@@ -1,0 +1,155 @@
+<template>
+  <q-layout view="lHh Lpr lFf">
+    <q-page-container>
+      <q-page class="flex flex-center bg-grey-2">
+        <q-card class="login-card" flat bordered>
+          <q-card-section class="text-center q-pt-xl">
+            <div class="text-h4 text-primary">Portale Volontario</div>
+            <div class="text-caption text-grey q-mt-sm">
+              Accedi per gestire i tuoi progetti
+            </div>
+          </q-card-section>
+
+          <q-card-section class="q-px-xl q-pb-xl">
+            <q-form @submit.prevent="handleLogin" class="q-gutter-y-md">
+              <q-input
+                v-model="email"
+                label="Email"
+                type="email"
+                filled
+                data-testid="login-email"
+                :rules="[val => !!val || 'Inserisci la tua email']"
+                lazy-rules
+              />
+              <q-input
+                v-model="password"
+                label="Password"
+                :type="showPassword ? 'text' : 'password'"
+                filled
+                data-testid="login-password"
+                :rules="[val => !!val || 'Inserisci la password']"
+                lazy-rules
+              >
+                <template v-slot:append>
+                  <q-icon
+                    :name="showPassword ? 'visibility_off' : 'visibility'"
+                    class="cursor-pointer"
+                    @click="showPassword = !showPassword"
+                  />
+                </template>
+              </q-input>
+
+              <q-btn
+                type="submit"
+                color="primary"
+                label="Accedi"
+                class="full-width"
+                :loading="authStore.loading"
+                data-testid="login-submit"
+              />
+
+              <div class="text-center">
+                <q-btn
+                  flat
+                  dense
+                  label="Password dimenticata?"
+                  color="grey"
+                  size="sm"
+                  @click="showForgotPassword = true"
+                />
+              </div>
+            </q-form>
+
+            <div v-if="authStore.error" class="text-negative text-center q-mt-md">
+              {{ authStore.error }}
+            </div>
+          </q-card-section>
+        </q-card>
+      </q-page>
+    </q-page-container>
+
+    <!-- Forgot Password Dialog -->
+    <q-dialog v-model="showForgotPassword" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section class="row items-center">
+          <div class="text-h6">Recupera password</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <p class="text-body2 text-grey">
+            Inserisci la tua email riceverai un link per reimpostare la password.
+          </p>
+          <q-input
+            v-model="resetEmail"
+            label="Email"
+            type="email"
+            filled
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Annulla" v-close-popup />
+          <q-btn
+            color="primary"
+            label="Invia link"
+            :loading="sendingReset"
+            @click="handleForgotPassword"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  </q-layout>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from 'stores/auth.store'
+import { authService } from 'src/services/auth.service'
+
+const $q = useQuasar()
+const router = useRouter()
+const authStore = useAuthStore()
+
+const email = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const showForgotPassword = ref(false)
+const resetEmail = ref('')
+const sendingReset = ref(false)
+
+async function handleLogin() {
+  const ok = await authStore.login(email.value, password.value)
+  if (ok) {
+    router.push('/famiglie')
+  }
+}
+
+async function handleForgotPassword() {
+  if (!resetEmail.value) return
+  sendingReset.value = true
+  try {
+    await authService.requestPasswordReset(resetEmail.value)
+    $q.notify({
+      type: 'positive',
+      message: 'Se l\'email esiste, riceverai un link per il reset'
+    })
+    showForgotPassword.value = false
+  } catch {
+    $q.notify({
+      type: 'negative',
+      message: 'Errore nell\'invio della richiesta'
+    })
+  } finally {
+    sendingReset.value = false
+  }
+}
+</script>
+
+<style scoped>
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
+</style>

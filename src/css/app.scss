@@ -1,0 +1,26 @@
+body {
+  font-family: 'Roboto', sans-serif;
+  background: #f5f5f5;
+}
+
+.text-stato-draft {
+  color: #ff9800;
+}
+
+.text-stato-inviato {
+  color: #2196f3;
+}
+
+.text-stato-approvato {
+  color: #4caf50;
+}
+
+.inline-edit-enter-active,
+.inline-edit-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.inline-edit-enter-from,
+.inline-edit-leave-to {
+  opacity: 0;
+}
