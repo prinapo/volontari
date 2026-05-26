@@ -43,6 +43,25 @@
 
         <GiustificativoList
           :progetto-id="famiglieStore.selectedProgettoId"
+          :famiglia-id="famiglieStore.famiglia?.id_famiglia"
+          :anno-bando="famiglieStore.selectedProgetto?.AnnoBando"
+        />
+      </div>
+    </template>
+
+    <template v-else-if="!loading && authStore.initialized && authStore.canVerifica">
+      <div class="text-center q-mt-xl">
+        <q-icon name="fact_check" size="lg" color="primary" />
+        <div class="q-mt-sm text-h6">Area verifica disponibile</div>
+        <div class="q-mt-xs text-grey-7">
+          Questo utente non e' collegato a famiglie come volontario.
+        </div>
+        <q-btn
+          class="q-mt-md"
+          color="primary"
+          icon="fact_check"
+          label="Vai a Verifica"
+          to="/verifica"
         />
       </div>
     </template>

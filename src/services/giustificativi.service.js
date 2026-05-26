@@ -4,7 +4,13 @@ export const giustificativiService = {
   getByProgetto(progettoId) {
     return api.get('/items/Giustificativi', {
       params: {
-        'filter[Progetto][_eq]': progettoId
+        'filter[Progetto][_eq]': progettoId,
+        fields: [
+          '*',
+          'Rendicontazione.id',
+          'Rendicontazione.Tranche',
+          'Rendicontazione.Stato'
+        ].join(',')
       }
     })
   },

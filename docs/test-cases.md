@@ -1,6 +1,6 @@
 # Test Cases Document
 
-**Version:** 1.1.0
+**Version:** 2.0.0
 **Last Updated:** 2026-05-25
 **Status:** Final
 
@@ -10,249 +10,70 @@
 |---|---|---|---|
 | 2026-05-25 | 1.0.0 | System | Initial draft |
 | 2026-05-25 | 1.1.0 | System | Final — mapped to actual test IDs (A-01 to RO-02); added Elimina, Allegato, Inline Edit cases |
+| 2026-05-25 | 2.0.0 | System | Final — added SU (submit), RO (read-only), EL (elimina) test cases; removed hardcoded credentials |
 
 ---
 
-## Test User
-
-> **Nota:** Le credenziali sono contenute in `tests/e2e/fixtures/auth.json` (escluso dal repository pubblico).
-
-| Field | Value |
-|---|---|
-| Email | Volontario test |
-| Password | Volontario test |
-| Role | Volontario |
+> **Nota:** Le credenziali di test sono contenute in `tests/e2e/fixtures/auth.json` (escluso dal repository pubblico).  
+> Il test user è un volontario con accesso a una o più famiglie.
 
 ---
 
-## TC-01: Login Success
+## Test Inventory
 
-| Field | Value |
-|---|---|
-| ID | TC-01 |
-| Title | Login Success |
-| Tags | `@smoke` |
-| Precondition | User has valid credentials |
-| Steps | 1. Navigate to `/login` |
-| | 2. Enter email `maddalena.massari@gmail.com` |
-| | 3. Enter password `mongolfiera26!` |
-| | 4. Click "Sign In" button |
-| Expected | URL changes to `/famiglie` |
-| | `localStorage` contains `access_token` and `refresh_token` |
-| | Welcome text with family name is visible |
+Per l'elenco completo e aggiornato di tutti i test, si veda [testing-plan.md](./testing-plan.md#7-test-id-reference).
 
----
+**Riepilogo:**
 
-## TC-02: Token Persistence
-
-| Field | Value |
-|---|---|
-| ID | TC-02 |
-| Title | Token Persistence Across Page Reload |
-| Tags | `@smoke` |
-| Precondition | TC-01 completed |
-| Steps | 1. Reload the page |
-| | 2. Wait for page to load |
-| Expected | URL remains `/famiglie` (not redirected to `/login`) |
-| | API calls succeed (200) |
+| Area | Tests | File |
+|---|---|---|
+| Auth | A-01 to A-04 (4) | `auth.spec.js` |
+| Famiglie | F-01, G-01, DB-01/02/03, IB-01/02/03/04, IN-01, PS-01/02/03/04 (14) | `famiglie.spec.js` |
+| Giustificativi — Form | CG-01 to CG-06 (6) | `giustificativi.spec.js` |
+| Giustificativi — Inline Edit | IE-01 to IE-07 (7) | `giustificativi.spec.js` |
+| Giustificativi — Allegato | AL-01 to AL-06 (6) | `giustificativi.spec.js` |
+| Giustificativi — Elimina | EL-01 to EL-04 (4) | `giustificativi.spec.js` |
+| Giustificativi — Invia | SU-01 to SU-03 (3) | `giustificativi.spec.js` |
+| Giustificativi — Read Only | RO-01 to RO-02 (2) | `giustificativi.spec.js` |
 
 ---
 
-## TC-03: Famiglie Page Loads
+## Test Design Patterns
 
-| Field | Value |
-|---|---|
-| ID | TC-03 |
-| Title | Famiglie Page Loads with Data |
-| Tags | `@smoke` |
-| Precondition | Logged in |
-| Steps | 1. Navigate to `/famiglie` |
-| Expected | Family name is visible |
-| | Project selector (`q-select`) is populated with projects |
-| | IBAN and Intestatario fields are displayed |
-| | Giustificativi list is visible (may be empty) |
+### Inline Edit Pattern (IB, IE)
 
----
+Ogni campo InlineEditableField viene testato con tre modalità:
 
-## TC-04: Project Selection
+1. **Save (✓):** Click campo → modifica valore → click ✓ → verifica display → reload → verifica persistenza
+2. **Cancel (✗):** Click campo → modifica valore → click ✗ → verifica display originale → reload → verifica persistenza
+3. **No-change (✓):** Click campo → click ✓ senza modificare → torna a display (nessuna PATCH)
 
-| Field | Value |
-|---|---|
-| ID | TC-04 |
-| Title | Project Selection Filters Giustificativi |
-| Tags | `@smoke` |
-| Precondition | Logged in, family has multiple projects |
-| Steps | 1. Select first project from dropdown |
-| | 2. Note the giustificativi shown |
-| | 3. Select a different project from dropdown |
-| Expected | Giustificativi list updates to show items for the selected project only |
+### Data Persistence Pattern (CG, IB, IN, IE, AL, SU, EL)
+
+Ogni operazione di scrittura viene seguita da:
+1. Verifica display immediato
+2. Page reload
+3. Verifica display dopo reload
+
+### Skip Pattern
+
+I test che richiedono dati pre-esistenti (es. una card in bozza) utilizzano `test.skip()` condizionale se il prerequisito non è soddisfatto.
 
 ---
 
-## TC-05: IBAN Inline Edit
+## Key Test Details
 
-| Field | Value |
-|---|---|
-| ID | TC-05 |
-| Title | IBAN Inline Edit |
-| Tags | `@crud` |
-| Precondition | Logged in |
-| Steps | 1. Click on IBAN display field |
-| | 2. Assert text transforms to input |
-| | 3. Type a new IBAN value |
-| | 4. Press Enter or click save checkmark |
-| Expected | IBAN display updates to new value |
-| | API call: PATCH `/items/Famiglie/:id` with `{IBAN: "newvalue"}` |
-| | Toast notification "Dati aggiornati" |
+### A-04: Token Removal Redirect
+Rimuove `access_token` dal localStorage, ricarica la pagina e verifica il redirect a `/login`.
 
----
+### AL-03: PDF Magic Bytes Verification
+Scarica il file tramite `page.request.get()` e verifica che i primi 4 byte siano `%PDF` (`0x25 0x50 0x44 0x46`).
 
-## TC-06: Intestatario CC Inline Edit
+### AL-04: Popup URL Verification
+Clicca "Apri" e cattura l'evento `popup` di Playwright. Verifica che l'URL della nuova scheda contenga `/assets/` e `access_token=`.
 
-| Field | Value |
-|---|---|
-| ID | TC-06 |
-| Title | Intestatario CC Inline Edit |
-| Tags | `@crud` |
-| Precondition | Logged in |
-| Steps | 1. Click on Intestatario_CC display field |
-| | 2. Type a new name |
-| | 3. Press Enter |
-| Expected | Display updates |
-| | API call updates `Intestatario_CC` |
+### EL-03/EL-04: Soft Delete
+Clicca "Elimina" → conferma nel dialog → verifica card sparita dalla lista → reload → verifica ancora sparita. Il backend esegue `PATCH {Invalidato: true}`.
 
----
-
-## TC-07: Add Giustificativo
-
-| Field | Value |
-|---|---|
-| ID | TC-07 |
-| Title | Add New Giustificativo |
-| Tags | `@crud` |
-| Precondition | Logged in, project selected |
-| Steps | 1. Click "Add Giustificativo" button |
-| | 2. Fill Descrizione |
-| | 3. Fill Importo |
-| | 4. Select Data |
-| | 5. Select Stato ("draft") |
-| | 6. Attach a file (image or PDF) |
-| | 7. Click "Save" |
-| Expected | New item appears in giustificativi list |
-| | Fields display correct values |
-| | Toast notification "Giustificativo creato" |
-
----
-
-## TC-08: Edit Giustificativo Value (Inline)
-
-| Field | Value |
-|---|---|
-| ID | TC-08 |
-| Title | Edit Giustificativo Descrizione/Importo Inline |
-| Tags | `@crud` |
-| Precondition | Logged in, project has a draft giustificativo |
-| Steps | 1. Click on Descrizione text of a draft item |
-| | 2. Modify the description |
-| | 3. Press Enter |
-| | 4. Click on Importo text |
-| | 5. Modify the amount |
-| | 6. Press Enter |
-| Expected | Values update in the list |
-| | API call: PATCH `/items/Giustificativi/:id` |
-
----
-
-## TC-09: Edit Giustificativo Attachment
-
-| Field | Value |
-|---|---|
-| ID | TC-09 |
-| Title | Edit Giustificativo Attachment (Image) |
-| Tags | `@crud` |
-| Precondition | Logged in, project has a draft giustificativo |
-| Steps | 1. Click attachment area of a draft item |
-| | 2. Select a new image file |
-| | 3. Confirm |
-| Expected | New attachment replaces old one |
-| | API calls: POST `/files` → PATCH `/items/Giustificativi/:id` |
-
----
-
-## TC-10: Submit Giustificativo (Invia)
-
-| Field | Value |
-|---|---|
-| ID | TC-10 |
-| Title | Submit Giustificativo Changes Stato to Inviato |
-| Tags | `@crud` |
-| Precondition | Logged in, project has a draft giustificativo |
-| Steps | 1. Click "Invia" button on a draft item |
-| | 2. Confirm in dialog |
-| Expected | Stato badge changes from "draft" to "Inviato" |
-| | Badge color changes (draft=orange, inviato=blue) |
-| | Edit controls disappear / become disabled |
-
----
-
-## TC-11: Cannot Edit Submitted Giustificativo
-
-| Field | Value |
-|---|---|
-| ID | TC-11 |
-| Title | Submitted Giustificativo is Read-Only |
-| Tags | `@crud` |
-| Precondition | TC-10 completed |
-| Steps | 1. Click on Descrizione of the submitted item |
-| Expected | No edit input appears |
-| | Inline editing is disabled for this item |
-| | "Invia" button is hidden |
-
----
-
-## TC-12: Logout
-
-| Field | Value |
-|---|---|
-| ID | TC-12 |
-| Title | Logout Clears Session |
-| Tags | `@smoke` |
-| Precondition | Logged in |
-| Steps | 1. Click user menu → "Logout" |
-| Expected | Redirected to `/login` |
-| | localStorage cleared of tokens |
-| | Navigating to `/famiglie` redirects back to `/login` |
-
----
-
-## TC-13: API Failure Handling
-
-| Field | Value |
-|---|---|
-| ID | TC-13 |
-| Title | API Failure Shows Error Notification |
-| Tags | `@regression` |
-| Precondition | Logged in |
-| Steps | 1. Use Playwright route interception to make API return 500 |
-| | 2. Trigger an API call (e.g., click select project) |
-| Expected | Error notification is displayed |
-| | App does not crash (white screen) |
-| | User can retry |
-
----
-
-## TC-14: Mobile Responsiveness
-
-| Field | Value |
-|---|---|
-| ID | TC-14 |
-| Title | Mobile Viewport — All Functionality Accessible |
-| Tags | `@mobile` |
-| Precondition | Logged in |
-| Steps | 1. Set viewport to 375x667 (iPhone SE) |
-| | 2. Navigate to `/famiglie` |
-| | 3. Perform TC-04, TC-05, TC-08 |
-| Expected | Layout adjusts to single-column |
-| | All elements visible and tappable |
-| | No horizontal scroll |
-| | Dropdown, inline editing, buttons all work |
+### SU-01/SU-02/SU-03: Submit Flow
+Clicca "Invia" → verifica badge cambia da "Bozza" a "Inviato" → verifica pulsanti edit/Elimina spariscono → reload → verifica stato ancora "Inviato".

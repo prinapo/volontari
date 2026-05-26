@@ -7,6 +7,38 @@ const api = axios.create({
   timeout: 30000
 })
 
+function clearSessionAndRedirectToLogin() {
+  const authStore = useAuthStore()
+  authStore.$patch({
+    token: null,
+    refreshToken: null,
+    user: null,
+    contatto: null
+  })
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+
+  if (window.location.pathname !== '/login') {
+    window.location.assign('/login')
+  }
+}
+
+function isInvalidTokenError(error) {
+  const status = error.response?.status
+  const message = error.response?.data?.errors?.[0]?.message || ''
+  const code = error.response?.data?.errors?.[0]?.extensions?.code || ''
+
+  return (
+    status === 401 ||
+    String(message).toLowerCase().includes('token invalid') ||
+    String(message).toLowerCase().includes('invalid token') ||
+    String(message).toLowerCase().includes('refresh token is required') ||
+    String(message).toLowerCase().includes('jwt') ||
+    String(code).toLowerCase() === 'invalid_payload' ||
+    String(code).toLowerCase().includes('token')
+  )
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
   if (token) {
@@ -23,14 +55,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+    const isAuthRequest = originalRequest?.url?.includes('/auth/')
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (isInvalidTokenError(error) && !originalRequest?._retry && !isAuthRequest) {
       originalRequest._retry = true
 
       const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
       if (!refreshToken) {
-        const authStore = useAuthStore()
-        authStore.logout()
+        clearSessionAndRedirectToLogin()
         return Promise.reject(error)
       }
 
@@ -43,10 +75,13 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`
         return api(originalRequest)
       } catch {
-        const authStore = useAuthStore()
-        authStore.logout()
+        clearSessionAndRedirectToLogin()
         return Promise.reject(error)
       }
+    }
+
+    if (isInvalidTokenError(error) && !isAuthRequest) {
+      clearSessionAndRedirectToLogin()
     }
 
     return Promise.reject(error)

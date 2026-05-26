@@ -9,12 +9,24 @@ export const authService = {
     return api.post('/auth/refresh', { refresh_token: refreshToken })
   },
 
-  logout() {
-    return api.post('/auth/logout')
+  logout(refreshToken) {
+    return api.post('/auth/logout', { refresh_token: refreshToken })
   },
 
   getMe() {
-    return api.get('/users/me')
+    return api.get('/users/me', {
+      params: {
+        fields: 'id,email,first_name,last_name,role,role.*'
+      }
+    })
+  },
+
+  getRole(roleId) {
+    return api.get(`/roles/${roleId}`, {
+      params: {
+        fields: 'id,name'
+      }
+    })
   },
 
   requestPasswordReset(email) {

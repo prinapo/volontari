@@ -8,6 +8,14 @@
         >
           {{ statoLabel(item.Stato) }}
         </q-badge>
+        <q-badge
+          v-if="trancheLabel"
+          color="teal"
+          outline
+          class="text-uppercase q-pa-xs"
+        >
+          {{ trancheLabel }}
+        </q-badge>
         <q-space />
         <q-btn
           v-if="canEdit"
@@ -112,9 +120,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { FILE_ACCEPT, API_URL, STORAGE_KEYS } from 'src/utils/constants'
+import { FILE_ACCEPT, API_URL, STORAGE_KEYS, TRANCHE_RENDICONTAZIONE } from 'src/utils/constants'
 import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
 
@@ -128,6 +136,13 @@ const props = defineProps({
 const emit = defineEmits(['save-field', 'submit', 'file-change', 'invalida'])
 
 const newFile = ref(null)
+
+const trancheLabel = computed(() => {
+  const value = typeof props.item.Rendicontazione === 'object'
+    ? props.item.Rendicontazione?.Tranche
+    : ''
+  return TRANCHE_RENDICONTAZIONE.find((tranche) => tranche.value === value)?.label || value
+})
 
 function allegatoUrl(fileId) {
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)

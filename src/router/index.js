@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { STORAGE_KEYS } from 'src/utils/constants'
+import { useAuthStore } from 'stores/auth.store'
 
 const routes = [
   {
@@ -23,9 +24,10 @@ const routes = [
         component: () => import('pages/FamigliePage.vue')
       },
       {
-        path: 'migrazione',
-        name: 'Migrazione',
-        component: () => import('pages/MigrazionePage.vue')
+        path: 'verifica',
+        name: 'Verifica',
+        component: () => import('pages/VerificaPage.vue'),
+        meta: { requiredRole: 'Verifica' }
       }
     ]
   },
@@ -45,13 +47,20 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = !!token
 
   if (isAuthenticated && to.meta.public) {
-    return next('/famiglie')
+    const authStore = useAuthStore()
+    return next(authStore.canVerifica ? '/verifica' : '/famiglie')
   }
 
   if (!isAuthenticated && to.meta.requiresAuth) {
     return next('/login')
   }
 
+  if (to.meta.requiredRole) {
+    const authStore = useAuthStore()
+    if (authStore.initialized && !authStore.canVerifica) {
+      return next('/famiglie')
+    }
+  }
   next()
 })
 

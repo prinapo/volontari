@@ -1,6 +1,9 @@
 node_modules/
 dist/
+.quasar/
+.env
 .env.local
 *.log
+dev-server.*.log
 test-results/
-.quasar/
+tests/e2e/fixtures/auth.json

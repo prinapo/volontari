@@ -1,6 +1,6 @@
 # API Integration Document
 
-**Version:** 1.1.0
+**Version:** 2.0.0
 **Last Updated:** 2026-05-25
 **Status:** Final
 
@@ -10,6 +10,7 @@
 |---|---|---|---|
 | 2026-05-25 | 1.0.0 | System | Initial draft |
 | 2026-05-25 | 1.1.0 | System | Final — added email table endpoints, 403 resolution notes |
+| 2026-05-25 | 2.0.0 | System | Final — added Verifica/Rendicontazione endpoints, refresh token interceptor, cache-buster, role resolution |
 
 ---
 
@@ -31,6 +32,8 @@ Development: http://localhost:9000 → proxy → https://app.sostienilsostegno.c
 | POST | `/auth/logout` | `auth.service.logout()` | Invalidate refresh token |
 | POST | `/auth/password/request` | `auth.service.requestReset()` | Request password reset email |
 | POST | `/auth/password/reset` | `auth.service.resetPassword()` | Reset password with token |
+| PATCH | `/users/me` | `auth.service.changePassword()` | Change current user password |
+| GET | `/roles/:id` | `auth.service.getRole()` | Get role name by ID (for permission resolution) |
 
 ### Auth Response Shape
 
@@ -52,7 +55,7 @@ Development: http://localhost:9000 → proxy → https://app.sostienilsostegno.c
 
 | Method | Path | Service | Params |
 |---|---|---|---|
-| GET | `/users/me` | `auth.service.getMe()` | — |
+| GET | `/users/me` | `auth.service.getMe()` | `fields=id,email,first_name,last_name,role,role.*` |
 | GET | `/items/contatti` | `contatti.service.getByUserId(id)` | `filter[user_id][_eq]={id}` |
 | PATCH | `/items/contatti/{id}` | `contatti.service.update(id, data)` | — |
 
@@ -61,38 +64,47 @@ Development: http://localhost:9000 → proxy → https://app.sostienilsostegno.c
 | Method | Path | Service | Params |
 |---|---|---|---|
 | GET | `/items/Famiglie_Contatti` | `famiglie.service.getFamiglieByVolontario(contattoId)` | `filter[Ruolo_nella_Famiglia][_eq]=Volontario&filter[Contatto][_eq]={id}` |
+| GET | `/items/Famiglie_Contatti` | `famiglie.service.getGenitoriByFamiglia(famigliaId)` | `filter[Famiglia][_eq]={famigliaId}&filter[Ruolo_nella_Famiglia][_eq]=Genitore&fields=id,Contatto.*` |
 | GET | `/items/Famiglie/{id}` | `famiglie.service.getById(id)` | `fields=id_famiglia,Nome_Famiglia,Progetti.*,IBAN,Intestatario_CC` |
 | PATCH | `/items/Famiglie/{id}` | `famiglie.service.update(id, data)` | Body: `{IBAN, Intestatario_CC}` |
+| GET | `/items/email` | `famiglie.service.getEmailByContatto(contattoIds)` | `filter[Contatto_Relation][_in]={ids}&filter[Primary][_eq]=true` |
 
 ### 3.3 Projects
 
-Projects are fetched inline with the family via the `fields` parameter (Progetti.*)
+| Method | Path | Service | Params |
+|---|---|---|---|
+| GET | `/items/Progetti/{id}` | `progetti.service.getById(id)` | — |
+| GET | `/items/Progetti` | `verifica.service.getProgetti()` | `limit=-1, sort=Famiglia,AnnoBando,Cognome_e__Nome_Beneficiario, fields=...Famiglia.*` |
+
+Projects are also fetched inline with the family via the `fields` parameter (Progetti.*).
 
 ### 3.4 Giustificativi
 
 | Method | Path | Service | Params |
 |---|---|---|---|
-| GET | `/items/Giustificativi` | `giustificativi.service.getByProgetto(progettoId)` | `filter[Progetto][_eq]={id}` |
+| GET | `/items/Giustificativi` | `giustificativi.service.getByProgetto(progettoId)` | `filter[Progetto][_eq]={id}&fields=*,Rendicontazione.*` |
+| GET | `/items/Giustificativi` | `verifica.service.getGiustificativi()` | `limit=-1, sort=Data, fields=*,Rendicontazione.*` |
 | POST | `/items/Giustificativi` | `giustificativi.service.create(data)` | Body: full giustificativo |
 | PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.update(id, data)` | Body: fields to update |
 | PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.submit(id)` | Body: `{Stato: "Inviato"}` |
+| PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.invalidate(id)` | Body: `{Invalidato: true}` |
 
 ### 3.5 Files
 
 | Method | Path | Service | Notes |
 |---|---|---|---|
-| POST | `/files` | `files.service.upload(file)` | Multipart FormData |
+| POST | `/files` | `files.service.upload(file, folder)` | Multipart FormData |
 | PATCH | `/files/{id}` | `files.service.updateMeta(id, meta)` | Update title, filename_download, folder |
-| GET | `/files/{id}` | Direct URL | Access file via Directus |
+| GET | `/assets/{id}` | Direct URL | Serve file (with `?access_token=` and optional `?download=1`) |
 
-### 3.6 Admin Endpoints (Migrazione)
+File folder UUID for giustificativi: `91a9c958-206f-4e1c-8143-e67f85398d0c`
 
-| Method | Path | Service | Notes |
+### 3.6 Rendicontazioni
+
+| Method | Path | Service | Params |
 |---|---|---|---|
-| GET | `/roles` | `admin.service.getVolontarioRole()` | Filter by name "Volontario" |
-| POST | `/users` | `admin.service.createUser(data)` | Requires admin role |
-| GET | `/items/email` | `admin.service.getEmailContatti()` | `limit=-1` for all |
-| GET | `/items/Famiglie_Contatti` | `admin.service.getVolontari()` | With fields for Contatto.* |
+| GET | `/items/Rendicontazioni` | `rendicontazioni.service.findByProjectAndTranche()` | `filter[Famiglia][_eq]={id}&filter[Progetto][_eq]={id}&filter[Tranche][_eq]={tranche}` |
+| POST | `/items/Rendicontazioni` | `rendicontazioni.service.create(data)` | Body: `{Famiglia, Progetto, AnnoBando, Tranche, Stato, Data_Ricezione}` |
 
 ---
 
@@ -100,10 +112,12 @@ Projects are fetched inline with the family via the `fields` parameter (Progetti
 
 ### GET Request Example
 ```
-GET /items/Giustificativi?filter[Progetto][_eq]=proj-123
+GET /items/Giustificativi?filter[Progetto][_eq]=proj-123&_t=1748123456789
 Headers:
   Authorization: Bearer eyJhbGciOi...
 ```
+
+Note: GET requests automatically include a `_t` cache-buster timestamp.
 
 ### POST Request Example (JSON)
 ```json
@@ -120,17 +134,6 @@ Body:
   "Stato": "draft",
   "Allegato": "uuid-of-file"
 }
-```
-
-### POST Request Example (File Upload)
-```
-POST /files
-Headers:
-  Authorization: Bearer eyJhbGciOi...
-Content-Type: multipart/form-data
-
-Body (FormData):
-  file: (binary file data)
 ```
 
 ### PATCH Request Example
@@ -168,14 +171,19 @@ Body:
 |---|---|---|
 | 200 | Success | Parse data |
 | 204 | Success (no content) | Treat as success |
-| 401 | Unauthorized | Attempt token refresh; if fails, redirect to login |
+| 401 | Unauthorized | **Axios interceptor**: attempt token refresh via `/auth/refresh`; if success, retry original request; if fail, `clearSessionAndRedirectToLogin()` |
 | 403 | Forbidden | Show "access denied" notification |
 | 404 | Not found | Show "resource not found" |
 | 422 | Validation error | Show field-level validation messages |
 | 429 | Rate limited | Wait and retry with backoff |
 | 5xx | Server error | Show generic "server error" notification |
 
-All errors are caught by the Axios response interceptor in `src/boot/axios.js`.
+All errors are caught by the Axios response interceptor in `src/services/api.js`. The interceptor:
+1. Detects invalid token errors (status 401, "token invalid", "jwt", "invalid_payload", etc.)
+2. Sets `_retry` flag to avoid infinite loops
+3. Creates a **fresh axios instance** (not the `api` instance) to POST `/auth/refresh`
+4. On success: stores new token, retries original request with updated Authorization header
+5. On failure: calls `clearSessionAndRedirectToLogin()` which wipes localStorage and navigates to `/login`
 
 ---
 
@@ -184,6 +192,14 @@ All errors are caught by the Axios response interceptor in `src/boot/axios.js`.
 Directus CORS must allow:
 - `https://volontari.sostienilsostegno.com` (production)
 - `http://localhost:9000` (development)
+
+```
+CORS_ENABLED=true
+CORS_ORIGIN=https://volontari.sostienilsostegno.com,http://localhost:9000
+CORS_CREDENTIALS=true
+CORS_METHODS=GET,POST,PATCH,DELETE,OPTIONS
+CORS_HEADERS=Content-Type,Authorization
+```
 
 ---
 
@@ -196,3 +212,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 ```
+
+### Request Interceptor
+- Attaches `Authorization: Bearer <token>` from localStorage
+- Adds `_t=${Date.now()}` cache-buster param to GET requests

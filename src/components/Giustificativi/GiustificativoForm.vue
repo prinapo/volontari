@@ -35,6 +35,16 @@
             lazy-rules
           />
           <q-select
+            v-model="form.Tranche"
+            :options="trancheOptions"
+            label="Tranche rendicontazione"
+            filled
+            emit-value
+            map-options
+            :rules="[val => !!val || 'Campo obbligatorio']"
+            lazy-rules
+          />
+          <q-select
             v-model="form.Stato"
             :options="statoOptions"
             label="Stato"
@@ -75,13 +85,15 @@
 <script setup>
 import { reactive, ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
-import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
+import { FILE_ACCEPT, FILE_MAX_SIZE, TRANCHE_RENDICONTAZIONE } from 'src/utils/constants'
 
 const $q = useQuasar()
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   progettoId: { type: String, default: '' },
+  famigliaId: { type: String, default: '' },
+  annoBando: { type: [Number, String], default: '' },
   saving: { type: Boolean, default: false }
 })
 
@@ -99,9 +111,12 @@ const form = reactive({
   Descrizione: '',
   Importo: null,
   Data: today,
+  Tranche: '',
   Stato: 'draft',
   File: null
 })
+
+const trancheOptions = TRANCHE_RENDICONTAZIONE
 
 const statoOptions = [
   { label: 'Bozza', value: 'draft' },
@@ -114,6 +129,8 @@ async function handleSave() {
   emit('save', {
     ...form,
     Progetto: props.progettoId,
+    Famiglia: props.famigliaId,
+    AnnoBando: props.annoBando,
     Importo: parseFloat(form.Importo)
   })
   resetForm()
@@ -122,7 +139,8 @@ async function handleSave() {
 function resetForm() {
   form.Descrizione = ''
   form.Importo = null
-  form.Data = ''
+  form.Data = today
+  form.Tranche = ''
   form.Stato = 'draft'
   form.File = null
 }

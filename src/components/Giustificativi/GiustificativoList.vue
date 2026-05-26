@@ -36,6 +36,8 @@
     <GiustificativoForm
       v-model="showForm"
       :progetto-id="progettoId"
+      :famiglia-id="famigliaId"
+      :anno-bando="annoBando"
       :saving="saving"
       @save="handleCreate"
     />
@@ -53,7 +55,9 @@ const $q = useQuasar()
 const giustificativiStore = useGiustificativiStore()
 
 const props = defineProps({
-  progettoId: { type: String, default: '' }
+  progettoId: { type: String, default: '' },
+  famigliaId: { type: String, default: '' },
+  annoBando: { type: [Number, String], default: '' }
 })
 
 const showForm = ref(false)

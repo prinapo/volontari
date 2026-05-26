@@ -31,6 +31,8 @@ export const useFamiglieStore = defineStore('famiglie', {
     async init(contattoId) {
       this.loading = true
       this.error = null
+      this.famiglia = null
+      this.selectedProgettoId = null
       try {
         const fcRes = await famiglieService.getFamiglieByVolontario(contattoId)
         this.famiglieContatti = fcRes.data.data || []
@@ -44,6 +46,19 @@ export const useFamiglieStore = defineStore('famiglie', {
         console.error(err)
       } finally {
         this.loading = false
+      }
+    },
+
+    async checkAccess(contattoId) {
+      if (!contattoId) return false
+      try {
+        const fcRes = await famiglieService.getFamiglieByVolontario(contattoId)
+        this.famiglieContatti = fcRes.data.data || []
+        return this.famiglieContatti.length > 0
+      } catch (err) {
+        this.famiglieContatti = []
+        console.warn('Unable to check family access:', err)
+        return false
       }
     },
 

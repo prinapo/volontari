@@ -1,6 +1,6 @@
 # Deployment Guide Document
 
-**Version:** 1.1.0
+**Version:** 2.0.0
 **Last Updated:** 2026-05-25
 **Status:** Final
 
@@ -10,6 +10,7 @@
 |---|---|---|---|
 | 2026-05-25 | 1.0.0 | System | Initial draft |
 | 2026-05-25 | 1.1.0 | System | Final — added test commands, GitHub Actions CI, rollback procedure |
+| 2026-05-25 | 2.0.0 | System | Final — added .env.example reference, updated build notes |
 
 ---
 
@@ -25,6 +26,9 @@ npx quasar dev
 # Production build
 npx quasar build
 
+# Run e2e tests (requires dev server or CI mode)
+npm run test:e2e
+
 # Output: dist/spa/
 #   ├── index.html
 #   ├── assets/
@@ -39,20 +43,48 @@ npx quasar build
 
 ## 2. Environment Variables
 
-Create `.env` file in project root:
+Create `.env` file in project root using the template:
+
+```bash
+cp .env.example .env
+```
 
 ```env
 VITE_API_URL=https://app.sostienilsostegno.com
 VITE_APP_TITLE=Portale Volontario
 ```
 
-> **Nota:** `.env` contiene l'URL dell'API backend ed è escluso dal repository pubblico. Usa `.env.example` come template.
+> **Nota:** `.env` contiene l'URL dell'API backend ed è escluso dal repository pubblico.  
+> Usa `.env.example` come template (committato nel repo).
 
 These are exposed via Vite's `import.meta.env` pattern.
 
 ---
 
-## 3. Deployment Options
+## 3. Environment Configuration
+
+The API URL is configured in `quasar.config.cjs`:
+
+```js
+env: {
+  API_URL: ctx.dev
+    ? 'http://localhost:9000/api'      // Development proxy
+    : 'https://app.sostienilsostegno.com' // Production
+}
+```
+
+The Quasar dev server runs on port 9000 with history mode routing:
+
+```cjs
+devServer: {
+  port: 9000,
+  open: false
+}
+```
+
+---
+
+## 4. Deployment Options
 
 ### Option A: Static Hosting (Recommended)
 
@@ -99,7 +131,7 @@ server {
 
 ---
 
-## 4. Directus CORS Configuration
+## 5. Directus CORS Configuration
 
 Ensure Directus CORS settings include the frontend origin:
 
@@ -113,28 +145,44 @@ CORS_HEADERS=Content-Type,Authorization
 
 ---
 
-## 5. Post-Deployment Checklist
+## 6. Directus Permissions
+
+The Volontario role must have read access to:
+
+| Collection | Minimum Fields | Notes |
+|---|---|---|
+| `contatti` | `id_contatto, Nome, Cognome, Numero_di_cellulare, Numero_di_telefono, user_id` | For genitori display |
+| `email` | `id, email_address, Contatto_Relation, Primary` | For email display (separate query) |
+| `Famiglie` | `id_famiglia, Nome_Famiglia, IBAN, Intestatario_CC, Progetti.*` | Main family data |
+| `Famiglie_Contatti` | All | Junction table for role resolution |
+| `Progetti` | As needed | Project data |
+| `Giustificativi` | All | CRUD operations |
+| `Rendicontazioni` | `id, Tranche, Stato` | For tranche assignment |
+| `directus_files` | As needed | File upload/download |
+
+---
+
+## 7. Post-Deployment Checklist
 
 - [ ] HTTPS enabled and certificate valid
 - [ ] `https://volontari.sostienilsostegno.com` loads correctly
 - [ ] Login works against `https://app.sostienilsostegno.com`
 - [ ] API calls succeed (no CORS errors in console)
 - [ ] File upload works
-- [ ] Token refresh works
+- [ ] Token refresh works (wait 15 min, verify no redirect to login)
 - [ ] Mobile viewport renders correctly
 - [ ] 404 fallback to `index.html` (SPA routing)
+- [ ] Directus role permissions verified
 
 ---
 
-## 6. Rollback Procedure
+## 8. Rollback Procedure
 
 ```bash
 # If using S3/static:
-# Re-deploy previous build
 aws s3 sync dist/spa.bak s3://bucket-name --delete
 
 # If using VPS:
-# Restore backup
 sudo mv /var/www/volontari /var/www/volontari.broken
 sudo mv /var/www/volontari.bak /var/www/volontari
 sudo systemctl reload nginx

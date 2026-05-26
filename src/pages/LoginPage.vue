@@ -122,7 +122,7 @@ const sendingReset = ref(false)
 async function handleLogin() {
   const ok = await authStore.login(email.value, password.value)
   if (ok) {
-    router.push('/famiglie')
+    router.push(authStore.canVerifica ? '/verifica' : '/famiglie')
   }
 }
 

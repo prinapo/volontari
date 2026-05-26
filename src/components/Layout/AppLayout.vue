@@ -2,6 +2,16 @@
   <q-layout view="hHh Lpr lFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
+        <q-btn
+          v-if="authStore.isAuthenticated"
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="drawerOpen = !drawerOpen"
+        />
+
         <q-toolbar-title>
           Portale Volontario
         </q-toolbar-title>
@@ -24,6 +34,47 @@
         </template>
       </q-toolbar>
     </q-header>
+
+    <q-drawer
+      v-if="authStore.isAuthenticated"
+      v-model="drawerOpen"
+      show-if-above
+      bordered
+      :width="240"
+      class="bg-white"
+    >
+      <q-list padding>
+        <q-item-label header>Navigazione</q-item-label>
+        <q-item
+          v-if="authStore.hasFamiglieAccess"
+          clickable
+          v-ripple
+          :active="$route.name === 'Famiglie'"
+          active-class="bg-primary text-white"
+          to="/famiglie"
+        >
+          <q-item-section avatar>
+            <q-icon name="home" />
+          </q-item-section>
+          <q-item-section>Famiglie</q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="authStore.canVerifica"
+          clickable
+          v-ripple
+          :active="$route.name === 'Verifica'"
+          active-class="bg-primary text-white"
+          to="/verifica"
+        >
+          <q-item-section avatar>
+            <q-icon name="fact_check" />
+          </q-item-section>
+          <q-item-section>Verifica</q-item-section>
+        </q-item>
+
+      </q-list>
+    </q-drawer>
 
     <q-page-container>
       <router-view />
@@ -80,12 +131,13 @@ const $q = useQuasar()
 const router = useRouter()
 const authStore = useAuthStore()
 
+const drawerOpen = ref(false)
 const showChangePassword = ref(false)
 const newPassword = ref('')
 const confirmPassword = ref('')
 
-function handleLogout() {
-  authStore.logout()
+async function handleLogout() {
+  await authStore.logout()
   router.push('/login')
 }
 

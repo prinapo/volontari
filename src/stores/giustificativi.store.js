@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { filesService } from 'src/services/files.service'
+import { rendicontazioniService } from 'src/services/rendicontazioni.service'
 
 export const useGiustificativiStore = defineStore('giustificativi', {
   state: () => ({
@@ -38,6 +39,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
     async createGiustificativo(data, file) {
       this.saving = true
       try {
+        const rendicontazioneId = await this.ensureRendicontazione(data)
         let fileId = null
         if (file) {
           const uploadRes = await filesService.upload(file, '91a9c958-206f-4e1c-8143-e67f85398d0c')
@@ -50,6 +52,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
           Importo: data.Importo,
           Data: data.Data,
           Stato: data.Stato || 'draft',
+          Rendicontazione: rendicontazioneId,
           Allegato: fileId
         })
 
@@ -65,6 +68,28 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       } finally {
         this.saving = false
       }
+    },
+
+    async ensureRendicontazione(data) {
+      if (!data.Famiglia || !data.Progetto || !data.Tranche) return null
+
+      const existingRes = await rendicontazioniService.findByProjectAndTranche({
+        famigliaId: data.Famiglia,
+        progettoId: data.Progetto,
+        tranche: data.Tranche
+      })
+      const existing = existingRes.data.data?.[0]
+      if (existing?.id) return existing.id
+
+      const createRes = await rendicontazioniService.create({
+        Famiglia: data.Famiglia,
+        Progetto: data.Progetto,
+        AnnoBando: data.AnnoBando || null,
+        Tranche: data.Tranche,
+        Stato: 'ricevuta',
+        Data_Ricezione: new Date().toISOString()
+      })
+      return createRes.data.data?.id || null
     },
 
     async updateGiustificativo(id, data, newFile) {
