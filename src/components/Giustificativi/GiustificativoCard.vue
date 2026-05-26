@@ -115,6 +115,14 @@
           />
         </div>
       </div>
+      <div
+        v-if="item.Stato === 'Rifiutato' && item.NotaRifiuto"
+        class="bg-red-1 q-pa-sm q-mx-md q-mb-md rounded-borders"
+        style="border: 1px solid #ffcdd2;"
+      >
+        <div class="text-caption text-negative text-weight-medium q-mb-xs">Motivazione del rifiuto</div>
+        <div class="text-body2">{{ item.NotaRifiuto }}</div>
+      </div>
     </q-card-section>
   </q-card>
 </template>

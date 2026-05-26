@@ -1,7 +1,7 @@
 # Testing Plan Document
 
-**Version:** 2.0.0
-**Last Updated:** 2026-05-25
+**Version:** 2.1.0
+**Last Updated:** 2026-05-26
 **Status:** Final
 
 ## Change Log
@@ -169,7 +169,7 @@ jobs:
 | PS-03 | Card totali mostra valori positivi | `@crud` | famiglie.spec.js |
 | PS-04 | Item selezionato ha sfondo bg-green-1 | `@smoke` | famiglie.spec.js |
 
-### Giustificativi (22 tests)
+### Giustificativi (30 tests)
 
 | ID | Title | Tags | File |
 |---|---|---|---|
@@ -179,6 +179,9 @@ jobs:
 | CG-04 | Salva senza File mostra errore validazione | `@regression` | giustificativi.spec.js |
 | CG-05 | Annulla chiude dialog senza creare | `@regression` | giustificativi.spec.js |
 | CG-06 | Crea con tutti i campi persiste dopo reload | `@crud` | giustificativi.spec.js |
+| CG-07 | NotaVolontario opzionale nel form creazione | `@smoke` | giustificativi.spec.js |
+| CG-08 | NotaVolontario salvata persiste dopo reload | `@crud` | giustificativi.spec.js |
+| CG-09 | Form larghezza limitata (non fullscreen) | `@smoke` | giustificativi.spec.js |
 | IE-01 | Descrizione modifica con ✓ salva e persiste dopo reload | `@crud` | giustificativi.spec.js |
 | IE-02 | Descrizione modifica con X annulla valore originale | `@crud` | giustificativi.spec.js |
 | IE-03 | Descrizione click senza modificare ✓ torna a display | `@crud` | giustificativi.spec.js |
@@ -201,6 +204,44 @@ jobs:
 | SU-03 | Invia reload stato ancora Inviato | `@crud` | giustificativi.spec.js |
 | RO-01 | Card inviata click campo NON entra in edit | `@crud` | giustificativi.spec.js |
 | RO-02 | Card inviata Apri e Scarica ancora funzionanti | `@smoke` | giustificativi.spec.js |
+| OR-01 | Giustificativi ordinati dal più recente | `@smoke` | giustificativi.spec.js |
+| NV-01 | NotaRifiuto box rosso visibile nel card volontario | `@smoke` | giustificativi.spec.js |
+| NV-02 | Card rifiutata senza nota non mostra box | `@regression` | giustificativi.spec.js |
+
+### VerificaPage (30 tests)
+
+| ID | Title | Tags | File |
+|---|---|---|---|
+| VR-01 | Accesso verificatore apre VerificaPage | `@smoke` | verifica.spec.js |
+| VR-02 | Volontario non accede a VerificaPage | `@regression` | verifica.spec.js |
+| TB-01 | Colonne ordine corretto | `@smoke` | verifica.spec.js |
+| TB-02 | Colonna Bando visibile e ordinabile | `@smoke` | verifica.spec.js |
+| TB-03 | Colonna Allocato mostra valore formattato | `@smoke` | verifica.spec.js |
+| TB-04 | Famiglia mostra nome — beneficiario — ID | `@smoke` | verifica.spec.js |
+| TB-05 | Colonna Totali non esiste | `@regression` | verifica.spec.js |
+| FL-01 | Tranche Tutte mostra tutti i progetti | `@smoke` | verifica.spec.js |
+| FL-02 | Seleziona tranche filtra progetti | `@crud` | verifica.spec.js |
+| FL-03 | Tranche dinamiche dropdown | `@smoke` | verifica.spec.js |
+| FL-04 | Filtro rendicontazione con importi | `@crud` | verifica.spec.js |
+| FL-05 | Filtro rendicontazione mancanti | `@crud` | verifica.spec.js |
+| FL-06 | Filtro anno bando | `@crud` | verifica.spec.js |
+| FL-07 | Ricerca per famiglia | `@crud` | verifica.spec.js |
+| ER-01 | Click expand mostra giustificativi | `@smoke` | verifica.spec.js |
+| ER-02 | Toggle expand/close | `@regression` | verifica.spec.js |
+| ER-03 | Nota rifiuto visibile nella riga espansa | `@crud` | verifica.spec.js |
+| DB-V1 | Badge dati bancari Completi/Da completare | `@smoke` | verifica.spec.js |
+| DB-V2 | Pulsante edit apre dialog IBAN | `@smoke` | verifica.spec.js |
+| DB-V3 | Dialog IBAN annulla non salva | `@crud` | verifica.spec.js |
+| DB-V4 | Dialog IBAN salva persiste dopo reload | `@crud` | verifica.spec.js |
+| DB-V5 | IBAN edit aggiorna tutti i progetti stessa famiglia | `@crud` | verifica.spec.js |
+| RN-01 | Rifiuta apre dialog nota obbligatoria | `@smoke` | verifica.spec.js |
+| RN-02 | Rifiuta senza nota button disabilitato | `@regression` | verifica.spec.js |
+| RN-03 | Rifiuta con nota salva e badge cambia | `@crud` | verifica.spec.js |
+| SR-01 | Stato Non ricevuta per progetti senza importi | `@smoke` | verifica.spec.js |
+| SR-02 | Stato Da verificare se giustificativi Inviato | `@smoke` | verifica.spec.js |
+| SR-03 | Stato Pronta ASPI | `@smoke` | verifica.spec.js |
+| AS-01 | Export ASPI disabilitato se nessuna pronta | `@smoke` | verifica.spec.js |
+| AS-02 | Copia riga ASPI in clipboard | `@crud` | verifica.spec.js |
 
 ---
 

@@ -5,6 +5,7 @@ export const giustificativiService = {
     return api.get('/items/Giustificativi', {
       params: {
         'filter[Progetto][_eq]': progettoId,
+        sort: '-Data',
         fields: [
           '*',
           'Rendicontazione.id',
@@ -32,6 +33,19 @@ export const giustificativiService = {
   invalidate(id) {
     return api.patch(`/items/Giustificativi/${id}`, {
       Invalidato: true
+    })
+  },
+
+  verify(id) {
+    return api.patch(`/items/Giustificativi/${id}`, {
+      Stato: 'Verificato'
+    })
+  },
+
+  reject(id, nota) {
+    return api.patch(`/items/Giustificativi/${id}`, {
+      Stato: 'Rifiutato',
+      NotaRifiuto: nota
     })
   }
 }

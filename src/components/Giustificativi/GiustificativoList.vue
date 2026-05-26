@@ -62,7 +62,11 @@ const props = defineProps({
 
 const showForm = ref(false)
 
-const items = computed(() => giustificativiStore.items.filter(i => !i.Invalidato))
+const items = computed(() => {
+  return giustificativiStore.items
+    .filter(i => !i.Invalidato)
+    .sort((a, b) => new Date(b.Data) - new Date(a.Data))
+})
 const loading = computed(() => giustificativiStore.loading)
 const saving = computed(() => giustificativiStore.saving)
 

@@ -22,6 +22,8 @@ export const VERIFICA_ROLE_IDS = (import.meta.env.VITE_VERIFICA_ROLE_IDS || '')
 export const STATI_GIUSTIFICATIVO = {
   DRAFT: 'draft',
   INVIATO: 'Inviato',
+  VERIFICATO: 'Verificato',
+  RIFIUTATO: 'Rifiutato',
   APPROVATO: 'approvato'
 }
 

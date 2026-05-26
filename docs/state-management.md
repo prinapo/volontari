@@ -1,7 +1,7 @@
 # State Management Document
 
-**Version:** 2.0.0
-**Last Updated:** 2026-05-25
+**Version:** 2.1.0
+**Last Updated:** 2026-05-26
 **Status:** Final
 
 ## Change Log
@@ -247,15 +247,24 @@ getters: {
 ### Actions
 
 ```js
-actions: {
-  async fetchAll() {
-    // 1. Parallel: GET /items/Progetti (limit:-1) + GET /items/Giustificativi (limit:-1)
-    // 2. Normalize projects: create rows with empty tranche buckets
-    // 3. Filter giustificativi: exclude Invalidato, only submitted (Inviato/approvato)
-    // 4. Aggregate by project + tranche: sum Importo * 0.8 for rimborsabile
-    // 5. Cap rimborsabile at Allocato per project
+  actions: {
+    async fetchAll() {
+      // 1. Parallel: GET /items/Progetti (limit:-1) + GET /items/Giustificativi (limit:-1, sort:-Data)
+      // 2. Normalize projects: create rows with empty tranche buckets
+      // 3. Include all non-Invalidato giustificativi in row.giustificativi[]
+      // 4. Aggregate by project + tranche: only isCountedInTotals() items contribute
+      // 5. Cap rimborsabile at Allocato per project
+    },
+    async verifyGiustificativo(progettoId, giustId) {
+      // PATCH Stato: "Verificato" → update local → recalculateRowTotals()
+    },
+    async rejectGiustificativo(progettoId, giustId, nota) {
+      // 1. PATCH Stato: "Rifiutato" + NotaRifiuto: nota
+      // 2. PATCH /files/{id}: rename allegato → RIFIUTATO_<data>
+      // 3. Update local → recalculateRowTotals()
+      // Item excluded from totals (isCountedInTotals returns false)
+    }
   }
-}
 ```
 
 ### Row Shape

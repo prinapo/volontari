@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { verificaService } from 'src/services/verifica.service'
+import { giustificativiService } from 'src/services/giustificativi.service'
+import { filesService } from 'src/services/files.service'
 
 export const TRANCHE = [
   { value: 'luglio', label: 'Luglio', month: 7 },
@@ -26,22 +28,25 @@ function getMonth(dateValue) {
 }
 
 function getTrancheKey(item) {
+  // 1. Tranche via relazione Rendicontazione
   const rendicontazione = item.Rendicontazione
-  const tranche = typeof rendicontazione === 'object'
-    ? rendicontazione?.Tranche
-    : null
+  const relTranche = rendicontazione && typeof rendicontazione === 'object'
+    ? String(rendicontazione.Tranche || '').toLowerCase()
+    : ''
+  if (TRANCHE.some(option => option.value === relTranche)) return relTranche
 
-  if (TRANCHE.some(option => option.value === tranche)) {
-    return tranche
-  }
+  // 2. Tranche diretto sul giustificativo (compilato dal volontario)
+  const directTranche = (item.Tranche || '').toLowerCase()
+  if (TRANCHE.some(option => option.value === directTranche)) return directTranche
 
+  // 3. Fallback: deriva dalla Data
   const month = getMonth(item.Data)
   return TRANCHE_BY_MONTH[month]
 }
 
-function isSubmitted(item) {
+function isCountedInTotals(item) {
   const stato = String(item.Stato || '').toLowerCase()
-  return stato === 'inviato' || stato === 'approvato'
+  return stato === 'inviato' || stato === 'verificato' || stato === 'approvato'
 }
 
 function normalizeProject(project) {
@@ -69,6 +74,37 @@ function normalizeProject(project) {
       return acc
     }, {})
   }
+}
+
+function recalculateRowTotals(row) {
+  const tranche = row.tranche
+  TRANCHE.forEach(t => {
+    tranche[t.value].rendicontato = 0
+    tranche[t.value].rimborsabile = 0
+    tranche[t.value].count = 0
+    tranche[t.value].allegati = 0
+  })
+
+  row.giustificativi.forEach(item => {
+    if (!isCountedInTotals(item)) return
+    const trancheKey = getTrancheKey(item)
+    if (!trancheKey) return
+
+    const importo = toNumber(item.Importo)
+    tranche[trancheKey].rendicontato += importo
+    tranche[trancheKey].rimborsabile += importo * 0.8
+    tranche[trancheKey].count += 1
+    if (item.Allegato) tranche[trancheKey].allegati += 1
+  })
+
+  const totaleRendicontato = TRANCHE.reduce(
+    (sum, t) => sum + tranche[t.value].rendicontato,
+    0
+  )
+  const totaleRimborsabileLordo = totaleRendicontato * 0.8
+  row.totaleRendicontato = totaleRendicontato
+  row.totaleRimborsabile = Math.min(totaleRimborsabileLordo, row.allocato || totaleRimborsabileLordo)
+  row.residuoAllocato = Math.max((row.allocato || 0) - totaleRimborsabileLordo, 0)
 }
 
 export const useVerificaStore = defineStore('verifica', {
@@ -108,7 +144,7 @@ export const useVerificaStore = defineStore('verifica', {
 
         const giustificativi = giustificativiRes.data.data || []
         giustificativi
-          .filter(item => !item.Invalidato && isSubmitted(item))
+          .filter(item => !item.Invalidato)
           .forEach(item => {
             const projectId = typeof item.Progetto === 'object'
               ? item.Progetto?.id_progetto
@@ -116,35 +152,52 @@ export const useVerificaStore = defineStore('verifica', {
             const row = rowsByProject.get(projectId)
             if (!row) return
 
-            const trancheKey = getTrancheKey(item)
-            if (!trancheKey) return
-
-            const importo = toNumber(item.Importo)
             row.giustificativi.push(item)
-            row.tranche[trancheKey].rendicontato += importo
-            row.tranche[trancheKey].rimborsabile += importo * 0.8
-            row.tranche[trancheKey].count += 1
-            if (item.Allegato) row.tranche[trancheKey].allegati += 1
           })
 
-        this.rows = [...rowsByProject.values()].map(row => {
-          const totaleRendicontato = TRANCHE.reduce(
-            (sum, tranche) => sum + row.tranche[tranche.value].rendicontato,
-            0
-          )
-          const totaleRimborsabileLordo = totaleRendicontato * 0.8
-          return {
-            ...row,
-            totaleRendicontato,
-            totaleRimborsabile: Math.min(totaleRimborsabileLordo, row.allocato || totaleRimborsabileLordo),
-            residuoAllocato: Math.max((row.allocato || 0) - totaleRimborsabileLordo, 0)
-          }
-        })
+        this.rows = [...rowsByProject.values()]
+        this.rows.forEach(rec => recalculateRowTotals(rec))
       } catch (err) {
         this.error = 'Errore nel caricamento della rendicontazione'
         console.error(err)
       } finally {
         this.loading = false
+      }
+    },
+
+    async verifyGiustificativo(progettoId, giustId) {
+      try {
+        await giustificativiService.verify(giustId)
+        const row = this.rows.find(r => r.idProgetto === progettoId)
+        if (!row) return
+        const item = row.giustificativi.find(g => g.id === giustId)
+        if (!item) return
+        item.Stato = 'Verificato'
+        recalculateRowTotals(row)
+      } catch (err) {
+        console.error('Errore nella verifica del giustificativo', err)
+        throw err
+      }
+    },
+
+    async rejectGiustificativo(progettoId, giustId, nota) {
+      try {
+        await giustificativiService.reject(giustId, nota)
+        const row = this.rows.find(r => r.idProgetto === progettoId)
+        if (!row) return
+        const item = row.giustificativi.find(g => g.id === giustId)
+        if (!item) return
+        if (item.Allegato) {
+          await filesService.updateMeta(item.Allegato, {
+            title: `RIFIUTATO_${new Date().toISOString().slice(0, 10)}`
+          }).catch(() => {})
+        }
+        item.Stato = 'Rifiutato'
+        item.NotaRifiuto = nota
+        recalculateRowTotals(row)
+      } catch (err) {
+        console.error("Errore nel rifiuto del giustificativo", err)
+        throw err
       }
     }
   }

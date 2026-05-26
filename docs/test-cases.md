@@ -1,7 +1,7 @@
 # Test Cases Document
 
-**Version:** 2.0.0
-**Last Updated:** 2026-05-25
+**Version:** 2.1.0
+**Last Updated:** 2026-05-26
 **Status:** Final
 
 ## Change Log
@@ -29,12 +29,14 @@ Per l'elenco completo e aggiornato di tutti i test, si veda [testing-plan.md](./
 |---|---|---|
 | Auth | A-01 to A-04 (4) | `auth.spec.js` |
 | Famiglie | F-01, G-01, DB-01/02/03, IB-01/02/03/04, IN-01, PS-01/02/03/04 (14) | `famiglie.spec.js` |
-| Giustificativi — Form | CG-01 to CG-06 (6) | `giustificativi.spec.js` |
+| Giustificativi — Form | CG-01 to CG-09 (9) | `giustificativi.spec.js` |
 | Giustificativi — Inline Edit | IE-01 to IE-07 (7) | `giustificativi.spec.js` |
 | Giustificativi — Allegato | AL-01 to AL-06 (6) | `giustificativi.spec.js` |
 | Giustificativi — Elimina | EL-01 to EL-04 (4) | `giustificativi.spec.js` |
 | Giustificativi — Invia | SU-01 to SU-03 (3) | `giustificativi.spec.js` |
 | Giustificativi — Read Only | RO-01 to RO-02 (2) | `giustificativi.spec.js` |
+| Giustificativi — Ordina/Note | OR-01, NV-01/02 (3) | `giustificativi.spec.js` |
+| VerificaPage | VR-01/02, TB-01..05, FL-01..07, ER-01..03, DB-V1..05, RN-01..03, SR-01..03, AS-01/02 (30) | `verifica.spec.js` |
 
 ---
 

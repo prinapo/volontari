@@ -53,6 +53,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
           Data: data.Data,
           Stato: data.Stato || 'draft',
           Rendicontazione: rendicontazioneId,
+          NotaVolontario: data.NotaVolontario || '',
           Allegato: fileId
         })
 

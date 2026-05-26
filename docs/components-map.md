@@ -1,7 +1,7 @@
 # Components Map Document
 
-**Version:** 2.0.0
-**Last Updated:** 2026-05-25
+**Version:** 2.1.0
+**Last Updated:** 2026-05-26
 **Status:** Final
 
 ## Change Log
@@ -86,21 +86,25 @@ App.vue
       │               │   ├── q-select (Tranche: Luglio/Settembre/Novembre/Febbraio)
       │               │   ├── q-select (Anno bando, filtered from data)
       │               │   ├── q-select (Rendicontazione: con importi/tutte/mancanti)
-      │               │   └── q-input (Cerca famiglia o beneficiario)
+      │               │   └── q-input (Cerca famiglia)
       │               ├── Summary grid (4 cards)
       │               │   ├── Famiglie/progetti count
       │               │   ├── Rendicontato tranche (primary)
       │               │   ├── Rimborsabile 80% (positive)
       │               │   └── Pronte per ASPI count
-      │               └── q-table (flat, bordered, custom body cells)
+      │               └── q-table (flat, bordered, expandable rows)
       │                   ├── Famiglia (nome + ID)
-      │                   ├── Beneficiario (nome + ambito/titolo)
+      │                   ├── Bando (AnnoBando)
       │                   ├── Dati bancari (badge Completi/Da completare + IBAN)
       │                   ├── Rendicontato [tranche] (importo + count)
       │                   ├── Rimborsabile (importo)
       │                   ├── Totali (totale rendicontato + rimborsabile)
       │                   ├── Stato (badge color based on completamento)
-      │                   └── Actions (copy ASPI line)
+      │                   │   └── expandable row (sub-lista giustificativi)
+      │                   │       ├── Ogni giustificativo: Descrizione | Importo | Data | Allegato Apri/Scarica | Stato badge
+      │                   │       ├── Se Stato "Inviato": [Verifica] check_circle + [Rifiuta] cancel
+      │                   │       └── Se Verificato/Rifiutato: icona + label (solo display)
+      │                   └── Actions (expand + copy ASPI)
 ```
 
 ---
@@ -229,10 +233,38 @@ App.vue
 |---|---|---|
 | — | — | Uses `useVerificaStore()` |
 
+**Column order:** Bando → Famiglia (nome — beneficiario — ID) → Dati bancari (con edit button) → Allocato → Rendicontato (per tranche o totale) → Rimborsabile (globale min 80%/allocato) → Stato → Actions
+
+**Features:**
+- **Expandable rows** in q-table: `#body` slot pattern, expand gestito da `props.expand`
+- Ogni giustificativo mostra: Descrizione (con NotaVolontario sotto), Importo, Data, Allegato (Apri/Scarica), Stato (badge), NotaRifiuto (se presente)
+- **Verifica** (check_circle, primary) → cambia Stato "Inviato" → "Verificato" (teal) — rimane nei totali
+- **Rifiuta** (cancel, negative) → apre dialog con textarea obbligatoria `NotaRifiuto` → salva `{Stato: "Rifiutato", NotaRifiuto}` → rename file `RIFIUTATO_<data>` nei filesystem
+- Loading state individuale per ogni bottone (`verifyingId` / `rejectingId`)
+
+**Filtri:**
+- **Tranche dropdown**: dinamico — mostra solo tranche con giustificativi presenti nei dati; opzione "Tutte" (nessun filtro)
+- **Anno bando**: dinamico da `store.anniBando` (dedotto dai progetti)
+- **Rendicontazione**: "con importi", "tutte", "mancanti" — funziona sia con tranche specifica che con "Tutte"
+- **Ricerca**: filtro testuale per famiglia
+
+**Dati bancari:**
+- Badge "Completi" (verde) se IBAN + Intestatario valorizzati; "Da completare" (giallo) altrimenti
+- Pulsante edit (matita) → dialog con campi IBAN e Intestatario → `PATCH /items/Famiglie/:id`
+- Salvataggio aggiorna TUTTE le righe con stesso `idFamiglia` in memoria (senza refresh)
+
+**State riga (progetto):**
+| Stato | Colore badge | Condizione |
+|---|---|---|
+| Non ricevuta | grey | Nessun giustificativo rendicontato nella tranche |
+| Dati bancari mancanti | warning | Ha importi ma IBAN/Intestatario assente |
+| Da verificare | orange | IBAN ok, ma qualche giustificativo ancora "Inviato" nella tranche |
+| Pronta ASPI | positive | IBAN ok, tutti i giustificativi della tranche Verificati/Rifiutati |
+
 **Computed totals:**
-- `totaleRendicontato`: sum of all rendered giustificativi for selected tranche
-- `totaleRimborsabile`: 80% of rendicontato (capped at allocato)
-- `aspiRows`: projects ready for ASPI export (dati bancari completi + importi)
+- `totaleRendicontato`: sum of all rendered giustificativi for selected tranche (esclude Rifiutato)
+- `totaleRimborsabile`: globale — `min(80% of totaleRendicontato all tranches, allocato)`
+- `aspiRows`: projects ready for ASPI export (dati bancari completi + importi + nessun Inviato pending nella tranche)
 
 ### 2.9 ConfirmDialog.vue
 

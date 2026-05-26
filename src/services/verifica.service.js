@@ -30,11 +30,17 @@ export const verificaService = {
         sort: 'Data',
         fields: [
           '*',
+          'Progetto',
+          'Tranche',
           'Rendicontazione.id',
           'Rendicontazione.Tranche',
           'Rendicontazione.Stato'
         ].join(',')
       }
     })
+  },
+
+  updateFamiglia(id, data) {
+    return api.patch(`/items/Famiglie/${id}`, data)
   }
 }

@@ -1,7 +1,7 @@
 # API Integration Document
 
-**Version:** 2.0.0
-**Last Updated:** 2026-05-25
+**Version:** 2.1.0
+**Last Updated:** 2026-05-26
 **Status:** Final
 
 ## Change Log
@@ -88,6 +88,15 @@ Projects are also fetched inline with the family via the `fields` parameter (Pro
 | PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.update(id, data)` | Body: fields to update |
 | PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.submit(id)` | Body: `{Stato: "Inviato"}` |
 | PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.invalidate(id)` | Body: `{Invalidato: true}` |
+| PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.verify(id)` | Body: `{Stato: "Verificato"}` |
+| PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.reject(id, nota)` | Body: `{Stato: "Rifiutato", NotaRifiuto: "..."}` |
+| PATCH | `/items/Giustificativi/{id}` | `giustificativi.service.update(id, data)` | Usato per inline edit: `{Descrizione, Importo, Data}` |
+
+**Campi Directus aggiunti alla tabella `Giustificativi`:**
+| Campo | Type | Descrizione |
+|---|---|---|
+| `NotaRifiuto` | text (nullable) | Nota inserita dal verificatore quando rifiuta il giustificativo |
+| `NotaVolontario` | text (nullable) | Nota opzionale inserita dal volontario durante la creazione |
 
 ### 3.5 Files
 
@@ -98,6 +107,12 @@ Projects are also fetched inline with the family via the `fields` parameter (Pro
 | GET | `/assets/{id}` | Direct URL | Serve file (with `?access_token=` and optional `?download=1`) |
 
 File folder UUID for giustificativi: `91a9c958-206f-4e1c-8143-e67f85398d0c`
+
+**File rename conventions:**
+| Event | Action | Prefix |
+|---|---|---|
+| File sostituito (cambia file) | `filesService.updateMeta(fileId, { title })` | `OBSOLETE_<data>_<nuovo_filename>` |
+| Giustificativo rifiutato | `filesService.updateMeta(fileId, { title })` | `RIFIUTATO_<data>` |
 
 ### 3.6 Rendicontazioni
 

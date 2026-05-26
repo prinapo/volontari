@@ -1,6 +1,6 @@
 <template>
-  <q-dialog v-model="model" persistent maximized>
-    <q-card>
+  <q-dialog v-model="model" persistent>
+    <q-card style="max-width: 520px; width: 100%;">
       <q-card-section class="row items-center">
         <div class="text-h6">Nuovo giustificativo</div>
         <q-space />
@@ -49,6 +49,13 @@
             :options="statoOptions"
             label="Stato"
             filled
+          />
+          <q-input
+            v-model="form.NotaVolontario"
+            label="Nota (opzionale)"
+            type="textarea"
+            filled
+            :maxlength="500"
           />
           <q-file
             v-model="form.File"
@@ -113,6 +120,7 @@ const form = reactive({
   Data: today,
   Tranche: '',
   Stato: 'draft',
+  NotaVolontario: '',
   File: null
 })
 
@@ -142,6 +150,7 @@ function resetForm() {
   form.Data = today
   form.Tranche = ''
   form.Stato = 'draft'
+  form.NotaVolontario = ''
   form.File = null
 }
 </script>
