@@ -2,12 +2,13 @@ import api from './api'
 
 export const filesService = {
   upload(file, folder) {
+    // Directus richiede che i campi non-file (es. folder) siano appesi PRIMA
+    // del campo file, altrimenti il folder viene ignorato (folder: null).
+    // Vedi: https://github.com/directus/directus/discussions/10130
     const formData = new FormData()
-    formData.append('file', file)
     if (folder) formData.append('folder', folder)
-    return api.post('/files', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    formData.append('file', file)
+    return api.post('/files', formData)
   },
 
   updateMeta(id, meta) {

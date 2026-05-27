@@ -6,6 +6,7 @@ export const giustificativiService = {
       params: {
         'filter[Progetto][_eq]': progettoId,
         sort: '-Data',
+        limit: -1,
         fields: [
           '*',
           'Rendicontazione.id',

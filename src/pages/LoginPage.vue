@@ -130,7 +130,10 @@ async function handleForgotPassword() {
   if (!resetEmail.value) return
   sendingReset.value = true
   try {
-    await authService.requestPasswordReset(resetEmail.value)
+    await authService.requestPasswordReset(
+      resetEmail.value,
+      'https://volontari.sostienilsostegno.com/reset-password?token='
+    )
     $q.notify({
       type: 'positive',
       message: 'Se l\'email esiste, riceverai un link per il reset'

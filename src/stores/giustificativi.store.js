@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { filesService } from 'src/services/files.service'
 import { rendicontazioniService } from 'src/services/rendicontazioni.service'
+import { FOLDERS } from 'src/utils/constants'
 
 export const useGiustificativiStore = defineStore('giustificativi', {
   state: () => ({
@@ -42,7 +43,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const rendicontazioneId = await this.ensureRendicontazione(data)
         let fileId = null
         if (file) {
-          const uploadRes = await filesService.upload(file, '91a9c958-206f-4e1c-8143-e67f85398d0c')
+          const uploadRes = await filesService.upload(file, FOLDERS.GIUSTIFICATIVI)
           fileId = uploadRes.data.data.id
         }
 
@@ -103,7 +104,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
               title: `OBSOLETE_${new Date().toISOString().slice(0, 10)}_${newFile.name}`
             })
           }
-          const uploadRes = await filesService.upload(newFile, '91a9c958-206f-4e1c-8143-e67f85398d0c')
+          const uploadRes = await filesService.upload(newFile, FOLDERS.GIUSTIFICATIVI)
           data.Allegato = uploadRes.data.data.id
         }
 

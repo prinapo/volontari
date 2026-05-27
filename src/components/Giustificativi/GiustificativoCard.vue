@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="q-mb-md">
+  <q-card flat bordered class="q-mb-md" :data-testid="'giustificativo-card-' + item.id">
     <q-card-section class="q-pa-md">
       <div class="row items-center q-gutter-sm q-mb-sm">
         <q-badge

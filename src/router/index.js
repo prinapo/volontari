@@ -10,6 +10,12 @@ const routes = [
     meta: { public: true }
   },
   {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('pages/ResetPasswordPage.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/',
     component: () => import('components/Layout/AppLayout.vue'),
     meta: { requiresAuth: true },
