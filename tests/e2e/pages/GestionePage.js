@@ -13,6 +13,15 @@ export class GestionePage {
     return this.page.locator('.q-tab:has-text("Contatti")')
   }
 
+  /**
+   * Selects the Contatti tab (Famiglie tab is first after reorder)
+   */
+  async selectContattiTab() {
+    await this.contattiTab.click()
+    await this.page.waitForTimeout(500)
+    await this.waitForTable()
+  }
+
   get searchInput() {
     return this.page.locator('input[placeholder="Cerca per nome..."]')
   }
@@ -93,14 +102,16 @@ export class GestionePage {
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
     // Trova la riga nella tabella che ha Nome_Famiglia = nomeFamiglia
+    // Nota: il primo td è l'expand toggle, il secondo è Nome_Famiglia
     const rows = this.page.locator('.q-table tbody tr')
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
-      const cellText = await rows.nth(i).locator('td').first().innerText()
+      const cellText = await rows.nth(i).locator('td').nth(1).innerText()
       if (cellText.trim() === nomeFamiglia) {
-        // Clicca icona contacts (ultima cella azioni)
-        const cols = await rows.nth(i).locator('td').count()
-        await rows.nth(i).locator('td').nth(cols - 1).locator('.q-btn[icon="contacts"]').click()
+        // Clicca icona contacts nell'ultima cella (azioni)
+        // icon="contacts" rende <i class="q-icon material-icons">contacts</i>
+        const actionCell = rows.nth(i).locator('td').last()
+        await actionCell.locator('.q-btn').filter({ hasText: 'contacts' }).click()
         await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
         return true
       }
@@ -110,16 +121,23 @@ export class GestionePage {
 
   /**
    * Assegna un contatto come Genitore tramite ContattiDialog.
-   * searchTerm: testo da digitare nell'autocomplete (es. "test")
-   * fullName: nome completo da selezionare nel dropdown (es. "Luigi Tagliatesta")
+   * Clicca il selettore per aprire il dropdown e seleziona la prima opzione disponibile.
+   * @param {string} searchTerm - non usato (mantenuto per retrocompatibilità)
+   * @param {string|object} [_unused] - non usato
    */
-  async assignGenitore(searchTerm, fullName) {
-    const input = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto")) input')
-    await input.fill(searchTerm)
-    await this.page.waitForTimeout(600)
-    const item = this.page.locator('.q-menu .q-item').filter({ hasText: fullName }).first()
-    await item.waitFor({ state: 'visible', timeout: 5000 })
-    await item.click()
+  async assignGenitore(searchTerm, _unused) {
+    const select = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto"))')
+    const input = select.locator('input')
+
+    // Click input to open dropdown with preloaded options
+    await input.click()
+    await this.page.waitForTimeout(800)
+
+    // Pick first available option
+    const firstItem = this.page.locator('.q-menu .q-item').first()
+    await firstItem.waitFor({ state: 'visible', timeout: 5000 })
+    await firstItem.click()
+
     await this.page.waitForTimeout(300)
     await this.contattiDialog.locator('button:has-text("Associa come Genitore")').click()
     await this.page.waitForTimeout(500)

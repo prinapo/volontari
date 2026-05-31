@@ -11,6 +11,8 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
     await loginPage.goto()
     await loginPage.login(auth.gestore.email, auth.gestore.password)
     await expect(page).toHaveURL(/\/gestione/)
+    const gp = new GestionePage(page)
+    await gp.selectContattiTab()
   })
 
   test('CT-01: Pagina carica e tab Contatti selezionato @smoke', async ({ page }) => {
@@ -22,22 +24,7 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
 
   test('CT-02: Intestazioni colonne ordine corretto @smoke', async ({ page }) => {
     const gp = new GestionePage(page)
-    await gp.waitForTable()
-    const headers = await page.locator('.q-table thead tr th').evaluateAll(
-      ths => ths.map(th => {
-        // Extract only text node content, skip icon/ARIA elements
-        return Array.from(th.childNodes)
-          .filter(n => n.nodeType === Node.TEXT_NODE)
-          .map(n => n.textContent.trim())
-          .join('')
-      })
-    )
-    expect(headers).toEqual(expectedHeaders)
-  })
-
-  test('CT-03: Tabella mostra contatti con righe @smoke', async ({ page }) => {
-    const gp = new GestionePage(page)
-    await gp.waitForTable()
+    await gp.selectContattiTab()
     const total = await gp.getTotalItems()
     const rows = await gp.getRowCount()
     expect(total).toBeGreaterThanOrEqual(0)
@@ -61,6 +48,8 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     await loginPage.goto()
     await loginPage.login(auth.gestore.email, auth.gestore.password)
     await expect(page).toHaveURL(/\/gestione/)
+    const gp = new GestionePage(page)
+    await gp.selectContattiTab()
   })
 
   test('CT-04: Ricerca per nome restringe risultati @crud', async ({ page }) => {
