@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-page-container>
-      <q-page class="flex flex-center bg-grey-2">
+      <q-page class="flex flex-center bg-grey-2 column">
         <q-card class="login-card" flat bordered>
           <q-card-section class="text-center q-pt-xl">
             <div class="text-h4 text-primary">Portale Volontario</div>
@@ -65,6 +65,9 @@
             </div>
           </q-card-section>
         </q-card>
+        <div class="text-caption text-grey-5 text-center q-mt-md">
+          v{{ version }}
+        </div>
       </q-page>
     </q-page-container>
 
@@ -104,6 +107,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { version } from '../../package.json'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'stores/auth.store'
 import { authService } from 'src/services/auth.service'
@@ -122,7 +126,9 @@ const sendingReset = ref(false)
 async function handleLogin() {
   const ok = await authStore.login(email.value, password.value)
   if (ok) {
-    router.push(authStore.canVerifica ? '/verifica' : '/famiglie')
+    if (authStore.canGestione) return router.push('/gestione')
+    if (authStore.canVerifica) return router.push('/verifica')
+    router.push('/famiglie')
   }
 }
 

@@ -9,9 +9,7 @@ export const giustificativiService = {
         limit: -1,
         fields: [
           '*',
-          'Rendicontazione.id',
-          'Rendicontazione.Tranche',
-          'Rendicontazione.Stato'
+          'Rendicontazione'
         ].join(',')
       }
     })

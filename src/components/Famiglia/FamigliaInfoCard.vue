@@ -8,15 +8,40 @@
         <div v-for="g in genitori" :key="g.id_contatto" class="q-py-xs">
           <div class="text-body1">{{ g.Nome }} {{ g.Cognome }}</div>
           <div class="text-body2 text-grey">
-            <template v-if="g.Email">
-              <a :href="'mailto:' + g.Email" class="text-primary">{{ g.Email }}</a><br>
+            <template v-for="em in g._emails" :key="em.email_address">
+              <q-icon name="email" size="xs" class="q-mr-xs text-grey-5" />
+              <span class="text-caption">{{ em.email_address }}</span>
+              <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </template>
             <template v-if="g.Numero_di_cellulare">
-              <a :href="'tel:' + g.Numero_di_cellulare" class="text-primary">{{ g.Numero_di_cellulare }}</a>
+              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-5" />
+              <a :href="'tel:' + g.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ g.Numero_di_cellulare }}</a>
             </template>
-            <template v-if="g.Numero_di_telefono && g.Numero_di_cellulare"> · </template>
             <template v-if="g.Numero_di_telefono">
-              <a :href="'tel:' + g.Numero_di_telefono" class="text-primary">{{ g.Numero_di_telefono }}</a>
+              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-5" />
+              <a :href="'tel:' + g.Numero_di_telefono" class="text-primary text-caption">{{ g.Numero_di_telefono }}</a>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="altriVolontari.length > 0" class="q-mt-md q-gutter-y-sm">
+        <div class="text-caption text-grey text-uppercase">Altri volontari</div>
+        <div v-for="v in altriVolontari" :key="v.id_contatto" class="q-py-xs">
+          <div class="text-body1">{{ v.Nome }} {{ v.Cognome }}</div>
+          <div class="text-body2 text-grey">
+            <template v-for="em in v._emails" :key="em.email_address">
+              <q-icon name="email" size="xs" class="q-mr-xs text-grey-5" />
+              <span class="text-caption">{{ em.email_address }}</span>
+              <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+            </template>
+            <template v-if="v.Numero_di_cellulare">
+              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-5" />
+              <a :href="'tel:' + v.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ v.Numero_di_cellulare }}</a>
+            </template>
+            <template v-if="v.Numero_di_telefono">
+              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-5" />
+              <a :href="'tel:' + v.Numero_di_telefono" class="text-primary text-caption">{{ v.Numero_di_telefono }}</a>
             </template>
           </div>
         </div>
@@ -59,6 +84,7 @@ const $q = useQuasar()
 const famiglieStore = useFamiglieStore()
 
 const genitori = computed(() => famiglieStore.genitori)
+const altriVolontari = computed(() => famiglieStore.altriVolontari)
 
 const props = defineProps({
   famigliaName: { type: String, default: '' },

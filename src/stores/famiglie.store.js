@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { famiglieService } from 'src/services/famiglie.service'
+import { useAuthStore } from 'stores/auth.store'
 
 export const useFamiglieStore = defineStore('famiglie', {
   state: () => ({
@@ -9,7 +10,8 @@ export const useFamiglieStore = defineStore('famiglie', {
     loading: false,
     saving: false,
     contattiLoading: false,
-    genitoriList: [],
+    genitori: [],
+    altriVolontari: [],
     error: null
   }),
 
@@ -24,7 +26,6 @@ export const useFamiglieStore = defineStore('famiglie', {
     famigliaName: (state) => state.famiglia?.Nome_Famiglia || '',
     iban: (state) => state.famiglia?.IBAN || '',
     intestatarioCC: (state) => state.famiglia?.Intestatario_CC || '',
-    genitori: (state) => state.genitoriList
   },
 
   actions: {
@@ -69,7 +70,10 @@ export const useFamiglieStore = defineStore('famiglie', {
         if (this.progetti.length > 0) {
           this.selectedProgettoId = this.progetti[0].id_progetto
         }
-        await this.loadGenitori(famigliaId)
+        await Promise.all([
+          this.loadGenitori(famigliaId),
+          this.loadVolontari(famigliaId)
+        ])
       } catch (err) {
         this.error = 'Errore nel caricamento della famiglia'
         console.error(err)
@@ -81,38 +85,85 @@ export const useFamiglieStore = defineStore('famiglie', {
       try {
         const res = await famiglieService.getGenitoriByFamiglia(famigliaId)
         const items = res.data.data || []
-        this.genitoriList = items.map(r => ({
+        this.genitori = items.map(r => ({
           id_contatto: r.Contatto?.id_contatto,
           Nome: r.Contatto?.Nome,
           Cognome: r.Contatto?.Cognome,
           Numero_di_cellulare: r.Contatto?.Numero_di_cellulare,
           Numero_di_telefono: r.Contatto?.Numero_di_telefono,
-          Email: ''
+          _emails: []
         })).filter(c => c.id_contatto)
 
-        const contattoIds = this.genitoriList.map(g => g.id_contatto).filter(Boolean)
+        const contattoIds = this.genitori.map(g => g.id_contatto).filter(Boolean)
         if (contattoIds.length > 0) {
           try {
             const emailRes = await famiglieService.getEmailByContatto(contattoIds)
             const emails = emailRes.data.data || []
-            const emailMap = {}
+            const emailByContatto = {}
             emails.forEach(e => {
-              if (e.Contatto_Relation && !emailMap[e.Contatto_Relation]) {
-                emailMap[e.Contatto_Relation] = e.email_address
+              if (e.Contatto_Relation) {
+                if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
+                emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
               }
             })
-            this.genitoriList.forEach(g => {
-              if (emailMap[g.id_contatto]) {
-                g.Email = emailMap[g.id_contatto]
-              }
+            this.genitori.forEach(g => {
+              g._emails = emailByContatto[g.id_contatto] || []
             })
           } catch (emailErr) {
             console.error('Errore caricamento email genitori', emailErr)
           }
         }
       } catch (err) {
-        this.genitoriList = []
+        this.genitori = []
         console.error('Errore caricamento genitori', err)
+      } finally {
+        this.contattiLoading = false
+      }
+    },
+
+    async loadVolontari(famigliaId) {
+      this.contattiLoading = true
+      try {
+        const res = await famiglieService.getVolontariByFamiglia(famigliaId)
+        const items = res.data.data || []
+        const authStore = useAuthStore()
+        const currentContattoId = authStore.contattoId
+
+        const filtered = items
+          .filter(r => r.Contatto?.id_contatto !== currentContattoId)
+          .map(r => ({
+            id_contatto: r.Contatto?.id_contatto,
+            Nome: r.Contatto?.Nome,
+            Cognome: r.Contatto?.Cognome,
+            Numero_di_cellulare: r.Contatto?.Numero_di_cellulare,
+            Numero_di_telefono: r.Contatto?.Numero_di_telefono,
+            _emails: []
+          }))
+          .filter(c => c.id_contatto)
+
+        const contattoIds = filtered.map(v => v.id_contatto).filter(Boolean)
+        if (contattoIds.length > 0) {
+          try {
+            const emailRes = await famiglieService.getEmailByContatto(contattoIds)
+            const emails = emailRes.data.data || []
+            const emailByContatto = {}
+            emails.forEach(e => {
+              if (e.Contatto_Relation) {
+                if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
+                emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
+              }
+            })
+            filtered.forEach(v => {
+              v._emails = emailByContatto[v.id_contatto] || []
+            })
+          } catch (emailErr) {
+            console.error('Errore caricamento email volontari', emailErr)
+          }
+        }
+        this.altriVolontari = filtered
+      } catch (err) {
+        this.altriVolontari = []
+        console.error('Errore caricamento volontari', err)
       } finally {
         this.contattiLoading = false
       }

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { verificaService } from 'src/services/verifica.service'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { filesService } from 'src/services/files.service'
+import { famiglieService } from 'src/services/famiglie.service'
 
 export const TRANCHE = [
   { value: 'luglio', label: 'Luglio', month: 7 },
@@ -28,11 +29,13 @@ function getMonth(dateValue) {
 }
 
 function getTrancheKey(item) {
-  // 1. Tranche via relazione Rendicontazione
+  // 1. Tranche via relazione Rendicontazione (deep field o batch fetch)
   const rendicontazione = item.Rendicontazione
   const relTranche = rendicontazione && typeof rendicontazione === 'object'
     ? String(rendicontazione.Tranche || '').toLowerCase()
-    : ''
+    : item._rendicontazione
+      ? String(item._rendicontazione.Tranche || '').toLowerCase()
+      : ''
   if (TRANCHE.some(option => option.value === relTranche)) return relTranche
 
   // 2. Tranche diretto sul giustificativo (compilato dal volontario)
@@ -49,12 +52,11 @@ function isCountedInTotals(item) {
   return stato === 'inviato' || stato === 'verificato' || stato === 'approvato'
 }
 
-function normalizeProject(project) {
-  const famiglia = project.Famiglia || {}
+function normalizeProject(project, famiglia = {}) {
   return {
     id: project.id_progetto,
     idProgetto: project.id_progetto,
-    idFamiglia: famiglia.id_famiglia || '',
+    idFamiglia: famiglia.id_famiglia || project.Famiglia || '',
     famiglia: famiglia.Nome_Famiglia || '',
     beneficiario: project.Cognome_e__Nome_Beneficiario || '',
     annoBando: project.AnnoBando || '',
@@ -111,14 +113,16 @@ export const useVerificaStore = defineStore('verifica', {
   state: () => ({
     rows: [],
     loading: false,
-    error: null
+    error: null,
+    submissions: [],
+    submissionsLoading: false,
+    totalCount: 0,
+    pagination: { page: 1, limit: 25, sortBy: null, descending: false },
+    anniBandoList: []
   }),
 
   getters: {
-    anniBando: (state) => {
-      const anni = state.rows.map(row => row.annoBando).filter(Boolean)
-      return [...new Set(anni)].sort((a, b) => b - a)
-    },
+    anniBando: (state) => state.anniBandoList,
     totaleRendicontato: (state) =>
       state.rows.reduce((sum, row) => sum + row.totaleRendicontato, 0),
     totaleRimborsabile: (state) =>
@@ -126,24 +130,102 @@ export const useVerificaStore = defineStore('verifica', {
   },
 
   actions: {
-    async fetchAll() {
+    async fetchAll(params = {}) {
       this.loading = true
       this.error = null
       try {
-        const [progettiRes, giustificativiRes] = await Promise.all([
-          verificaService.getProgetti(),
-          verificaService.getGiustificativi()
-        ])
+        if (params.page !== undefined) this.pagination.page = params.page
+        if (params.limit !== undefined) this.pagination.limit = params.limit
+        if (params.sortBy !== undefined) this.pagination.sortBy = params.sortBy
+        if (params.descending !== undefined) this.pagination.descending = params.descending
+
+        const SORT_MAP = {
+          'annoBando': 'AnnoBando',
+          'famiglia': 'Famiglia',
+          'allocato': 'Allocato'
+        }
+        const sortField = SORT_MAP[this.pagination.sortBy]
+        const sort = sortField
+          ? (this.pagination.descending ? `-${sortField}` : sortField)
+          : 'Famiglia,AnnoBando,Cognome_e__Nome_Beneficiario'
+
+        let progettiRes
+        try {
+          progettiRes = await verificaService.getProgetti({
+            page: this.pagination.page,
+            limit: this.pagination.limit,
+            sort,
+            search: params.search,
+            anno: params.anno,
+            meta: 'filter_count'
+          })
+        } catch (metaErr) {
+          if (metaErr.response?.status === 403) {
+            progettiRes = await verificaService.getProgetti({
+              page: this.pagination.page,
+              limit: this.pagination.limit,
+              sort,
+              search: params.search,
+              anno: params.anno
+            })
+          } else {
+            throw metaErr
+          }
+        }
+
+        this.totalCount = progettiRes.data.meta?.filter_count || 0
+        const projects = progettiRes.data.data || []
+
+        const famIds = [...new Set(projects.map(p => p.Famiglia).filter(Boolean))]
+        let famMap = new Map()
+        if (famIds.length > 0) {
+          const famRes = await famiglieService.getFamiglieBatch(famIds)
+          famMap = new Map(
+            (famRes.data.data || []).map(f => [f.id_famiglia, f])
+          )
+        }
+
+        let allGiustificativi = []
+        const progettoIds = projects.map(p => p.id_progetto)
+        if (progettoIds.length > 0) {
+          try {
+            const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
+            allGiustificativi = giustRes.data.data || []
+          } catch (deepErr) {
+            if (deepErr.response?.status === 403) {
+              const giustRes = await verificaService.getGiustificativiByProgettiLight(progettoIds)
+              allGiustificativi = giustRes.data.data || []
+
+              const rendIds = [...new Set(allGiustificativi.map(g => g.Rendicontazione).filter(Boolean))]
+              if (rendIds.length > 0) {
+                try {
+                  const rendRes = await verificaService.getRendicontazioniBatch(rendIds)
+                  const rendMap = new Map(
+                    (rendRes.data.data || []).map(r => [r.id, r])
+                  )
+                  allGiustificativi.forEach(g => {
+                    if (g.Rendicontazione && rendMap.has(g.Rendicontazione)) {
+                      g._rendicontazione = rendMap.get(g.Rendicontazione)
+                    }
+                  })
+                } catch {
+                  // rendicontazioni non accessibili
+                }
+              }
+            } else {
+              throw deepErr
+            }
+          }
+        }
 
         const rowsByProject = new Map()
-        const projects = progettiRes.data.data || []
         projects.forEach(project => {
-          const row = normalizeProject(project)
+          const fam = famMap.get(project.Famiglia) || {}
+          const row = normalizeProject(project, fam)
           rowsByProject.set(row.idProgetto, row)
         })
 
-        const giustificativi = giustificativiRes.data.data || []
-        giustificativi
+        allGiustificativi
           .filter(item => !item.Invalidato)
           .forEach(item => {
             const projectId = typeof item.Progetto === 'object'
@@ -151,7 +233,6 @@ export const useVerificaStore = defineStore('verifica', {
               : item.Progetto
             const row = rowsByProject.get(projectId)
             if (!row) return
-
             row.giustificativi.push(item)
           })
 
@@ -162,6 +243,16 @@ export const useVerificaStore = defineStore('verifica', {
         console.error(err)
       } finally {
         this.loading = false
+      }
+    },
+
+    async fetchAnni() {
+      try {
+        const res = await verificaService.getAnniBando()
+        const anni = (res.data.data || []).map(p => p.AnnoBando).filter(Boolean)
+        this.anniBandoList = [...new Set(anni)].sort((a, b) => b - a)
+      } catch {
+        this.anniBandoList = []
       }
     },
 
@@ -177,6 +268,108 @@ export const useVerificaStore = defineStore('verifica', {
       } catch (err) {
         console.error('Errore nella verifica del giustificativo', err)
         throw err
+      }
+    },
+
+    async updateGiustificativoField(progettoId, giustId, field, value) {
+      try {
+        await giustificativiService.update(giustId, { [field]: value })
+        const row = this.rows.find(r => r.idProgetto === progettoId)
+        if (!row) return
+        const item = row.giustificativi.find(g => g.id === giustId)
+        if (!item) return
+        item[field] = value
+        recalculateRowTotals(row)
+      } catch (err) {
+        console.error(`Errore nell'aggiornamento del campo ${field}`, err)
+        throw err
+      }
+    },
+
+    async fetchSubmissions() {
+      this.submissionsLoading = true
+      try {
+        const res = await verificaService.getSubmissionsInAttesa()
+        this.submissions = res.data.data || []
+      } catch (err) {
+        console.error('Errore caricamento submission', err)
+        this.submissions = []
+      } finally {
+        this.submissionsLoading = false
+      }
+    },
+
+    async reconcileSubmission(id, famigliaId, progettoId, note) {
+      const submission = this.submissions.find(s => s.id === id)
+      if (!submission) throw new Error('Submission not found')
+
+      const giustData = {
+        Descrizione: submission.descrizione,
+        Importo: submission.importo,
+        Data: submission.data,
+        Allegato: submission.allegato,
+        Progetto: progettoId,
+        Famiglia: famigliaId
+      }
+
+      const progRes = await verificaService.findProgettoByFamiglia(famigliaId, submission.cognome_beneficiario)
+      const progetti = progRes.data.data || []
+      const progetto = progetti.find(p => p.id_progetto === progettoId)
+      if (progetto?.AnnoBando) giustData.AnnoBando = progetto.AnnoBando
+
+      const createRes = await giustificativiService.create(giustData)
+      const giustificativoId = createRes.data.data.id
+
+      await verificaService.updateSubmission(id, {
+        stato: 'riconciliato',
+        famiglia_riconciliata: famigliaId,
+        progetto_riconciliato: progettoId,
+        giustificativo_creato: giustificativoId,
+        note_riconciliazione: note || null
+      })
+
+      this.submissions = this.submissions.filter(s => s.id !== id)
+    },
+
+    async scartaSubmission(id, note) {
+      await verificaService.updateSubmission(id, {
+        stato: 'scartato',
+        note_riconciliazione: note
+      })
+      this.submissions = this.submissions.filter(s => s.id !== id)
+    },
+
+    async tryAutoReconcile(submissionId) {
+      const submission = this.submissions.find(s => s.id === submissionId)
+      if (!submission) return false
+
+      try {
+        const famRes = await verificaService.findFamigliaByIBAN(
+          submission.iban,
+          submission.intestatario
+        )
+        const famiglie = famRes.data.data || []
+        if (famiglie.length !== 1) return false
+        const famiglia = famiglie[0]
+
+        const progRes = await verificaService.findProgettoByFamiglia(
+          famiglia.id_famiglia,
+          submission.cognome_beneficiario
+        )
+        const progetti = progRes.data.data || []
+        if (progetti.length !== 1) return false
+        const progetto = progetti[0]
+
+        await this.reconcileSubmission(
+          submissionId,
+          famiglia.id_famiglia,
+          progetto.id_progetto,
+          'Riconciliazione automatica'
+        )
+        return true
+      } catch (err) {
+        console.error('Auto-reconciliation failed', err)
+        return false
       }
     },
 

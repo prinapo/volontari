@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
-import { STORAGE_KEYS, VERIFICA_ROLE_IDS, VERIFICA_ROLE_NAMES } from 'src/utils/constants'
+import { STORAGE_KEYS, VERIFICA_ROLE_IDS, VERIFICA_ROLE_NAMES, GESTIONE_ROLE_IDS, GESTIONE_ROLE_NAMES, ADMIN_ROLE_IDS, ADMIN_ROLE_NAMES } from 'src/utils/constants'
 
 function normalizeRoleName(role) {
   if (!role) return ''
@@ -53,6 +53,16 @@ export const useAuthStore = defineStore('auth', {
       const roleName = normalizeRoleName(state.user?.role)
       const roleId = getRoleId(state.user?.role)
       return VERIFICA_ROLE_NAMES.includes(roleName) || VERIFICA_ROLE_IDS.includes(roleId)
+    },
+    canGestione: (state) => {
+      const roleName = normalizeRoleName(state.user?.role)
+      const roleId = getRoleId(state.user?.role)
+      return GESTIONE_ROLE_NAMES.includes(roleName) || GESTIONE_ROLE_IDS.includes(roleId)
+    },
+    canAdmin: (state) => {
+      const roleName = normalizeRoleName(state.user?.role)
+      const roleId = getRoleId(state.user?.role)
+      return ADMIN_ROLE_NAMES.includes(roleName) || ADMIN_ROLE_IDS.includes(roleId)
     },
     userName: (state) => {
       if (state.contatto) {

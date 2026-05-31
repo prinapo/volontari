@@ -1,0 +1,8 @@
+{
+  "volontario": { "email": "test.volontario@test.com", "password": "TestVol_2026!" },
+  "volontario_nofam": { "email": "test.volontario.nofam@test.com", "password": "TestVol_2026!" },
+  "genitore": { "email": "test.genitore@test.com", "password": "TestVol_2026!" },
+  "gestore": { "email": "test.gestore@test.com", "password": "TestGest_2026!" },
+  "verificatore": { "email": "test.verificatore@test.com", "password": "TestVer_2026!" },
+  "gestore_verifica": { "email": "test.gestore.verifica@test.com", "password": "TestGestVer_2026!", "role": "GestoreVerifica" }
+}

@@ -16,6 +16,12 @@ const routes = [
     meta: { public: true }
   },
   {
+    path: '/submit',
+    name: 'Submit',
+    component: () => import('pages/SubmitPage.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/',
     component: () => import('components/Layout/AppLayout.vue'),
     meta: { requiresAuth: true },
@@ -34,6 +40,24 @@ const routes = [
         name: 'Verifica',
         component: () => import('pages/VerificaPage.vue'),
         meta: { requiredRole: 'Verifica' }
+      },
+      {
+        path: 'gestione',
+        name: 'Gestione',
+        component: () => import('pages/GestionePage.vue'),
+        meta: { requiredRole: 'Gestione' }
+      },
+      {
+        path: 'deduplica',
+        name: 'Deduplica',
+        component: () => import('pages/DeduplicaPage.vue'),
+        meta: { requiredRole: 'Admin' }
+      },
+      {
+        path: 'admin',
+        name: 'Admin',
+        component: () => import('pages/AdminPage.vue'),
+        meta: { requiredRole: 'Admin' }
       }
     ]
   },
@@ -54,7 +78,15 @@ router.beforeEach((to, from, next) => {
 
   if (isAuthenticated && to.meta.public) {
     const authStore = useAuthStore()
-    return next(authStore.canVerifica ? '/verifica' : '/famiglie')
+    if (authStore.canGestione) return next('/gestione')
+    if (authStore.canVerifica) return next('/verifica')
+    return next('/famiglie')
+  }
+
+  if (isAuthenticated && to.path === '/') {
+    const authStore = useAuthStore()
+    if (authStore.canGestione) return next('/gestione')
+    if (authStore.canVerifica) return next('/verifica')
   }
 
   if (!isAuthenticated && to.meta.requiresAuth) {
@@ -63,9 +95,9 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiredRole) {
     const authStore = useAuthStore()
-    if (authStore.initialized && !authStore.canVerifica) {
-      return next('/famiglie')
-    }
+    if (to.meta.requiredRole === 'Verifica' && !authStore.canVerifica) return next('/famiglie')
+    if (to.meta.requiredRole === 'Gestione' && !authStore.canGestione) return next('/famiglie')
+    if (to.meta.requiredRole === 'Admin' && !authStore.canAdmin) return next('/famiglie')
   }
   next()
 })

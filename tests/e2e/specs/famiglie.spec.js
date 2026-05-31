@@ -1,37 +1,59 @@
 import { test, expect } from '../helpers/console.js'
 import { LoginPage } from '../pages/LoginPage.js'
-import auth from '../fixtures/auth.json' with { type: 'json' }
+import { GestionePage } from '../pages/GestionePage.js'
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
-test.describe('Famiglie Page', () => {
+test.describe.serial('Famiglie Page', () => {
+
+  // ── FM-01: assegna TEST_03 (genitore) a TEST_FAM_01 come setup ──
+  test('FM-01: Assegna genitore a famiglia via ContattiDialog @setup', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.gestore.email, auth.gestore.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+
+    const gestione = new GestionePage(page)
+    await gestione.famiglieTab.click()
+    await gestione.waitForTable()
+
+    // Clicca contacts icon sulla riga della famiglia "Famiglia Test"
+    const found = await gestione.clickContactsOnFamiglia('Famiglia Test')
+    expect(found).toBe(true)
+
+    // Assegna contatto TEST_03 ("Test Genitore") come genitore
+    await gestione.assignGenitore('Test Genitore', 'Test Genitore')
+
+    // Verifica che il contatto sia stato aggiunto (badge o nome nel dialog)
+    await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 3000 })
+    await expect(page.locator('.q-dialog:has-text("Test Genitore")')).toBeVisible({ timeout: 5000 })
+
+    // Chiudi dialog
+    await page.locator('.q-dialog button:has-text("Chiudi")').click()
+    await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 3000 })
+  })
+
+  // ── Tutti i test esistenti (serializzati dopo FM-01) ──
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
-    await loginPage.login(auth.email, auth.password)
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
     await expect(page).toHaveURL(/\/famiglie/)
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await page.waitForTimeout(1500)
   })
 
   test('F-01: Pagina carica tutti i dati corretti all\'avvio @smoke', async ({ page }) => {
-    // Nome famiglia
     await expect(page.locator('.text-h6').first()).toBeVisible()
     const famigliaName = await page.locator('.text-h6').first().innerText()
     expect(famigliaName.trim()).toBeTruthy()
 
-    // Progetto selector
     await expect(page.locator('.q-select')).toBeVisible()
 
-    // Card totali visibile (dopo selezione automatica primo progetto)
     await expect(page.locator('text=Totale Giustificativi')).toBeVisible({ timeout: 8000 })
     await expect(page.getByText('Totale Rimborsabile', { exact: true })).toBeVisible()
 
-    // Expansion item Dati bancari presente
     await expect(page.locator('text=Dati bancari')).toBeVisible()
-
-    // Giustificativi list presente
     await expect(page.getByText('Giustificativi', { exact: true })).toBeVisible()
-
-    // Nessun errore console (già catturato dal helper)
   })
 
   test('G-01: Genitori con Nome, Email cliccabile, Telefoni cliccabili @smoke', async ({ page }) => {
@@ -52,7 +74,6 @@ test.describe('Famiglie Page', () => {
     const expansion = page.locator('.q-expansion-item:has-text("Dati bancari")')
     await expect(expansion).toBeVisible()
 
-    // IBAN e Intestatario NON visibili quando collassato
     const ibanDisplay = expansion.locator('.inline-editable-field').first().locator('.text-body1')
     await expect(ibanDisplay).not.toBeVisible()
   })
@@ -109,7 +130,6 @@ test.describe('Famiglie Page', () => {
     expect(patchResp.status()).toBe(200)
     await expect(ibanField.locator('.text-body1')).toContainText(testIBAN, { timeout: 5000 })
 
-    // Reload - persiste
     await page.reload()
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await expandDatiBancari(page)
@@ -131,7 +151,6 @@ test.describe('Famiglie Page', () => {
     const displayValue = (await ibanField.locator('.text-body1').innerText()).trim()
     expect(displayValue).toBe(originalValue)
 
-    // Reload - ancora originale
     await page.reload()
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await expandDatiBancari(page)
@@ -149,7 +168,6 @@ test.describe('Famiglie Page', () => {
   })
 
   test('IB-04: IBAN click senza modificare torna a display @crud', async ({ page }) => {
-    // Test semplificato: click su IBAN e salva senza modificare
     await expandDatiBancari(page)
     const ibanField = getExpandedField(page, 0)
     await ibanField.click()
@@ -181,7 +199,6 @@ test.describe('Famiglie Page', () => {
     expect(patchResp.status()).toBe(200)
     await expect(intestatarioField.locator('.text-body1')).toContainText(testName, { timeout: 5000 })
 
-    // Reload
     await page.reload()
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await expandDatiBancari(page)
@@ -206,7 +223,6 @@ test.describe('Famiglie Page', () => {
       expect(text).toMatch(/—/)
     }
 
-    // Chiudi dropdown
     await page.keyboard.press('Escape')
   })
 
@@ -216,7 +232,6 @@ test.describe('Famiglie Page', () => {
   })
 
   test('PS-03: Card totali mostra valori positivi @crud', async ({ page }) => {
-    // Verifica che entrambi i totali siano visibili e positivi
     const totaleText = await page.locator('text=Totale Giustificativi').locator('..').locator('.text-h6').innerText()
     const rimborsabileText = await page.getByText('Totale Rimborsabile', { exact: true }).locator('..').locator('.text-h6').innerText()
 

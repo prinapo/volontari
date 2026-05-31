@@ -19,11 +19,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] }
     }
   ],
-  webServer: process.env.CI
-    ? {
-        command: 'npx quasar build && npx serve dist/spa -p 9000',
-        port: 9000,
-        timeout: 120000
-      }
-    : undefined
+  webServer: {
+    command: 'npx quasar dev -p 9000',
+    port: 9000,
+    timeout: 60000,
+    reuseExistingServer: true
+  }
 })

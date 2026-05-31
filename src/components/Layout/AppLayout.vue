@@ -73,6 +73,50 @@
           <q-item-section>Verifica</q-item-section>
         </q-item>
 
+        <q-item
+          v-if="authStore.canGestione"
+          clickable
+          v-ripple
+          :active="$route.name === 'Gestione'"
+          active-class="bg-primary text-white"
+          to="/gestione"
+        >
+          <q-item-section avatar>
+            <q-icon name="manage_accounts" />
+          </q-item-section>
+          <q-item-section>Gestione</q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="authStore.canAdmin"
+          clickable
+          v-ripple
+          :active="$route.name === 'Deduplica'"
+          active-class="bg-primary text-white"
+          to="/deduplica"
+        >
+          <q-item-section avatar>
+            <q-icon name="cleaning_services" />
+          </q-item-section>
+          <q-item-section>Duplicati</q-item-section>
+        </q-item>
+
+        <q-item-label v-if="authStore.canAdmin" header class="q-mt-md">Amministrazione</q-item-label>
+
+        <q-item
+          v-if="authStore.canAdmin"
+          clickable
+          v-ripple
+          :active="$route.name === 'Admin'"
+          active-class="bg-primary text-white"
+          to="/admin"
+        >
+          <q-item-section avatar>
+            <q-icon name="admin_panel_settings" />
+          </q-item-section>
+          <q-item-section>Ruoli e Policy</q-item-section>
+        </q-item>
+
       </q-list>
     </q-drawer>
 

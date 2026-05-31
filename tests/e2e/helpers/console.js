@@ -1,7 +1,7 @@
-import { test as base } from '@playwright/test'
+import { test as base, expect } from '@playwright/test'
 
 export const test = base.extend({
-  page: async ({ page }, use) => {
+  page: async ({ page, testInfo }, use) => {
     const logs = []
     const errors = []
     const warnings = []
@@ -38,8 +38,9 @@ export const test = base.extend({
     if (errors.length > 0) {
       console.log(`\n=== CONSOLE ERRORS (${errors.length}) ===`)
       errors.forEach((e, i) => console.log(`  ${i + 1}. ${e}`))
+      expect(errors).toHaveLength(0)
     }
   }
 })
 
-export { expect } from '@playwright/test'
+export { expect }

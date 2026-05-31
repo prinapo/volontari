@@ -31,6 +31,16 @@ export const famiglieService = {
     })
   },
 
+  getFamiglieBatch(ids) {
+    const idList = Array.isArray(ids) ? ids.join(',') : ids
+    return api.get('/items/Famiglie', {
+      params: {
+        'filter[id_famiglia][_in]': idList,
+        fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC'
+      }
+    })
+  },
+
   update(famigliaId, data) {
     return api.patch(`/items/Famiglie/${famigliaId}`, data)
   },
@@ -40,6 +50,23 @@ export const famiglieService = {
       params: {
         'filter[Famiglia][_eq]': famigliaId,
         'filter[Ruolo_nella_Famiglia][_eq]': 'Genitore',
+        'fields': [
+          'id',
+          'Contatto.id_contatto',
+          'Contatto.Nome',
+          'Contatto.Cognome',
+          'Contatto.Numero_di_cellulare',
+          'Contatto.Numero_di_telefono'
+        ].join(',')
+      }
+    })
+  },
+
+  getVolontariByFamiglia(famigliaId) {
+    return api.get('/items/Famiglie_Contatti', {
+      params: {
+        'filter[Famiglia][_eq]': famigliaId,
+        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
         'fields': [
           'id',
           'Contatto.id_contatto',
