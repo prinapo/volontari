@@ -65,6 +65,19 @@
             </div>
           </q-card-section>
         </q-card>
+
+        <div class="text-center q-mt-md" style="max-width: 420px; margin: 0 auto;">
+          <q-separator class="q-mb-md" />
+          <div class="text-body2 text-grey q-mb-sm">Non hai un account?</div>
+          <q-btn
+            outline
+            color="primary"
+            label="Invia un giustificativo senza account →"
+            to="/submit"
+            class="full-width"
+          />
+        </div>
+
         <div class="text-caption text-grey-5 text-center q-mt-md">
           v{{ version }}
         </div>
