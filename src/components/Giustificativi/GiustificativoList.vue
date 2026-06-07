@@ -1,7 +1,9 @@
 <template>
   <div>
     <div class="row items-center q-mb-md">
-      <div class="text-h6">Giustificativi</div>
+      <div class="text-h6">
+        Giustificativi
+      </div>
       <q-space />
       <q-btn
         color="primary"
@@ -48,6 +50,7 @@
 import { ref, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useGiustificativiStore } from 'stores/giustificativi.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import GiustificativoCard from './GiustificativoCard.vue'
 import GiustificativoForm from './GiustificativoForm.vue'
 
@@ -63,7 +66,7 @@ const props = defineProps({
 const showForm = ref(false)
 
 const items = computed(() => {
-  return giustificativiStore.items
+  return [...giustificativiStore.items]
     .filter(i => !i.Invalidato)
     .sort((a, b) => new Date(b.Data) - new Date(a.Data))
 })
@@ -79,51 +82,55 @@ watch(() => props.progettoId, (id) => {
 async function handleCreate(formData) {
   const ok = await giustificativiStore.createGiustificativo(formData, formData.File)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Giustificativo creato' })
+    notifySuccess($q, 'Giustificativo creato')
     showForm.value = false
     if (props.progettoId) {
       giustificativiStore.fetchByProgetto(props.progettoId)
     }
   } else {
-    $q.notify({ type: 'negative', message: 'Errore nella creazione' })
+    notifyError($q, giustificativiStore.error || 'Errore nella creazione')
   }
 }
 
 async function handleSaveField({ id, field, value }) {
   const ok = await giustificativiStore.saveInlineEdit(id, field, value)
-  if (!ok) {
-    $q.notify({ type: 'negative', message: 'Errore nel salvataggio' })
+  if (ok) {
+    notifySuccess($q, 'Campo salvato')
+  } else {
+    notifyError($q, giustificativiStore.error || 'Errore nel salvataggio')
   }
 }
 
 async function handleSubmit(item) {
   const ok = await giustificativiStore.submitGiustificativo(item.id)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Giustificativo inviato' })
+    notifySuccess($q, 'Giustificativo inviato')
     if (props.progettoId) {
       await giustificativiStore.fetchByProgetto(props.progettoId)
     }
   } else {
-    $q.notify({ type: 'negative', message: "Errore nell'invio" })
+    notifyError($q, giustificativiStore.error || "Errore nell'invio")
   }
 }
 
 async function handleFileChange({ id, file }) {
   const ok = await giustificativiStore.updateGiustificativo(id, {}, file)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Allegato aggiornato' })
+    notifySuccess($q, 'Allegato aggiornato')
     if (props.progettoId) {
       giustificativiStore.fetchByProgetto(props.progettoId)
     }
+  } else {
+    notifyError($q, giustificativiStore.error || "Errore nell'aggiornamento")
   }
 }
 
 async function handleInvalida(id) {
   const ok = await giustificativiStore.invalidateGiustificativo(id)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Giustificativo eliminato' })
+    notifySuccess($q, 'Giustificativo eliminato')
   } else {
-    $q.notify({ type: 'negative', message: "Errore nell'invalidazione" })
+    notifyError($q, giustificativiStore.error || "Errore nell'invalidazione")
   }
 }
 </script>

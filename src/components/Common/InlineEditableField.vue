@@ -8,7 +8,9 @@
     <template v-if="!editing">
       <div class="row items-center">
         <div class="col">
-          <div class="text-caption text-grey">{{ label }}</div>
+          <div class="text-caption text-grey">
+            {{ label }}
+          </div>
           <div class="text-body1" style="word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap;">
             {{ displayValue || '—' }}
             <q-icon
@@ -24,7 +26,9 @@
 
     <!-- Edit mode -->
     <template v-else>
-      <div class="text-caption text-grey">{{ label }}</div>
+      <div class="text-caption text-grey">
+        {{ label }}
+      </div>
       <div class="row items-center q-gutter-xs">
         <q-input
           ref="inputRef"

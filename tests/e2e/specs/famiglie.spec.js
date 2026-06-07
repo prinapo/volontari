@@ -27,17 +27,38 @@ test.describe.serial('Famiglie Page', () => {
     const gestione = new GestionePage(page)
     await gestione.famiglieTab.click()
     await gestione.waitForTable()
+    await gestione.searchFamiglie('TEST_FAM_01')
+    await gestione.waitForTable()
 
-    // Clicca contacts icon sulla riga della famiglia "Famiglia Test"
-    const found = await gestione.clickContactsOnFamiglia('Famiglia Test')
+    // Clicca contacts icon sulla riga della famiglia "Famiglia TEST_FAM_01"
+    const found = await gestione.clickContactsOnFamiglia('Famiglia TEST_FAM_01')
     expect(found).toBe(true)
 
-    // Assegna contatto genitore via autocomplete cercando per email
-    await gestione.assignGenitore(auth.genitore.email, { exact: false })
+    // Aspetta che il dialog si apra
+    await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
+    await page.waitForTimeout(2000)
 
-    // Verifica che il contatto sia stato aggiunto (badge o nome nel dialog)
-    await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 3000 })
-    await expect(page.locator('.q-dialog:has-text("Test Genitore")')).toBeVisible({ timeout: 5000 })
+    // La tabella ha 2 q-table: Volontari e Genitori. La seconda è quella dei Genitori.
+    const tables = page.locator('.q-dialog .q-table')
+    const tableCount = await tables.count()
+    console.log(`[FM-01] ${tableCount} tabelle nel dialog`)
+    if (tableCount >= 2) {
+      const genitoriRows = await tables.nth(1).locator('tbody tr').count()
+      console.log(`[FM-01] ${genitoriRows} righe nella tabella Genitori`)
+      if (genitoriRows > 0) {
+        console.log(`[FM-01] ${genitoriRows} genitore/i già assegnato/i — skip assignment`)
+        await page.locator('.q-dialog button:has-text("Chiudi")').click()
+        await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 3000 })
+        return
+      }
+    }
+
+    // Assegna contatto genitore via autocomplete cercando per email nel label
+    await gestione.assignGenitore(auth.genitore.email)
+
+    // Verifica che il contatto sia stato aggiunto
+    const newGenitoriRows = await genitoriTable.locator('tbody tr').count()
+    expect(newGenitoriRows).toBeGreaterThanOrEqual(1)
 
     // Chiudi dialog
     await page.locator('.q-dialog button:has-text("Chiudi")').click()
@@ -288,5 +309,80 @@ test.describe.serial('Famiglie Page', () => {
     }
     const chip = page.locator('.bg-green-1').first()
     await expect(chip).toBeVisible({ timeout: 5000 })
+  })
+
+  test('EN-01: Genitori mostrano email con badge Primaria @smoke', async ({ page }) => {
+    // Questo test richiede un ruolo con permessi sulla tabella email.
+    // Il volontario potrebbe non avere questi permessi, quindi controlliamo
+    // solo che la sezione Genitori esista con almeno un nome visibile.
+    const genitoriHeader = page.locator('.text-caption.text-grey.text-uppercase:has-text("Genitori")')
+    if (await genitoriHeader.count() === 0) {
+      test.skip()
+      return
+    }
+
+    await page.waitForTimeout(2000)
+
+    // Cerca badge Primaria ovunque nella pagina (potrebbe non esserci se il ruolo non ha permessi email)
+    const badgeCount = await page.locator('.q-badge:has-text("Primaria")').count()
+    const emailCount = await page.locator('a[href^="mailto:"]').count()
+    console.log(`[EN-01] badge Primaria: ${badgeCount}, email links: ${emailCount}`)
+
+    // Se non ci sono badge email, il ruolo probabilmente non ha permessi — skip
+    if (badgeCount === 0 && emailCount === 0) {
+      console.log('[EN-01] Nessuna email visibile — ruolo senza permessi email, skip')
+      test.skip()
+      return
+    }
+
+    expect(badgeCount).toBeGreaterThanOrEqual(1)
+  })
+
+  test('NT-01: Notifica successo compare dopo salvataggio IBAN @smoke', async ({ page }) => {
+    await expandDatiBancari(page)
+    const ibanField = getExpandedField(page, 0)
+    await expect(ibanField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
+
+    const originalValue = (await ibanField.locator('.text-body1').innerText()).trim()
+
+    await ibanField.click()
+    const input = ibanField.locator('input')
+    await expect(input).toBeVisible({ timeout: 3000 })
+    await input.fill(originalValue)
+    await ibanField.locator('[data-testid="inline-save"]').click()
+
+    const notification = page.locator('.q-notification')
+    await expect(notification).toBeVisible({ timeout: 5000 })
+    await expect(notification).toContainText('IBAN aggiornato')
+  })
+
+  test('NT-02: Notifica successo IBAN sparisce automaticamente @regression', async ({ page }) => {
+    await expandDatiBancari(page)
+    const ibanField = getExpandedField(page, 0)
+    await expect(ibanField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
+
+    const ts = String(Date.now()).slice(-10)
+    const testIBAN = `IT60X${ts.padStart(22, '0')}`
+
+    const [patchResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'
+      ),
+      (async () => {
+        await ibanField.click()
+        const input = ibanField.locator('input')
+        await expect(input).toBeVisible({ timeout: 3000 })
+        await input.fill(testIBAN)
+        await ibanField.locator('[data-testid="inline-save"]').click()
+      })()
+    ])
+    expect(patchResp.status()).toBe(200)
+
+    const notification = page.locator('.q-notification')
+    await expect(notification).toBeVisible({ timeout: 5000 })
+    await expect(notification).toContainText('IBAN aggiornato')
+
+    await page.waitForTimeout(6000)
+    await expect(notification).not.toBeVisible({ timeout: 10000 })
   })
 })

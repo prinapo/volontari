@@ -2,13 +2,15 @@
   <q-dialog v-model="model" persistent>
     <q-card style="max-width: 520px; width: 100%;">
       <q-card-section class="row items-center">
-        <div class="text-h6">Nuovo giustificativo</div>
+        <div class="text-h6">
+          Nuovo giustificativo
+        </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
       <q-separator />
       <q-card-section>
-        <q-form @submit.prevent="handleSave" class="q-gutter-y-md" ref="formRef">
+        <q-form ref="formRef" class="q-gutter-y-md" @submit.prevent="handleSave">
           <q-input
             v-model="form.Descrizione"
             label="Descrizione"
@@ -25,31 +27,24 @@
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
           />
-          <q-date
+          <q-input
             v-model="form.Data"
             label="Data"
             filled
-            mask="YYYY-MM-DD"
-            today-btn
+            readonly
+            class="cursor-pointer"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
-          />
-          <q-select
-            v-model="form.Tranche"
-            :options="trancheOptions"
-            label="Tranche rendicontazione"
-            filled
-            emit-value
-            map-options
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-          />
-          <q-select
-            v-model="form.Stato"
-            :options="statoOptions"
-            label="Stato"
-            filled
-          />
+            @click="dateProxy?.show()"
+          >
+            <template #prepend>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy ref="dateProxy" cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="form.Data" mask="YYYY-MM-DD" today-btn />
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
           <q-input
             v-model="form.NotaVolontario"
             label="Nota (opzionale)"
@@ -57,27 +52,46 @@
             filled
             :maxlength="500"
           />
-          <q-file
-            v-model="form.File"
-            label="Allega file"
-            :accept="FILE_ACCEPT"
-            :max-file-size="FILE_MAX_SIZE"
-            filled
-            clearable
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-          >
-            <template v-slot:prepend>
-              <q-icon name="attach_file" />
-            </template>
-            <template v-slot:hint>
-              Formati: {{ FILE_ACCEPT }}
-            </template>
-          </q-file>
+          <div class="row q-gutter-sm items-center">
+            <q-file
+              v-model="form.File"
+              label="Allega file"
+              :accept="FILE_ACCEPT"
+              :max-file-size="FILE_MAX_SIZE"
+              filled
+              clearable
+              class="col"
+              :rules="[val => !!val || 'Campo obbligatorio']"
+              lazy-rules
+            >
+              <template #prepend>
+                <q-icon name="attach_file" />
+              </template>
+              <template #hint>
+                Formati: {{ FILE_ACCEPT }}
+              </template>
+            </q-file>
+            <input
+              ref="cameraInput"
+              type="file"
+              :accept="FILE_ACCEPT"
+              capture="environment"
+              class="hidden"
+              @change="onCameraCapture"
+            >
+            <q-btn
+              outline
+              color="secondary"
+              icon="photo_camera"
+              @click="$refs.cameraInput.click()"
+            >
+              <q-tooltip>Foto</q-tooltip>
+            </q-btn>
+          </div>
         </q-form>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn data-testid="form-annulla" flat label="Annulla" v-close-popup />
+        <q-btn v-close-popup data-testid="form-annulla" flat label="Annulla" />
         <q-btn
           color="primary"
           label="Salva"
@@ -91,10 +105,7 @@
 
 <script setup>
 import { reactive, ref, computed } from 'vue'
-import { useQuasar } from 'quasar'
-import { FILE_ACCEPT, FILE_MAX_SIZE, TRANCHE_RENDICONTAZIONE } from 'src/utils/constants'
-
-const $q = useQuasar()
+import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -112,30 +123,24 @@ const model = computed({
 })
 
 const formRef = ref(null)
+const dateProxy = ref(null)
+const cameraInput = ref(null)
 
 const today = new Date().toISOString().slice(0, 10)
 const form = reactive({
   Descrizione: '',
   Importo: null,
   Data: today,
-  Tranche: '',
-  Stato: 'draft',
   NotaVolontario: '',
   File: null
 })
-
-const trancheOptions = TRANCHE_RENDICONTAZIONE
-
-const statoOptions = [
-  { label: 'Bozza', value: 'draft' },
-  { label: 'Inviato', value: 'Inviato' }
-]
 
 async function handleSave() {
   const isValid = await formRef.value?.validate()
   if (!isValid) return
   emit('save', {
     ...form,
+    Stato: 'draft',
     Progetto: props.progettoId,
     Famiglia: props.famigliaId,
     AnnoBando: props.annoBando,
@@ -148,9 +153,15 @@ function resetForm() {
   form.Descrizione = ''
   form.Importo = null
   form.Data = today
-  form.Tranche = ''
-  form.Stato = 'draft'
   form.NotaVolontario = ''
   form.File = null
+}
+
+function onCameraCapture(event) {
+  const file = event.target.files?.[0]
+  if (file) {
+    form.File = file
+  }
+  event.target.value = ''
 }
 </script>

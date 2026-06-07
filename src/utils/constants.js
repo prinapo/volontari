@@ -45,24 +45,18 @@ export const ADMIN_ROLE_IDS = (import.meta.env.VITE_ADMIN_ROLE_IDS || '')
 
 export const STATI_GIUSTIFICATIVO = {
   DRAFT: 'draft',
-  INVIATO: 'Inviato',
-  VERIFICATO: 'Verificato',
-  RIFIUTATO: 'Rifiutato',
+  INVIATO: 'inviato',
+  VERIFICATO: 'verificato',
+  RIFIUTATO: 'rifiutato',
   APPROVATO: 'approvato'
 }
 
 export const RUOLI_FAMIGLIA = {
   VOLONTARIO: 'Volontario',
   GENITORE: 'Genitore',
-  TUTORE: 'Tutore'
+  TUTORE: 'Tutore',
+  REFERENTE: 'Referente'
 }
-
-export const TRANCHE_RENDICONTAZIONE = [
-  { label: 'Luglio', value: 'luglio' },
-  { label: 'Settembre', value: 'settembre' },
-  { label: 'Novembre', value: 'novembre' },
-  { label: 'Febbraio', value: 'febbraio' }
-]
 
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.gif,.heic,.pdf'
 export const FILE_MAX_SIZE = 5 * 1024 * 1024

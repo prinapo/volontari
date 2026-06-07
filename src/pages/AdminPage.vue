@@ -2,13 +2,19 @@
   <q-page class="q-pa-md admin-page">
     <div v-if="!store.loading && store.users.length === 0 && !store.error" class="text-center text-grey-5 q-py-xl">
       <q-icon name="admin_panel_settings" size="64px" />
-      <div class="text-h6 q-mt-md">Nessun utente trovato</div>
-      <div class="text-body2">Verifica i permessi API di Directus.</div>
+      <div class="text-h6 q-mt-md">
+        Nessun utente trovato
+      </div>
+      <div class="text-body2">
+        Verifica i permessi API di Directus.
+      </div>
     </div>
 
     <div class="row items-center q-gutter-sm q-mb-md">
       <div>
-        <div class="text-h5 text-weight-medium">User Admin</div>
+        <div class="text-h5 text-weight-medium">
+          User Admin
+        </div>
         <div class="text-body2 text-grey-7">
           Gestisci utenti, ruoli e invii comunicazioni.
         </div>
@@ -36,8 +42,12 @@
     >
       <template #body-cell-name="props">
         <q-td :props="props">
-          <div class="text-weight-medium">{{ props.row.first_name }} {{ props.row.last_name }}</div>
-          <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">—</div>
+          <div class="text-weight-medium">
+            {{ props.row.first_name }} {{ props.row.last_name }}
+          </div>
+          <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
+            —
+          </div>
         </q-td>
       </template>
 
@@ -76,8 +86,10 @@
               :loading="store.saving"
               @update:model-value="(val) => handleRoleChange(props.row.id, val)"
             >
-              <template v-slot:selected-item="opt">
-                <div class="text-caption">{{ opt.opt.name }}</div>
+              <template #selected-item="opt">
+                <div class="text-caption">
+                  {{ opt.opt.name }}
+                </div>
               </template>
             </q-select>
             <q-btn
@@ -99,9 +111,11 @@
     <q-dialog v-model="showCreateDialog" persistent maximized>
       <q-card>
         <q-card-section class="row items-center">
-          <div class="text-h6">Aggiungi utente</div>
+          <div class="text-h6">
+            Aggiungi utente
+          </div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn v-close-popup icon="close" flat round dense />
         </q-card-section>
 
         <q-separator />
@@ -171,16 +185,28 @@
             <div class="text-h6 text-positive q-mb-sm">
               <q-icon name="check_circle" /> Utente creato con successo
             </div>
-            <div class="text-body2 q-mb-sm">Email: <strong>{{ searchEmail }}</strong></div>
+            <div class="text-body2 q-mb-sm">
+              Email: <strong>{{ searchEmail }}</strong>
+            </div>
             <div class="text-caption text-grey-7 q-mb-md">
               Directus invierà automaticamente un'email di invito per impostare la password.
             </div>
 
             <q-separator class="q-mb-md" />
 
-            <div class="text-subtitle2 q-mb-sm">Invia email informativa (opzionale)</div>
+            <div class="text-subtitle2 q-mb-sm">
+              Invia email informativa (opzionale)
+            </div>
             <q-input v-model="emailSubject" label="Soggetto" filled class="q-mb-sm" placeholder="Benvenuto sul Portale Volontario" />
-            <q-input v-model="emailBody" label="Testo email" filled type="textarea" autogrow class="q-mb-sm" placeholder="Ciao {nome}, il tuo account è stato creato. Accedi a {link_login}" />
+            <q-input
+              v-model="emailBody"
+              label="Testo email"
+              filled
+              type="textarea"
+              autogrow
+              class="q-mb-sm"
+              placeholder="Ciao {nome}, il tuo account è stato creato. Accedi a {link_login}"
+            />
             <div class="text-caption text-grey-7 q-mb-sm">
               Placeholder disponibili: <code>{email}</code> <code>{nome}</code> <code>{link_login}</code>
             </div>
@@ -195,7 +221,7 @@
         </template>
 
         <q-card-actions align="right">
-          <q-btn flat label="Chiudi" v-close-popup />
+          <q-btn v-close-popup flat label="Chiudi" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -204,9 +230,11 @@
     <q-dialog v-model="showResetDialog" persistent>
       <q-card style="min-width: 350px">
         <q-card-section class="row items-center">
-          <div class="text-h6">Reset password</div>
+          <div class="text-h6">
+            Reset password
+          </div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn v-close-popup icon="close" flat round dense />
         </q-card-section>
         <q-card-section>
           <div class="text-body2 q-mb-md">
@@ -218,7 +246,7 @@
             filled
             :type="showResetPwd ? 'text' : 'password'"
           >
-            <template v-slot:append>
+            <template #append>
               <q-icon
                 :name="showResetPwd ? 'visibility_off' : 'visibility'"
                 class="cursor-pointer"
@@ -228,7 +256,7 @@
           </q-input>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Annulla" v-close-popup />
+          <q-btn v-close-popup flat label="Annulla" />
           <q-btn
             color="primary"
             label="Salva password"
@@ -246,6 +274,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAdminStore } from 'stores/admin.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
 const store = useAdminStore()
@@ -304,7 +333,10 @@ async function handleCreateUser() {
     newLastName.value
   )
   if (ok) {
+    notifySuccess($q, 'Utente creato con successo')
     userCreated.value = true
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 
@@ -316,9 +348,11 @@ async function handleSendEmail() {
     .replace(/\{nome\}/g, nome)
   const ok = await store.sendCustomEmail(searchEmail.value, emailSubject.value, body)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Email inviata con successo' })
+    notifySuccess($q, 'Email inviata con successo')
     emailSubject.value = ''
     emailBody.value = ''
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 
@@ -338,8 +372,10 @@ function openResetPasswordDialog(user) {
 async function handleResetPassword() {
   const ok = await store.resetUserPassword(resetUser.value.id, resetPassword.value)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Password reimpostata con successo' })
+    notifySuccess($q, 'Password reimpostata con successo')
     showResetDialog.value = false
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 
@@ -347,7 +383,9 @@ async function handleRoleChange(userId, roleId) {
   if (!roleId) return
   const ok = await store.updateUserRole(userId, roleId)
   if (ok) {
-    $q.notify({ type: 'positive', message: 'Ruolo aggiornato' })
+    notifySuccess($q, 'Ruolo aggiornato')
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 

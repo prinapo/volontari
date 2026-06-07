@@ -142,13 +142,12 @@ App.vue
     │           │           ├── q-input (Descrizione)
     │           │           ├── q-input (Importo, number)
     │           │           ├── q-date (Data)
-    │           │           ├── q-select (Tranche)
-    │           │   ├── q-select (Stato: Bozza/Inviato)
+      │           │           ├── q-select (Stato: Bozza/Inviato)
     │           │           ├── FileUploader.vue (q-file)
     │           │           └── q-btn (Salva)
     │           │
     │           └── VerificaPage.vue (admin/verifica role only)
-    │               ├── Filtri (Tranche, AnnoBando, Rendicontazione, Cerca)
+    │               ├── Filtri (AnnoBando, Rendicontazione, Cerca)
     │               ├── Summary grid (count, rendicontato, rimborsabile, ASPI ready)
     │               └── q-table (progetti con colonne personalizzate)
 ```
@@ -188,10 +187,8 @@ See [auth-flow.md](./auth-flow.md) for detailed route guard code.
 | Separate email query | Email fetched from `email` table via `_in` filter (not o2m on contatti) to avoid 403 |
 | Axios interceptor for refresh | Automatically catches 401, attempts refresh, retries original request |
 | Cache-buster on GET | `_t=${Date.now()}` param prevents browser caching of API responses |
-| Dynamic tranche options | `trancheOptions` è un `computed` che filtra solo tranche con dati presenti |
-| Tranche filter | `filteredRows` esclude progetti senza giustificativi nella tranche selezionata; opzione "Tutte" = nessun filtro |
 | Reject with note | Rifiuto giustificativo obbliga una `NotaRifiuto` (textarea in dialog); salvata su Directus + visibile a volontario |
 | File rename on reject | Allegato rifiutato ridenominato `RIFIUTATO_<data>` sul filesystem (nessuna eliminazione) |
 | IBAN/Intestatario editing inline | Dialog di modifica dati bancari con salvataggio su `PATCH /items/Famiglie/:id` |
-| Global rimborsabile | `totaleRimborsabile` = `min(80% totale rendicontato, allocato)` — unico valore globale per progetto, non per-tranche |
+| Global rimborsabile | `totaleRimborsabile` = `min(80% totale rendicontato, allocato)` — unico valore globale per progetto |
 | "Da verificare" stato intermedio | Stato arancione per progetti con giustificativi ancora `Inviato` (dopo aver verificato IBAN) |

@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import { gestioneService } from 'src/services/gestione.service'
+import { contattiService } from 'src/services/contatti.service'
+import { emailService } from 'src/services/email.service'
+import { usersService } from 'src/services/users.service'
+import { referentiService } from 'src/services/referenti.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 
 const RESET_URL = 'https://volontari.sostienilsostegno.com/reset-password'
@@ -7,21 +11,22 @@ const RESET_URL = 'https://volontari.sostienilsostegno.com/reset-password'
 export const useGestioneStore = defineStore('gestione', {
   state: () => ({
     famiglie: [],
+    totalFamiglie: 0,
     loading: false,
     saving: false,
     error: null
   }),
 
   actions: {
-    async fetchAll() {
+    async fetchAll(params = {}) {
       this.loading = true
       this.error = null
       try {
-        const famRes = await gestioneService.getFamiglie()
+        const famRes = await gestioneService.getFamiglie({ ...params, meta: 'filter_count' })
         this.famiglie = famRes.data.data || []
+        this.totalFamiglie = famRes.data.meta?.filter_count || 0
       } catch (err) {
-        this.error = 'Errore nel caricamento dei dati'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
       } finally {
         this.loading = false
       }
@@ -31,7 +36,15 @@ export const useGestioneStore = defineStore('gestione', {
       this.saving = true
       this.error = null
       try {
-        const contattoRes = await gestioneService.createContatto({
+        if (data.Email) {
+          const emailCheck = await contattiService.getByEmails([data.Email])
+          const existingContatti = emailCheck.data.data || []
+          if (existingContatti.length > 0) {
+            this.error = 'Questa email è già associata a un altro contatto'
+            return false
+          }
+        }
+        const contattoRes = await contattiService.create({
           id_contatto: data.id_contatto,
           Nome: data.Nome,
           Cognome: data.Cognome,
@@ -40,16 +53,18 @@ export const useGestioneStore = defineStore('gestione', {
         })
         const contattoId = contattoRes.data.data?.id_contatto
         if (contattoId && data.Email) {
-          await gestioneService.createEmail({
+          await emailService.create({
             email_address: data.Email,
             Contatto_Relation: contattoId,
-            Primary: 'true'
+            Primary: true
           })
         }
-        return true
+        if (contattoId && data.IsReferente) {
+          await contattiService.update(contattoId, { IsReferente: true })
+        }
+        return contattoId
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella creazione del contatto'
-        console.error(err)
         return false
       } finally {
         this.saving = false
@@ -64,28 +79,32 @@ export const useGestioneStore = defineStore('gestione', {
         const contattoData = { ...data }
         delete contattoData.Email
 
-        await gestioneService.updateContatto(id, contattoData)
+        await contattiService.update(id, contattoData)
 
-        if (newEmail !== undefined) {
-          const emailRes = await gestioneService.getEmailRecordByContatto(id)
+        if (newEmail !== undefined && newEmail) {
+          const emailCheck = await contattiService.getByEmails([newEmail])
+          const existingContatti = emailCheck.data.data || []
+          const duplicateContatto = existingContatti.find(c => c.id_contatto !== id)
+          if (duplicateContatto) {
+            this.error = 'Questa email è già associata a un altro contatto'
+            return false
+          }
+          const emailRes = await emailService.getRecordByContatto(id)
           const existing = emailRes.data.data?.[0]
           if (existing) {
-            if (newEmail) {
-              await gestioneService.updateEmail(existing.id, { email_address: newEmail })
-            }
-          } else if (newEmail) {
-            await gestioneService.createEmail({
+            await emailService.update(existing.id, { email_address: newEmail })
+          } else {
+            await emailService.create({
               email_address: newEmail,
               Contatto_Relation: id,
-              Primary: 'true'
+              Primary: true
             })
           }
         }
 
         return true
       } catch (err) {
-        this.error = 'Errore nella modifica del contatto'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella modifica del contatto'
         return false
       } finally {
         this.saving = false
@@ -94,22 +113,20 @@ export const useGestioneStore = defineStore('gestione', {
 
     async disableUser(userId) {
       try {
-        await gestioneService.updateDirectusUser(userId, { status: 'suspended' })
+        await usersService.update(userId, { status: 'suspended' })
         return true
       } catch (err) {
-        this.error = 'Errore nella disattivazione'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella disattivazione'
         return false
       }
     },
 
     async enableUser(userId) {
       try {
-        await gestioneService.updateDirectusUser(userId, { status: 'active' })
+        await usersService.update(userId, { status: 'active' })
         return true
       } catch (err) {
-        this.error = 'Errore nella riattivazione'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella riattivazione'
         return false
       }
     },
@@ -126,8 +143,7 @@ export const useGestioneStore = defineStore('gestione', {
         await this.fetchAll()
         return true
       } catch (err) {
-        this.error = 'Errore nella creazione della famiglia'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella creazione della famiglia'
         return false
       } finally {
         this.saving = false
@@ -142,8 +158,7 @@ export const useGestioneStore = defineStore('gestione', {
         await this.fetchAll()
         return true
       } catch (err) {
-        this.error = 'Errore nella modifica della famiglia'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella modifica della famiglia'
         return false
       } finally {
         this.saving = false
@@ -154,7 +169,7 @@ export const useGestioneStore = defineStore('gestione', {
       this.error = null
       try {
         if (ruolo === 'Volontario') {
-          const contattoRes = await gestioneService.getContattoById(contattoId)
+          const contattoRes = await contattiService.getById(contattoId)
           const contatto = contattoRes.data.data
           if (contatto && !contatto.user_id) {
             const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
@@ -162,12 +177,12 @@ export const useGestioneStore = defineStore('gestione', {
               this.error = 'Email mancante: sistema il contatto prima di associarlo come volontario'
               return false
             }
-            const userRes = await gestioneService.searchUsersByEmail(email)
+            const userRes = await usersService.searchByEmail(email)
             const existing = (userRes.data.data || [])[0]
             if (existing) {
-              await gestioneService.updateContatto(contattoId, { user_id: existing.id })
+              await contattiService.update(contattoId, { user_id: existing.id })
             } else {
-              const newUserRes = await gestioneService.createDirectusUser({
+              const newUserRes = await usersService.create({
                 email,
                 password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
                 first_name: contatto.Nome || '',
@@ -175,8 +190,8 @@ export const useGestioneStore = defineStore('gestione', {
               })
               const newUserId = newUserRes.data.data?.id
               if (newUserId) {
-                await gestioneService.updateContatto(contattoId, { user_id: newUserId })
-                await gestioneService.sendInvite(email, RESET_URL)
+                await contattiService.update(contattoId, { user_id: newUserId })
+                await usersService.sendInvite(email, RESET_URL)
               }
             }
           }
@@ -186,10 +201,15 @@ export const useGestioneStore = defineStore('gestione', {
           Famiglia: famigliaId,
           Ruolo_nella_Famiglia: ruolo || RUOLI_FAMIGLIA.VOLONTARIO
         })
+        const flagPatch = {}
+        if (ruolo === 'Volontario') flagPatch.IsVolontario = true
+        else if (ruolo === 'Genitore') flagPatch.IsGenitore = true
+        if (Object.keys(flagPatch).length > 0) {
+          await contattiService.update(contattoId, flagPatch)
+        }
         return true
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'assegnazione'
-        console.error(err)
         return false
       }
     },
@@ -197,24 +217,86 @@ export const useGestioneStore = defineStore('gestione', {
     async removeFromFamiglia(fcId, contattoId, ruolo) {
       try {
         await gestioneService.removeFromFamiglia(fcId)
-        if (ruolo === 'Genitore' && contattoId) {
-          await gestioneService.updateContatto(contattoId, { IsGenitore: false })
+        if (contattoId) {
+          const flagPatch = {}
+          if (ruolo === 'Genitore') flagPatch.IsGenitore = false
+          else if (ruolo === 'Referente') flagPatch.IsReferente = false
+          if (Object.keys(flagPatch).length > 0) {
+            await contattiService.update(contattoId, flagPatch)
+          }
         }
         return true
       } catch (err) {
-        this.error = 'Errore nella rimozione'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella rimozione'
         return false
       }
     },
 
     async sendInvite(email) {
       try {
-        await gestioneService.sendInvite(email, RESET_URL)
+        await usersService.sendInvite(email, RESET_URL)
         return true
       } catch (err) {
-        this.error = 'Errore nell\'invio dell\'invito'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'invio dell\'invito'
+        return false
+      }
+    },
+
+    async assignReferente(volontarioId, referenteId) {
+      this.error = null
+      try {
+        await referentiService.create(volontarioId, referenteId)
+        return true
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'assegnazione referente'
+        return false
+      }
+    },
+
+    async removeReferente(relationId) {
+      this.error = null
+      try {
+        await referentiService.remove(relationId)
+        return true
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella rimozione referente'
+        return false
+      }
+    },
+
+    async markAsReferente(contattoId) {
+      this.error = null
+      try {
+        const contattoRes = await contattiService.getById(contattoId)
+        const contatto = contattoRes.data.data
+        if (contatto && !contatto.user_id) {
+          const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
+          if (!email) {
+            this.error = 'Email mancante: prima aggiungi un\'email al contatto'
+            return false
+          }
+          const userRes = await usersService.searchByEmail(email)
+          const existing = (userRes.data.data || [])[0]
+          if (existing) {
+            await contattiService.update(contattoId, { user_id: existing.id })
+          } else {
+            const newUserRes = await usersService.create({
+              email,
+              password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
+              first_name: contatto.Nome || '',
+              last_name: contatto.Cognome || ''
+            })
+            const newUserId = newUserRes.data.data?.id
+            if (newUserId) {
+              await contattiService.update(contattoId, { user_id: newUserId })
+              await usersService.sendInvite(email, RESET_URL)
+            }
+          }
+        }
+        await contattiService.update(contattoId, { IsReferente: true })
+        return true
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'impostazione referente'
         return false
       }
     }

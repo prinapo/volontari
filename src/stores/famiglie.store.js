@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia'
 import { famiglieService } from 'src/services/famiglie.service'
+import { emailService } from 'src/services/email.service'
+import { referentiService } from 'src/services/referenti.service'
 import { useAuthStore } from 'stores/auth.store'
+import { enrichWithEmails } from 'src/utils/enrichment'
 
 export const useFamiglieStore = defineStore('famiglie', {
   state: () => ({
@@ -43,8 +46,7 @@ export const useFamiglieStore = defineStore('famiglie', {
           await this.loadFamiglia(famigliaId)
         }
       } catch (err) {
-        this.error = 'Errore nel caricamento dei dati'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
       } finally {
         this.loading = false
       }
@@ -58,7 +60,6 @@ export const useFamiglieStore = defineStore('famiglie', {
         return this.famiglieContatti.length > 0
       } catch (err) {
         this.famiglieContatti = []
-        console.warn('Unable to check family access:', err)
         return false
       }
     },
@@ -75,8 +76,7 @@ export const useFamiglieStore = defineStore('famiglie', {
           this.loadVolontari(famigliaId)
         ])
       } catch (err) {
-        this.error = 'Errore nel caricamento della famiglia'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
       }
     },
 
@@ -97,25 +97,16 @@ export const useFamiglieStore = defineStore('famiglie', {
         const contattoIds = this.genitori.map(g => g.id_contatto).filter(Boolean)
         if (contattoIds.length > 0) {
           try {
-            const emailRes = await famiglieService.getEmailByContatto(contattoIds)
-            const emails = emailRes.data.data || []
-            const emailByContatto = {}
-            emails.forEach(e => {
-              if (e.Contatto_Relation) {
-                if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
-                emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
-              }
-            })
+            const emailMap = await enrichWithEmails(contattoIds, emailService.getByContatto.bind(emailService))
             this.genitori.forEach(g => {
-              g._emails = emailByContatto[g.id_contatto] || []
+              g._emails = emailMap[g.id_contatto] || []
             })
-          } catch (emailErr) {
-            console.error('Errore caricamento email genitori', emailErr)
+          } catch {
+            // silent
           }
         }
       } catch (err) {
         this.genitori = []
-        console.error('Errore caricamento genitori', err)
       } finally {
         this.contattiLoading = false
       }
@@ -137,33 +128,45 @@ export const useFamiglieStore = defineStore('famiglie', {
             Cognome: r.Contatto?.Cognome,
             Numero_di_cellulare: r.Contatto?.Numero_di_cellulare,
             Numero_di_telefono: r.Contatto?.Numero_di_telefono,
-            _emails: []
+            _emails: [],
+            _referenti: []
           }))
           .filter(c => c.id_contatto)
 
         const contattoIds = filtered.map(v => v.id_contatto).filter(Boolean)
         if (contattoIds.length > 0) {
           try {
-            const emailRes = await famiglieService.getEmailByContatto(contattoIds)
-            const emails = emailRes.data.data || []
-            const emailByContatto = {}
-            emails.forEach(e => {
-              if (e.Contatto_Relation) {
-                if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
-                emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
-              }
+            const emailMap = await enrichWithEmails(contattoIds, emailService.getByContatto.bind(emailService))
+            filtered.forEach(v => {
+              v._emails = emailMap[v.id_contatto] || []
+            })
+          } catch {
+            // silent
+          }
+          try {
+            const refRes = await referentiService.getByVolontari(contattoIds)
+            const refItems = refRes.data.data || []
+            const refMap = new Map()
+            refItems.forEach(r => {
+              const volId = r.Volontario
+              if (!refMap.has(volId)) refMap.set(volId, [])
+              refMap.get(volId).push({
+                id_relazione: r.id,
+                id_contatto: r.Referente?.id_contatto,
+                Nome: r.Referente?.Nome,
+                Cognome: r.Referente?.Cognome
+              })
             })
             filtered.forEach(v => {
-              v._emails = emailByContatto[v.id_contatto] || []
+              v._referenti = refMap.get(v.id_contatto) || []
             })
-          } catch (emailErr) {
-            console.error('Errore caricamento email volontari', emailErr)
+          } catch {
+            // silent
           }
         }
         this.altriVolontari = filtered
       } catch (err) {
         this.altriVolontari = []
-        console.error('Errore caricamento volontari', err)
       } finally {
         this.contattiLoading = false
       }
@@ -189,7 +192,7 @@ export const useFamiglieStore = defineStore('famiglie', {
         this.famiglia.Intestatario_CC = updated.Intestatario_CC
         return true
       } catch (err) {
-        this.error = 'Errore nel salvataggio'
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel salvataggio'
         return false
       } finally {
         this.saving = false

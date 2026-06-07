@@ -1,4 +1,34 @@
-# v2.0.0
+# v2.3.0
+
+- **Tranche rimosso**: Eliminato il sistema Tranche da tutto il codice. `recalculateRowTotals()` ora somma direttamente tutti i giustificativi con stato `inviato/verificato/approvato`.
+- **Stato case normalization**: Tutti i confronti Stato usano lowercase (`'inviato'`, `'verificato'`, `'rifiutato'`). DB e frontend coerenti.
+- **Paginazione client-side**: VerificaPage usa `fetchAllPages()` per caricare tutti i dati. Ordinamento e filtro funzionano lato client.
+- **ContattiTab fix**: Paginazione con `v-model:pagination`, ricerca case-insensitive (`_icontains`), filtro Referente funzionante.
+- **Email CRUD**: ContattoDialog supporta N email con add/edit/delete/primary. Controllo email duplicate.
+- **Referente model**: Nuova tabella `Volontari_Referenti` (junction many-to-many). Il Referente segue i Volontari, non le Famiglie. Campo `contatti.IsReferente` per filtro.
+- **Badge multipli**: ContattiTab mostra tutti i ruoli (Volontario + Genitore + Referente) come badge separati.
+- **ContattiDialog**: Layout più largo, pulsanti impilati verticalmente, pulsante "Crea contatto" con popup ruolo dopo creazione.
+- **FamiglieTab**: Ordinamento funzionante (sort mappato a Directus field names). Genitori prima, poi separator, poi Volontari nell riga espandibile.
+- **FamigliaInfoCard**: Mostra referente di ogni volontario.
+- **Email layout**: Email verticali nella tabella Contatti (non orizzontali).
+- **Test E2E**: 100 test passano, 0 falliti, 19 skip (dati mancanti o funzionalità nascoste).
+- **Version bump**: 2.2.0 → 2.3.0
+
+# v2.1.0
+
+- **StatoRendicontazione fix**: `reconcileSubmission()` ora imposta `Stato: 'inviato'` sul giustificativo riconciliato. Aggiunto `fetchPage()` dopo riconciliazione.
+- **normalizeProject()**: include ora `StatoRendicontazione`, `TotaleGiustificativi`, `TotaleImporto` dal DB.
+- **Services**: aggiunti `email.service.js` (batch email), `users.service.js` (CRUD Directus users).
+- **Shared utilities**: `notify.js`, `enrichment.js`, `file-naming.js`, `assets.js` documentati.
+- **AdminPage**: descrizione corretta — User Admin (utenti), non gestione ruoli/policy.
+
+# v1.1.0
+
+- **FamiglieTab**: server-side pagination + search (come ContattiTab). `gestione.service.js:getFamiglie()` ora accetta `{ page, limit, search, sort, meta }`. Il filtro client-side è stato rimosso.
+- **SubmitPage**: multipli giustificativi con lista dinamica (pulsante "+"). Ogni giustificativo ha descrizione, importo, data, file proprio. Invio unico processa N upload + N create.
+- **Version bump**: 1.0.1 → 1.1.0
+
+# v2.0.0 (historical)
 
 - DeduplicaPage: aggiunto controllo ID duplicati su contatti, famiglie, progetti
 - VerificaPage: show tutte email con badge Primaria, telefoni già presenti
@@ -53,14 +83,16 @@ eseguiti con `--reporter=list` per vedere subito gli errori.
 | `deduplica.store.js` | Duplicate groups, merge, delete actions |
 | `admin.store.js` | Admin: ruoli, policy, assegnazione policy ai ruoli |
 
-## Services (13)
+## Services (15)
 
 | File | Key endpoints |
 |------|---------------|
 | `api.js` | Axios instance + auth interceptor + token refresh |
 | `auth.service.js` | `/auth/login`, `/auth/refresh`, `/users/me` |
-| `contatti.service.js` | CRUD contatti |
-| `gestione.service.js` | Paginated contatti, users batch, email, famiglie, Famiglie_Contatti |
+| `contatti.service.js` | CRUD contatti, batch `getByEmails()` |
+| `email.service.js` | CRUD email, batch `getByContatto()`, `getByEmails()` |
+| `gestione.service.js` | Paginated contatti, users batch, famiglie, Famiglie_Contatti |
+| `users.service.js` | CRUD Directus users |
 | `famiglie.service.js` | Famiglie_Contatti by ruolo, famiglia detail, email batch |
 | `verifica.service.js` | Progetti, giustificativi, submissions, famiglia/progetto search |
 | `giustificativi.service.js` | CRUD giustificativi by progetto |
@@ -71,11 +103,29 @@ eseguiti con `--reporter=list` per vedere subito gli errori.
 | `progetti.service.js` | GET single progetto |
 | `admin.service.js` | `GET /roles`, `GET /policies`, `PATCH /roles/:id` (set policies) |
 
+## Shared Utilities (`src/utils/`)
+
+| File | Purpose | Used by |
+|------|---------|---------|
+| `notify.js` | `notifyError($q, err, fallback)` + `notifySuccess($q, msg)` | All pages/stores |
+| `enrichment.js` | `enrichWithEmails(ids, emailService)` — batch email merge | Stores, components |
+| `file-naming.js` | `buildUploadFileName(famiglia, nome)`, `buildObsoletePrefix()`, `buildRejectPrefix()` | Upload flows |
+| `assets.js` | `assetUrl(id, { preview })` — Directus asset URL builder | Components |
+| `constants.js` | Role names, FOLDERS, RENDICONTAZIONE states | Stores |
+| `formatters.js` | Date/number formatting helpers | Pages |
+
+### Conventions
+
+- **`notifyError($q, err, fallback)`** — always use for error toasts. Timeout 0, close button, extracts Directus message.
+- **`notifySuccess($q, msg)`** — success confirmations.
+- **`limit: -1`** — Directus batch fetches must use `limit: -1` (default 100 truncates results). Required in: `getFamiglieBatch`, `getByEmails`, `getByContatto`, `queryFamiglieContatti`, `getGiustificativiByProgetti`, `getRendicontazioniBatch`.
+- **Email enrichment** — centralize in `enrichWithEmails()`, never duplicate batch email fetch logic.
+
 ## Components (17)
 
 **Layout (1):** `AppLayout.vue`
 
-**Common (3):** `ConfirmDialog.vue`, `FileUploader.vue`, `InlineEditableField.vue`
+**Common (5):** `ConfirmDialog.vue`, `FileUploader.vue`, `InlineEditableField.vue`, `ContattoInfoLine.vue`, `BancariDialog.vue`
 
 **Famiglia (2):** `FamigliaInfoCard.vue`, `ProgettoSelector.vue`
 
@@ -83,7 +133,7 @@ eseguiti con `--reporter=list` per vedere subito gli errori.
 
 **Giustificativi (3):** `GiustificativoCard.vue`, `GiustificativoList.vue`, `GiustificativoForm.vue`
 
-**Other (2):** `RiconciliaDialog.vue`, `PolicyAssegnaDialog.vue` (Admin)
+**Other (1):** `RiconciliaDialog.vue`
 
 ## Routes (8)
 
@@ -164,29 +214,18 @@ ma vedono "accesso negato" dentro `FamigliePage.vue`.
 | Duplicati | `authStore.canAdmin` |
 | **Amministrazione > Ruoli e Policy** | `authStore.canAdmin` |
 
-## AdminPage — Gestione Ruoli e Policy
+## AdminPage — User Admin
 
 Pagina `/admin` accessibile solo a `canAdmin === true`.
 
 **Cosa fa:**
-- Legge tutti i ruoli Directus con le rispettive policy collegate
-- Mostra una tabella: Ruolo, Policy assegnate (badge), N. utenti, Azioni
-- Cliccando **Gestisci policy** su un ruolo si apre un dialog per selezionare/deselezionare le policy da assegnare
-
-**Salvataggio:**
-`PATCH /roles/{roleId} { policies: [id1, id2] }` aggiorna direttamente
-la relazione `directus_role_policies`. Immediate visibile al refresh.
+- Gestisce utenti Directus: lista, creazione, reset password
+- Mostra tabella: Utente, Email, Ruolo, Stato, Azioni
+- Crea utente con email, password, ruolo
+- Reset password per utente esistente
 
 **Attenzione:** l'utente admin Directus deve avere permessi di lettura su
-`directus_roles`, `directus_policies`, `directus_role_policies` e scrittura
-su `directus_roles` (per il campo `policies` alias).
-
-### Policy multiple su un ruolo
-
-Un ruolo Directus può avere **più policy** collegate. Es. ruolo "GestoreVerifica"
-ha policy "Gestione" + policy "Verifica".
-Chi ha quel ruolo vede sia `/gestione` che `/verifica`.
-La UI `AdminPage` permette di selezionare/deselezionare policy per ogni ruolo.
+`directus_users` e scrittura su `directus_users` (per reset password).
 
 ## Test Data
 
@@ -313,7 +352,8 @@ Colonne: Data invio, Richiedente, Email, Beneficiario, Importo, Allegato, Azioni
 
 **Riconcilia manuale** (`RiconciliaDialog.vue`):
 - Riepilogo submission, dropdown Famiglia + Progetto, campo note
-- Crea Giustificativo (stato `draft`), PATCH submission `stato: riconciliato`
+- Crea Giustificativo (stato `inviato`), PATCH submission `stato: riconciliato`
+- Dopo creazione: `fetchSubmissions()` + `fetchPage()` per aggiornare entrambi i tab
 
 **Scarta**: prompt motivazione → PATCH `stato: scartato` + note (audit trail).
 
@@ -389,6 +429,21 @@ Pattern usato per recuperare le email:
 In edit, `gestione.store.js:updateContatto()` estrae `Email` dal payload, lo
 aggiorna su `email` table, e rimuove il campo prima di chiamare
 `PATCH /items/contatti`.
+
+## SubmitPage tests (submit.spec.js)
+
+| Test | Type | Cosa fa |
+|------|------|---------|
+| SP-02 | smoke | "Torna al login" → /login |
+| SP-03 | regression | "+ Aggiungi" aggiunge riga |
+| SP-04 | regression | Delete rimuove riga |
+| SP-05 | regression | Submit vuoto → errori validazione |
+| SP-06 | regression | Email non valida → errore |
+| SP-07 | regression | Submit 1 giust. → successo (skip — Directus public upload) |
+| SP-08 | regression | Submit N giust. → successo (skip — Directus public upload) |
+| SP-09 | regression | "Invia altri" resetta form (skip — Directus public upload) |
+
+Per sbloccare SP-07/08/09: abilitare `POST /files` e `POST /items/InviiGiustificativiNoLogin` per utenti Public in Directus.
 
 ## Comandi
 ```bash

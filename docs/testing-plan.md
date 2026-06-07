@@ -219,13 +219,10 @@ jobs:
 | TB-03 | Colonna Allocato mostra valore formattato | `@smoke` | verifica.spec.js |
 | TB-04 | Famiglia mostra nome — beneficiario — ID | `@smoke` | verifica.spec.js |
 | TB-05 | Colonna Totali non esiste | `@regression` | verifica.spec.js |
-| FL-01 | Tranche Tutte mostra tutti i progetti | `@smoke` | verifica.spec.js |
-| FL-02 | Seleziona tranche filtra progetti | `@crud` | verifica.spec.js |
-| FL-03 | Tranche dinamiche dropdown | `@smoke` | verifica.spec.js |
-| FL-04 | Filtro rendicontazione con importi | `@crud` | verifica.spec.js |
-| FL-05 | Filtro rendicontazione mancanti | `@crud` | verifica.spec.js |
-| FL-06 | Filtro anno bando | `@crud` | verifica.spec.js |
-| FL-07 | Ricerca per famiglia | `@crud` | verifica.spec.js |
+| FL-01 | Filtro rendicontazione con importi | `@crud` | verifica.spec.js |
+| FL-02 | Filtro rendicontazione mancanti | `@crud` | verifica.spec.js |
+| FL-03 | Filtro anno bando | `@crud` | verifica.spec.js |
+| FL-04 | Ricerca per famiglia | `@crud` | verifica.spec.js |
 | ER-01 | Click expand mostra giustificativi | `@smoke` | verifica.spec.js |
 | ER-02 | Toggle expand/close | `@regression` | verifica.spec.js |
 | ER-03 | Nota rifiuto visibile nella riga espansa | `@crud` | verifica.spec.js |

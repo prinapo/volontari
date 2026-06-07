@@ -1,10 +1,12 @@
 <template>
-  <q-dialog v-model="visible" persistent maximized>
+  <q-dialog v-model="visible" persistent style="min-width: 600px; max-width: 800px">
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">Famiglie di {{ contatto?.Nome }} {{ contatto?.Cognome }}</div>
+        <div class="text-h6">
+          Associa a famiglia
+        </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
       <q-card-section>
@@ -17,14 +19,14 @@
           :loading="loading"
           :pagination="{ rowsPerPage: 10 }"
         >
-          <template #body-cell-azioni="props">
-            <q-td :props="props">
+          <template #body-cell-azioni="slotProps">
+            <q-td :props="slotProps">
               <q-btn
                 flat
                 dense
                 icon="delete"
                 color="negative"
-                @click="handleRemove(props.row)"
+                @click="handleRemove(slotProps.row)"
               >
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>
@@ -33,6 +35,17 @@
         </q-table>
 
         <div class="row items-center q-mt-md q-gutter-sm">
+          <q-select
+            v-model="selectedRuolo"
+            :options="ruoloOptions"
+            emit-value
+            map-options
+            dense
+            outlined
+            label="Ruolo"
+            class="col"
+            style="max-width: 200px"
+          />
           <q-select
             v-model="selectedFamiglia"
             :options="famigliaOptions"
@@ -60,15 +73,17 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Chiudi" v-close-popup />
+        <q-btn v-close-popup flat label="Chiudi" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { useGestioneStore } from 'stores/gestione.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import { gestioneService } from 'src/services/gestione.service'
 
 const props = defineProps({
@@ -79,6 +94,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const $q = useQuasar()
 const store = useGestioneStore()
 
 const visible = ref(false)
@@ -86,6 +102,12 @@ const loading = ref(false)
 const famiglie = ref([])
 const selectedFamiglia = ref(null)
 const famigliaOptions = ref([])
+const selectedRuolo = ref(props.ruolo)
+
+const ruoloOptions = [
+  { label: 'Volontario', value: 'Volontario' },
+  { label: 'Genitore', value: 'Genitore' }
+]
 
 const famigliaColumns = [
   { name: 'nome', label: 'Famiglia', field: row => row.Famiglia?.Nome_Famiglia || '', align: 'left' },
@@ -119,7 +141,12 @@ async function loadFamiglie() {
 async function filterFamiglie(search, update) {
   update(async () => {
     if (!search) {
-      famigliaOptions.value = store.famiglie
+      try {
+        const res = await gestioneService.getFamiglie({ limit: -1 })
+        famigliaOptions.value = res.data.data || []
+      } catch {
+        famigliaOptions.value = []
+      }
       return
     }
     try {
@@ -136,18 +163,24 @@ async function handleAssign() {
   const ok = await store.assignToFamiglia(
     props.contatto.id_contatto,
     selectedFamiglia.value,
-    props.ruolo
+    selectedRuolo.value
   )
   if (ok) {
+    notifySuccess($q, 'Famiglia assegnata')
     selectedFamiglia.value = null
     await loadFamiglie()
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 
 async function handleRemove(row) {
   const ok = await store.removeFromFamiglia(row.id, props.contatto.id_contatto, row.Ruolo_nella_Famiglia)
   if (ok) {
+    notifySuccess($q, 'Famiglia rimossa')
     await loadFamiglie()
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 </script>

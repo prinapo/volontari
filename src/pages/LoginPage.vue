@@ -4,14 +4,16 @@
       <q-page class="flex flex-center bg-grey-2 column">
         <q-card class="login-card" flat bordered>
           <q-card-section class="text-center q-pt-xl">
-            <div class="text-h4 text-primary">Portale Volontario</div>
+            <div class="text-h4 text-primary">
+              Portale Volontario
+            </div>
             <div class="text-caption text-grey q-mt-sm">
               Accedi per gestire i tuoi progetti
             </div>
           </q-card-section>
 
           <q-card-section class="q-px-xl q-pb-xl">
-            <q-form @submit.prevent="handleLogin" class="q-gutter-y-md">
+            <q-form class="q-gutter-y-md" @submit.prevent="handleLogin">
               <q-input
                 v-model="email"
                 label="Email"
@@ -30,7 +32,7 @@
                 :rules="[val => !!val || 'Inserisci la password']"
                 lazy-rules
               >
-                <template v-slot:append>
+                <template #append>
                   <q-icon
                     :name="showPassword ? 'visibility_off' : 'visibility'"
                     class="cursor-pointer"
@@ -66,17 +68,21 @@
           </q-card-section>
         </q-card>
 
-        <div class="text-center q-mt-md" style="max-width: 420px; margin: 0 auto;">
-          <q-separator class="q-mb-md" />
-          <div class="text-body2 text-grey q-mb-sm">Non hai un account?</div>
-          <q-btn
-            outline
-            color="primary"
-            label="Invia un giustificativo senza account →"
-            to="/submit"
-            class="full-width"
-          />
-        </div>
+        <q-card flat bordered class="q-mt-md" style="max-width: 420px; width: 100%;">
+          <q-card-section class="text-center">
+            <div class="text-body2 text-grey-8 q-mb-sm">
+              Non hai un account?
+            </div>
+            <q-btn
+              unelevated
+              color="secondary"
+              size="md"
+              label="Invia un giustificativo senza account →"
+              to="/submit"
+              class="full-width"
+            />
+          </q-card-section>
+        </q-card>
 
         <div class="text-caption text-grey-5 text-center q-mt-md">
           v{{ version }}
@@ -88,9 +94,11 @@
     <q-dialog v-model="showForgotPassword" persistent>
       <q-card style="min-width: 350px">
         <q-card-section class="row items-center">
-          <div class="text-h6">Recupera password</div>
+          <div class="text-h6">
+            Recupera password
+          </div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn v-close-popup icon="close" flat round dense />
         </q-card-section>
         <q-card-section>
           <p class="text-body2 text-grey">
@@ -104,7 +112,7 @@
           />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Annulla" v-close-popup />
+          <q-btn v-close-popup flat label="Annulla" />
           <q-btn
             color="primary"
             label="Invia link"
@@ -123,6 +131,7 @@ import { useRouter } from 'vue-router'
 import { version } from '../../package.json'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'stores/auth.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import { authService } from 'src/services/auth.service'
 
 const $q = useQuasar()
@@ -153,16 +162,10 @@ async function handleForgotPassword() {
       resetEmail.value,
       'https://volontari.sostienilsostegno.com/reset-password?token='
     )
-    $q.notify({
-      type: 'positive',
-      message: 'Se l\'email esiste, riceverai un link per il reset'
-    })
+    notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")
     showForgotPassword.value = false
-  } catch {
-    $q.notify({
-      type: 'negative',
-      message: 'Errore nell\'invio della richiesta'
-    })
+  } catch (err) {
+    notifyError($q, err, "Errore nell'invio della richiesta")
   } finally {
     sendingReset.value = false
   }

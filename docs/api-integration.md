@@ -118,8 +118,8 @@ File folder UUID for giustificativi: `91a9c958-206f-4e1c-8143-e67f85398d0c`
 
 | Method | Path | Service | Params |
 |---|---|---|---|
-| GET | `/items/Rendicontazioni` | `rendicontazioni.service.findByProjectAndTranche()` | `filter[Famiglia][_eq]={id}&filter[Progetto][_eq]={id}&filter[Tranche][_eq]={tranche}` |
-| POST | `/items/Rendicontazioni` | `rendicontazioni.service.create(data)` | Body: `{Famiglia, Progetto, AnnoBando, Tranche, Stato, Data_Ricezione}` |
+| GET | `/items/Rendicontazioni` | `rendicontazioni.service.findByProject()` | `filter[Famiglia][_eq]={id}&filter[Progetto][_eq]={id}` |
+| POST | `/items/Rendicontazioni` | `rendicontazioni.service.create(data)` | Body: `{Famiglia, Progetto, AnnoBando, Stato, Data_Ricezione}` |
 
 ---
 

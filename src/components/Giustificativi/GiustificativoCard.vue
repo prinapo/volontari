@@ -8,14 +8,6 @@
         >
           {{ statoLabel(item.Stato) }}
         </q-badge>
-        <q-badge
-          v-if="trancheLabel"
-          color="teal"
-          outline
-          class="text-uppercase q-pa-xs"
-        >
-          {{ trancheLabel }}
-        </q-badge>
         <q-space />
         <q-btn
           v-if="canEdit"
@@ -71,7 +63,9 @@
 
       <!-- Attachment -->
       <div>
-        <div class="text-caption text-grey q-mb-xs">Allegato</div>
+        <div class="text-caption text-grey q-mb-xs">
+          Allegato
+        </div>
         <div class="row items-center q-gutter-sm">
           <template v-if="item.Allegato">
             <q-btn
@@ -116,22 +110,27 @@
         </div>
       </div>
       <div
-        v-if="item.Stato === 'Rifiutato' && item.NotaRifiuto"
+        v-if="item.Stato === 'rifiutato' && item.NotaRifiuto"
         class="bg-red-1 q-pa-sm q-mx-md q-mb-md rounded-borders"
         style="border: 1px solid #ffcdd2;"
       >
-        <div class="text-caption text-negative text-weight-medium q-mb-xs">Motivazione del rifiuto</div>
-        <div class="text-body2">{{ item.NotaRifiuto }}</div>
+        <div class="text-caption text-negative text-weight-medium q-mb-xs">
+          Motivazione del rifiuto
+        </div>
+        <div class="text-body2">
+          {{ item.NotaRifiuto }}
+        </div>
       </div>
     </q-card-section>
   </q-card>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { FILE_ACCEPT, API_URL, STORAGE_KEYS, TRANCHE_RENDICONTAZIONE } from 'src/utils/constants'
+import { FILE_ACCEPT } from 'src/utils/constants'
 import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import { assetUrl } from 'src/utils/assets'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
 
 const $q = useQuasar()
@@ -145,21 +144,12 @@ const emit = defineEmits(['save-field', 'submit', 'file-change', 'invalida'])
 
 const newFile = ref(null)
 
-const trancheLabel = computed(() => {
-  const value = typeof props.item.Rendicontazione === 'object'
-    ? props.item.Rendicontazione?.Tranche
-    : ''
-  return TRANCHE_RENDICONTAZIONE.find((tranche) => tranche.value === value)?.label || value
-})
-
 function allegatoUrl(fileId) {
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  return `${API_URL}/assets/${fileId}?access_token=${token}`
+  return assetUrl(fileId)
 }
 
 function downloadUrl(fileId) {
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  return `${API_URL}/assets/${fileId}?download=1&access_token=${token}`
+  return assetUrl(fileId, true)
 }
 
 function confirmDelete() {

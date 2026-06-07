@@ -1,10 +1,12 @@
 <template>
   <q-dialog v-model="visible" persistent>
-    <q-card style="min-width: 450px">
+    <q-card style="min-width: 500px; max-width: 700px">
       <q-card-section class="row items-center">
-        <div class="text-h6">{{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}</div>
+        <div class="text-h6">
+          {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
+        </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
       <q-card-section>
@@ -24,13 +26,6 @@
             class="q-mb-md"
           />
           <q-input
-            v-model="form.Email"
-            label="Email"
-            type="email"
-            :disable="hasAccount"
-            class="q-mb-md"
-          />
-          <q-input
             v-model="form.Numero_di_cellulare"
             label="Numero di cellulare"
             class="q-mb-md"
@@ -40,11 +35,71 @@
             label="Numero di telefono"
             class="q-mb-md"
           />
+
+          <q-toggle
+            v-model="form.IsReferente"
+            label="Referente"
+            class="q-mb-md"
+          />
+
+          <div class="text-subtitle2 q-mb-sm">Email</div>
+          <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">
+            Nessuna email associata
+          </div>
+          <div v-for="(em, idx) in emails" :key="idx" class="row items-center q-gutter-xs q-mb-xs">
+            <q-input
+              v-model="em.email_address"
+              label="Email"
+              type="email"
+              dense
+              outlined
+              class="col"
+              :disable="hasAccount"
+              @blur="onEmailBlur(em, idx)"
+            />
+            <q-btn
+              v-if="!em.Primary"
+              flat
+              round
+              dense
+              icon="star_outline"
+              color="grey"
+              size="sm"
+              :disable="hasAccount"
+              @click="setPrimary(idx)"
+            >
+              <q-tooltip>Imposta come primaria</q-tooltip>
+            </q-btn>
+            <q-badge v-else color="primary" label="Primaria" size="sm" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="delete"
+              color="negative"
+              size="sm"
+              :disable="hasAccount"
+              @click="removeEmail(idx)"
+            >
+              <q-tooltip>Elimina email</q-tooltip>
+            </q-btn>
+          </div>
+          <q-btn
+            v-if="!hasAccount"
+            flat
+            dense
+            icon="add"
+            label="Aggiungi email"
+            color="primary"
+            size="sm"
+            class="q-mb-md"
+            @click="addEmail"
+          />
         </q-form>
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Annulla" v-close-popup />
+        <q-btn v-close-popup flat label="Annulla" />
         <q-btn
           color="primary"
           label="Salva"
@@ -59,7 +114,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { useGestioneStore } from 'stores/gestione.store'
+import { emailService } from 'src/services/email.service'
+import { notifyError } from 'src/utils/notify'
 
 function generateContattoId() {
   const ts = Date.now()
@@ -69,42 +127,104 @@ function generateContattoId() {
 
 const props = defineProps({
   modelValue: Boolean,
-  editItem: { type: Object, default: null }
+  editItem: { type: Object, default: null },
+  initialData: { type: Object, default: null }
 })
 
 const emit = defineEmits(['update:modelValue', 'saved'])
 
+const $q = useQuasar()
 const store = useGestioneStore()
 
 const visible = ref(false)
+const emails = ref([])
+const originalEmailIds = ref([])
 
 const form = ref({
   Nome: '',
   Cognome: '',
-  Email: '',
   Numero_di_cellulare: '',
-  Numero_di_telefono: ''
+  Numero_di_telefono: '',
+  IsReferente: false
 })
 
 const isEdit = computed(() => !!props.editItem)
 const hasAccount = computed(() => !!props.editItem?.user_id)
 
-watch(() => props.modelValue, (val) => {
+watch(() => props.modelValue, async (val) => {
   visible.value = val
   if (val && props.editItem) {
     form.value.Nome = props.editItem.Nome || ''
     form.value.Cognome = props.editItem.Cognome || ''
-    form.value.Email = props.editItem.Email || props.editItem.user_id?.email || ''
     form.value.Numero_di_cellulare = props.editItem.Numero_di_cellulare || ''
     form.value.Numero_di_telefono = props.editItem.Numero_di_telefono || ''
+    form.value.IsReferente = props.editItem.IsReferente || false
+    await loadEmails(props.editItem.id_contatto)
+  } else if (val && props.initialData) {
+    form.value.Nome = props.initialData.Nome || ''
+    form.value.Cognome = props.initialData.Cognome || ''
+    form.value.Numero_di_cellulare = props.initialData.Numero_di_cellulare || ''
+    form.value.Numero_di_telefono = props.initialData.Numero_di_telefono || ''
+    emails.value = props.initialData.Email
+      ? [{ email_address: props.initialData.Email, Primary: true }]
+      : []
   } else if (val) {
     form.value.Nome = ''
     form.value.Cognome = ''
-    form.value.Email = ''
     form.value.Numero_di_cellulare = ''
     form.value.Numero_di_telefono = ''
+    emails.value = []
   }
 })
+
+async function loadEmails(contattoId) {
+  if (!contattoId) { emails.value = []; originalEmailIds.value = []; return }
+  try {
+    const res = await emailService.getAllByContatto(contattoId)
+    emails.value = (res.data.data || []).map(e => ({
+      id: e.id,
+      email_address: e.email_address || '',
+      Primary: e.Primary || false
+    }))
+    originalEmailIds.value = emails.value.map(e => e.id).filter(Boolean)
+  } catch {
+    emails.value = []
+    originalEmailIds.value = []
+  }
+}
+
+function addEmail() {
+  emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0 })
+}
+
+function removeEmail(idx) {
+  emails.value.splice(idx, 1)
+  if (emails.value.length > 0 && !emails.value.some(e => e.Primary)) {
+    emails.value[0].Primary = true
+  }
+}
+
+function setPrimary(idx) {
+  emails.value.forEach((e, i) => { e.Primary = i === idx })
+}
+
+async function onEmailBlur(em, _idx) {
+  if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
+  if (em.id) {
+    await emailService.update(em.id, { email_address: em.email_address })
+  } else {
+    try {
+      const res = await emailService.create({
+        email_address: em.email_address,
+        Contatto_Relation: props.editItem.id_contatto,
+        Primary: em.Primary
+      })
+      em.id = res.data.data?.id
+    } catch (err) {
+      notifyError($q, err, 'Errore creazione email')
+    }
+  }
+}
 
 watch(visible, (val) => {
   if (!val) emit('update:modelValue', false)
@@ -117,26 +237,47 @@ async function handleSave() {
     const ok = await store.updateContatto(props.editItem.id_contatto, {
       Nome: form.value.Nome,
       Cognome: form.value.Cognome,
-      Email: hasAccount.value ? undefined : (form.value.Email || null),
       Numero_di_cellulare: form.value.Numero_di_cellulare || null,
-      Numero_di_telefono: form.value.Numero_di_telefono || null
+      Numero_di_telefono: form.value.Numero_di_telefono || null,
+      IsReferente: form.value.IsReferente
     })
     if (ok) {
+      for (const em of emails.value) {
+        if (em.id && em.email_address) {
+          await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
+        } else if (!em.id && em.email_address) {
+          await emailService.create({
+            email_address: em.email_address,
+            Contatto_Relation: props.editItem.id_contatto,
+            Primary: em.Primary
+          })
+        }
+      }
+      for (const origId of originalEmailIds.value) {
+        if (!emails.value.some(e => e.id === origId)) {
+          await emailService.remove(origId)
+        }
+      }
       emit('saved')
       visible.value = false
+    } else {
+      notifyError($q, store.error || 'Errore nella modifica')
     }
   } else {
-    const ok = await store.createGenitore({
+    const contattoId = await store.createGenitore({
       id_contatto: generateContattoId(),
       Nome: form.value.Nome,
       Cognome: form.value.Cognome,
-      Email: form.value.Email,
+      Email: emails.value[0]?.email_address || '',
       Numero_di_cellulare: form.value.Numero_di_cellulare,
-      Numero_di_telefono: form.value.Numero_di_telefono
+      Numero_di_telefono: form.value.Numero_di_telefono,
+      IsReferente: form.value.IsReferente
     })
-    if (ok) {
-      emit('saved')
+    if (contattoId) {
+      emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
       visible.value = false
+    } else {
+      notifyError($q, store.error || 'Errore nella creazione')
     }
   }
 }

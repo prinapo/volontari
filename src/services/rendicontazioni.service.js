@@ -1,14 +1,13 @@
 import api from './api'
 
 export const rendicontazioniService = {
-  findByProjectAndTranche({ famigliaId, progettoId, tranche }) {
+  findByProject({ famigliaId, progettoId }) {
     return api.get('/items/Rendicontazioni', {
       params: {
         limit: 1,
         'filter[Famiglia][_eq]': famigliaId,
         'filter[Progetto][_eq]': progettoId,
-        'filter[Tranche][_eq]': tranche,
-        fields: 'id,Famiglia,Progetto,AnnoBando,Tranche,Stato'
+        fields: 'id,Famiglia,Progetto,AnnoBando,Stato'
       }
     })
   },

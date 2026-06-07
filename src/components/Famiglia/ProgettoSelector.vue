@@ -11,18 +11,20 @@
     clearable
     @update:model-value="$emit('update:modelValue', $event)"
   >
-    <template v-slot:option="scope">
+    <template #option="scope">
       <q-item v-bind="scope.itemProps">
         <q-item-section>
           <q-item-label>{{ scope.opt.AnnoBando }} — {{ scope.opt.Cognome_e__Nome_Beneficiario }} — {{ scope.opt.Eta }} anni</q-item-label>
         </q-item-section>
         <q-item-section side>
-          <q-item-label caption>€{{ scope.opt.Allocato }}</q-item-label>
+          <q-item-label caption>
+            €{{ scope.opt.Allocato }}
+          </q-item-label>
         </q-item-section>
       </q-item>
     </template>
 
-    <template v-slot:selected-item="scope">
+    <template #selected-item="scope">
       <div class="q-gutter-xs row items-center">
         <q-item-label class="text-primary text-weight-medium bg-green-1 q-pa-xs rounded-borders">
           {{ scope.opt.AnnoBando }} — {{ scope.opt.Cognome_e__Nome_Beneficiario }} — {{ scope.opt.Eta }} anni

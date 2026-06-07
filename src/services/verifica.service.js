@@ -1,7 +1,7 @@
 import api from './api'
 
 export const verificaService = {
-  getProgetti({ page = 1, limit = 25, sort, search, anno, meta } = {}) {
+  getProgetti({ page = 1, limit = 25, sort, search, anno, rendicontazioneFilter, meta } = {}) {
     const params = {
       limit,
       page,
@@ -13,12 +13,16 @@ export const verificaService = {
         'Ambito',
         'Cognome_e__Nome_Beneficiario',
         'Titolo_Progetto',
-        'Famiglia'
+        'Famiglia',
+        'StatoRendicontazione',
+        'TotaleGiustificativi',
+        'TotaleImporto'
       ].join(',')
     }
     if (meta) params.meta = meta
     if (search) params['filter[Famiglia][Nome_Famiglia][_icontains]'] = search
     if (anno) params['filter[AnnoBando][_eq]'] = anno
+    if (rendicontazioneFilter) params['filter[StatoRendicontazione][_eq]'] = rendicontazioneFilter
     return api.get('/items/Progetti', { params })
   },
 
@@ -27,6 +31,7 @@ export const verificaService = {
       params: {
         'filter[Progetto][_in]': progettoIds.join(','),
         sort: 'Data',
+        limit: -1,
         fields: [
           'id',
           'Descrizione',
@@ -34,10 +39,8 @@ export const verificaService = {
           'Data',
           'Stato',
           'Allegato',
-          'Tranche',
           'Progetto',
-          'Invalidato',
-          'Rendicontazione.Tranche'
+          'Invalidato'
         ].join(',')
       }
     })
@@ -48,7 +51,8 @@ export const verificaService = {
       params: {
         'filter[Progetto][_in]': progettoIds.join(','),
         sort: 'Data',
-        fields: 'id,Descrizione,Importo,Data,Stato,Allegato,Tranche,Progetto,Invalidato,Rendicontazione'
+        limit: -1,
+        fields: 'id,Descrizione,Importo,Data,Stato,Allegato,Progetto,Invalidato,Rendicontazione'
       }
     })
   },
@@ -69,23 +73,31 @@ export const verificaService = {
     return api.get('/items/Rendicontazioni', {
       params: {
         'filter[id][_in]': idList,
-        fields: 'id,Tranche'
-      }
-    })
-  },
-
-  updateFamiglia(id, data) {
-    return api.patch(`/items/Famiglie/${id}`, data)
-  },
-
-  getSubmissionsInAttesa() {
-    return api.get('/items/InviiGiustificativiNoLogin', {
-      params: {
-        'filter[stato][_eq]': 'in_attesa',
-        sort: '-data_invio',
+        fields: 'id',
         limit: -1
       }
     })
+  },
+
+  getSubmissions({ page = 1, limit = 25, includeScartati = false, meta } = {}) {
+    const filter = includeScartati
+      ? { _or: [
+          { stato: { _eq: 'in_attesa' } },
+          { stato: { _eq: 'scartato' } }
+        ]}
+      : { stato: { _eq: 'in_attesa' } }
+    const params = {
+      filter: JSON.stringify(filter),
+      sort: '-data_invio',
+      limit,
+      page
+    }
+    if (meta) params.meta = meta
+    return api.get('/items/InviiGiustificativiNoLogin', { params })
+  },
+
+  getSubmissionsInAttesa() {
+    return this.getSubmissions({ limit: -1 })
   },
 
   updateSubmission(id, data) {
@@ -102,21 +114,23 @@ export const verificaService = {
   },
 
   searchFamiglie(search) {
-    return api.get('/items/Famiglie', {
+    const params = { limit: 20, fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC' }
+    if (search && search.trim()) {
+      params['filter[Nome_Famiglia][_icontains]'] = search.trim()
+    }
+    return api.get('/items/Famiglie', params)
+  },
+
+  findProgettoByFamiglia(famigliaId) {
+    return api.get('/items/Progetti', {
       params: {
-        'filter[Nome_Famiglia][_icontains]': search,
-        limit: 20,
-        fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC'
+        'filter[Famiglia][_eq]': famigliaId,
+        limit: -1
       }
     })
   },
 
-  findProgettoByFamiglia(famigliaId, cognome) {
-    return api.get('/items/Progetti', {
-      params: {
-        'filter[Famiglia][_eq]': famigliaId,
-        'filter[Cognome_e__Nome_Beneficiario][_icontains]': cognome.trim()
-      }
-    })
+  updateProgetto(progettoId, data) {
+    return api.patch(`/items/Progetti/${progettoId}`, data)
   }
 }

@@ -39,6 +39,10 @@ export class LoginPage {
         await this.emailInput.fill(email)
         await this.passwordInput.fill(password)
         await this.submitButton.click()
+        // Wait for login redirect to complete before returning
+        await this.page.waitForURL(/\/gestione|\/verifica|\/famiglie/, { timeout: 15000 }).catch(() => {
+          console.log('[LOGIN] navigation after submit timed out')
+        })
         return
       } catch {
         console.log(`[LOGIN] ${desc} failed`)

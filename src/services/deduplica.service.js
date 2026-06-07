@@ -21,6 +21,7 @@ export const deduplicaService = {
           'Numero_di_telefono',
           'IsVolontario',
           'IsGenitore',
+          'IsReferente',
           'user_id'
         ].join(',')
       }

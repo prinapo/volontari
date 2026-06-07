@@ -2,7 +2,9 @@
   <q-page class="q-pa-md">
     <div v-if="!authStore.initialized" class="text-center q-mt-xl">
       <q-spinner size="lg" />
-      <div class="q-mt-sm">Caricamento...</div>
+      <div class="q-mt-sm">
+        Caricamento...
+      </div>
     </div>
 
     <q-inner-loading :showing="loading && authStore.initialized" />
@@ -26,12 +28,20 @@
           <q-card flat bordered class="q-mb-md">
             <q-card-section class="row items-center q-gutter-x-lg q-gutter-y-sm">
               <div>
-                <div class="text-caption text-grey">Totale Giustificativi</div>
-                <div class="text-h6 text-primary">{{ formatCurrency(totaleGiustificativi) }}</div>
+                <div class="text-caption text-grey">
+                  Totale Giustificativi
+                </div>
+                <div class="text-h6 text-primary">
+                  {{ formatCurrency(totaleGiustificativi) }}
+                </div>
               </div>
               <div>
-                <div class="text-caption text-grey">Totale Rimborsabile</div>
-                <div class="text-h6 text-positive">{{ formatCurrency(totaleRimborsabile) }}</div>
+                <div class="text-caption text-grey">
+                  Totale Rimborsabile
+                </div>
+                <div class="text-h6 text-positive">
+                  {{ formatCurrency(totaleRimborsabile) }}
+                </div>
               </div>
               <q-space />
               <div class="text-caption text-grey" style="max-width: 280px">
@@ -52,7 +62,9 @@
     <template v-else-if="!loading && authStore.initialized && authStore.canVerifica">
       <div class="text-center q-mt-xl">
         <q-icon name="fact_check" size="lg" color="primary" />
-        <div class="q-mt-sm text-h6">Area verifica disponibile</div>
+        <div class="q-mt-sm text-h6">
+          Area verifica disponibile
+        </div>
         <div class="q-mt-xs text-grey-7">
           Questo utente non e' collegato a famiglie come volontario.
         </div>
@@ -69,7 +81,9 @@
     <template v-else-if="!loading && authStore.initialized">
       <div class="text-center text-grey q-mt-xl">
         <q-icon name="info" size="lg" />
-        <div class="q-mt-sm">Nessun dato disponibile</div>
+        <div class="q-mt-sm">
+          Nessun dato disponibile
+        </div>
       </div>
     </template>
   </q-page>

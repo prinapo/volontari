@@ -3,16 +3,34 @@
     <div class="page-inner">
       <div class="row items-center q-gutter-sm q-mb-md">
         <div>
-          <div class="text-h5 text-weight-medium">Gestione duplicati</div>
-      <div class="text-body2 text-grey-7">
-        Gruppi di email duplicate trovate nella tabella email.
-        <q-btn flat dense size="sm" icon="refresh" :loading="store.loading" @click="store.fetchDuplicates" class="q-ml-sm">
-          <q-tooltip>Aggiorna</q-tooltip>
-        </q-btn>
-      </div>
+          <div class="text-h5 text-weight-medium">
+            Gestione duplicati
+          </div>
+          <div class="text-body2 text-grey-7">
+            Gruppi di email duplicate trovate nella tabella email.
+            <q-btn
+              flat
+              dense
+              size="sm"
+              icon="refresh"
+              :loading="store.loading"
+              class="q-ml-sm"
+              @click="store.fetchDuplicates"
+            >
+              <q-tooltip>Aggiorna</q-tooltip>
+            </q-btn>
+          </div>
         </div>
         <q-space />
-        <q-btn flat dense icon="shield" :color="idBadgeColor" :label="`ID duplicati (${store.idDuplicateGroups.length})`" @click="showIdDuplicates" class="q-mr-sm">
+        <q-btn
+          flat
+          dense
+          icon="shield"
+          :color="idBadgeColor"
+          :label="`ID duplicati (${store.idDuplicateGroups.length})`"
+          class="q-mr-sm"
+          @click="showIdDuplicates"
+        >
           <q-tooltip>Controlla ID duplicati in tutte le tabelle</q-tooltip>
         </q-btn>
       </div>
@@ -23,8 +41,12 @@
 
       <div v-if="!store.loading && store.duplicateGroups.length === 0" class="text-center text-grey-5 q-py-xl">
         <q-icon name="check_circle" size="64px" />
-        <div class="text-h6 q-mt-md">Nessun duplicato trovato</div>
-        <div class="text-body2">Tutti i contatti hanno email univoche.</div>
+        <div class="text-h6 q-mt-md">
+          Nessun duplicato trovato
+        </div>
+        <div class="text-body2">
+          Tutti i contatti hanno email univoche.
+        </div>
       </div>
 
       <div class="q-gutter-y-sm">
@@ -38,7 +60,9 @@
         >
           <q-card-section class="row items-center q-gutter-sm">
             <div class="col">
-              <div class="text-body1 text-weight-medium">{{ group.email }}</div>
+              <div class="text-body1 text-weight-medium">
+                {{ group.email }}
+              </div>
               <div class="row q-gutter-xs q-mt-xs">
                 <q-badge v-if="group.types.includes('cross-contatto')" color="primary" outline>
                   {{ group.contattoIds.length }} contatti
@@ -76,7 +100,9 @@
         <q-card v-if="selectedGroup" class="comparison-card">
           <q-card-section class="row items-center">
             <div class="col">
-              <div class="text-h6">{{ selectedGroup.email }}</div>
+              <div class="text-h6">
+                {{ selectedGroup.email }}
+              </div>
               <div class="row q-gutter-xs q-mt-xs">
                 <q-badge v-if="selectedGroup.types.includes('cross-contatto')" color="primary" outline>
                   {{ selectedGroup.contattoIds.length }} contatti
@@ -89,7 +115,7 @@
                 </q-badge>
               </div>
             </div>
-            <q-btn icon="close" flat round dense v-close-popup />
+            <q-btn v-close-popup icon="close" flat round dense />
           </q-card-section>
 
           <q-separator />
@@ -111,7 +137,7 @@
                   hide-pagination
                   :pagination="{ rowsPerPage: 0 }"
                 >
-                  <template v-slot:body-cell-scelta="props">
+                  <template #body-cell-scelta="props">
                     <q-td :props="props">
                       <q-radio
                         v-if="props.row.differs"
@@ -140,7 +166,9 @@
                       </q-card-section>
                       <q-card-section class="q-pt-none">
                         <div v-for="e in pair.aData.emailEntries" :key="e.id" class="row items-center q-gutter-xs q-py-xs">
-                          <div class="col">{{ e.email_address }}</div>
+                          <div class="col">
+                            {{ e.email_address }}
+                          </div>
                           <q-badge v-if="e.Primary === true" color="primary" label="Primaria" size="xs" />
                         </div>
                       </q-card-section>
@@ -149,14 +177,33 @@
                   <div class="col-6">
                     <q-card flat bordered>
                       <q-card-section class="text-caption text-weight-medium row items-center">
-                        <div class="col">Email di {{ formatContatto(pair.bData.contatto) }}</div>
-                        <q-btn flat dense size="sm" icon="forward" color="primary" label="Sposta in A" @click="moveBEmailsToA(pair)" />
+                        <div class="col">
+                          Email di {{ formatContatto(pair.bData.contatto) }}
+                        </div>
+                        <q-btn
+                          flat
+                          dense
+                          size="sm"
+                          icon="forward"
+                          color="primary"
+                          label="Sposta in A"
+                          @click="moveBEmailsToA(pair)"
+                        />
                       </q-card-section>
                       <q-card-section class="q-pt-none">
                         <div v-for="e in pair.bData.emailEntries" :key="e.id" class="row items-center q-gutter-xs q-py-xs">
-                          <div class="col">{{ e.email_address }}</div>
+                          <div class="col">
+                            {{ e.email_address }}
+                          </div>
                           <q-badge v-if="e.Primary === true" color="primary" label="Primaria" size="xs" />
-                          <q-btn flat dense icon="delete" size="xs" color="negative" @click="handleDeleteEmail(e.id)" />
+                          <q-btn
+                            flat
+                            dense
+                            icon="delete"
+                            size="xs"
+                            color="negative"
+                            @click="handleDeleteEmail(e.id)"
+                          />
                         </div>
                       </q-card-section>
                     </q-card>
@@ -182,8 +229,19 @@
                   <div class="col-6">
                     <q-card flat bordered>
                       <q-card-section class="text-caption text-weight-medium row items-center">
-                        <div class="col">Famiglie di {{ formatContatto(pair.bData.contatto) }}</div>
-                        <q-btn v-if="pair.bData.famiglieContatti.length" flat dense size="sm" icon="forward" color="primary" label="Sposta in A" @click="moveBFamiliesToA(pair)" />
+                        <div class="col">
+                          Famiglie di {{ formatContatto(pair.bData.contatto) }}
+                        </div>
+                        <q-btn
+                          v-if="pair.bData.famiglieContatti.length"
+                          flat
+                          dense
+                          size="sm"
+                          icon="forward"
+                          color="primary"
+                          label="Sposta in A"
+                          @click="moveBFamiliesToA(pair)"
+                        />
                       </q-card-section>
                       <q-card-section class="q-pt-none">
                         <div v-for="fc in pair.bData.famiglieContatti" :key="fc.id" class="text-caption q-py-xs">
@@ -203,7 +261,16 @@
                       <div class="col">
                         <strong>Account Directus:</strong> {{ formatContatto(pair.bData.contatto) }} ha un account.
                       </div>
-                      <q-btn flat dense size="sm" icon="forward" color="primary" label="Sposta in A" @click="pair.moveUser = true" :disable="pair.moveUser" />
+                      <q-btn
+                        flat
+                        dense
+                        size="sm"
+                        icon="forward"
+                        color="primary"
+                        label="Sposta in A"
+                        :disable="pair.moveUser"
+                        @click="pair.moveUser = true"
+                      />
                       <q-icon v-if="pair.moveUser" name="check" color="positive" size="sm" class="q-ml-xs" />
                     </q-card-section>
                   </q-card>
@@ -233,15 +300,22 @@
                   hide-pagination
                   :pagination="{ rowsPerPage: 0 }"
                 >
-                  <template v-slot:body-cell-primary="props">
+                  <template #body-cell-primary="props">
                     <q-td :props="props">
                       <q-badge v-if="props.value === 'true'" color="primary" label="Sì" size="xs" />
                       <span v-else class="text-grey">No</span>
                     </q-td>
                   </template>
-                  <template v-slot:body-cell-actions="props">
+                  <template #body-cell-actions="props">
                     <q-td :props="props">
-                      <q-btn flat dense icon="delete" size="xs" color="negative" @click="handleDeleteEmail(props.row.id)" />
+                      <q-btn
+                        flat
+                        dense
+                        icon="delete"
+                        size="xs"
+                        color="negative"
+                        @click="handleDeleteEmail(props.row.id)"
+                      />
                     </q-td>
                   </template>
                 </q-table>
@@ -266,15 +340,22 @@
                   hide-pagination
                   :pagination="{ rowsPerPage: 0 }"
                 >
-                  <template v-slot:body-cell-primary="props">
+                  <template #body-cell-primary="props">
                     <q-td :props="props">
                       <q-badge v-if="props.value === 'true'" color="primary" label="Sì" size="xs" />
                       <span v-else class="text-grey">No</span>
                     </q-td>
                   </template>
-                  <template v-slot:body-cell-actions="props">
+                  <template #body-cell-actions="props">
                     <q-td :props="props">
-                      <q-btn flat dense icon="delete" size="xs" color="negative" @click="handleDeleteEmail(props.row.id)" />
+                      <q-btn
+                        flat
+                        dense
+                        icon="delete"
+                        size="xs"
+                        color="negative"
+                        @click="handleDeleteEmail(props.row.id)"
+                      />
                     </q-td>
                   </template>
                 </q-table>
@@ -285,7 +366,7 @@
           <q-separator />
 
           <q-card-actions align="right" class="q-pa-md">
-            <q-btn flat label="Chiudi" v-close-popup />
+            <q-btn v-close-popup flat label="Chiudi" />
             <template v-if="selectedGroup.types.includes('cross-contatto')">
               <q-btn
                 flat
@@ -308,13 +389,30 @@
         <q-card class="comparison-card">
           <q-card-section class="row items-center">
             <div class="col">
-              <div class="text-h6">ID duplicati</div>
+              <div class="text-h6">
+                ID duplicati
+              </div>
               <div class="text-caption text-grey-7">
                 ID presenti più volte nelle tabelle. Tabella: {{ idFilter }}
               </div>
             </div>
-            <q-btn flat round dense icon="refresh" :loading="store.idLoading" @click="loadIdDuplicates" class="q-mr-sm" />
-            <q-btn icon="close" flat round dense v-close-popup @click="idDialog = false" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="refresh"
+              :loading="store.idLoading"
+              class="q-mr-sm"
+              @click="loadIdDuplicates"
+            />
+            <q-btn
+              v-close-popup
+              icon="close"
+              flat
+              round
+              dense
+              @click="idDialog = false"
+            />
           </q-card-section>
 
           <q-separator />
@@ -325,8 +423,12 @@
             </div>
             <div v-else-if="store.idDuplicateGroups.length === 0" class="text-center q-py-xl text-grey-5">
               <q-icon name="check_circle" size="64px" />
-              <div class="text-h6 q-mt-md">Nessun ID duplicato</div>
-              <div class="text-body2">Tutti gli ID sono univoci nelle tabelle controllate.</div>
+              <div class="text-h6 q-mt-md">
+                Nessun ID duplicato
+              </div>
+              <div class="text-body2">
+                Tutti gli ID sono univoci nelle tabelle controllate.
+              </div>
             </div>
             <template v-else>
               <q-table
@@ -348,7 +450,14 @@
                 </template>
                 <template #body-cell-actions="props">
                   <q-td :props="props">
-                    <q-btn flat dense icon="search" size="sm" color="primary" @click="viewIdDuplicates(props.row)">
+                    <q-btn
+                      flat
+                      dense
+                      icon="search"
+                      size="sm"
+                      color="primary"
+                      @click="viewIdDuplicates(props.row)"
+                    >
                       <q-tooltip>Vedi dettagli</q-tooltip>
                     </q-btn>
                   </q-td>
@@ -358,7 +467,7 @@
           </q-card-section>
 
           <q-card-actions align="right" class="q-pa-md">
-            <q-btn flat label="Chiudi" v-close-popup @click="idDialog = false" />
+            <q-btn v-close-popup flat label="Chiudi" @click="idDialog = false" />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -370,6 +479,7 @@
 import { ref, computed, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 import { useDeduplicaStore } from 'stores/deduplica.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import { deduplicaService } from 'src/services/deduplica.service'
 
 const $q = useQuasar()
@@ -472,28 +582,36 @@ const sameContattoData = computed(() => {
 })
 
 async function moveBEmailsToA(pair) {
-  for (const e of pair.bData.emailEntries) {
-    await deduplicaService.updateEmail(e.id, { Contatto_Relation: pair.aId })
+  try {
+    for (const e of pair.bData.emailEntries) {
+      await deduplicaService.updateEmail(e.id, { Contatto_Relation: pair.aId })
+    }
+    pair.bData.emailEntries = []
+    notifySuccess($q, 'Email spostate in A')
+  } catch (err) {
+    notifyError($q, err, 'Errore nello spostamento email')
   }
-  pair.bData.emailEntries = []
-  $q.notify({ type: 'positive', message: 'Email spostate in A' })
 }
 
 async function moveBFamiliesToA(pair) {
-  for (const fc of pair.bData.famiglieContatti) {
-    await deduplicaService.updateFamigliaContatto(fc.id, { Contatto: pair.aId })
+  try {
+    for (const fc of pair.bData.famiglieContatti) {
+      await deduplicaService.updateFamigliaContatto(fc.id, { Contatto: pair.aId })
+    }
+    pair.bData.famiglieContatti = []
+    notifySuccess($q, 'Famiglie spostate in A')
+  } catch (err) {
+    notifyError($q, err, 'Errore nello spostamento famiglie')
   }
-  pair.bData.famiglieContatti = []
-  $q.notify({ type: 'positive', message: 'Famiglie spostate in A' })
 }
 
 async function handleDeleteEmail(emailId) {
   try {
     await store.deleteEmailRow(emailId)
-    $q.notify({ type: 'positive', message: 'Email eliminata' })
+    notifySuccess($q, 'Email eliminata')
     comparisonDialog.value = false
-  } catch {
-    $q.notify({ type: 'negative', message: "Errore nell'eliminazione" })
+  } catch (err) {
+    notifyError($q, err, "Errore nell'eliminazione")
   }
 }
 
@@ -521,10 +639,10 @@ async function handleMerge() {
 
       await store.merge(pair.aId, pair.bId, overrides)
     }
-    $q.notify({ type: 'positive', message: 'Unione completata' })
+    notifySuccess($q, 'Unione completata')
     comparisonDialog.value = false
-  } catch {
-    $q.notify({ type: 'negative', message: "Errore nell'unione" })
+  } catch (err) {
+    notifyError($q, err, "Errore nell'unione")
   }
 }
 
@@ -544,10 +662,10 @@ function confirmDeleteB() {
       for (const pair of crossPairs.value) {
         await store.deleteContattoIfEmpty(pair.bId)
       }
-      $q.notify({ type: 'positive', message: 'Contatti eliminati' })
+      notifySuccess($q, 'Contatti eliminati')
       comparisonDialog.value = false
     } catch (err) {
-      $q.notify({ type: 'negative', message: err.message || 'Errore' })
+      notifyError($q, err, 'Errore')
     }
   })
 }

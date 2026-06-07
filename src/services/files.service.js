@@ -13,5 +13,17 @@ export const filesService = {
 
   updateMeta(id, meta) {
     return api.patch(`/files/${id}`, meta)
+  },
+
+  updateFolder(fileId, folderId) {
+    return api.patch(`/files/${fileId}`, { folder: folderId })
+  },
+
+  renameFile(fileId, newFilename) {
+    return api.patch(`/files/${fileId}`, { filename_download: newFilename })
+  },
+
+  getFile(fileId) {
+    return api.get(`/files/${fileId}`)
   }
 }

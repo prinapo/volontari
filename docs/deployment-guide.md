@@ -157,7 +157,7 @@ The Volontario role must have read access to:
 | `Famiglie_Contatti` | All | Junction table for role resolution |
 | `Progetti` | As needed | Project data |
 | `Giustificativi` | All | CRUD operations |
-| `Rendicontazioni` | `id, Tranche, Stato` | For tranche assignment |
+| `Rendicontazioni` | `id, Stato` | For rendicontazione status |
 | `directus_files` | As needed | File upload/download |
 
 ---

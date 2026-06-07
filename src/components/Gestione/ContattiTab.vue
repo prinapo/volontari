@@ -43,11 +43,10 @@
     </div>
 
     <q-table
+      v-model:pagination="pagination"
       :rows="rows"
       :columns="columns"
-      :pagination="pagination"
       :loading="loading"
-      :total-items="totalItems"
       row-key="id_contatto"
       flat
       bordered
@@ -68,11 +67,11 @@
             <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
           </template>
           <template v-else-if="props.row._emails?.length">
-            <template v-for="em in props.row._emails" :key="em.email_address">
+            <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <span class="text-caption">{{ em.email_address }}</span>
-              <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
-            </template>
+              {{ em.email_address }}
+              <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
+            </div>
           </template>
           <span v-else class="text-grey-5">—</span>
         </q-td>
@@ -86,8 +85,13 @@
 
       <template #body-cell-tipo="props">
         <q-td :props="props">
-          <q-badge :color="tipoBadgeColor(computedTipo(props.row))">
-            {{ computedTipo(props.row) }}
+          <q-badge
+            v-for="tipo in computedTipi(props.row)"
+            :key="tipo"
+            :color="tipoBadgeColor(tipo)"
+            class="q-mr-xs"
+          >
+            {{ tipo }}
           </q-badge>
         </q-td>
       </template>
@@ -129,6 +133,16 @@
             icon="groups"
             @click="openFamiglie(props.row)"
           />
+          <q-btn
+            v-if="props.row.IsVolontario"
+            flat
+            dense
+            icon="person_search"
+            color="teal"
+            @click="openReferente(props.row)"
+          >
+            <q-tooltip>Assegna Referente</q-tooltip>
+          </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -144,17 +158,24 @@
       :contatto="famiglieTarget"
       :ruolo="famiglieTarget?.IsVolontario ? 'Volontario' : 'Genitore'"
     />
+
+    <AssegnaReferenteDialog
+      v-model="showReferente"
+      :volontario="referenteTarget"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useGestioneStore } from 'stores/gestione.store'
 import { gestioneService } from 'src/services/gestione.service'
+import { contattiService } from 'src/services/contatti.service'
+import { usersService } from 'src/services/users.service'
+import { emailService } from 'src/services/email.service'
+import { enrichWithEmails } from 'src/utils/enrichment'
 import ContattoDialog from './ContattoDialog.vue'
 import AssegnaFamigliaDialog from './AssegnaFamigliaDialog.vue'
-
-const store = useGestioneStore()
+import AssegnaReferenteDialog from './AssegnaReferenteDialog.vue'
 
 const rows = ref([])
 const loading = ref(false)
@@ -169,7 +190,7 @@ const pagination = ref({
 
 const search = ref('')
 const tipoFilter = ref('Tutti')
-const tipoOptions = ['Tutti', 'Volontario', 'Genitore', 'Contatto']
+const tipoOptions = ['Tutti', 'Volontario', 'Genitore', 'Referente', 'Contatto']
 const statoFilter = ref('Tutti')
 const statoOptions = ['Tutti', 'Attivi', 'Disattivati']
 
@@ -178,6 +199,9 @@ const editingItem = ref(null)
 
 const showFamiglie = ref(false)
 const famiglieTarget = ref(null)
+
+const showReferente = ref(false)
+const referenteTarget = ref(null)
 
 const famiglieCount = ref({})
 
@@ -201,29 +225,37 @@ function displayNome(row) {
 function tipoBadgeColor(tipo) {
   if (tipo === 'Volontario') return 'primary'
   if (tipo === 'Genitore') return 'accent'
+  if (tipo === 'Referente') return 'teal'
   return 'grey'
 }
 
-function computedTipo(row) {
-  if (row.IsVolontario) return 'Volontario'
-  if (row.IsGenitore) return 'Genitore'
-  return 'Contatto'
+function computedTipi(row) {
+  const tipi = []
+  if (row.IsVolontario) tipi.push('Volontario')
+  if (row.IsGenitore) tipi.push('Genitore')
+  if (row.IsReferente) tipi.push('Referente')
+  if (tipi.length === 0) tipi.push('Contatto')
+  return tipi
 }
 
 function getQueryFilters() {
   let isVolontario = undefined
   let isGenitore = undefined
+  let isReferente = undefined
 
   if (tipoFilter.value === 'Volontario') {
     isVolontario = true
   } else if (tipoFilter.value === 'Genitore') {
     isGenitore = true
+  } else if (tipoFilter.value === 'Referente') {
+    isReferente = true
   } else if (tipoFilter.value === 'Contatto') {
     isVolontario = false
     isGenitore = false
+    isReferente = false
   }
 
-  return { isVolontario, isGenitore }
+  return { isVolontario, isGenitore, isReferente }
 }
 
 async function onRequest(props) {
@@ -235,13 +267,14 @@ async function onRequest(props) {
     const filters = getQueryFilters()
     const sort = descending ? `-${sortBy || 'Cognome'}` : sortBy || 'Cognome'
 
-    const res = await gestioneService.queryContatti({
+    const res = await contattiService.query({
       limit: rowsPerPage,
       offset: (page - 1) * rowsPerPage,
       sort,
       search: search.value || undefined,
       isVolontario: filters.isVolontario,
       isGenitore: filters.isGenitore,
+      isReferente: filters.isReferente,
       stato: tipoFilter.value === 'Volontario' ? statoFilter.value : undefined
     })
 
@@ -250,7 +283,7 @@ async function onRequest(props) {
 
     const userIds = data.map(c => c.user_id).filter(Boolean)
     if (userIds.length > 0) {
-      const usersRes = await gestioneService.getUsersByIds([...new Set(userIds)])
+      const usersRes = await usersService.getByIds([...new Set(userIds)])
       const users = usersRes.data.data || []
       const userMap = {}
       users.forEach(u => { userMap[u.id] = u })
@@ -274,7 +307,6 @@ async function onRequest(props) {
       rowsNumber: totalItems.value
     }
   } catch (err) {
-    console.error('Query error:', err)
     rows.value = []
   } finally {
     loading.value = false
@@ -286,10 +318,7 @@ async function enrichRows(data) {
 
   const ids = data.map(c => c.id_contatto)
 
-  const [famRes, emailRes] = await Promise.all([
-    gestioneService.queryFamiglieContatti(ids),
-    gestioneService.getEmailByContatto(ids)
-  ])
+  const famRes = await gestioneService.queryFamiglieContatti(ids)
 
   const famItems = famRes.data.data || []
   const counts = {}
@@ -300,17 +329,10 @@ async function enrichRows(data) {
   }
   famiglieCount.value = counts
 
-  const emailItems = emailRes.data.data || []
-  const emailByContatto = {}
-  for (const e of emailItems) {
-    if (e.Contatto_Relation) {
-      if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
-      emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
-    }
-  }
+  const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
   for (const row of data) {
     if (!row.user_id?.email) {
-      row._emails = emailByContatto[row.id_contatto] || []
+      row._emails = emailMap[row.id_contatto] || []
     }
   }
 }
@@ -351,6 +373,11 @@ function openEdit(row) {
 function openFamiglie(row) {
   famiglieTarget.value = row
   showFamiglie.value = true
+}
+
+function openReferente(row) {
+  referenteTarget.value = row
+  showReferente.value = true
 }
 
 async function onSaved() {

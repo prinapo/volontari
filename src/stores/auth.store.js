@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
+import { verificaService } from 'src/services/verifica.service'
 import { STORAGE_KEYS, VERIFICA_ROLE_IDS, VERIFICA_ROLE_NAMES, GESTIONE_ROLE_IDS, GESTIONE_ROLE_NAMES, ADMIN_ROLE_IDS, ADMIN_ROLE_NAMES } from 'src/utils/constants'
 
 function normalizeRoleName(role) {
@@ -38,7 +39,13 @@ export const useAuthStore = defineStore('auth', {
     hasFamiglieAccess: false,
     loading: false,
     error: null,
-    initialized: false
+    initialized: false,
+    rendicontazioneCheck: {
+      checked: false,
+      ok: true,
+      discrepancies: [],
+      lastChecked: null
+    }
   }),
 
   getters: {
@@ -117,7 +124,6 @@ export const useAuthStore = defineStore('auth', {
 
         if (!this.user?.id) return
       } catch (err) {
-        console.error('Failed to fetch user data:', err)
         this.token = null
         this.refreshToken = null
         this.user = null
@@ -136,7 +142,10 @@ export const useAuthStore = defineStore('auth', {
       } catch (err) {
         this.contatto = null
         this.hasFamiglieAccess = false
-        console.warn('No contatto linked to current user or missing contatti permissions:', err)
+      }
+
+      if (this.canAdmin) {
+        this.checkRendicontazioneConsistency()
       }
     },
 
@@ -151,7 +160,6 @@ export const useAuthStore = defineStore('auth', {
         this.hasFamiglieAccess = (fcRes.data.data || []).length > 0
       } catch (err) {
         this.hasFamiglieAccess = false
-        console.warn('Unable to resolve family access:', err)
       }
     },
 
@@ -175,6 +183,94 @@ export const useAuthStore = defineStore('auth', {
         }
       } catch {
         // If directus_roles is not readable, canVerifica can still match VITE_VERIFICA_ROLE_IDS.
+      }
+    },
+
+    async checkRendicontazioneConsistency() {
+      if (!this.canAdmin) return
+
+      this.rendicontazioneCheck = { checked: false, ok: true, discrepancies: [], lastChecked: null }
+
+      try {
+        const projRes = await verificaService.getProgetti({ limit: -1 })
+        const projects = projRes.data.data || []
+
+        const progettoIds = projects.map(p => p.id_progetto).filter(Boolean)
+        if (progettoIds.length === 0) {
+          this.rendicontazioneCheck = {
+            checked: true, ok: true, discrepancies: [], lastChecked: new Date().toISOString()
+          }
+          return
+        }
+
+        const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
+        const allGiust = giustRes.data.data || []
+
+        const giustByProject = {}
+        for (const g of allGiust) {
+          if (g.Invalidato) continue
+          const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
+          if (!pid) continue
+          if (!giustByProject[pid]) giustByProject[pid] = []
+          giustByProject[pid].push(g)
+        }
+
+        const discrepancies = []
+
+        for (const project of projects) {
+          const projId = project.id_progetto
+          const giustificativi = giustByProject[projId] || []
+
+          const count = giustificativi.length
+          const totaleImporto = giustificativi.reduce(
+            (sum, g) => sum + (parseFloat(g.Importo) || 0), 0
+          )
+
+          let statoCalcolato = 'nessuno'
+          if (count > 0) {
+            const stati = giustificativi.map(g => (g.Stato || '').toLowerCase())
+            if (stati.every(s => s === 'verificato' || s === 'approvato')) {
+              statoCalcolato = 'verificato'
+            } else if (stati.some(s => s === 'inviato')) {
+              statoCalcolato = 'in_attesa'
+            } else if (stati.every(s => s === 'bozza' || s === '')) {
+              statoCalcolato = 'bozza'
+            } else {
+              statoCalcolato = 'parziale'
+            }
+          }
+
+          const statoDB = project.StatoRendicontazione || 'nessuno'
+          const countDB = project.TotaleGiustificativi || 0
+          const importoDB = parseFloat(project.TotaleImporto) || 0
+
+          if (statoDB !== statoCalcolato || countDB !== count || Math.abs(importoDB - totaleImporto) > 0.01) {
+            discrepancies.push({
+              progettoId: projId,
+              beneficiario: project.Cognome_e__Nome_Beneficiario || '',
+              statoDB,
+              statoCalcolato,
+              countDB,
+              countCalcolato: count,
+              importoDB,
+              importoCalcolato: totaleImporto
+            })
+          }
+        }
+
+        this.rendicontazioneCheck = {
+          checked: true,
+          ok: discrepancies.length === 0,
+          discrepancies,
+          lastChecked: new Date().toISOString()
+        }
+      } catch (err) {
+        this.rendicontazioneCheck = {
+          checked: true,
+          ok: false,
+          discrepancies: [{ errore: true, messaggio: err.message }],
+          lastChecked: new Date().toISOString()
+        }
       }
     },
 

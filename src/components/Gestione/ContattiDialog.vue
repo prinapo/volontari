@@ -1,14 +1,18 @@
 <template>
-  <q-dialog v-model="visible" persistent maximized>
-    <q-card>
+  <q-dialog v-model="visible" persistent style="min-width: 700px; max-width: 900px">
+    <q-card style="min-width: 700px">
       <q-card-section class="row items-center">
-        <div class="text-h6">Contatti di {{ famiglia?.Nome_Famiglia }}</div>
+        <div class="text-h6">
+          Contatti di {{ famiglia?.Nome_Famiglia }}
+        </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
       <q-card-section>
-        <div class="text-subtitle1 q-mb-sm">Volontari assegnati</div>
+        <div class="text-subtitle1 q-mb-sm">
+          Volontari assegnati
+        </div>
         <q-table
           :rows="volontari"
           :columns="contattoColumns"
@@ -17,24 +21,24 @@
           bordered
           :pagination="{ rowsPerPage: 5 }"
         >
-          <template #body-cell-email="props">
-            <q-td :props="props">
-              <template v-for="em in props.row._emails" :key="em.email_address">
+          <template #body-cell-email="slotPropsV">
+            <q-td :props="slotPropsV">
+              <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
                 <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
                 <span class="text-caption">{{ em.email_address }}</span>
                 <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
               </template>
-              <span v-if="!props.row._emails?.length" class="text-grey-5">—</span>
+              <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
             </q-td>
           </template>
-          <template #body-cell-azioni="props">
-            <q-td :props="props">
+          <template #body-cell-azioni="slotPropsV">
+            <q-td :props="slotPropsV">
               <q-btn
                 flat
                 dense
                 icon="delete"
                 color="negative"
-                @click="handleRemove(props.row)"
+                @click="handleRemove(slotPropsV.row)"
               >
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>
@@ -42,7 +46,9 @@
           </template>
         </q-table>
 
-        <div class="text-subtitle1 q-mb-sm">Genitori assegnati</div>
+        <div class="text-subtitle1 q-mb-sm">
+          Genitori assegnati
+        </div>
         <q-table
           :rows="genitori"
           :columns="contattoColumns"
@@ -51,24 +57,24 @@
           bordered
           :pagination="{ rowsPerPage: 5 }"
         >
-          <template #body-cell-email="props">
-            <q-td :props="props">
-              <template v-for="em in props.row._emails" :key="em.email_address">
+          <template #body-cell-email="slotPropsG">
+            <q-td :props="slotPropsG">
+              <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
                 <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
                 <span class="text-caption">{{ em.email_address }}</span>
                 <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
               </template>
-              <span v-if="!props.row._emails?.length" class="text-grey-5">—</span>
+              <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
             </q-td>
           </template>
-          <template #body-cell-azioni="props">
-            <q-td :props="props">
+          <template #body-cell-azioni="slotPropsG">
+            <q-td :props="slotPropsG">
               <q-btn
                 flat
                 dense
                 icon="delete"
                 color="negative"
-                @click="handleRemove(props.row)"
+                @click="handleRemove(slotPropsG.row)"
               >
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>
@@ -91,29 +97,76 @@
             label="Cerca contatto..."
             clearable
             class="col"
-            style="max-width: 400px"
             @filter="filterContatti"
           />
-          <q-btn
-            color="secondary"
-            icon="person_add"
-            label="Associa come Genitore"
-            :disable="!selectedContatto"
-            @click="() => handleAssign('Genitore')"
-          />
-          <q-btn
-            color="primary"
-            icon="badge"
-            label="Associa come Volontario"
-            :disable="!selectedContatto"
-            @click="() => handleAssign('Volontario')"
-          />
+          <div class="column q-gutter-xs">
+            <q-btn
+              color="secondary"
+              icon="person_add"
+              label="Genitore"
+              :disable="!selectedContatto"
+              @click="() => handleAssign('Genitore')"
+            />
+            <q-btn
+              color="primary"
+              icon="badge"
+              label="Volontario"
+              :disable="!selectedContatto"
+              @click="() => handleAssign('Volontario')"
+            />
+            <q-btn
+              outline
+              color="teal"
+              icon="person_add"
+              label="Crea contatto"
+              @click="showNewContatto = true"
+            />
+          </div>
         </div>
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Chiudi" v-close-popup />
+        <q-btn v-close-popup flat label="Chiudi" />
       </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <ContattoDialog
+    v-model="showNewContatto"
+    @saved="onNewContattoSaved"
+  />
+
+  <q-dialog v-model="showRoleDialog" persistent>
+    <q-card style="min-width: 400px">
+      <q-card-section class="text-center">
+        <div class="text-h6 q-mb-md">
+          Associare {{ newContattoNome }} alla famiglia?
+        </div>
+        <div class="text-body2 text-grey q-mb-lg">
+          Scegli come aggiungere il contatto alla famiglia {{ famiglia?.Nome_Famiglia }}
+        </div>
+        <div class="row q-gutter-sm justify-center">
+          <q-btn
+            color="primary"
+            icon="badge"
+            label="Volontario"
+            @click="assignNewContatto('Volontario')"
+          />
+          <q-btn
+            color="secondary"
+            icon="person_add"
+            label="Genitore"
+            @click="assignNewContatto('Genitore')"
+          />
+          <q-btn
+            flat
+            color="grey"
+            icon="close"
+            label="Solo contatto"
+            @click="showRoleDialog = false"
+          />
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
@@ -122,7 +175,12 @@
 import { ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useGestioneStore } from 'stores/gestione.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import { gestioneService } from 'src/services/gestione.service'
+import { contattiService } from 'src/services/contatti.service'
+import { emailService } from 'src/services/email.service'
+import { enrichWithEmails } from 'src/utils/enrichment'
+import ContattoDialog from './ContattoDialog.vue'
 
 const $q = useQuasar()
 
@@ -141,6 +199,10 @@ const genitori = ref([])
 
 const selectedContatto = ref(null)
 const contattoOptions = ref([])
+const showNewContatto = ref(false)
+const showRoleDialog = ref(false)
+const newContattoId = ref(null)
+const newContattoNome = ref('')
 const allContatti = ref([])
 
 function getEmailLabel(c) {
@@ -175,17 +237,10 @@ async function loadContatti() {
     const items = res.data.data || []
     const ids = items.map(i => i.Contatto?.id_contatto).filter(Boolean)
     if (ids.length > 0) {
-      const emailRes = await gestioneService.getEmailByContatto(ids)
-      const emailByContatto = {}
-      for (const e of (emailRes.data.data || [])) {
-        if (e.Contatto_Relation) {
-          if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
-          emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
-        }
-      }
+      const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
       for (const item of items) {
         if (item.Contatto?.id_contatto) {
-          item._emails = emailByContatto[item.Contatto.id_contatto] || []
+          item._emails = emailMap[item.Contatto.id_contatto] || []
         }
       }
     }
@@ -199,7 +254,7 @@ async function loadContatti() {
 
 async function preloadOptions() {
   try {
-    const res = await gestioneService.searchContatti('', false)
+    const res = await contattiService.search('', false)
     allContatti.value = res.data.data || []
     const assignedIds = [
       ...volontari.value.map(v => v.Contatto?.id_contatto),
@@ -224,7 +279,7 @@ async function filterContatti(search, update) {
     data = allContatti.value
   } else {
     try {
-      const res = await gestioneService.searchContatti(search, false)
+      const res = await contattiService.search(search, false)
       data = res.data.data || []
     } catch {
       data = []
@@ -241,11 +296,36 @@ async function handleAssign(ruolo) {
   if (!selectedContatto.value) return
   const ok = await store.assignToFamiglia(selectedContatto.value, props.famiglia.id_famiglia, ruolo)
   if (ok) {
+    notifySuccess($q, 'Contatto associato come ' + ruolo)
     selectedContatto.value = null
     await loadContatti()
     await preloadOptions()
   } else if (store.error) {
-    $q.notify({ type: 'warning', message: store.error, timeout: 5000 })
+    notifyError($q, store.error)
+  }
+}
+
+function onNewContattoSaved(data) {
+  showNewContatto.value = false
+  if (data?.id) {
+    newContattoId.value = data.id
+    newContattoNome.value = `${data.Nome} ${data.Cognome}`
+    showRoleDialog.value = true
+  } else {
+    preloadOptions()
+  }
+}
+
+async function assignNewContatto(ruolo) {
+  showRoleDialog.value = false
+  if (!newContattoId.value || !props.famiglia?.id_famiglia) return
+  const ok = await store.assignToFamiglia(newContattoId.value, props.famiglia.id_famiglia, ruolo)
+  if (ok) {
+    notifySuccess($q, `Contatto associato come ${ruolo}`)
+    await loadContatti()
+    await preloadOptions()
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 
@@ -253,8 +333,11 @@ async function handleRemove(row) {
   const contattoId = row.Contatto?.id_contatto || row.Contatto
   const ok = await store.removeFromFamiglia(row.id, contattoId, row.Ruolo_nella_Famiglia)
   if (ok) {
+    notifySuccess($q, 'Contatto rimosso dalla famiglia')
     await loadContatti()
     await preloadOptions()
+  } else if (store.error) {
+    notifyError($q, store.error)
   }
 }
 </script>

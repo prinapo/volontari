@@ -183,8 +183,8 @@ actions: {
     // 3. Create giustificativo → POST /items/Giustificativi
     // 4. Refresh list
   },
-  async ensureRendicontazione(data) {
-    // Find existing rendicontazione by Famiglia+Progetto+Tranche
+    async ensureRendicontazione(data) {
+    // Find existing rendicontazione by Famiglia+Progetto
     // If not found, create one with Stato:'ricevuta'
   },
   async updateGiustificativo(id, data, newFile) {
@@ -215,21 +215,10 @@ actions: {
 
 ```js
 state: () => ({
-  rows: [],        // Normalized projects with tranche aggregation
+  rows: [],        // Normalized projects with totals
   loading: false,
   error: null
 })
-```
-
-### Constants
-
-```js
-TRANCHE = [
-  { value: 'luglio',    label: 'Luglio',    month: 7 },
-  { value: 'settembre', label: 'Settembre',  month: 9 },
-  { value: 'novembre',  label: 'Novembre',   month: 11 },
-  { value: 'febbraio',  label: 'Febbraio',   month: 2 }
-]
 ```
 
 ### Getters
@@ -250,9 +239,9 @@ getters: {
   actions: {
     async fetchAll() {
       // 1. Parallel: GET /items/Progetti (limit:-1) + GET /items/Giustificativi (limit:-1, sort:-Data)
-      // 2. Normalize projects: create rows with empty tranche buckets
+      // 2. Normalize projects: create rows
       // 3. Include all non-Invalidato giustificativi in row.giustificativi[]
-      // 4. Aggregate by project + tranche: only isCountedInTotals() items contribute
+      // 4. Aggregate totals: only isCountedInTotals() items contribute
       // 5. Cap rimborsabile at Allocato per project
     },
     async verifyGiustificativo(progettoId, giustId) {
@@ -285,13 +274,7 @@ getters: {
   totaleRendicontato: number,
   totaleRimborsabile: number,
   residuoAllocato: number,
-  giustificativi: [],
-  tranche: {
-    luglio:    { rendicontato: 0, rimborsabile: 0, count: 0, allegati: 0 },
-    settembre: { rendicontato: 0, rimborsabile: 0, count: 0, allegati: 0 },
-    novembre:  { rendicontato: 0, rimborsabile: 0, count: 0, allegati: 0 },
-    febbraio:  { rendicontato: 0, rimborsabile: 0, count: 0, allegati: 0 }
-  }
+  giustificativi: []
 }
 ```
 
@@ -307,9 +290,9 @@ LoginPage.vue                    FamigliePage.vue                     VerificaPa
 ┌─────────────┐                ┌──────────────┐                    ┌─────────────┐
 │ auth.store   │                │famiglie.store│                    │verifica.store│
 │  token       │                │  famiglia    │───progetti[]       │  rows[]      │
-│  user        │                │  genitori[]  │                    │  Rows with   │
-│  contatto    │                │  selectedId  │                    │  tranche     │
-│  canVerifica │                └──────┬───────┘                    │  aggregation │
+│  user        │                │  genitori[]  │                    │              │
+│  contatto    │                │  selectedId  │                    │              │
+│  canVerifica │                └──────┬───────┘                    │              │
 │  initialized │                       │ selectProgetto()           └─────────────┘
 └──────┬───────┘                       ▼
        │                       ┌───────────────────┐

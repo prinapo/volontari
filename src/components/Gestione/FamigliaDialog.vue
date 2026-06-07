@@ -2,9 +2,11 @@
   <q-dialog v-model="visible" persistent>
     <q-card style="min-width: 450px">
       <q-card-section class="row items-center">
-        <div class="text-h6">{{ isEdit ? 'Modifica Famiglia' : 'Nuova Famiglia' }}</div>
+        <div class="text-h6">
+          {{ isEdit ? 'Modifica Famiglia' : 'Nuova Famiglia' }}
+        </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
       <q-card-section>
@@ -30,7 +32,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Annulla" v-close-popup />
+        <q-btn v-close-popup flat label="Annulla" />
         <q-btn
           color="primary"
           label="Salva"
@@ -45,7 +47,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { useGestioneStore } from 'stores/gestione.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -54,6 +58,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'saved'])
 
+const $q = useQuasar()
 const store = useGestioneStore()
 
 const visible = ref(false)
@@ -93,8 +98,11 @@ async function handleSave() {
       Intestatario_CC: form.value.Intestatario_CC || null
     })
     if (ok) {
+      notifySuccess($q, 'Famiglia modificata')
       emit('saved')
       visible.value = false
+    } else if (store.error) {
+      notifyError($q, store.error)
     }
   } else {
     const ok = await store.createFamiglia({
@@ -103,8 +111,11 @@ async function handleSave() {
       Intestatario_CC: form.value.Intestatario_CC
     })
     if (ok) {
+      notifySuccess($q, 'Famiglia creata')
       emit('saved')
       visible.value = false
+    } else if (store.error) {
+      notifyError($q, store.error)
     }
   }
 }

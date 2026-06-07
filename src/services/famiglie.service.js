@@ -36,7 +36,8 @@ export const famiglieService = {
     return api.get('/items/Famiglie', {
       params: {
         'filter[id_famiglia][_in]': idList,
-        fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC'
+        fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC',
+        limit: -1
       }
     })
   },
@@ -62,6 +63,25 @@ export const famiglieService = {
     })
   },
 
+  getFamiglieByContatto(contattoId) {
+    return api.get('/items/Famiglie_Contatti', {
+      params: {
+        'filter[Contatto][_eq]': contattoId,
+        'filter[_or][0][Disattivo][_null]': true,
+        'filter[_or][1][Disattivo][_eq]': false,
+        fields: [
+          'id',
+          'Famiglia',
+          'Famiglia.id_famiglia',
+          'Famiglia.Nome_Famiglia',
+          'Famiglia.IBAN',
+          'Famiglia.Intestatario_CC',
+          'Ruolo_nella_Famiglia'
+        ].join(',')
+      }
+    })
+  },
+
   getVolontariByFamiglia(famigliaId) {
     return api.get('/items/Famiglie_Contatti', {
       params: {
@@ -75,17 +95,6 @@ export const famiglieService = {
           'Contatto.Numero_di_cellulare',
           'Contatto.Numero_di_telefono'
         ].join(',')
-      }
-    })
-  },
-
-  getEmailByContatto(contattoIds) {
-    const ids = Array.isArray(contattoIds) ? contattoIds.join(',') : contattoIds
-    return api.get('/items/email', {
-      params: {
-        'filter[Contatto_Relation][_in]': ids,
-        'filter[Primary][_eq]': 'true',
-        'fields': 'id,email_address,Contatto_Relation'
       }
     })
   }

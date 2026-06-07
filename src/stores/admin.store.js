@@ -30,8 +30,7 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminService.getUsers()
         this.users = res.data.data || []
       } catch (err) {
-        this.error = "Errore nel caricamento degli utenti"
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento degli utenti"
       } finally {
         this.loading = false
       }
@@ -41,8 +40,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         const res = await adminService.getRoles()
         this.roles = res.data.data || []
-      } catch (err) {
-        console.error(err)
+      } catch {
+        // silent
       }
     },
 
@@ -56,8 +55,8 @@ export const useAdminStore = defineStore('admin', {
         if (emails.length > 0) {
           this.contattoTrovato = emails[0].Contatto_Relation
         }
-      } catch (err) {
-        console.error(err)
+      } catch {
+        // silent
       }
     },
 
@@ -94,8 +93,7 @@ export const useAdminStore = defineStore('admin', {
         await this.fetchUsers()
         return true
       } catch (err) {
-        this.error = "Errore nella creazione dell'utente"
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nella creazione dell'utente"
         return false
       } finally {
         this.saving = false
@@ -110,8 +108,7 @@ export const useAdminStore = defineStore('admin', {
         await this.fetchUsers()
         return true
       } catch (err) {
-        this.error = "Errore nell'aggiornamento del ruolo"
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del ruolo"
         return false
       } finally {
         this.saving = false
@@ -125,8 +122,7 @@ export const useAdminStore = defineStore('admin', {
         await adminService.updateUser(userId, { password })
         return true
       } catch (err) {
-        this.error = "Errore nel reset della password"
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel reset della password"
         return false
       } finally {
         this.saving = false
@@ -148,8 +144,7 @@ export const useAdminStore = defineStore('admin', {
         })
         return true
       } catch (err) {
-        this.error = "Errore nell'invio dell'email"
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'email"
         return false
       } finally {
         this.sending = false

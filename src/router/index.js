@@ -42,6 +42,12 @@ const routes = [
         meta: { requiredRole: 'Verifica' }
       },
       {
+        path: 'riconciliazione',
+        name: 'Riconciliazione',
+        component: () => import('pages/RiconciliazionePage.vue'),
+        meta: { requiredRole: 'Verifica' }
+      },
+      {
         path: 'gestione',
         name: 'Gestione',
         component: () => import('pages/GestionePage.vue'),

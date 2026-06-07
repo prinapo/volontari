@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { giustificativiService } from 'src/services/giustificativi.service'
-import { filesService } from 'src/services/files.service'
 import { rendicontazioniService } from 'src/services/rendicontazioni.service'
 import { FOLDERS } from 'src/utils/constants'
+import { uploadAndPrefixFile, markFileObsolete } from 'src/utils/file-naming'
 
 export const useGiustificativiStore = defineStore('giustificativi', {
   state: () => ({
@@ -16,7 +16,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
   getters: {
     draftItems: (state) => state.items.filter((i) => i.Stato === 'draft'),
     inviatoItems: (state) =>
-      state.items.filter((i) => i.Stato === 'Inviato' || i.Stato === 'approvato'),
+      state.items.filter((i) => i.Stato === 'inviato' || i.Stato === 'approvato'),
     canEdit: (state) => (itemId) => {
       const item = state.items.find((i) => i.id === itemId)
       return item && item.Stato === 'draft'
@@ -30,8 +30,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const res = await giustificativiService.getByProgetto(progettoId)
         this.items = res.data.data || []
       } catch (err) {
-        this.error = 'Errore nel caricamento dei giustificativi'
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei giustificativi'
       } finally {
         this.loading = false
       }
@@ -43,8 +42,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const rendicontazioneId = await this.ensureRendicontazione(data)
         let fileId = null
         if (file) {
-          const uploadRes = await filesService.upload(file, FOLDERS.GIUSTIFICATIVI)
-          fileId = uploadRes.data.data.id
+          fileId = await uploadAndPrefixFile(file, data.Famiglia, FOLDERS.GIUSTIFICATIVI)
         }
 
         const createRes = await giustificativiService.create({
@@ -60,12 +58,11 @@ export const useGiustificativiStore = defineStore('giustificativi', {
 
         const created = createRes.data.data
         if (created && created.Descrizione !== data.Descrizione) {
-          console.error('[store] Create verification failed')
           return false
         }
         return true
       } catch (err) {
-        this.error = 'Errore nella creazione'
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella creazione'
         return false
       } finally {
         this.saving = false
@@ -73,12 +70,11 @@ export const useGiustificativiStore = defineStore('giustificativi', {
     },
 
     async ensureRendicontazione(data) {
-      if (!data.Famiglia || !data.Progetto || !data.Tranche) return null
+      if (!data.Famiglia || !data.Progetto) return null
 
-      const existingRes = await rendicontazioniService.findByProjectAndTranche({
+      const existingRes = await rendicontazioniService.findByProject({
         famigliaId: data.Famiglia,
-        progettoId: data.Progetto,
-        tranche: data.Tranche
+        progettoId: data.Progetto
       })
       const existing = existingRes.data.data?.[0]
       if (existing?.id) return existing.id
@@ -87,7 +83,6 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         Famiglia: data.Famiglia,
         Progetto: data.Progetto,
         AnnoBando: data.AnnoBando || null,
-        Tranche: data.Tranche,
         Stato: 'ricevuta',
         Data_Ricezione: new Date().toISOString()
       })
@@ -100,12 +95,10 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         if (newFile) {
           const existingItem = this.items.find(i => i.id === id)
           if (existingItem?.Allegato) {
-            await filesService.updateMeta(existingItem.Allegato, {
-              title: `OBSOLETE_${new Date().toISOString().slice(0, 10)}_${newFile.name}`
-            })
+            await markFileObsolete(existingItem.Allegato)
           }
-          const uploadRes = await filesService.upload(newFile, FOLDERS.GIUSTIFICATIVI)
-          data.Allegato = uploadRes.data.data.id
+          const famigliaId = data.Famiglia || existingItem?.Famiglia
+          data.Allegato = await uploadAndPrefixFile(newFile, famigliaId, FOLDERS.GIUSTIFICATIVI)
         }
 
         const patchRes = await giustificativiService.update(id, data)
@@ -116,7 +109,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         }
         return true
       } catch (err) {
-        this.error = 'Errore nella modifica'
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella modifica'
         return false
       } finally {
         this.saving = false
@@ -136,7 +129,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         }
         return true
       } catch (err) {
-        this.error = "Errore nell'invio"
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'invio"
         return false
       } finally {
         this.saving = false
@@ -161,7 +154,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         }
         return true
       } catch (err) {
-        this.error = "Errore nell'aggiornamento"
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento"
         return false
       }
     },
@@ -169,6 +162,10 @@ export const useGiustificativiStore = defineStore('giustificativi', {
     async invalidateGiustificativo(id) {
       this.saving = true
       try {
+        const item = this.items.find(i => i.id === id)
+        if (item?.Allegato) {
+          await markFileObsolete(item.Allegato)
+        }
         await giustificativiService.invalidate(id)
         const idx = this.items.findIndex(i => i.id === id)
         if (idx !== -1) {
@@ -176,7 +173,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         }
         return true
       } catch (err) {
-        this.error = "Errore nell'invalidazione"
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'invalidazione"
         return false
       } finally {
         this.saving = false

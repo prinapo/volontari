@@ -53,3 +53,11 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 })
   })
 })
+
+test.describe('Pagine Pubbliche', () => {
+  test('SP-01: SubmitPage si carica senza errori console @smoke', async ({ page }) => {
+    await page.goto('/submit')
+    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=Invio giustificativi')).toBeVisible()
+  })
+})

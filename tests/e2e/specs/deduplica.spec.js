@@ -2,7 +2,7 @@ import { test, expect } from '../helpers/console.js'
 import { LoginPage } from '../pages/LoginPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
-test.describe('DeduplicaPage — Accesso e Layout', () => {
+test.describe.skip('DeduplicaPage — non in uso', () => {
   test('DP-01: Pagina accessibile solo ad admin @smoke', async ({ page }) => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()

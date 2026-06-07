@@ -101,8 +101,7 @@ export const useDeduplicaStore = defineStore('deduplica', {
 
         this.duplicateGroups = result
       } catch (err) {
-        this.error = "Errore nel caricamento dei duplicati"
-        console.error(err)
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento dei duplicati"
       } finally {
         this.loading = false
       }
@@ -132,55 +131,73 @@ export const useDeduplicaStore = defineStore('deduplica', {
           }
         }
         this.idDuplicateGroups = results
-      } catch (err) {
-        console.error('Errore controllo ID duplicati', err)
+      } catch {
+        // silent
       } finally {
         this.idLoading = false
       }
     },
 
     async merge(contattoAId, contattoBId, fieldOverrides) {
-      const updateData = {}
-      Object.entries(fieldOverrides).forEach(([field, value]) => {
-        if (value !== undefined && value !== null) {
-          updateData[field] = value
+      this.error = null
+      try {
+        const updateData = {}
+        Object.entries(fieldOverrides).forEach(([field, value]) => {
+          if (value !== undefined && value !== null) {
+            updateData[field] = value
+          }
+        })
+        if (Object.keys(updateData).length > 0) {
+          await deduplicaService.updateContatto(contattoAId, updateData)
         }
-      })
-      if (Object.keys(updateData).length > 0) {
-        await deduplicaService.updateContatto(contattoAId, updateData)
+
+        const fcRes = await deduplicaService.getFamiglieByContatto(contattoBId)
+        const bFamilies = fcRes.data.data || []
+        for (const fc of bFamilies) {
+          await deduplicaService.updateFamigliaContatto(fc.id, { Contatto: contattoAId })
+        }
+
+        const emailRes = await deduplicaService.getAllEmails()
+        const bEmails = (emailRes.data.data || []).filter(
+          e => e.Contatto_Relation === contattoBId
+        )
+        for (const email of bEmails) {
+          await deduplicaService.updateEmail(email.id, { Contatto_Relation: contattoAId })
+        }
+
+        await deduplicaService.deleteContatto(contattoBId)
+
+        await this.fetchDuplicates()
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'unione"
+        throw err
       }
-
-      const fcRes = await deduplicaService.getFamiglieByContatto(contattoBId)
-      const bFamilies = fcRes.data.data || []
-      for (const fc of bFamilies) {
-        await deduplicaService.updateFamigliaContatto(fc.id, { Contatto: contattoAId })
-      }
-
-      const emailRes = await deduplicaService.getAllEmails()
-      const bEmails = (emailRes.data.data || []).filter(
-        e => e.Contatto_Relation === contattoBId
-      )
-      for (const email of bEmails) {
-        await deduplicaService.updateEmail(email.id, { Contatto_Relation: contattoAId })
-      }
-
-      await deduplicaService.deleteContatto(contattoBId)
-
-      await this.fetchDuplicates()
     },
 
     async deleteEmailRow(emailId) {
-      await deduplicaService.deleteEmail(emailId)
-      await this.fetchDuplicates()
+      this.error = null
+      try {
+        await deduplicaService.deleteEmail(emailId)
+        await this.fetchDuplicates()
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'eliminazione"
+        throw err
+      }
     },
 
     async deleteContattoIfEmpty(contattoId) {
-      const fcRes = await deduplicaService.getFamiglieByContatto(contattoId)
-      if ((fcRes.data.data || []).length > 0) {
-        throw new Error("Contatto ha ancora famiglie assegnate")
+      this.error = null
+      try {
+        const fcRes = await deduplicaService.getFamiglieByContatto(contattoId)
+        if ((fcRes.data.data || []).length > 0) {
+          throw new Error("Contatto ha ancora famiglie assegnate")
+        }
+        await deduplicaService.deleteContatto(contattoId)
+        await this.fetchDuplicates()
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'eliminazione"
+        throw err
       }
-      await deduplicaService.deleteContatto(contattoId)
-      await this.fetchDuplicates()
     }
   }
 })

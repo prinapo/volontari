@@ -1,130 +1,21 @@
 import api from './api'
 
 export const gestioneService = {
-  queryContatti({ limit = 25, offset = 0, sort, search, isVolontario, isGenitore, stato }) {
-    const filter = {}
-
-    if (search) {
-      filter._or = [
-        { Nome: { _contains: search } },
-        { Cognome: { _contains: search } },
-        { email: { _some: { email_address: { _contains: search } } } }
-      ]
+  getFamiglie({ page = 1, limit = 25, sort, search, meta } = {}) {
+    const params = {
+      fields: [
+        'id_famiglia',
+        'Nome_Famiglia',
+        'IBAN',
+        'Intestatario_CC'
+      ].join(','),
+      limit,
+      page
     }
-
-    if (isVolontario === true) {
-      filter.IsVolontario = { _eq: true }
-    } else if (isGenitore === true) {
-      filter.IsGenitore = { _eq: true }
-      filter.IsVolontario = { _eq: false }
-    } else if (isVolontario === false && isGenitore === false) {
-      filter.IsVolontario = { _eq: false }
-      filter.IsGenitore = { _eq: false }
-    }
-
-    if (stato === 'Attivi') {
-      filter['user_id.status'] = { _neq: 'suspended' }
-    } else if (stato === 'Disattivati') {
-      filter['user_id.status'] = { _eq: 'suspended' }
-    }
-
-    return api.get('/items/contatti', {
-      params: {
-        filter: JSON.stringify(filter),
-        fields: [
-          'id_contatto',
-          'Nome',
-          'Cognome',
-          'Numero_di_cellulare',
-          'Numero_di_telefono',
-          'IsVolontario',
-          'IsGenitore',
-          'user_id'
-        ].join(','),
-        sort: sort || 'Cognome',
-        limit,
-        offset,
-        meta: 'filter_count'
-      }
-    })
-  },
-
-  getUsersByIds(ids) {
-    const list = Array.isArray(ids) ? ids.join(',') : ids
-    return api.get('/users', {
-      params: {
-        'filter[id][_in]': list,
-        fields: 'id,email,status,last_access',
-        limit: -1
-      }
-    })
-  },
-
-  createContatto(data) {
-    return api.post('/items/contatti', data)
-  },
-
-  updateContatto(id, data) {
-    return api.patch(`/items/contatti/${id}`, data)
-  },
-
-  getEmailByContatto(contattoIds) {
-    const ids = Array.isArray(contattoIds) ? contattoIds.join(',') : contattoIds
-    return api.get('/items/email', {
-      params: {
-        'filter[Contatto_Relation][_in]': ids,
-        'filter[Primary][_eq]': 'true',
-        fields: 'id,email_address,Contatto_Relation'
-      }
-    })
-  },
-
-  getEmailRecordByContatto(contattoId) {
-    return api.get('/items/email', {
-      params: {
-        'filter[Contatto_Relation][_eq]': contattoId,
-        'filter[Primary][_eq]': 'true'
-      }
-    })
-  },
-
-  getContattoById(id) {
-    return api.get(`/items/contatti/${id}`, {
-      params: {
-        fields: 'id_contatto,Nome,Cognome,user_id,email.email_address,email.Primary'
-      }
-    })
-  },
-
-  searchUsersByEmail(email) {
-    return api.get('/users', {
-      params: {
-        'filter[email][_eq]': email,
-        fields: 'id,email',
-        limit: 1
-      }
-    })
-  },
-
-  createEmail(data) {
-    return api.post('/items/email', data)
-  },
-
-  updateEmail(id, data) {
-    return api.patch(`/items/email/${id}`, data)
-  },
-
-  getFamiglie() {
-    return api.get('/items/Famiglie', {
-      params: {
-        fields: [
-          'id_famiglia',
-          'Nome_Famiglia',
-          'IBAN',
-          'Intestatario_CC'
-        ].join(',')
-      }
-    })
+    if (sort) params.sort = sort
+    if (search) params['filter[Nome_Famiglia][_icontains]'] = search
+    if (meta) params.meta = meta
+    return api.get('/items/Famiglie', { params })
   },
 
   createFamiglia(data) {
@@ -135,10 +26,22 @@ export const gestioneService = {
     return api.patch(`/items/Famiglie/${id}`, data)
   },
 
+  searchFamiglie(q) {
+    return api.get('/items/Famiglie', {
+      params: {
+        'filter[Nome_Famiglia][_icontains]': q,
+        fields: 'id_famiglia,Nome_Famiglia',
+        limit: 20
+      }
+    })
+  },
+
   getFamiglieByContatto(contattoId) {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Contatto][_eq]': contattoId,
+        'filter[_or][0][Disattivo][_null]': true,
+        'filter[_or][1][Disattivo][_eq]': false,
         fields: [
           'id',
           'Ruolo_nella_Famiglia',
@@ -155,13 +58,16 @@ export const gestioneService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Contatto][_in]': ids,
+        'filter[_or][0][Disattivo][_null]': true,
+        'filter[_or][1][Disattivo][_eq]': false,
         fields: [
           'id',
           'Ruolo_nella_Famiglia',
           'Contatto',
           'Famiglia.id_famiglia',
           'Famiglia.Nome_Famiglia'
-        ].join(',')
+        ].join(','),
+        limit: -1
       }
     })
   },
@@ -223,57 +129,5 @@ export const gestioneService = {
 
   removeFromFamiglia(fcId) {
     return api.patch(`/items/Famiglie_Contatti/${fcId}`, { Disattivo: true })
-  },
-
-  searchContatti(q, excludeWithUserId) {
-    if (!q || !q.trim()) {
-      return api.get('/items/contatti', {
-        params: {
-          fields: 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
-          limit: 20
-        }
-      })
-    }
-    const filter = {
-      _or: [
-        { Nome: { _icontains: q } },
-        { Cognome: { _icontains: q } },
-        { email: { _some: { email_address: { _icontains: q } } } }
-      ]
-    }
-    if (excludeWithUserId) {
-      filter.user_id = { _null: true }
-    }
-    return api.get('/items/contatti', {
-      params: {
-        'filter': JSON.stringify(filter),
-        fields: 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
-        limit: 20
-      }
-    })
-  },
-
-  searchFamiglie(q) {
-    return api.get('/items/Famiglie', {
-      params: {
-        'filter[Nome_Famiglia][_contains]': q,
-        fields: 'id_famiglia,Nome_Famiglia',
-        limit: 20
-      }
-    })
-  },
-
-  createDirectusUser(data) {
-    return api.post('/users', data)
-  },
-
-  updateDirectusUser(id, data) {
-    return api.patch(`/users/${id}`, data)
-  },
-
-  sendInvite(email, resetUrl) {
-    const data = { email }
-    if (resetUrl) data.reset_url = resetUrl
-    return api.post('/auth/password/request', data)
   }
 }

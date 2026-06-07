@@ -7,8 +7,10 @@
         outlined
         placeholder="Cerca per nome famiglia..."
         clearable
+        debounce="300"
         class="col"
         style="max-width: 320px"
+        @update:model-value="onSearchChange"
       >
         <template #prepend>
           <q-icon name="search" />
@@ -21,14 +23,15 @@
     </div>
 
     <q-table
-      :rows="filteredRows"
+      v-model:expanded="expandedRows"
+      v-model:pagination="pagination"
+      :rows="store.famiglie"
       :columns="columns"
       row-key="id_famiglia"
-      v-model:expanded="expandedRows"
       flat
       bordered
       :loading="store.loading"
-      :pagination="{ rowsPerPage: 25 }"
+      @request="onRequest"
     >
       <template #header="props">
         <q-tr :props="props">
@@ -80,7 +83,9 @@
           <q-td colspan="100%">
             <q-card flat bordered class="q-ma-sm">
               <q-card-section>
-                <div class="text-caption text-grey text-uppercase q-mb-sm">Contatti</div>
+                <div class="text-caption text-grey text-uppercase q-mb-sm">
+                  Contatti
+                </div>
                 <div v-if="expandedLoading && !expandedCache[props.row.id_famiglia]" class="text-center q-py-md">
                   <q-spinner size="sm" /> Caricamento...
                 </div>
@@ -88,42 +93,77 @@
                   Nessun contatto assegnato a questa famiglia.
                 </div>
                 <q-list v-else dense>
-                  <q-item v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id">
-                    <q-item-section avatar>
-                      <q-icon name="person" size="sm" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>
-                        {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
-                        <q-badge
-                          outline
-                          :color="c.Ruolo_nella_Famiglia === 'Genitore' ? 'secondary' : 'primary'"
-                          class="q-ml-sm"
-                        >
-                          {{ c.Ruolo_nella_Famiglia }}
-                        </q-badge>
-                      </q-item-label>
-                      <q-item-label caption lines="1">
-                        <template v-for="em in c._emails" :key="em.email_address">
-                          <q-icon name="email" size="xs" class="q-mr-xs" />
-                          {{ em.email_address }}
-                          <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
-                        </template>
-                        <template v-if="c.Contatto?.Numero_di_cellulare">
-                          <span class="q-ml-sm">
-                            <q-icon name="smartphone" size="xs" class="q-mr-xs" />
-                            {{ c.Contatto.Numero_di_cellulare }}
-                          </span>
-                        </template>
-                        <template v-if="c.Contatto?.Numero_di_telefono">
-                          <span class="q-ml-sm">
-                            <q-icon name="phone" size="xs" class="q-mr-xs" />
-                            {{ c.Contatto.Numero_di_telefono }}
-                          </span>
-                        </template>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
+                  <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id">
+                    <q-item v-if="c.Ruolo_nella_Famiglia === 'Genitore'">
+                      <q-item-section avatar>
+                        <q-icon name="person" size="sm" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>
+                          {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
+                          <q-badge outline color="secondary" class="q-ml-sm">
+                            {{ c.Ruolo_nella_Famiglia }}
+                          </q-badge>
+                        </q-item-label>
+                        <q-item-label caption lines="1">
+                          <template v-for="em in c._emails" :key="em.email_address">
+                            <q-icon name="email" size="xs" class="q-mr-xs" />
+                            {{ em.email_address }}
+                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                          </template>
+                          <template v-if="c.Contatto?.Numero_di_cellulare">
+                            <span class="q-ml-sm">
+                              <q-icon name="smartphone" size="xs" class="q-mr-xs" />
+                              {{ c.Contatto.Numero_di_cellulare }}
+                            </span>
+                          </template>
+                          <template v-if="c.Contatto?.Numero_di_telefono">
+                            <span class="q-ml-sm">
+                              <q-icon name="phone" size="xs" class="q-mr-xs" />
+                              {{ c.Contatto.Numero_di_telefono }}
+                            </span>
+                          </template>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </template>
+
+                  <q-separator v-if="expandedCache[props.row.id_famiglia]?.some(c => c.Ruolo_nella_Famiglia !== 'Genitore')" class="q-my-sm" />
+
+                  <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id + '-vol'">
+                    <q-item v-if="c.Ruolo_nella_Famiglia !== 'Genitore'">
+                      <q-item-section avatar>
+                        <q-icon name="person" size="sm" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>
+                          {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
+                          <q-badge outline color="primary" class="q-ml-sm">
+                            {{ c.Ruolo_nella_Famiglia }}
+                          </q-badge>
+                        </q-item-label>
+                        <q-item-label caption lines="1">
+                          <template v-for="em in c._emails" :key="em.email_address">
+                            <q-icon name="email" size="xs" class="q-mr-xs" />
+                            {{ em.email_address }}
+                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                          </template>
+                          <template v-if="c.Contatto?.Numero_di_cellulare">
+                            <span class="q-ml-sm">
+                              <q-icon name="smartphone" size="xs" class="q-mr-xs" />
+                              {{ c.Contatto.Numero_di_cellulare }}
+                            </span>
+                          </template>
+                          <template v-if="c.Contatto?.Numero_di_telefono">
+                            <span class="q-ml-sm">
+                              <q-icon name="phone" size="xs" class="q-mr-xs" />
+                              {{ c.Contatto.Numero_di_telefono }}
+                            </span>
+                          </template>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </template>
                 </q-list>
               </q-card-section>
             </q-card>
@@ -146,9 +186,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useGestioneStore } from 'stores/gestione.store'
 import { gestioneService } from 'src/services/gestione.service'
+import { emailService } from 'src/services/email.service'
+import { enrichWithEmails } from 'src/utils/enrichment'
 import FamigliaDialog from './FamigliaDialog.vue'
 import ContattiDialog from './ContattiDialog.vue'
 
@@ -166,6 +208,14 @@ const expandedCache = ref({})
 const expandedLoading = ref(false)
 const expandedRows = ref([])
 
+const pagination = ref({
+  page: 1,
+  rowsPerPage: 25,
+  rowsNumber: 0,
+  sortBy: null,
+  descending: false
+})
+
 watch(showContatti, (val) => {
   if (val) {
     expandedRows.value = []
@@ -180,13 +230,42 @@ const columns = [
   { name: 'azioni', label: 'Azioni', align: 'center' }
 ]
 
-const filteredRows = computed(() => {
-  let rows = store.famiglie
-  if (search.value) {
-    const q = search.value.toLowerCase()
-    rows = rows.filter(r => r.Nome_Famiglia?.toLowerCase().includes(q))
+async function loadData() {
+  const SORT_FIELD_MAP = {
+    nome: 'Nome_Famiglia',
+    IBAN: 'IBAN',
+    intestatario: 'Intestatario_CC'
   }
-  return rows
+  const sortField = SORT_FIELD_MAP[pagination.value.sortBy] || pagination.value.sortBy
+  const sort = sortField
+    ? (pagination.value.descending ? `-${sortField}` : sortField)
+    : undefined
+  const params = {
+    page: pagination.value.page,
+    limit: pagination.value.rowsPerPage,
+    search: search.value || undefined,
+    sort
+  }
+  await store.fetchAll(params)
+  pagination.value.rowsNumber = store.totalFamiglie
+}
+
+function onSearchChange() {
+  pagination.value.page = 1
+  loadData()
+}
+
+async function onRequest(props) {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination
+  pagination.value.page = page
+  if (rowsPerPage) pagination.value.rowsPerPage = rowsPerPage
+  if (sortBy !== undefined) pagination.value.sortBy = sortBy
+  if (descending !== undefined) pagination.value.descending = descending
+  await loadData()
+}
+
+onMounted(() => {
+  loadData()
 })
 
 async function loadExpanded(row) {
@@ -197,17 +276,10 @@ async function loadExpanded(row) {
     const items = res.data.data || []
     const ids = items.map(i => i.Contatto?.id_contatto).filter(Boolean)
     if (ids.length > 0) {
-      const emailRes = await gestioneService.getEmailByContatto(ids)
-      const emailByContatto = {}
-      for (const e of (emailRes.data.data || [])) {
-        if (e.Contatto_Relation) {
-          if (!emailByContatto[e.Contatto_Relation]) emailByContatto[e.Contatto_Relation] = []
-          emailByContatto[e.Contatto_Relation].push({ email_address: e.email_address, Primary: e.Primary === true })
-        }
-      }
+      const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
       for (const item of items) {
         if (item.Contatto?.id_contatto) {
-          item._emails = emailByContatto[item.Contatto.id_contatto] || []
+          item._emails = emailMap[item.Contatto.id_contatto] || []
         }
       }
     }

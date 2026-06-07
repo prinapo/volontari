@@ -4,12 +4,16 @@
       <q-card-section class="row items-center">
         <q-icon :name="icon" :color="iconColor" size="md" class="q-mr-sm" />
         <div>
-          <div class="text-h6">{{ title }}</div>
-          <div class="text-body2 text-grey">{{ message }}</div>
+          <div class="text-h6">
+            {{ title }}
+          </div>
+          <div class="text-body2 text-grey">
+            {{ message }}
+          </div>
         </div>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat :label="cancelLabel" v-close-popup />
+        <q-btn v-close-popup flat :label="cancelLabel" />
         <q-btn
           :color="confirmColor"
           :label="confirmLabel"

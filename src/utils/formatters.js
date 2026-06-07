@@ -19,9 +19,9 @@ export function formatDate(dateStr) {
 export function statoLabel(stato) {
   const labels = {
     draft: 'Bozza',
-    Inviato: 'Inviato',
-    Verificato: 'Verificato',
-    Rifiutato: 'Rifiutato',
+    inviato: 'Inviato',
+    verificato: 'Verificato',
+    rifiutato: 'Rifiutato',
     approvato: 'Approvato'
   }
   return labels[stato] || stato
@@ -30,9 +30,9 @@ export function statoLabel(stato) {
 export function statoColor(stato) {
   const colors = {
     draft: 'orange',
-    Inviato: 'blue',
-    Verificato: 'teal',
-    Rifiutato: 'red',
+    inviato: 'blue',
+    verificato: 'teal',
+    rifiutato: 'red',
     approvato: 'green'
   }
   return colors[stato] || 'grey'

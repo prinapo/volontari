@@ -25,7 +25,7 @@ export const giustificativiService = {
 
   submit(id) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Stato: 'Inviato'
+      Stato: 'inviato'
     })
   },
 
@@ -37,13 +37,13 @@ export const giustificativiService = {
 
   verify(id) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Stato: 'Verificato'
+      Stato: 'verificato'
     })
   },
 
   reject(id, nota) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Stato: 'Rifiutato',
+      Stato: 'rifiutato',
       NotaRifiuto: nota
     })
   }

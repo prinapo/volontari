@@ -5,7 +5,9 @@
         <q-card class="login-card" flat bordered>
           <template v-if="!token">
             <q-card-section class="text-center q-pt-xl q-px-xl">
-              <div class="text-h6 text-negative">Link non valido</div>
+              <div class="text-h6 text-negative">
+                Link non valido
+              </div>
               <div class="text-body2 text-grey q-mt-sm">
                 Il link per il reset della password non è valido o è scaduto.
               </div>
@@ -17,7 +19,9 @@
 
           <template v-else-if="success">
             <q-card-section class="text-center q-pt-xl q-px-xl">
-              <div class="text-h6 text-positive">Password aggiornata</div>
+              <div class="text-h6 text-positive">
+                Password aggiornata
+              </div>
               <div class="text-body2 text-grey q-mt-sm">
                 Reindirizzamento al login...
               </div>
@@ -26,14 +30,16 @@
 
           <template v-else>
             <q-card-section class="text-center q-pt-xl">
-              <div class="text-h6 text-primary">Reimposta password</div>
+              <div class="text-h6 text-primary">
+                Reimposta password
+              </div>
               <div class="text-caption text-grey q-mt-sm">
                 Scegli una nuova password per il tuo account
               </div>
             </q-card-section>
 
             <q-card-section class="q-px-xl q-pb-xl">
-              <q-form @submit.prevent="handleReset" class="q-gutter-y-md">
+              <q-form class="q-gutter-y-md" @submit.prevent="handleReset">
                 <q-input
                   v-model="newPassword"
                   label="Nuova password"
@@ -42,7 +48,7 @@
                   :rules="[val => !!val || 'Inserisci la nuova password']"
                   lazy-rules
                 >
-                  <template v-slot:append>
+                  <template #append>
                     <q-icon
                       :name="showPwd1 ? 'visibility_off' : 'visibility'"
                       class="cursor-pointer"
@@ -62,7 +68,7 @@
                   ]"
                   lazy-rules
                 >
-                  <template v-slot:append>
+                  <template #append>
                     <q-icon
                       :name="showPwd2 ? 'visibility_off' : 'visibility'"
                       class="cursor-pointer"

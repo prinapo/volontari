@@ -2,7 +2,9 @@
   <q-page class="q-pa-md">
     <div v-if="!authStore.initialized" class="text-center q-mt-xl">
       <q-spinner size="lg" />
-      <div class="q-mt-sm">Caricamento...</div>
+      <div class="q-mt-sm">
+        Caricamento...
+      </div>
     </div>
 
     <q-inner-loading :showing="store.loading && authStore.initialized" />

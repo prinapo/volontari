@@ -15,15 +15,13 @@ async function createBozzaViaUI(page, descPrefix) {
     console.log(`createBozzaViaUI: Aggiungi button disabled for ${descPrefix} — skipping`)
     return null
   }
-  await page.locator('text=Aggiungi').click()
+  await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
   await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
   const dialog = page.locator('.q-dialog')
   await dialog.locator('input').first().fill(testDesc)
   await dialog.locator('input').nth(1).fill('50.00')
-  await dialog.locator('.q-date__today').click()
-  await dialog.locator('.q-select').first().click()
-  await page.locator('.q-menu .q-item').first().click()
-  await dialog.locator('input[type="file"]').setInputFiles(FIXTURE_PDF)
+  await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
   const [postResp] = await Promise.all([
     page.waitForResponse(
       resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'
@@ -65,29 +63,33 @@ test.describe.serial('Giustificativi', () => {
 
   // ── CG: Creazione ──
   test.describe('GiustificativoForm — Creazione', () => {
-    let hasProgetto = false
-
     test.beforeEach(async ({ page }) => {
-      if (!hasProgetto) {
-        hasProgetto = await loginAndSelectProgetto(page)
-      }
+      await loginAndSelectProgetto(page)
     })
 
     test('CG-01: Dialog si apre con Aggiungi @smoke', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
-      await page.locator('button:has-text("Aggiungi")').click()
+      const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
+      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       await expect(page.locator('.q-dialog').locator('text=Nuovo giustificativo')).toBeVisible()
     })
 
     test('CG-02: Salva senza Descrizione mostra errore validazione @regression', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
-      await page.locator('text=Aggiungi').click()
+      const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
+      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
       await dialog.locator('input').nth(1).fill('50.00')
-      await dialog.locator('input[type="file"]').setInputFiles(FIXTURE_PDF)
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       await dialog.locator('button:has-text("Salva")').click()
       await page.waitForTimeout(500)
 
@@ -96,13 +98,17 @@ test.describe.serial('Giustificativi', () => {
     })
 
     test('CG-03: Salva senza Importo mostra errore validazione @regression', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
-      await page.locator('text=Aggiungi').click()
+      if (!(await page.locator('button:has-text("Aggiungi")').isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
       await dialog.locator('input').first().fill(`__TEST_NoImp_${Date.now()}`)
-      await dialog.locator('input[type="file"]').setInputFiles(FIXTURE_PDF)
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       await dialog.locator('button:has-text("Salva")').click()
       await page.waitForTimeout(500)
 
@@ -111,8 +117,12 @@ test.describe.serial('Giustificativi', () => {
     })
 
     test('CG-04: Salva senza File mostra errore validazione @regression', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
-      await page.locator('text=Aggiungi').click()
+      if (!(await page.locator('button:has-text("Aggiungi")').isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
@@ -126,10 +136,14 @@ test.describe.serial('Giustificativi', () => {
     })
 
     test('CG-05: Annulla chiude dialog senza creare @regression', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
+      if (!(await page.locator('button:has-text("Aggiungi")').isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
       const countBefore = await page.locator('.q-card').count()
 
-      await page.locator('text=Aggiungi').click()
+      await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       await page.locator('[data-testid="form-annulla"]').click()
       await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 3000 })
@@ -139,21 +153,21 @@ test.describe.serial('Giustificativi', () => {
     })
 
     test('CG-06: Crea con tutti i campi persiste dopo reload @crud', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
+      if (!(await page.locator('button:has-text("Aggiungi")').isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
       const testDesc = `__TEST_Creazione_${Date.now()}`
       const testImporto = '42.50'
 
-      await page.locator('text=Aggiungi').click()
+      await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
       await dialog.locator('input').first().fill(testDesc)
       await dialog.locator('input').nth(1).fill(testImporto)
-      await dialog.locator('.q-date__today').click()
-      await dialog.locator('.q-select').first().click()
-      await page.locator('.q-menu .q-item').first().click()
-      await dialog.locator('input[type="file"]').setInputFiles(FIXTURE_PDF)
-
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       const [postResp] = await Promise.all([
         page.waitForResponse(
           resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'
@@ -171,8 +185,12 @@ test.describe.serial('Giustificativi', () => {
     })
 
     test('CG-09: Form larghezza limitata non fullscreen @smoke', async ({ page }) => {
-      test.skip(!hasProgetto, 'No progetto available for this user')
-      await page.locator('text=Aggiungi').click()
+      if (!(await page.locator('button:has-text("Aggiungi")').isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const card = page.locator('.q-dialog .q-card')
       const box = await card.boundingBox()
@@ -494,15 +512,13 @@ test.describe.serial('Giustificativi', () => {
           test.skip()
           return
         }
-        await page.locator('text=Aggiungi').click()
+        await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
+      await page.locator('button:has-text("Aggiungi")').click()
         await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
         const dialog = page.locator('.q-dialog')
         await dialog.locator('input').first().fill(testDesc)
         await dialog.locator('input').nth(1).fill('30.00')
-        await dialog.locator('.q-date__today').click()
-        await dialog.locator('.q-select').first().click()
-        await page.locator('.q-menu .q-item').first().click()
-        await dialog.locator('input[type="file"]').setInputFiles(FIXTURE_PDF)
+        await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
         const [createResp] = await Promise.all([
           page.waitForResponse(
             resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'

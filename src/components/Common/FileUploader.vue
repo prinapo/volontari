@@ -8,10 +8,10 @@
     clearable
     @update:model-value="onFileChange"
   >
-    <template v-slot:prepend>
+    <template #prepend>
       <q-icon name="attach_file" />
     </template>
-    <template v-slot:hint>
+    <template #hint>
       Formati: {{ accept }}
     </template>
   </q-file>
@@ -20,7 +20,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const props = defineProps({
+defineProps({
   accept: { type: String, default: '.jpg,.jpeg,.png,.gif,.heic,.pdf' },
   maxSize: { type: Number, default: 5 * 1024 * 1024 },
   label: { type: String, default: 'Allega file' }

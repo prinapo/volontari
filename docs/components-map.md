@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 2026-05-25 | 1.0.0 | System | Initial draft |
 | 2026-05-25 | 1.1.0 | System | Final — added Dati bancari expansion, Elimina button, Apri/Scarica labels |
-| 2026-05-25 | 2.0.0 | System | Final — added AppLayout with sidebar, VerificaPage, ConfirmDialog, FileUploader, genitori section, InlineEditableField date type, GiustificativoForm Tranche/Stato |
+| 2026-05-25 | 2.0.0 | System | Final — added AppLayout with sidebar, VerificaPage, ConfirmDialog, FileUploader, genitori section, InlineEditableField date type, GiustificativoForm Stato |
 
 ---
 
@@ -61,7 +61,6 @@ App.vue
       │           │       ├── q-btn (Aggiungi, icon add)
       │           │       ├── GiustificativoCard (q-card per item)
       │           │       │   ├── q-badge (Stato: Bozza orange / Inviato blue)
-      │           │       │   ├── q-badge (Tranche, if present)
       │           │       │   ├── InlineEditableField (Descrizione, type text)
       │           │       │   ├── InlineEditableField (Importo, type text, format "€ X,XX")
       │           │       │   ├── InlineEditableField (Data, type text, format "DD/MM/YYYY")
@@ -75,7 +74,6 @@ App.vue
       │           │           ├── q-input (Descrizione)
       │           │           ├── q-input (Importo, type number, step 0.01)
       │           │           ├── q-date (Data, mask="YYYY-MM-DD")
-      │           │           ├── q-select (Tranche: Luglio/Settembre/Novembre/Febbraio)
       │           │           ├── q-select (Stato: draft/Inviato)
       │           │           ├── FileUploader (q-file, accept .pdf/.jpg/.png)
       │           │           ├── q-btn (Annulla, data-testid="form-annulla")
@@ -83,20 +81,19 @@ App.vue
       │           │
       │           └── VerificaPage.vue (requiredRole: Verifica)
       │               ├── Filtri row
-      │               │   ├── q-select (Tranche: Luglio/Settembre/Novembre/Febbraio)
       │               │   ├── q-select (Anno bando, filtered from data)
       │               │   ├── q-select (Rendicontazione: con importi/tutte/mancanti)
       │               │   └── q-input (Cerca famiglia)
       │               ├── Summary grid (4 cards)
       │               │   ├── Famiglie/progetti count
-      │               │   ├── Rendicontato tranche (primary)
+      │               │   ├── Rendicontato totale (primary)
       │               │   ├── Rimborsabile 80% (positive)
       │               │   └── Pronte per ASPI count
       │               └── q-table (flat, bordered, expandable rows)
       │                   ├── Famiglia (nome + ID)
       │                   ├── Bando (AnnoBando)
       │                   ├── Dati bancari (badge Completi/Da completare + IBAN)
-      │                   ├── Rendicontato [tranche] (importo + count)
+      │                   ├── Rendicontato (importo + count)
       │                   ├── Rimborsabile (importo)
       │                   ├── Totali (totale rendicontato + rimborsabile)
       │                   ├── Stato (badge color based on completamento)
@@ -233,7 +230,7 @@ App.vue
 |---|---|---|
 | — | — | Uses `useVerificaStore()` |
 
-**Column order:** Bando → Famiglia (nome — beneficiario — ID) → Dati bancari (con edit button) → Allocato → Rendicontato (per tranche o totale) → Rimborsabile (globale min 80%/allocato) → Stato → Actions
+**Column order:** Bando → Famiglia (nome — beneficiario — ID) → Dati bancari (con edit button) → Allocato → Rendicontato → Rimborsabile (globale min 80%/allocato) → Stato → Actions
 
 **Features:**
 - **Expandable rows** in q-table: `#body` slot pattern, expand gestito da `props.expand`
@@ -243,9 +240,8 @@ App.vue
 - Loading state individuale per ogni bottone (`verifyingId` / `rejectingId`)
 
 **Filtri:**
-- **Tranche dropdown**: dinamico — mostra solo tranche con giustificativi presenti nei dati; opzione "Tutte" (nessun filtro)
 - **Anno bando**: dinamico da `store.anniBando` (dedotto dai progetti)
-- **Rendicontazione**: "con importi", "tutte", "mancanti" — funziona sia con tranche specifica che con "Tutte"
+- **Rendicontazione**: "con importi", "tutte", "mancanti"
 - **Ricerca**: filtro testuale per famiglia
 
 **Dati bancari:**
@@ -256,15 +252,15 @@ App.vue
 **State riga (progetto):**
 | Stato | Colore badge | Condizione |
 |---|---|---|
-| Non ricevuta | grey | Nessun giustificativo rendicontato nella tranche |
+| Non ricevuta | grey | Nessun giustificativo rendicontato |
 | Dati bancari mancanti | warning | Ha importi ma IBAN/Intestatario assente |
-| Da verificare | orange | IBAN ok, ma qualche giustificativo ancora "Inviato" nella tranche |
-| Pronta ASPI | positive | IBAN ok, tutti i giustificativi della tranche Verificati/Rifiutati |
+| Da verificare | orange | IBAN ok, ma qualche giustificativo ancora "Inviato" |
+| Pronta ASPI | positive | IBAN ok, tutti i giustificativi Verificati/Rifiutati |
 
 **Computed totals:**
-- `totaleRendicontato`: sum of all rendered giustificativi for selected tranche (esclude Rifiutato)
-- `totaleRimborsabile`: globale — `min(80% of totaleRendicontato all tranches, allocato)`
-- `aspiRows`: projects ready for ASPI export (dati bancari completi + importi + nessun Inviato pending nella tranche)
+- `totaleRendicontato`: sum of all rendered giustificativi (esclude Rifiutato)
+- `totaleRimborsabile`: globale — `min(80% of totaleRendicontato, allocato)`
+- `aspiRows`: projects ready for ASPI export (dati bancari completi + importi + nessun Inviato pending)
 
 ### 2.9 ConfirmDialog.vue
 
