@@ -47,33 +47,26 @@ test.describe.serial('Referente Role', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
-    await page.waitForTimeout(2000)
+    await gestionePage.search('test.volontario')
+    await page.waitForTimeout(3000)
 
     const rowCount = await gestionePage.getRowCount()
     if (rowCount === 0) {
-      test.skip()
+      test.skip('Contatto test.volontario@test.com non trovato')
       return
     }
 
-    let targetRow = null
-    const rows = gestionePage.tableRows
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') })
-      if (await btn.count() > 0) {
-        targetRow = rows.nth(i)
-        break
-      }
-    }
+    const firstRow = gestionePage.tableRows.first()
+    await expect(firstRow).toBeVisible()
 
-    if (!targetRow) {
-      test.skip('Nessun contatto con bottone Assegna Referente')
+    const actionCell = firstRow.locator('td').last()
+    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') })
+    if (await referenteBtn.count() === 0) {
+      test.skip('Bottone Assegna Referente non trovato')
       return
     }
 
-    const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') }).click()
+    await referenteBtn.click()
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')
@@ -110,33 +103,26 @@ test.describe.serial('Referente Role', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
-    await page.waitForTimeout(2000)
+    await gestionePage.search('test.volontario')
+    await page.waitForTimeout(3000)
 
     const rowCount = await gestionePage.getRowCount()
     if (rowCount === 0) {
-      test.skip()
+      test.skip('Contatto test.volontario@test.com non trovato')
       return
     }
 
-    let targetRow = null
-    const rows = gestionePage.tableRows
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') })
-      if (await btn.count() > 0) {
-        targetRow = rows.nth(i)
-        break
-      }
-    }
+    const firstRow = gestionePage.tableRows.first()
+    await expect(firstRow).toBeVisible()
 
-    if (!targetRow) {
-      test.skip('Nessun contatto con bottone Assegna Referente')
+    const actionCell = firstRow.locator('td').last()
+    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') })
+    if (await referenteBtn.count() === 0) {
+      test.skip('Bottone Assegna Referente non trovato')
       return
     }
 
-    const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') }).click()
+    await referenteBtn.click()
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')
@@ -189,33 +175,26 @@ test.describe.serial('Referente Role', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
-    await page.waitForTimeout(2000)
+    await gestionePage.search('test.volontario')
+    await page.waitForTimeout(3000)
 
     const rowCount = await gestionePage.getRowCount()
     if (rowCount === 0) {
-      test.skip()
+      test.skip('Contatto test.volontario@test.com non trovato')
       return
     }
 
-    let targetRow = null
-    const rows = gestionePage.tableRows
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') })
-      if (await btn.count() > 0) {
-        targetRow = rows.nth(i)
-        break
-      }
-    }
+    const firstRow = gestionePage.tableRows.first()
+    await expect(firstRow).toBeVisible()
 
-    if (!targetRow) {
-      test.skip('Nessun contatto con bottone Assegna Referente')
+    const actionCell = firstRow.locator('td').last()
+    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') })
+    if (await referenteBtn.count() === 0) {
+      test.skip('Bottone Assegna Referente non trovato')
       return
     }
 
-    const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="person_search"]') }).click()
+    await referenteBtn.click()
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')

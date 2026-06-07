@@ -48,8 +48,6 @@ export const contattiService = {
       filter.IsVolontario = { _eq: false }
     } else if (isReferente === true) {
       filter.IsReferente = { _eq: true }
-      filter.IsVolontario = { _eq: false }
-      filter.IsGenitore = { _eq: false }
     } else if (isVolontario === false && isGenitore === false && isReferente === false) {
       filter.IsVolontario = { _eq: false }
       filter.IsGenitore = { _eq: false }
