@@ -26,6 +26,11 @@ test.describe.skip('DeduplicaPage — non in uso', () => {
   })
 
   test('DP-02: Pulsante refresh visibile quando pagina accessibile @smoke', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await page.waitForURL(/\/(famiglie|gestione|verifica|deduplica)/, { timeout: 15000 })
+
     await page.goto('/deduplica')
     await page.waitForTimeout(2000)
     if (!page.url().includes('/deduplica')) {
@@ -36,6 +41,11 @@ test.describe.skip('DeduplicaPage — non in uso', () => {
   })
 
   test('DP-03: Messaggio nessun duplicato o lista gruppi @smoke', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await page.waitForURL(/\/(famiglie|gestione|verifica|deduplica)/, { timeout: 15000 })
+
     await page.goto('/deduplica')
     await page.waitForTimeout(2000)
     if (!page.url().includes('/deduplica')) {
@@ -65,6 +75,11 @@ test.describe.skip('DeduplicaPage — non in uso', () => {
   })
 
   test('DP-04: Badge tipo duplicato presenti @smoke', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await page.waitForURL(/\/(famiglie|gestione|verifica|deduplica)/, { timeout: 15000 })
+
     await page.goto('/deduplica')
     await page.waitForTimeout(2000)
     if (!page.url().includes('/deduplica')) {

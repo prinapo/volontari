@@ -15,6 +15,7 @@
             v-model="form.Descrizione"
             label="Descrizione"
             filled
+            data-testid="giustform-descrizione"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
           />
@@ -23,6 +24,7 @@
             label="Importo (€)"
             type="number"
             filled
+            data-testid="giustform-importo"
             step="0.01"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
@@ -32,6 +34,7 @@
             label="Data"
             filled
             readonly
+            data-testid="giustform-data"
             class="cursor-pointer"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
@@ -50,6 +53,7 @@
             label="Nota (opzionale)"
             type="textarea"
             filled
+            data-testid="giustform-nota"
             :maxlength="500"
           />
           <div class="row q-gutter-sm items-center">
@@ -61,6 +65,7 @@
               filled
               clearable
               class="col"
+              data-testid="giustform-file"
               :rules="[val => !!val || 'Campo obbligatorio']"
               lazy-rules
             >
@@ -95,6 +100,7 @@
         <q-btn
           color="primary"
           label="Salva"
+          data-testid="giustform-salva"
           :loading="saving"
           @click="handleSave"
         />

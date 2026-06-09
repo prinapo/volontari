@@ -14,6 +14,7 @@
           <q-input
             v-model="form.Nome_Famiglia"
             label="Nome Famiglia *"
+            data-testid="famiglia-nome"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
             class="q-mb-md"
@@ -21,11 +22,13 @@
           <q-input
             v-model="form.IBAN"
             label="IBAN"
+            data-testid="famiglia-iban"
             class="q-mb-md"
           />
           <q-input
             v-model="form.Intestatario_CC"
             label="Intestatario CC"
+            data-testid="famiglia-intestatario"
             class="q-mb-md"
           />
         </q-form>

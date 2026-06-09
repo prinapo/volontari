@@ -14,6 +14,7 @@
           <q-input
             v-model="form.Nome"
             label="Nome *"
+            data-testid="contatto-nome"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
             class="q-mb-md"
@@ -21,6 +22,7 @@
           <q-input
             v-model="form.Cognome"
             label="Cognome *"
+            data-testid="contatto-cognome"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
             class="q-mb-md"
@@ -28,17 +30,20 @@
           <q-input
             v-model="form.Numero_di_cellulare"
             label="Numero di cellulare"
+            data-testid="contatto-cellulare"
             class="q-mb-md"
           />
           <q-input
             v-model="form.Numero_di_telefono"
             label="Numero di telefono"
+            data-testid="contatto-telefono"
             class="q-mb-md"
           />
 
           <q-toggle
             v-model="form.IsReferente"
             label="Referente"
+            data-testid="contatto-referente"
             class="q-mb-md"
           />
 
@@ -54,6 +59,7 @@
               dense
               outlined
               class="col"
+              :data-testid="`contatto-email-${idx}`"
               :disable="hasAccount"
               @blur="onEmailBlur(em, idx)"
             />
