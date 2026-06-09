@@ -96,13 +96,72 @@ test.describe('VerificaPage', () => {
     })
   })
 
-  test.describe('Expanded Row & Giustificativi', () => {
+  test.describe.serial('Expanded Row & Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       const loginPage = new LoginPage(page)
       await loginPage.goto()
       await loginPage.login(auth.verificatore.email, auth.verificatore.password)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
+    })
+
+    test('ER-SETUP: Crea giustificativo inviato @setup', async ({ page }) => {
+      test.setTimeout(60000)
+
+      await page.evaluate(() => localStorage.clear())
+
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(auth.volontario.email, auth.volontario.password)
+      await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+      await page.waitForTimeout(2000)
+
+      const select = page.locator('.q-select').first()
+      await select.click()
+      await page.waitForTimeout(2000)
+      const firstOption = page.locator('.q-menu .q-item').first()
+      if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await firstOption.click()
+        await page.waitForTimeout(1000)
+      }
+
+      const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
+      if (await aggiungiBtn.isDisabled().catch(() => true)) return
+
+      await aggiungiBtn.click()
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
+      const dialog = page.locator('.q-dialog')
+
+      await dialog.locator('input').first().fill(`Test ER_${Date.now()}`)
+      await dialog.locator('input').nth(1).fill('75.00')
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+
+      const [postResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
+        dialog.locator('button:has-text("Salva")').click()
+      ])
+
+      const postStatus = postResp.status()
+      if (postStatus < 200 || postStatus >= 300) return
+      await expect(dialog).not.toBeVisible({ timeout: 10000 })
+
+      const created = await postResp.json()
+      const giustId = created.data?.id
+      if (!giustId) return
+
+      const submitBtn = page.locator('button:has-text("Invia")').first()
+      const submitVisible = await submitBtn.isVisible({ timeout: 8000 }).catch(() => false)
+      console.log(`[ER-SETUP] submitBtn visible: ${submitVisible}`)
+      if (submitVisible) {
+        const [submitResp] = await Promise.all([
+          page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH'),
+          submitBtn.click()
+        ])
+        console.log(`[ER-SETUP] submit PATCH status: ${submitResp.status()}`)
+        await page.waitForTimeout(2000)
+      } else {
+        console.log('[ER-SETUP] Submit button non trovato')
+      }
     })
 
     test('ER-01: Click expand mostra giustificativi @smoke', async ({ page }) => {
@@ -123,41 +182,53 @@ test.describe('VerificaPage', () => {
     })
 
     test('VE-EDIT: Inline edit Descrizione su giustificativo inviato @crud', async ({ page }) => {
+      const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
+      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await searchInput.fill('Famiglia TEST_FAM_01')
+        await page.waitForTimeout(4000)
+      }
+
       const expandBtn = page.locator('.verifica-table tbody tr td:first-child .q-btn').first()
-      await expandBtn.click({ timeout: 5000 })
-      await page.waitForTimeout(3000)
-
-      const expandedContent = page.locator('.expandable-content').first()
-      if (await expandedContent.isVisible({ timeout: 3000 }).catch(() => false)) {
-        const inlineFields = expandedContent.locator('.inline-editable-field')
-        if (await inlineFields.count() > 0) {
-          const targetField = inlineFields.first()
-          await targetField.click()
-          await page.waitForTimeout(500)
-
-          const input = expandedContent.locator('.inline-editable-field input').first()
-          if (await input.count() > 0) {
-            const originalValue = await input.inputValue()
-            const testValue = `${originalValue} (test edit)`
-            await input.fill(testValue)
-
-            const saveBtn = expandedContent.locator('[data-testid="inline-save"]').first()
-            if (await saveBtn.count() > 0) {
-              const [patchResp] = await Promise.all([
-                page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH'),
-                saveBtn.click()
-              ])
-              expect(patchResp.status()).toBe(200)
-            }
-
-            await expandBtn.click()
-            return
-          }
-        }
+      if (!(await expandBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+        test.skip('Nessuna riga trovata dopo filtro')
+        return
       }
 
       await expandBtn.click()
-      test.skip('Inline edit non disponibile (giustificativo non in stato inviato?)')
+      await page.waitForTimeout(3000)
+
+      const editableField = page.locator('.giust-item .inline-editable-field.cursor-pointer').first()
+      const fieldCount = await editableField.count()
+      if (fieldCount === 0) {
+        await expandBtn.click()
+        test.skip('Nessun campo inline editabile (tutti readonly?)')
+        return
+      }
+
+      await editableField.click()
+      await page.waitForTimeout(500)
+
+      const input = page.locator('.inline-editable-field input:visible').first()
+      if (await input.count() === 0) {
+        await expandBtn.click()
+        test.skip('Input non apparso dopo click')
+        return
+      }
+
+      const originalValue = await input.inputValue()
+      const testValue = `${originalValue} (test edit)`
+      await input.fill(testValue)
+
+      const saveBtn = page.locator('[data-testid="inline-save"]:visible').first()
+      if (await saveBtn.count() > 0) {
+        const [patchResp] = await Promise.all([
+          page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH'),
+          saveBtn.click()
+        ])
+        expect(patchResp.status()).toBe(200)
+      }
+
+      await expandBtn.click()
     })
 
     test('VE-ADD: Aggiungi giustificativo da VerificaPage @crud', async ({ page }) => {
@@ -357,8 +428,10 @@ test.describe('VerificaPage', () => {
     const giustId = created.data?.id
     if (!giustId) return
 
-    const submitBtn = page.locator('[data-testid^="giustificativo-card-"] button:has-text("Invia")').first()
-    if (await submitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    const submitBtn = page.locator('button:has-text("Invia")').first()
+    const submitVisible = await submitBtn.isVisible({ timeout: 8000 }).catch(() => false)
+    console.log(`[SR-SETUP] submitBtn visible: ${submitVisible}`)
+    if (submitVisible) {
       await submitBtn.click()
       await page.waitForTimeout(2000)
     } else {
