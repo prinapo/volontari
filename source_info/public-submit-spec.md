@@ -86,49 +86,7 @@ Accessibile senza login. Non appare nella sidebar. Da aggiungere in `src/router/
 
 ---
 
-## 5. Riconciliazione Automatica
-
-Dopo ogni submission, il sistema tenta una riconciliazione automatica.
-
-### 5.1 Logica di matching
-
-```js
-async function tryAutoReconcile(submissionId) {
-  // Step 1: cerca famiglia per IBAN + Intestatario
-  // GET /items/Famiglie?filter[IBAN][_eq]={iban}&filter[Intestatario_CC][_eq]={intestatario}
-
-  // Step 2: se famiglia trovata, cerca progetto per cognome beneficiario
-  // GET /items/Progetti?filter[Famiglia][_eq]={famigliaId}
-  //   &filter[Cognome_e__Nome_Beneficiario][_contains]={cognome_beneficiario}
-
-  // Step 3: valuta risultato
-  // - famiglia trovata + progetto trovato (univoco) → riconciliazione automatica
-  // - altrimenti → lascia in_attesa
-}
-```
-
-**Note sul matching:**
-- Confronto case-insensitive e con `.trim()` per robustezza su typo minori
-- Se la famiglia ha più progetti e uno solo corrisponde al beneficiario → match
-- Se la famiglia ha più progetti e nessuno o più di uno corrisponde → in_attesa
-
-### 5.2 Riconciliazione automatica riuscita
-
-1. Crea `Giustificativo` con i dati della submission (stato `draft`)
-2. `PATCH /items/InviiGiustificativiNoLogin/{id}`:
-   - `stato: "riconciliato"`
-   - `famiglia_riconciliata: famigliaId`
-   - `progetto_riconciliato: progettoId`
-   - `giustificativo_creato: giustificativoId`
-
-### 5.3 Riconciliazione automatica fallita
-
-- `stato` resta `in_attesa`
-- La submission appare nella coda di riconciliazione in VerificaPage
-
----
-
-## 6. Coda di Riconciliazione in VerificaPage
+## 5. Coda di Riconciliazione in VerificaPage
 
 ### 6.1 Nuova tab "Da riconciliare"
 

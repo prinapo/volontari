@@ -368,11 +368,6 @@ Colonne: Data invio, Richiedente, Email, Beneficiario, Importo, Allegato, Azioni
 
 **Scarta**: prompt motivazione → PATCH `stato: scartato` + note (audit trail).
 
-**Riconciliazione automatica** (`store.tryAutoReconcile()`):
-- Match IBAN + Intestatario su `Famiglie`
-- Match Cognome beneficiario su `Progetti`
-- Solo se un risultato univoco → riconcilia
-
 # Test E2E — Reset Password
 
 ## Account email per intercettazione
