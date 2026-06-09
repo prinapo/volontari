@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   testDir: './specs',
@@ -6,7 +10,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: [['list'], ['./helpers/results-reporter.js']],
+  reporter: [['list'], [resolve(__dirname, 'helpers/results-reporter.cjs')]],
   use: {
     baseURL: 'http://localhost:9000',
     trace: 'on-first-retry',

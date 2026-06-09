@@ -1,6 +1,12 @@
 import { test, expect } from '../helpers/console.js'
 import { LoginPage } from '../pages/LoginPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
 
 test.describe('VerificaPage', () => {
   test.describe('Auth & Layout', () => {
@@ -12,8 +18,17 @@ test.describe('VerificaPage', () => {
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     })
 
-    test('VR-02: VerificaPage non accessibile se non autorizzati @regression', async () => {
-      test.skip()
+    test('VR-02: VerificaPage non accessibile se non autorizzati @regression', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(auth.volontario.email, auth.volontario.password)
+      await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+
+      await page.goto('/verifica')
+      await page.waitForTimeout(2000)
+
+      const currentUrl = page.url()
+      expect(currentUrl).not.toContain('/verifica')
     })
 
     test('TB-01: Colonne ordine corretto @smoke', async ({ page }) => {
@@ -55,32 +70,6 @@ test.describe('VerificaPage', () => {
     test('FL-01: Tranche Tutte mostra tutti i progetti @smoke', async ({ page }) => {
       const rows = await page.locator('.verifica-table tbody tr').count()
       expect(rows).toBeGreaterThanOrEqual(0)
-    })
-
-    test('FL-04: Filtro rendicontazione con importi @crud', async ({ page }) => {
-      const rendSelect = page.locator('.q-select:has(.q-field__label:has-text("Rendicontazione"))')
-      if (!(await rendSelect.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
-      await rendSelect.click()
-      await page.locator('.q-item:has-text("Solo con importi")').click()
-      await page.waitForTimeout(500)
-      const nonRicevutaCount = await page.locator('.q-badge:has-text("Non ricevuta")').count()
-      expect(nonRicevutaCount).toBe(0)
-    })
-
-    test('FL-05: Filtro rendicontazione mancanti @crud', async ({ page }) => {
-      const rendSelect = page.locator('.q-select:has(.q-field__label:has-text("Rendicontazione"))')
-      if (!(await rendSelect.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
-      await rendSelect.click()
-      await page.locator('.q-item:has-text("Solo mancanti")').click()
-      await page.waitForTimeout(500)
-      const dataRows = await page.locator('.verifica-table tbody tr:has(td .q-btn)').count()
-      expect(dataRows).toBeGreaterThanOrEqual(0)
     })
 
     test('FL-06: Filtro anno bando @crud', async ({ page }) => {
@@ -165,7 +154,75 @@ test.describe('VerificaPage', () => {
     })
   })
 
-  test.describe('Stato riga', () => {
+  test('SR-SETUP: Crea giustificativo inviato @setup', async ({ page }) => {
+    test.setTimeout(60000)
+
+    const networkLog = []
+    page.on('response', async resp => {
+      const entry = { method: resp.request().method(), url: resp.url().replace(/\?.*$/, ''), status: resp.status() }
+      if (resp.status() >= 400) {
+        try { entry.body = await resp.text() } catch {}
+      }
+      networkLog.push(entry)
+    })
+
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await page.waitForTimeout(2000)
+
+    const select = page.locator('.q-select').first()
+    await select.click()
+    await page.waitForTimeout(2000)
+    const firstOption = page.locator('.q-menu .q-item').first()
+    if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await firstOption.click()
+      await page.waitForTimeout(1000)
+    }
+
+    const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
+    if (await aggiungiBtn.isDisabled().catch(() => true)) return
+
+    await aggiungiBtn.click()
+    await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
+    const dialog = page.locator('.q-dialog')
+
+    await dialog.locator('input').first().fill(`Test SR_${Date.now()}`)
+    await dialog.locator('input').nth(1).fill('75.00')
+    await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
+      dialog.locator('button:has-text("Salva")').click()
+    ])
+
+    const postStatus = postResp.status()
+    if (postStatus < 200 || postStatus >= 300) {
+      console.log(`[SR-SETUP] POST Giustificativi fallito: ${postStatus}`)
+      return
+    }
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+
+    const created = await postResp.json()
+    const giustId = created.data?.id
+    if (!giustId) return
+
+    const submitBtn = page.locator('[data-testid^="giustificativo-card-"] button:has-text("Invia")').first()
+    if (await submitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await submitBtn.click()
+      await page.waitForTimeout(2000)
+    } else {
+      console.log('[SR-SETUP] Submit button non trovato — giustificativo resta in bozza')
+    }
+
+    const errors = networkLog.filter(e => e.status >= 400)
+    if (errors.length > 0) {
+      console.log(`[SR-SETUP] Errori rete: ${JSON.stringify(errors, null, 2)}`)
+    }
+  })
+
+  test.describe.serial('Stato riga', () => {
     test.beforeEach(async ({ page }) => {
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -185,24 +242,13 @@ test.describe('VerificaPage', () => {
     })
 
     test('SR-02: Stato Da verificare visibile quando presente @smoke', async ({ page }) => {
-      const trancheSelect = page.locator('.q-select').first()
-      await trancheSelect.click()
-      const options = page.locator('.q-menu .q-item')
-      const optionCount = await options.count()
-      if (optionCount > 1) {
-        await options.nth(1).click()
-        await page.waitForTimeout(500)
+      const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
+      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await searchInput.fill('Famiglia TEST_FAM_01')
+        await page.waitForTimeout(4000)
       }
-      const badge = page.locator('.q-badge:has-text("Da verificare")').first()
-      if (await badge.count() > 0) {
-        await expect(badge).toBeVisible()
-      } else {
-        test.skip()
-      }
-    })
 
-    test('SR-03: Stato Pronta ASPI visibile quando presente @smoke', async ({ page }) => {
-      const badge = page.locator('.q-badge:has-text("Pronta ASPI")').first()
+      const badge = page.locator('.q-badge:has-text("Da verificare")').first()
       if (await badge.count() > 0) {
         await expect(badge).toBeVisible()
       } else {

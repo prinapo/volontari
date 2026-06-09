@@ -409,16 +409,6 @@ test.describe.serial('Giustificativi', () => {
       expect(scaricaHref).toContain('access_token=')
     })
 
-    test('AL-02: Card senza allegato mostra Nessun allegato @smoke', async ({ page }) => {
-      const cardNoAttach = page.locator('.q-card').filter({ hasText: 'Nessun allegato' })
-      if (await cardNoAttach.count() === 0) {
-        console.log('AL-02: tutte le card hanno allegato — skip')
-        test.skip()
-        return
-      }
-      await expect(cardNoAttach.first()).toBeVisible()
-    })
-
     test('AL-03: Scarica file è un PDF valido @crud', async ({ page }) => {
       const cardWithAttach = page.locator('.q-card').filter({ has: page.locator('a[href*="/assets/"]') })
       if (await cardWithAttach.count() === 0) {

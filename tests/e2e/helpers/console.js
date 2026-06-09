@@ -3,14 +3,9 @@ import { test as base, expect } from '@playwright/test'
 const EXPECTED_API_ERRORS = [
   '/auth/login',       // 401 — intentional wrong credentials (A-03)
   '/auth/password/reset',  // 422/401 — intentional bad token (RP-04, RP-10)
-  '/items/email',       // 403 — role lacks read access to email collection
-  '/items/Famiglie_Contatti',  // 403 — role lacks read access to Famiglie_Contatti
-  'favicon.ico'         // 404 — missing favicon
 ]
 
 const EXPECTED_CONSOLE_ERROR_PATTERNS = [
-  /^Errore caricamento email (volontari|genitori) AxiosError: Request failed with status code 403/,
-  /^Failed to load resource:.*404/
 ]
 
 export const test = base.extend({

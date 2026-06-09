@@ -104,12 +104,10 @@ async function loadAssigned() {
 }
 
 async function filterReferenti(val, update) {
-  if (!val || val.length < 2) {
-    update(() => { referenteOptions.value = [] })
-    return
-  }
   try {
-    const res = await contattiService.query({ search: val, isReferente: true, limit: 20 })
+    const params = { isReferente: true, limit: 20 }
+    if (val && val.length >= 2) params.search = val
+    const res = await contattiService.query(params)
     const rows = res.data.data || []
     update(() => {
       referenteOptions.value = rows

@@ -65,7 +65,8 @@ test.describe('ResetPasswordPage — UI', () => {
 })
 
 test.describe('ResetPasswordPage — Full E2E', () => {
-  test.skip('RP-10: Reset password reale via email e ripristino @e2e', async ({ page }) => {
+  test('RP-10: Reset password reale via email e ripristino @e2e', async ({ page }) => {
+    test.setTimeout(120000)
     // 1. Forgot password — richiedi reset
     await page.goto('/login')
     await page.locator('button:has-text("Password dimenticata")').click()

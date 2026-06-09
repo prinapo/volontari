@@ -11,7 +11,7 @@
 - **FamiglieTab**: Ordinamento funzionante (sort mappato a Directus field names). Genitori prima, poi separator, poi Volontari nell riga espandibile.
 - **FamigliaInfoCard**: Mostra referente di ogni volontario.
 - **Email layout**: Email verticali nella tabella Contatti (non orizzontali).
-- **Test E2E**: 100 test passano, 0 falliti, 19 skip (dati mancanti o funzionalità nascoste).
+- **Test E2E**: 112 test passano, 0 falliti, 4 skip (Deduplica hardcoded).
 - **Version bump**: 2.2.0 → 2.3.0
 
 # v2.1.0
@@ -54,6 +54,17 @@ manualmente in Directus o tramite UI nei test di setup (es. FM-01).
 console (4xx/5xx API, eccezioni JS, errori runtime). Il helper `console.js`
 chiama `expect(errors).toHaveLength(0)` dopo ogni test. I test vanno sempre
 eseguiti con `--reporter=list` per vedere subito gli errori.
+
+**INTERCETTAZIONE RETE PRIMA DEL DOM.** Quando un test interagisce con la rete
+e non funziona, la prima cosa da fare è intercettare la risposta API con
+`page.on('response')` o `page.waitForResponse()` per verificare:
+- Lo status code (200, 403, 500?)
+- Il body della risposta
+- Il payload inviato
+
+Solo DOPO aver verificato la rete ha senso controllare il DOM.
+Se un pulsante non viene trovato, riscrivere il test per intercettare
+l'HTML/HTML invece di cercare selettori specifici.
 
 # Architecture Overview
 

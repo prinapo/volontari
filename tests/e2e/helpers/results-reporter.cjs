@@ -1,7 +1,7 @@
-import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs'
-import { resolve, dirname } from 'path'
+const { writeFileSync, existsSync, readFileSync, mkdirSync } = require('fs')
+const { resolve, dirname } = require('path')
 
-const RESULTS_FILE = resolve('test-results', 'test-results.json')
+const RESULTS_FILE = resolve(__dirname, '..', '..', '..', 'test-results', 'test-results.json')
 
 class ResultsReporter {
   constructor(options) {
@@ -64,4 +64,4 @@ class ResultsReporter {
   }
 }
 
-export default ResultsReporter
+module.exports = ResultsReporter

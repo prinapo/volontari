@@ -290,8 +290,8 @@ test.describe.serial('Famiglie Page', () => {
     const totaleText = await page.locator('text=Totale Giustificativi').locator('..').locator('.text-h6').innerText()
     const rimborsabileText = await page.getByText('Totale Rimborsabile', { exact: true }).locator('..').locator('.text-h6').innerText()
 
-    const totale = parseFloat(totaleText.replace(/[€\s]/g, '').replace(',', '.'))
-    const rimborsabile = parseFloat(rimborsabileText.replace(/[€\s]/g, '').replace(',', '.'))
+    const totale = parseFloat(totaleText.replace(/[€\s.]/g, '').replace(',', '.'))
+    const rimborsabile = parseFloat(rimborsabileText.replace(/[€\s.]/g, '').replace(',', '.'))
 
     expect(totale).toBeGreaterThanOrEqual(0)
     expect(rimborsabile).toBeGreaterThanOrEqual(0)
