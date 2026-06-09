@@ -152,6 +152,37 @@ test.describe('VerificaPage', () => {
       await page.locator('.q-dialog button:has-text("Annulla")').click()
       await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 3000 })
     })
+
+    test('DB-V4: Dialog IBAN salva invia PATCH @crud', async ({ page }) => {
+      const editBtn = page.locator('.verifica-table tbody tr td .q-btn').filter({ has: page.locator('i:text-is("edit")') }).first()
+      if (await editBtn.count() === 0) test.skip()
+      await editBtn.click()
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
+
+      const ibanInput = page.locator('.q-dialog [data-testid="bancari-iban"]')
+      if (await ibanInput.count() === 0) {
+        await page.locator('.q-dialog button:has-text("Annulla")').click()
+        test.skip('BancariDialog senza data-testid')
+        return
+      }
+
+      const originalIban = await ibanInput.inputValue()
+      const testIban = originalIban === 'IT60XTEST00000000000000' ? 'IT60XREAL00000000000000' : 'IT60XTEST00000000000000'
+      await ibanInput.fill(testIban)
+
+      const intestatarioInput = page.locator('.q-dialog [data-testid="bancari-intestatario"]')
+      if (await intestatarioInput.count() > 0) {
+        await intestatarioInput.fill('Test Intestatario')
+      }
+
+      const [patchResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'PATCH'),
+        page.locator('.q-dialog button:has-text("Salva")').click()
+      ])
+
+      expect(patchResp.status()).toBe(200)
+      await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 10000 })
+    })
   })
 
   test('SR-SETUP: Crea giustificativo inviato @setup', async ({ page }) => {

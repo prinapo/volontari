@@ -61,3 +61,51 @@ test.describe('Pagine Pubbliche', () => {
     await expect(page.locator('text=Invio giustificativi')).toBeVisible()
   })
 })
+
+test.describe('Route Guards', () => {
+  test('RG-01: Volontario non accede a /gestione @regression', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+
+    await page.goto('/gestione')
+    await page.waitForTimeout(2000)
+    expect(page.url()).not.toContain('/gestione')
+  })
+
+  test('RG-02: Volontario non accede a /admin @regression', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+
+    await page.goto('/admin')
+    await page.waitForTimeout(2000)
+    expect(page.url()).not.toContain('/admin')
+  })
+
+  test('RG-03: Gestore non accede a /verifica @regression', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.gestore.email, auth.gestore.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+
+    await page.goto('/verifica')
+    await page.waitForTimeout(2000)
+    expect(page.url()).not.toContain('/verifica')
+  })
+
+  test('RG-04: Redirect post-login va alla pagina corretta per ruolo @regression', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.gestore.email, auth.gestore.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+
+    const loginPage2 = new LoginPage(page)
+    await page.evaluate(() => localStorage.clear())
+    await loginPage2.goto()
+    await loginPage2.login(auth.verificatore.email, auth.verificatore.password)
+    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+  })
+})
