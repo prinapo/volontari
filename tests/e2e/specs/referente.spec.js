@@ -92,7 +92,6 @@ test.describe('Referente Role', () => {
 
   test('RF-04: Rimuovi Referente da Volontario @crud', async ({ page }) => {
     test.setTimeout(90000)
-    const referenteNome = `Ref Test ${Date.now()}`
 
     const loginPage = new LoginPage(page)
     await loginPage.goto()
@@ -103,28 +102,6 @@ test.describe('Referente Role', () => {
     await gestionePage.selectContattiTab()
     await page.waitForTimeout(2000)
 
-    const addBtn = page.locator('button:has-text("Aggiungi Contatto")')
-    await addBtn.click()
-    await page.waitForTimeout(1000)
-
-    const dialog = page.locator('.q-dialog:visible')
-    await expect(dialog).toBeVisible({ timeout: 5000 })
-
-    await dialog.locator('input').first().fill(referenteNome)
-    await dialog.locator('input').nth(1).fill('Test RF04')
-
-    const referenteToggle = dialog.locator('.q-toggle:has-text("Referente")')
-    await referenteToggle.click()
-    await page.waitForTimeout(300)
-
-    const patchPromise = page.waitForResponse(
-      resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'
-    )
-    await dialog.locator('button:has-text("Salva")').click()
-    await patchPromise
-    await expect(dialog).not.toBeVisible({ timeout: 10000 })
-    await page.waitForTimeout(1000)
-
     await gestionePage.tipoFilter.click()
     await page.waitForTimeout(500)
     await page.locator('.q-item:has-text("Volontario")').click()
@@ -134,7 +111,6 @@ test.describe('Referente Role', () => {
     await page.waitForTimeout(2000)
 
     const rowCount = await gestionePage.getRowCount()
-    console.log(`[RF-04] rows after filter: ${rowCount}`)
     if (rowCount === 0) { test.skip('Volontario di test non trovato'); return }
 
     const targetRow = gestionePage.tableRows.first()
@@ -152,8 +128,10 @@ test.describe('Referente Role', () => {
     await expect(refDialog).toBeVisible({ timeout: 5000 })
 
     const searchInput = refDialog.locator('input[aria-label="Cerca referente..."]')
-    await searchInput.fill(referenteNome)
-    await page.waitForTimeout(3000)
+    await searchInput.click()
+    await page.waitForTimeout(300)
+    await page.keyboard.type('test.referente', { delay: 30 })
+    await page.waitForTimeout(2000)
 
     const qMenuItems = page.locator('.q-menu .q-item')
     const menuCount = await qMenuItems.count()
