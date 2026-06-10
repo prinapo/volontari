@@ -208,8 +208,12 @@ test.describe('ContattiTab — CRUD', () => {
   test('CT-10: Modifica contatto esistente @crud', async ({ page }) => {
     const gp = new GestionePage(page)
     await gp.waitForTable()
+
+    await gp.search('TEST_01')
+    await page.waitForTimeout(1000)
+
     const rows = await gp.getRowCount()
-    if (rows === 0) { test.skip('No contatti da modificare'); return }
+    if (rows === 0) { test.skip('TEST_01 non trovato'); return }
 
     const editBtn = page.locator('.q-table tbody tr').first().locator('button:has(i:text-is("edit"))')
     if (await editBtn.count() === 0) { test.skip('Nessun pulsante edit'); return }

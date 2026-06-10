@@ -169,18 +169,23 @@ test.describe.serial('Riconciliazione', () => {
     }
 
     let foundBtn = null
+    let foundRowIndex = -1
     const rows = riconcPage.tableRows
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const btn = rows.nth(i).locator('.q-td:last-child .q-btn').filter({ has: page.locator('i:has-text("fact_check")') }).first()
       if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        foundBtn = btn
-        break
+        const rowText = await rows.nth(i).innerText()
+        if (rowText.toLowerCase().includes('test')) {
+          foundBtn = btn
+          foundRowIndex = i
+          break
+        }
       }
     }
 
     if (!foundBtn) {
-      test.skip('Nessuna riga linked disponibile')
+      test.skip('Nessuna submission di test con linked disponibile')
       return
     }
 
@@ -217,8 +222,26 @@ test.describe.serial('Riconciliazione', () => {
       return
     }
 
-    // Scarta la prima
-    await scartaBtns.first().click()
+    let testScartaBtn = null
+    const rows = riconcPage.tableRows
+    const rowCount = await rows.count()
+    for (let i = 0; i < rowCount; i++) {
+      const btn = rows.nth(i).locator('button:has(i:text-is("delete"))').first()
+      if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+        const rowText = await rows.nth(i).innerText()
+        if (rowText.toLowerCase().includes('test')) {
+          testScartaBtn = btn
+          break
+        }
+      }
+    }
+
+    if (!testScartaBtn) {
+      test.skip('Nessuna submission di test da scartare')
+      return
+    }
+
+    await testScartaBtn.click()
 
     // Inserisci motivazione nel prompt
     const dialog = page.locator('.q-dialog').filter({ hasText: 'Scarta submission' })
@@ -310,7 +333,6 @@ test.describe.serial('Riconciliazione', () => {
     await riconcPage.goto()
     await riconcPage.waitForTable()
 
-    // Attiva toggle per vedere gli scartati
     const toggle = page.locator('.q-toggle:has-text("Mostra scartati")')
     if (await toggle.count() === 0) {
       test.skip('Toggle non trovato')
@@ -324,14 +346,34 @@ test.describe.serial('Riconciliazione', () => {
       await riconcPage.waitForTable()
     }
 
-    // Cerca pulsante Recupera (icona restore colore orange)
-    const restoreBtn = page.locator('button:has(i:text-is("restore"))').first()
-    if (await restoreBtn.count() === 0) {
+    const restoreBtns = page.locator('button:has(i:text-is("restore"))')
+    const restoreCount = await restoreBtns.count()
+
+    if (restoreCount === 0) {
       test.skip('Nessuna submission scartata da recuperare')
       return
     }
 
-    await restoreBtn.click()
+    let testRestoreBtn = null
+    const rows = riconcPage.tableRows
+    const rowCount = await rows.count()
+    for (let i = 0; i < rowCount; i++) {
+      const btn = rows.nth(i).locator('button:has(i:text-is("restore"))').first()
+      if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+        const rowText = await rows.nth(i).innerText()
+        if (rowText.toLowerCase().includes('test')) {
+          testRestoreBtn = btn
+          break
+        }
+      }
+    }
+
+    if (!testRestoreBtn) {
+      test.skip('Nessuna submission di test scartata da recuperare')
+      return
+    }
+
+    await testRestoreBtn.click()
     await expect(page.locator('.q-notification').first()).toBeVisible({ timeout: 5000 })
   })
 })

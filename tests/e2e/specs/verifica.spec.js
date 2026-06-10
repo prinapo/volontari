@@ -338,6 +338,12 @@ test.describe('VerificaPage', () => {
     })
 
     test('DB-V4: Dialog IBAN salva invia PATCH @crud', async ({ page }) => {
+      const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
+      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await searchInput.fill('Famiglia TEST_FAM_01')
+        await page.waitForTimeout(4000)
+      }
+
       const editBtn = page.locator('.verifica-table tbody tr td .q-btn').filter({ has: page.locator('i:text-is("edit")') }).first()
       if (await editBtn.count() === 0) test.skip()
       await editBtn.click()
