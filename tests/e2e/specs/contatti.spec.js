@@ -249,48 +249,68 @@ test.describe('ContattiTab — CRUD', () => {
   })
 
   test('CT-11: Elimina email da contatto @crud', async ({ page }) => {
+    test.setTimeout(60000)
+    const timestamp = Date.now()
+    const nome = `Del Email ${timestamp}`
+
     const gp = new GestionePage(page)
     await gp.waitForTable()
-    const rows = await gp.getRowCount()
-    if (rows === 0) { test.skip('No contatti'); return }
 
-    const headers = await gp.getTableHeaderTexts()
-    const statoIdx = headers.indexOf('Stato account')
-
-    let targetRowIndex = -1
-    for (let i = 0; i < Math.min(rows, 10); i++) {
-      if (statoIdx !== -1) {
-        const cellText = await gp.getCellText(i, statoIdx)
-        if (cellText === '—') {
-          targetRowIndex = i
-          break
-        }
-      }
-    }
-
-    if (targetRowIndex === -1) {
-      test.skip('Nessun contatto senza account trovato')
-      return
-    }
-
-    const editBtn = page.locator('.q-table tbody tr').nth(targetRowIndex).locator('button:has(i:text-is("edit"))')
-    if (await editBtn.count() === 0) { test.skip('Nessun pulsante edit'); return }
-    await editBtn.click()
+    const addBtn = page.locator('button:has-text("Aggiungi Contatto")')
+    await addBtn.click()
+    await page.waitForTimeout(1000)
 
     const dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
 
-    const emailInputs = dialog.locator('[data-testid^="contatto-email-"]')
-    const emailCount = await emailInputs.count()
-    if (emailCount === 0) {
+    await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
+    await dialog.locator('[data-testid="contatto-cognome"]').fill('TestEmail')
+
+    const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
+    if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await addEmailBtn.click()
+      await page.waitForTimeout(500)
+    }
+
+    const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
+    if (await emailInput.count() === 0) {
       await dialog.locator('button:has-text("Annulla")').click()
+      test.skip('Impossibile aggiungere email')
+      return
+    }
+
+    await emailInput.fill(`test_email_${timestamp}@test.com`)
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
+      dialog.locator('button:has-text("Salva")').click()
+    ])
+    expect(postResp.status()).toBe(200)
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    await page.waitForTimeout(1000)
+
+    await gp.search(nome)
+    await page.waitForTimeout(1000)
+
+    const editBtn = page.locator('.q-table tbody tr').first().locator('button:has(i:text-is("edit"))')
+    if (await editBtn.count() === 0) { test.skip('Nessun pulsante edit'); return }
+    await editBtn.click()
+
+    const editDialog = page.locator('.q-dialog:visible')
+    await expect(editDialog).toBeVisible({ timeout: 5000 })
+
+    const emailInputs = editDialog.locator('[data-testid^="contatto-email-"]')
+    const emailCount = await emailInputs.count()
+    console.log(`[CT-11] email count prima: ${emailCount}`)
+    if (emailCount === 0) {
+      await editDialog.locator('button:has-text("Annulla")').click()
       test.skip('Nessuna email da eliminare')
       return
     }
 
-    const deleteEmailBtn = dialog.locator('button:has(i:text-is("delete"))').first()
+    const deleteEmailBtn = editDialog.locator('button:has(i:text-is("delete"))').first()
     if (await deleteEmailBtn.count() === 0) {
-      await dialog.locator('button:has-text("Annulla")').click()
+      await editDialog.locator('button:has-text("Annulla")').click()
       test.skip('Nessun pulsante elimina email')
       return
     }
@@ -298,11 +318,11 @@ test.describe('ContattiTab — CRUD', () => {
     await deleteEmailBtn.click()
     await page.waitForTimeout(500)
 
-    const emailInputsAfter = dialog.locator('[data-testid^="contatto-email-"]')
-    const emailCountAfter = await emailInputsAfter.count()
+    const emailCountAfter = await editDialog.locator('[data-testid^="contatto-email-"]').count()
+    console.log(`[CT-11] email count dopo: ${emailCountAfter}`)
     expect(emailCountAfter).toBeLessThan(emailCount)
 
-    await dialog.locator('button:has-text("Annulla")').click()
+    await editDialog.locator('button:has-text("Annulla")').click()
     await page.waitForTimeout(500)
   })
 
