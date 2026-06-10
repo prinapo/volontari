@@ -115,11 +115,6 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
-    const submission = await createTestSubmission(page, {
-      email: 'test_riconciliazione@test.com',
-      descrizione: 'Test RC-02 submission'
-    })
-
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
@@ -160,11 +155,6 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-03: Singolo campo contatto salvabile via pulsante save ──
   test('RC-03: Salva singolo campo contatto (Nome) @crud', async ({ page }) => {
-    const submission = await createTestSubmission(page, {
-      email: 'test_riconciliazione@test.com',
-      descrizione: 'Test RC-03 submission'
-    })
-
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
