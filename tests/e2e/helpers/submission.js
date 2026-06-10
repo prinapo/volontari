@@ -4,9 +4,17 @@ export async function createTestSubmission(page, { email, descrizione } = {}) {
   const testEmail = email || `test_riconciliazione_${Date.now()}@test.com`
   const testDescrizione = descrizione || `Test submission ${Date.now()}`
 
+  try {
+    await page.evaluate(() => localStorage.clear())
+  } catch {
+    await page.goto('/login')
+    await page.evaluate(() => localStorage.clear())
+  }
+  await page.waitForTimeout(500)
+
   const submitPage = new SubmitPage(page)
   await submitPage.goto()
-  await page.waitForTimeout(1000)
+  await page.waitForTimeout(2000)
 
   await submitPage.fillForm({
     nome_richiedente: 'Test',

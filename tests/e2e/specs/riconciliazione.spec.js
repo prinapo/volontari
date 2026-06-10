@@ -115,7 +115,49 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
+    const testEmail = `test_rc02_${Date.now()}@test.com`
+
     const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.gestore.email, auth.gestore.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+
+    const gestione = new GestionePage(page)
+    await gestione.selectContattiTab()
+    await page.waitForTimeout(1000)
+
+    const addBtn = page.locator('button:has-text("Aggiungi Contatto")')
+    await addBtn.click()
+    await page.waitForTimeout(1000)
+
+    const dialog = page.locator('.q-dialog:visible')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+
+    await dialog.locator('[data-testid="contatto-nome"]').fill('Test RC02')
+    await dialog.locator('[data-testid="contatto-cognome"]').fill('Linked')
+
+    const emailField = dialog.locator('[data-testid^="contatto-email-"]').first()
+    if (await emailField.count() === 0) {
+      const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
+      if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await addEmailBtn.click()
+        await page.waitForTimeout(500)
+      }
+    }
+    const emailInput = dialog.locator('[data-testid^="contatto-email-"]').first()
+    if (await emailInput.count() > 0) {
+      await emailInput.fill(testEmail)
+    }
+
+    await dialog.locator('button:has-text("Salva")').click()
+    await expect(dialog).not.toBeVisible({ timeout: 15000 })
+    await page.waitForTimeout(2000)
+
+    await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: 'Test RC-02 linked'
+    })
+
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
 
@@ -133,15 +175,18 @@ test.describe.serial('Riconciliazione', () => {
     const rows = riconcPage.tableRows
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
-      const btn = rows.nth(i).locator('.q-td:last-child .q-btn').filter({ has: page.locator('i:has-text("fact_check")') }).first()
-      if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        foundBtn = btn
-        break
+      const rowText = await rows.nth(i).innerText()
+      if (rowText.toLowerCase().includes(testEmail)) {
+        const btn = rows.nth(i).locator('.q-td:last-child .q-btn').filter({ has: page.locator('i:has-text("fact_check")') }).first()
+        if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          foundBtn = btn
+          break
+        }
       }
     }
 
     if (!foundBtn) {
-      test.skip('Nessuna riga linked disponibile')
+      test.skip('Submission di test non trovata o non linked')
       return
     }
 
@@ -151,11 +196,54 @@ test.describe.serial('Riconciliazione', () => {
     await expect(riconcPage.dialog.locator('text=Famiglia')).toBeVisible({ timeout: 3000 })
 
     await riconcPage.closeDialog()
+    await page.evaluate(() => localStorage.clear())
   })
 
   // ── RC-03: Singolo campo contatto salvabile via pulsante save ──
   test('RC-03: Salva singolo campo contatto (Nome) @crud', async ({ page }) => {
+    const testEmail = `test_rc03_${Date.now()}@test.com`
+
     const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.gestore.email, auth.gestore.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+
+    const gestione = new GestionePage(page)
+    await gestione.selectContattiTab()
+    await page.waitForTimeout(1000)
+
+    const addBtn = page.locator('button:has-text("Aggiungi Contatto")')
+    await addBtn.click()
+    await page.waitForTimeout(1000)
+
+    const dialog = page.locator('.q-dialog:visible')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+
+    await dialog.locator('[data-testid="contatto-nome"]').fill('Test RC03')
+    await dialog.locator('[data-testid="contatto-cognome"]').fill('Linked')
+
+    const emailField = dialog.locator('[data-testid^="contatto-email-"]').first()
+    if (await emailField.count() === 0) {
+      const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
+      if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await addEmailBtn.click()
+        await page.waitForTimeout(500)
+      }
+    }
+    const emailInput = dialog.locator('[data-testid^="contatto-email-"]').first()
+    if (await emailInput.count() > 0) {
+      await emailInput.fill(testEmail)
+    }
+
+    await dialog.locator('button:has-text("Salva")').click()
+    await expect(dialog).not.toBeVisible({ timeout: 15000 })
+    await page.waitForTimeout(2000)
+
+    await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: 'Test RC-03 linked'
+    })
+
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
 
@@ -173,15 +261,18 @@ test.describe.serial('Riconciliazione', () => {
     const rows = riconcPage.tableRows
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
-      const btn = rows.nth(i).locator('.q-td:last-child .q-btn').filter({ has: page.locator('i:has-text("fact_check")') }).first()
-      if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        foundBtn = btn
-        break
+      const rowText = await rows.nth(i).innerText()
+      if (rowText.toLowerCase().includes(testEmail)) {
+        const btn = rows.nth(i).locator('.q-td:last-child .q-btn').filter({ has: page.locator('i:has-text("fact_check")') }).first()
+        if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          foundBtn = btn
+          break
+        }
       }
     }
 
     if (!foundBtn) {
-      test.skip('Nessuna riga linked disponibile')
+      test.skip('Submission di test non trovata o non linked')
       return
     }
 
@@ -198,6 +289,7 @@ test.describe.serial('Riconciliazione', () => {
     await saveBtn.click()
     await expect(page.locator('.q-notification.bg-positive').first()).toBeVisible({ timeout: 5000 })
     await riconcPage.closeDialog()
+    await page.evaluate(() => localStorage.clear())
   })
 
   // ── RC-04: Elimina submission (Scarta) @crud ──
