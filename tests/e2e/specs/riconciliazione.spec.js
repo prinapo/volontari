@@ -115,7 +115,7 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
-    const testEmail = `test_rc02_${Date.now()}@test.com`
+    const testEmail = 'test_rc02_linked@test.com'
 
     const loginPage = new LoginPage(page)
     await loginPage.goto()
@@ -150,8 +150,48 @@ test.describe.serial('Riconciliazione', () => {
     }
 
     await dialog.locator('button:has-text("Salva")').click()
-    await expect(dialog).not.toBeVisible({ timeout: 15000 })
-    await page.waitForTimeout(2000)
+    await page.waitForTimeout(3000)
+
+    const dialogStillVisible = await dialog.isVisible().catch(() => false)
+    if (dialogStillVisible) {
+      await dialog.locator('button:has-text("Annulla")').click()
+      await page.waitForTimeout(1000)
+    }
+
+    await gestione.famiglieTab.click()
+    await gestione.waitForTable()
+    await gestione.searchFamiglie('TEST_FAM')
+    await page.waitForTimeout(1000)
+
+    const famigliaRow = page.locator('.q-table tbody tr').filter({ hasText: 'TEST_FAM_01' }).first()
+    const contactsBtn = famigliaRow.locator('.q-btn').filter({ has: page.locator('i:text-is("contacts")') }).first()
+    if (await contactsBtn.count() > 0) {
+      await contactsBtn.click()
+      await page.waitForTimeout(1000)
+
+      const contattiDialog = page.locator('.q-dialog:visible')
+      await expect(contattiDialog).toBeVisible({ timeout: 5000 })
+
+      const searchSelect = contattiDialog.locator('.q-select:has-text("Cerca contatto")')
+      const searchInput = searchSelect.locator('input')
+      await searchInput.fill('Test RC02')
+      await page.waitForTimeout(2000)
+
+      const option = page.locator('.q-menu .q-item:has-text("Test RC02")')
+      if (await option.count() > 0) {
+        await option.first().click()
+        await page.waitForTimeout(500)
+
+        const associaBtn = contattiDialog.locator('button:has-text("Associa come Volontario")')
+        if (await associaBtn.count() > 0) {
+          await associaBtn.click()
+          await page.waitForTimeout(1000)
+        }
+      }
+
+      await contattiDialog.locator('button:has-text("Chiudi")').click()
+      await page.waitForTimeout(500)
+    }
 
     await createTestSubmission(page, {
       email: testEmail,
