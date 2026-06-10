@@ -2,6 +2,7 @@ import { test, expect } from '../helpers/console.js'
 import { LoginPage } from '../pages/LoginPage.js'
 import { GestionePage } from '../pages/GestionePage.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
+import { createTestSubmission } from '../helpers/submission.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe.serial('Riconciliazione', () => {
@@ -114,6 +115,11 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
+    const submission = await createTestSubmission(page, {
+      email: 'test_riconciliazione@test.com',
+      descrizione: 'Test RC-02 submission'
+    })
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
@@ -154,6 +160,11 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-03: Singolo campo contatto salvabile via pulsante save ──
   test('RC-03: Salva singolo campo contatto (Nome) @crud', async ({ page }) => {
+    const submission = await createTestSubmission(page, {
+      email: 'test_riconciliazione@test.com',
+      descrizione: 'Test RC-03 submission'
+    })
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
@@ -169,23 +180,18 @@ test.describe.serial('Riconciliazione', () => {
     }
 
     let foundBtn = null
-    let foundRowIndex = -1
     const rows = riconcPage.tableRows
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const btn = rows.nth(i).locator('.q-td:last-child .q-btn').filter({ has: page.locator('i:has-text("fact_check")') }).first()
       if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        const rowText = await rows.nth(i).innerText()
-        if (rowText.toLowerCase().includes('test')) {
-          foundBtn = btn
-          foundRowIndex = i
-          break
-        }
+        foundBtn = btn
+        break
       }
     }
 
     if (!foundBtn) {
-      test.skip('Nessuna submission di test con linked disponibile')
+      test.skip('Nessuna riga linked disponibile')
       return
     }
 
@@ -206,6 +212,11 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-04: Elimina submission (Scarta) @crud ──
   test('RC-04: Scarta submission @crud', async ({ page }) => {
+    const submission = await createTestSubmission(page, {
+      email: 'test_riconciliazione@test.com',
+      descrizione: 'Test RC-04 submission'
+    })
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
@@ -222,26 +233,7 @@ test.describe.serial('Riconciliazione', () => {
       return
     }
 
-    let testScartaBtn = null
-    const rows = riconcPage.tableRows
-    const rowCount = await rows.count()
-    for (let i = 0; i < rowCount; i++) {
-      const btn = rows.nth(i).locator('button:has(i:text-is("delete"))').first()
-      if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        const rowText = await rows.nth(i).innerText()
-        if (rowText.toLowerCase().includes('test')) {
-          testScartaBtn = btn
-          break
-        }
-      }
-    }
-
-    if (!testScartaBtn) {
-      test.skip('Nessuna submission di test da scartare')
-      return
-    }
-
-    await testScartaBtn.click()
+    await scartaBtns.first().click()
 
     // Inserisci motivazione nel prompt
     const dialog = page.locator('.q-dialog').filter({ hasText: 'Scarta submission' })
@@ -325,6 +317,11 @@ test.describe.serial('Riconciliazione', () => {
 
   // ── RC-PG-04: Recupera submission scartata @crud ──
   test('RC-PG-04: Recupera submission scartata @crud', async ({ page }) => {
+    const submission = await createTestSubmission(page, {
+      email: 'test_scarto@test.com',
+      descrizione: 'Test RC-PG-04 submission'
+    })
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore_verifica.email, auth.gestore_verifica.password)
@@ -354,26 +351,7 @@ test.describe.serial('Riconciliazione', () => {
       return
     }
 
-    let testRestoreBtn = null
-    const rows = riconcPage.tableRows
-    const rowCount = await rows.count()
-    for (let i = 0; i < rowCount; i++) {
-      const btn = rows.nth(i).locator('button:has(i:text-is("restore"))').first()
-      if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        const rowText = await rows.nth(i).innerText()
-        if (rowText.toLowerCase().includes('test')) {
-          testRestoreBtn = btn
-          break
-        }
-      }
-    }
-
-    if (!testRestoreBtn) {
-      test.skip('Nessuna submission di test scartata da recuperare')
-      return
-    }
-
-    await testRestoreBtn.click()
+    await restoreBtns.first().click()
     await expect(page.locator('.q-notification').first()).toBeVisible({ timeout: 5000 })
   })
 })
