@@ -50,6 +50,13 @@ chiamata di rete.
 Un test che usa API non è un test utente. I dati di partenza vanno creati
 manualmente in Directus o tramite UI nei test di setup (es. FM-01).
 
+**RICERCA UNIVOCA NEI TEST:** Ogni test che cerca o modifica dati deve usare
+il campo di filtro/search della pagina, non iterare le righe della tabella
+(che potrebbero essere incomplete per paginazione). Le ricerche devono usare
+un **criterio univoco**: email (per entità che hanno una mail come riferimento)
+o nome completo (che per design è unico). Mai cercare per prefisso o testo
+generico che potrebbe dare risultati multipli e inficiare il test.
+
 **CONSOLE ERRORS = TEST FAILURE.** Ogni test deve fallire se rileva errori
 console (4xx/5xx API, eccezioni JS, errori runtime). Il helper `console.js`
 chiama `expect(errors).toHaveLength(0)` dopo ogni test. I test vanno sempre
