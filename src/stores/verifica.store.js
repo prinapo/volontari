@@ -380,9 +380,8 @@ export const useVerificaStore = defineStore('verifica', {
       for (const c of allContatti) {
         if (c.email && c.email.length > 0) {
           for (const e of c.email) {
-            if (emails.includes(e.email_address)) {
-              contattiByEmail[e.email_address] = c
-            }
+            const key = (e.email_address || '').toLowerCase()
+            if (key) contattiByEmail[key] = c
           }
         }
       }
@@ -411,7 +410,7 @@ export const useVerificaStore = defineStore('verifica', {
       }
 
       for (const submission of submissions) {
-        const contatto = contattiByEmail[submission.email]
+        const contatto = contattiByEmail[(submission.email || '').toLowerCase()]
         if (!contatto) {
           submission._detectState = 'not_found'
           submission._foundContatto = null
