@@ -248,12 +248,19 @@ export const useAuthStore = defineStore('auth', {
             discrepancies.push({
               progettoId: projId,
               beneficiario: project.Cognome_e__Nome_Beneficiario || '',
+              annoBando: project.AnnoBando || '',
               statoDB,
               statoCalcolato,
               countDB,
               countCalcolato: count,
               importoDB,
-              importoCalcolato: totaleImporto
+              importoCalcolato: totaleImporto,
+              giustificativi: giustificativi.map(g => ({
+                id: g.id,
+                descrizione: g.Descrizione || '',
+                stato: g.Stato || '',
+                importo: parseFloat(g.Importo) || 0
+              }))
             })
           }
         }

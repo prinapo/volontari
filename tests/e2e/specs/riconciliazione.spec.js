@@ -116,6 +116,8 @@ test.describe.serial('Riconciliazione', () => {
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
     const testEmail = 'test_rc02_linked@test.com'
+    console.log(`[RC-02] === INIZIO TEST ===`)
+    console.log(`[RC-02] Email test: ${testEmail}`)
 
     const loginPage = new LoginPage(page)
     await loginPage.goto()
@@ -161,7 +163,7 @@ test.describe.serial('Riconciliazione', () => {
     await gestione.famiglieTab.click()
     await gestione.waitForTable()
     await gestione.searchFamiglie('TEST_FAM')
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(3000)
 
     const famigliaRow = page.locator('.q-table tbody tr').filter({ hasText: 'TEST_FAM_01' }).first()
     const contactsBtn = famigliaRow.locator('.q-btn').filter({ has: page.locator('i:text-is("contacts")') }).first()

@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh Lpr lFf">
-    <q-header elevated class="bg-primary text-white">
+    <q-header elevated :class="isDev ? 'bg-orange-9 text-white' : 'bg-primary text-white'">
       <q-toolbar>
         <q-btn
           v-if="authStore.isAuthenticated"
@@ -192,6 +192,7 @@ import { useAuthStore } from 'stores/auth.store'
 import { authService } from 'src/services/auth.service'
 import { useQuasar } from 'quasar'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+const isDev = import.meta.env.VITE_ENV === 'local'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -232,11 +233,20 @@ function showRendicontazioneNotify() {
   } else {
     const details = check.discrepancies.map(d => {
       if (d.errore) return `${d.progettoId}: errore`
-      return `${d.beneficiario || d.progettoId}: stato "${d.statoDB}" → "${d.statoCalcolato}", giust ${d.countDB} → ${d.countCalcolato}, importo ${d.importoDB} → ${d.importoCalcolato}`
-    }).join('\n')
+      const parts = []
+      parts.push(`**${d.beneficiario || d.progettoId}**`)
+      parts.push(`Stato: ${d.statoDB} → ${d.statoCalcolato}`)
+      parts.push(`Giust: ${d.countDB} → ${d.countCalcolato}`)
+      parts.push(`Importo: ${d.importoDB} → ${d.importoCalcolato}`)
+      parts.push(`Progetto ID: ${d.progettoId}`)
+      if (d.giustificativi && d.giustificativi.length > 0) {
+        parts.push(`Giustificativi (${d.giustificativi.length}): ${d.giustificativi.map(g => `${g.id} [${g.stato}] €${g.importo}`).join(', ')}`)
+      }
+      return parts.join(' | ')
+    }).join('\n\n')
     $q.notify({
       type: 'warning',
-      message: `${check.discrepancies.length} discrepanze trovate:\n${details}`,
+      message: `${check.discrepancies.length} discrepanze trovate:\n\n${details}`,
       timeout: 0,
       html: false,
       actions: [{ icon: 'close', color: 'white', round: true, dense: true }]
