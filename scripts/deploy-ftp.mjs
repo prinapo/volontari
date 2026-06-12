@@ -74,6 +74,13 @@ try {
   await client.clearWorkingDir()
   await client.uploadFromDir(config.localDir)
 
+  // Upload .htaccess per SPA routing
+  const htaccessPath = resolve(__dirname, '..', '.htaccess')
+  if (existsSync(htaccessPath)) {
+    await client.uploadFrom(htaccessPath, '.htaccess')
+    console.log('   .htaccess uploaded')
+  }
+
   console.log(`\n✅ Deploy complete!`)
 } catch (err) {
   console.error(`\n❌ Deploy failed: ${err.message}`)
