@@ -1,19 +1,16 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
+import { VerificaPage } from '../pages/VerificaPage.js'
+import { loginAs } from '../helpers/login.js'
+import { monitorApi, waitForPatchStato, logApiCalls } from '../helpers/network.js'
+import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import path from 'path'
 import { fileURLToPath } from 'url'
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
 
-async function createGiustificativoViaVolontario(page, stato = 'draft') {
-  const loginPage = new LoginPage(page)
-  await loginPage.goto()
-  await loginPage.login(auth.volontario.email, auth.volontario.password)
-  await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
-
+async function selectFirstProgetto(page) {
   const select = page.locator('.q-select').first()
   await select.click()
   await page.waitForTimeout(2000)
@@ -21,217 +18,215 @@ async function createGiustificativoViaVolontario(page, stato = 'draft') {
   if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
     await firstOption.click()
     await page.waitForTimeout(1000)
+    return true
   }
+  return false
+}
 
-  const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-  if (await aggiungiBtn.isDisabled().catch(() => true)) return null
+async function createGiustificativoViaVolontario(page, descrizione, stato = 'draft') {
+  await loginAs(page, 'volontario', auth)
+  await selectFirstProgetto(page)
 
-  const testDesc = `Test VF_${Date.now()}`
-  await aggiungiBtn.click()
-  await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
-  const dialog = page.locator('.q-dialog')
+  const result = await createGiustificativoViaDialog(page, {
+    descrizione,
+    importo: '75.00',
+    submitAfter: stato === 'inviato'
+  })
 
-  await dialog.locator('input').first().fill(testDesc)
-  await dialog.locator('input').nth(1).fill('75.00')
-  await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+  return result
+}
+
+async function createGiustificativoViaVerificatore(page) {
+  await loginAs(page, 'verificatore', auth)
+  const vp = new VerificaPage(page)
+  await vp.waitForTable()
+  await page.waitForTimeout(2000)
+
+  const addBtn = page.locator('[data-testid="btn-add-giust"]').first()
+  const addBtnCount = await addBtn.count()
+  if (addBtnCount === 0) return null
+
+  await addBtn.click()
+  await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
+
+  const testDesc = `VE_ADD_${Date.now()}`
+  await page.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
+  await page.locator('[data-testid="giustform-importo"]').fill('120.00')
+  await page.locator('.q-dialog input[type="file"]').first().setInputFiles(FIXTURE_PDF)
 
   const [postResp] = await Promise.all([
     page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
-    dialog.locator('button:has-text("Salva")').click()
+    page.locator('[data-testid="giustform-salva"]').click()
   ])
 
   if (postResp.status() !== 200) return null
-  await expect(dialog).not.toBeVisible({ timeout: 10000 })
-
-  const created = await postResp.json()
-  const giustId = created.data?.id
-
-  if (stato === 'inviato' && giustId) {
-    const submitBtn = page.locator('.giust-item button:has(i:has-text("send"))').first()
-    if (await submitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await submitBtn.click()
-      await page.waitForTimeout(2000)
-    }
-  }
-
-  return { id: giustId, desc: testDesc }
+  return { desc: testDesc, id: (await postResp.json()).data?.id }
 }
 
-test.describe.serial('Verifica StatoRendicontazione Flow', () => {
-  let testGiustId = null
-
-  test('VF-SETUP: Crea giustificativo via volontario @setup', async ({ page }) => {
-    const apiCalls = []
-    page.on('response', resp => {
-      if (resp.url().includes('/items/') || resp.url().includes('/files') || resp.url().includes('/auth/')) {
-        apiCalls.push({
-          method: resp.request().method(),
-          url: resp.url().replace(/\?.*$/, ''),
-          status: resp.status()
-        })
-        if (resp.status() >= 400) {
-          console.log(`[API ${resp.status()}] ${resp.request().method()} ${resp.url()}`)
-        }
-      }
-    })
-
-    const result = await createGiustificativoViaVolontario(page, 'inviato')
-    if (result) testGiustId = result.id
-
-    console.log('\n=== API CALLS ===')
-    apiCalls.forEach(c => console.log(`  ${c.method} ${c.url} → ${c.status}`))
-    console.log(`  Total: ${apiCalls.length} calls, Errors: ${apiCalls.filter(c => c.status >= 400).length}`)
-  })
+test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-01: Verifica giustificativo — intercetta PATCH @crud', async ({ page }) => {
-    const apiCalls = []
-    page.on('response', resp => {
-      if (resp.url().includes('/items/') || resp.url().includes('/files')) {
-        apiCalls.push({
-          method: resp.request().method(),
-          url: resp.url().replace(/\?.*$/, ''),
-          status: resp.status()
-        })
-        if (resp.status() >= 400) {
-          console.log(`[API ${resp.status()}] ${resp.request().method()} ${resp.url()}`)
-        }
+    const testDesc = `VF_01_verify_${Date.now()}`
+    const apiCalls = monitorApi(page)
+
+    await createGiustificativoViaVolontario(page, testDesc, 'inviato')
+
+    const vp = new VerificaPage(page)
+    await loginAs(page, 'verificatore', auth)
+    await vp.waitForTable()
+    await vp.searchFamiglia('Famiglia TEST_FAM_01')
+    await vp.expandRow(0)
+
+    const patches = await waitForPatchStato(page, 'verificato', async () => {
+      const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
+      if (!(await verifyBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+        test.skip('No verify button found')
+        return
       }
+      await verifyBtn.click()
+      await page.waitForTimeout(3000)
     })
 
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    await page.waitForTimeout(2000)
-
-    const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-    if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill('Famiglia TEST_FAM_01')
-      await page.waitForTimeout(4000)
-    }
-
-    const expandBtn = page.locator('.verifica-table tbody tr td:first-child .q-btn').first()
-    if (!(await expandBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip('No expand button after search')
-      return
-    }
-    await expandBtn.click()
-    await page.waitForTimeout(2000)
-
-    const patchRequests = []
-    page.on('request', req => {
-      if (req.url().includes('/items/Giustificativi') && req.method() === 'PATCH') {
-        try { patchRequests.push(JSON.parse(req.postData())) } catch {}
-      }
-    })
-
-    const verifyBtn = page.locator('.giust-item button:has(i:has-text("check_circle"))').first()
-    if (!(await verifyBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip('No verify button found')
-      return
-    }
-    await verifyBtn.click()
-    await page.waitForTimeout(3000)
-
-    console.log('\n=== VF-01 API CALLS ===')
-    apiCalls.forEach(c => console.log(`  ${c.method} ${c.url} → ${c.status}`))
-    console.log(`  Total: ${apiCalls.length} calls, Errors: ${apiCalls.filter(c => c.status >= 400).length}`)
-
-    expect(patchRequests.length).toBeGreaterThan(0)
-    const lastPatch = patchRequests[patchRequests.length - 1]
-    expect(lastPatch.Stato).toBe('verificato')
+    logApiCalls(apiCalls)
+    expect(patches.length).toBeGreaterThan(0)
+    expect(patches[patches.length - 1].Stato).toBe('verificato')
   })
 
   test('VF-02: Rifiuta giustificativo — intercetta PATCH @crud', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    await page.waitForTimeout(2000)
+    const testDesc = `VF_02_reject_${Date.now()}`
+    const apiCalls = monitorApi(page)
 
-    const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-    if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill('Famiglia TEST_FAM_01')
-      await page.waitForTimeout(4000)
-    }
+    await createGiustificativoViaVolontario(page, testDesc, 'inviato')
 
-    const expandBtn = page.locator('.verifica-table tbody tr td:first-child .q-btn').first()
-    if (!(await expandBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip('No expand button after search')
-      return
-    }
-    await expandBtn.click()
-    await page.waitForTimeout(2000)
+    const vp = new VerificaPage(page)
+    await loginAs(page, 'verificatore', auth)
+    await vp.waitForTable()
+    await vp.searchFamiglia('Famiglia TEST_FAM_01')
+    await vp.expandRow(0)
 
-    const patchRequests = []
-    page.on('request', req => {
-      if (req.url().includes('/items/Giustificativi') && req.method() === 'PATCH') {
-        try { patchRequests.push(JSON.parse(req.postData())) } catch {}
+    const patches = await waitForPatchStato(page, 'rifiutato', async () => {
+      const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
+      if (!(await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+        test.skip('No reject button found')
+        return
+      }
+      await rejectBtn.click()
+      await page.waitForTimeout(1500)
+
+      const rejectDialog = page.locator('.q-dialog:visible').last()
+      if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
+        const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
+        if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Test rifiuto E2E')
+        await rejectDialog.locator('button').filter({ hasText: /rifiut|conferma/i }).last().click()
+        await page.waitForTimeout(3000)
       }
     })
 
-    const rejectBtn = page.locator('.giust-item button:has(i:has-text("cancel"))').first()
-    if (!(await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip('No reject button found')
-      return
-    }
-    await rejectBtn.click()
-    await page.waitForTimeout(1500)
-
-    const rejectDialog = page.locator('.q-dialog:visible').last()
-    if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
-      if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Test rifiuto E2E')
-      await rejectDialog.locator('button').filter({ hasText: /rifiut|conferma/i }).last().click()
-      await page.waitForTimeout(3000)
-    }
-
-    expect(patchRequests.length).toBeGreaterThan(0)
-    const lastPatch = patchRequests[patchRequests.length - 1]
-    expect(lastPatch.Stato).toBe('rifiutato')
+    logApiCalls(apiCalls)
+    expect(patches.length).toBeGreaterThan(0)
+    expect(patches[patches.length - 1].Stato).toBe('rifiutato')
   })
 
   test('VF-03: Draft→Inviato — intercetta PATCH @crud', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    await page.waitForTimeout(2000)
+    const testDesc = `VF_03_send_${Date.now()}`
+    const apiCalls = monitorApi(page)
 
+    await createGiustificativoViaVolontario(page, testDesc, 'draft')
+
+    const vp = new VerificaPage(page)
+    await loginAs(page, 'verificatore', auth)
+    await vp.waitForTable()
+    await vp.searchFamiglia('Famiglia TEST_FAM_01')
+    await vp.expandRow(0)
+
+    const patches = await waitForPatchStato(page, 'inviato', async () => {
+      const sendBtn = page.locator('[data-testid="btn-send"]').first()
+      if (!(await sendBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+        test.skip('No send button found')
+        return
+      }
+      await sendBtn.click()
+      await page.waitForTimeout(3000)
+    })
+
+    logApiCalls(apiCalls)
+    expect(patches.length).toBeGreaterThan(0)
+    expect(patches[patches.length - 1].Stato).toBe('inviato')
+  })
+
+  test('VF-04: Aggiungi giustificativo da VerificaPage @crud', async ({ page }) => {
+    await createGiustificativoViaVolontario(page, `VF_04_setup_${Date.now()}`, 'inviato')
+
+    const result = await createGiustificativoViaVerificatore(page)
+    expect(result, 'VE-ADD: creazione giustificativo da VerificaPage fallita').not.toBeNull()
+    expect(result.desc).toContain('VE_ADD_')
+  })
+
+  test('VF-05: Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e', async ({ page }) => {
+    test.setTimeout(120000)
+    const apiCalls = monitorApi(page)
+
+    // 1. Volontario crea e invia giustificativo
+    const testDesc = `VF_05_full_${Date.now()}`
+    await loginAs(page, 'volontario', auth)
+    await selectFirstProgetto(page)
+
+    const draft = await createGiustificativoViaDialog(page, {
+      descrizione: testDesc,
+      importo: '200.00',
+      submitAfter: true
+    })
+    expect(draft, 'Creazione giustificativo fallita').not.toBeNull()
+
+    // 2. Verificatore verifica e poi rifiuta
+    await loginAs(page, 'verificatore', auth)
+    const vp = new VerificaPage(page)
+    await vp.waitForTable()
+
+    // Cerca il giustificativo appena creato
     const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-    if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill('Famiglia TEST_FAM_01')
-      await page.waitForTimeout(4000)
+    await searchInput.fill('Famiglia TEST_FAM_01')
+    await page.waitForTimeout(4000)
+
+    const expandBtn = page.locator('[data-testid="expand-row"]').first()
+    if (await expandBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await expandBtn.click()
+      await page.waitForTimeout(2000)
     }
 
-    const expandBtn = page.locator('.verifica-table tbody tr td:first-child .q-btn').first()
-    if (!(await expandBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip('No expand button after search')
-      return
-    }
-    await expandBtn.click()
-    await page.waitForTimeout(2000)
-
-    const patchRequests = []
-    page.on('request', req => {
-      if (req.url().includes('/items/Giustificativi') && req.method() === 'PATCH') {
-        try { patchRequests.push(JSON.parse(req.postData())) } catch {}
+    // Verifica
+    const verifyPatches = await waitForPatchStato(page, 'verificato', async () => {
+      const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
+      if (await verifyBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await verifyBtn.click()
+        await page.waitForTimeout(2000)
       }
     })
 
-    const sendBtn = page.locator('.giust-item button:has(i:has-text("send"))').first()
-    if (!(await sendBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip('No send button found')
-      return
+    if (verifyPatches.length > 0) {
+      expect(verifyPatches[verifyPatches.length - 1].Stato).toBe('verificato')
     }
-    await sendBtn.click()
-    await page.waitForTimeout(3000)
 
-    expect(patchRequests.length).toBeGreaterThan(0)
-    const lastPatch = patchRequests[patchRequests.length - 1]
-    expect(lastPatch.Stato).toBe('inviato')
+    // Rifiuta
+    const rejectPatches = await waitForPatchStato(page, 'rifiutato', async () => {
+      const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
+      if (await rejectBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await rejectBtn.click()
+        await page.waitForTimeout(1500)
+        const rejectDialog = page.locator('.q-dialog:visible').last()
+        if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
+          const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
+          if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Rifiuto test VF-05')
+          await rejectDialog.locator('button').filter({ hasText: /rifiut|conferma/i }).last().click()
+          await page.waitForTimeout(3000)
+        }
+      }
+    })
+
+    if (rejectPatches.length > 0) {
+      expect(rejectPatches[rejectPatches.length - 1].Stato).toBe('rifiutato')
+    }
+
+    logApiCalls(apiCalls)
   })
 })

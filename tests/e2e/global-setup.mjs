@@ -1,0 +1,169 @@
+import { readFileSync, existsSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+const PRODUCTION_PATTERNS = [
+  'sostienilsostegno.com',
+  'app.sostienilsostegno',
+  'sostienilsostegno'
+]
+
+function getApiUrl() {
+  const envFiles = ['.env.local', '.env']
+  for (const file of envFiles) {
+    const fullPath = resolve(__dirname, '..', '..', file)
+    if (!existsSync(fullPath)) continue
+    const content = readFileSync(fullPath, 'utf-8')
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim()
+      if (trimmed.startsWith('VITE_API_URL=')) {
+        return trimmed.replace('VITE_API_URL=', '').trim()
+      }
+    }
+  }
+  return null
+}
+
+async function directusLogin(baseUrl, email, password) {
+  const res = await fetch(`${baseUrl}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  return data.data?.access_token
+}
+
+async function apiGet(baseUrl, token, path, params = {}) {
+  const url = new URL(`${baseUrl}${path}`)
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined) url.searchParams.set(k, v) })
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  if (!res.ok) return { data: [] }
+  return res.json()
+}
+
+async function apiDelete(baseUrl, token, path) {
+  const res = await fetch(`${baseUrl}${path}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  return res.ok
+}
+
+async function cleanupTestData(baseUrl, token) {
+  console.log('[CLEANUP] Removing test data from previous runs...')
+
+  // 1. Delete submissions from test runs (InviiGiustificativiNoLogin with test emails)
+  const submissions = await apiGet(baseUrl, token, '/items/InviiGiustificativiNoLogin', {
+    filter: JSON.stringify({ email: { _contains: '@test.com' } }),
+    fields: 'id',
+    limit: -1
+  })
+  for (const s of (submissions.data || [])) {
+    await apiDelete(baseUrl, token, `/items/InviiGiustificativiNoLogin/${s.id}`)
+  }
+  if ((submissions.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${submissions.data.length} test submissions`)
+  }
+
+  // 2. Delete giustificativi with test descriptions (created by E2E tests)
+  const giustificativi = await apiGet(baseUrl, token, '/items/Giustificativi', {
+    filter: JSON.stringify({ _or: [
+      { Descrizione: { _startswith: 'Test VF_' } },
+      { Descrizione: { _startswith: 'Test SR_' } },
+      { Descrizione: { _startswith: 'Test VE_' } },
+      { Descrizione: { _startswith: 'VF_01_' } },
+      { Descrizione: { _startswith: 'VF_02_' } },
+      { Descrizione: { _startswith: 'VF_03_' } }
+    ] }),
+    fields: 'id',
+    limit: -1
+  })
+  for (const g of (giustificativi.data || [])) {
+    await apiDelete(baseUrl, token, `/items/Giustificativi/${g.id}`)
+  }
+  if ((giustificativi.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${giustificativi.data.length} test giustificativi`)
+  }
+
+  // 3. Delete contatti created by CT tests (non-fixture, IDs are timestamps)
+  const contatti = await apiGet(baseUrl, token, '/items/contatti', {
+    filter: JSON.stringify({ _or: [
+      { Cognome: { _eq: 'AutoTest' } },
+      { Cognome: { _eq: 'TestEmail' } },
+      { Nome: { _startswith: 'Test CT ' } },
+      { Nome: { _startswith: 'CT12 ' } },
+      { Nome: { _startswith: 'Del Email ' } },
+      { Nome: { _startswith: 'Test RC02' } },
+      { Nome: { _startswith: 'Test RC03' } }
+    ] }),
+    fields: 'id_contatto',
+    limit: -1
+  })
+  for (const c of (contatti.data || [])) {
+    // Delete emails first
+    const emails = await apiGet(baseUrl, token, '/items/email', {
+      filter: JSON.stringify({ Contatto_Relation: { _eq: c.id_contatto } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const e of (emails.data || [])) {
+      await apiDelete(baseUrl, token, `/items/email/${e.id}`)
+    }
+    // Delete Famiglie_Contatti
+    const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
+      filter: JSON.stringify({ Contatto: { _eq: c.id_contatto } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const f of (fc.data || [])) {
+      await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${f.id}`)
+    }
+    await apiDelete(baseUrl, token, `/items/contatti/${c.id_contatto}`)
+  }
+  if ((contatti.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${contatti.data.length} test contatti (with emails and famiglia links)`)
+  }
+
+  console.log('[CLEANUP] Done')
+}
+
+export default async function () {
+  const url = getApiUrl()
+
+  if (!url) {
+    console.error('\n❌ ERRORE: VITE_API_URL non trovato in .env o .env.local')
+    console.error('   Crea un file .env.local con:')
+    console.error('   VITE_API_URL=http://localhost:8055')
+    console.error('   VITE_ENV=local\n')
+    process.exit(1)
+  }
+
+  const isProduction = PRODUCTION_PATTERNS.some(p => url.includes(p))
+  const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1')
+
+  if (isProduction || !isLocalhost) {
+    console.error(`\n❌ PERICOLO: VITE_API_URL punta a un ambiente NON locale!`)
+    console.error(`   URL: ${url}`)
+    console.error('   I test E2E DEVONO essere eseguiti solo su ambiente locale.')
+    console.error('   Crea/aggiorna .env.local con:')
+    console.error('   VITE_API_URL=http://localhost:8055')
+    console.error('   VITE_ENV=local\n')
+    process.exit(1)
+  }
+
+  console.log(`\n✅ GUARD: API URL = ${url} — OK (locale)\n`)
+
+  // Cleanup test data from previous runs
+  const token = await directusLogin(url, 'test.gestore@test.com', 'TestGest_2026!')
+  if (token) {
+    await cleanupTestData(url, token)
+  } else {
+    console.log('[CLEANUP] Skipped — could not login as gestore (database might be fresh)')
+  }
+}

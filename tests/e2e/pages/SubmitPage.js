@@ -133,7 +133,10 @@ export class SubmitPage {
   async clickTornaAlLogin() { await this.tornaAlLoginLink.click() }
   async clickAddGiustificativo() { await this.addGiustificativoBtn.click() }
   async clickDeleteGiustificativo(index) { await this.getDeleteBtn(index).click() }
-  async clickSubmit() { await this.submitBtn.click() }
+  async clickSubmit() {
+    await this.submitBtn.scrollIntoViewIfNeeded()
+    await this.submitBtn.click()
+  }
 
   async waitForSuccess() {
     await this.successNotification.waitFor({ state: 'visible', timeout: 30000 })

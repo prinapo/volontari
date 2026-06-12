@@ -1,20 +1,12 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
+import { loginAs } from '../helpers/login.js'
 import { GestionePage } from '../pages/GestionePage.js'
+import { SubmitPage } from '../pages/SubmitPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
 
 test.describe('Gestione Fixes', () => {
   test('GF-01: Disattivo filter — soft-delete non mostrato @regression', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.famiglieTab.click()
@@ -44,54 +36,31 @@ test.describe('Gestione Fixes', () => {
       networkLog.push(entry)
     })
 
-    await page.goto('/submit')
+    const submitPage = new SubmitPage(page)
+    await submitPage.goto()
     await page.waitForTimeout(2000)
 
-    const nomeField = page.locator('.q-field').filter({ hasText: /^Nome \*$/ }).first().locator('input')
-    await nomeField.fill('Test No Esiste')
+    await submitPage.fillForm({
+      nome_richiedente: 'Test No Esiste',
+      cognome_richiedente: 'Test',
+      email: randomEmail,
+      telefono: '3331234567',
+      iban: 'IT60X0000000000000000000',
+      intestatario: 'Test intestatario',
+      nome_beneficiario: 'Luigi',
+      cognome_beneficiario: 'Rossi'
+    })
 
-    const cognomeField = page.locator('.q-field').filter({ hasText: /^Cognome \*$/ }).first().locator('input')
-    await cognomeField.fill('Test')
-
-    const emailField = page.locator('input[type="email"]')
-    await emailField.fill(randomEmail)
-
-    const telefonoField = page.locator('.q-field').filter({ hasText: /^Telefono \*$/ }).locator('input')
-    await telefonoField.fill('3331234567')
-
-    const ibanField = page.locator('.q-field').filter({ hasText: /^IBAN \*$/ }).locator('input')
-    await ibanField.fill('IT60X0000000000000000000')
-
-    const intestatarioField = page.locator('.q-field').filter({ hasText: /^Intestatario CC \*$/ }).locator('input')
-    await intestatarioField.fill('Test intestatario')
-
-    const nomeBenField = page.locator('.q-card').filter({ hasText: 'Beneficiario' }).locator('.q-field').filter({ hasText: /^Nome \*$/ }).locator('input')
-    await nomeBenField.fill('Luigi')
-
-    const cognomeBenField = page.locator('.q-card').filter({ hasText: 'Beneficiario' }).locator('.q-field').filter({ hasText: /^Cognome \*$/ }).locator('input')
-    await cognomeBenField.fill('Rossi')
-
-    const aggiungiBtn = page.locator('button:has-text("Aggiungi giustificativo")')
-    await expect(aggiungiBtn).toBeVisible({ timeout: 5000 })
-    await aggiungiBtn.click()
+    await submitPage.clickAddGiustificativo()
     await page.waitForTimeout(500)
 
-    const descField = page.locator('.q-field').filter({ hasText: /^Descrizione \*$/ }).locator('textarea')
-    await descField.fill('Test giustificativo')
+    await submitPage.fillGiustificativo(0, {
+      descrizione: 'Test giustificativo',
+      importo: 100,
+      data: '2026-01-15'
+    })
 
-    const importoField = page.locator('input[type="number"]')
-    await importoField.fill('100')
-
-    const dataField = page.locator('input[type="date"]')
-    await dataField.fill('2026-01-15')
-
-    const fileField = page.locator('input[type="file"]').first()
-    await fileField.setInputFiles(FIXTURE_PDF)
-
-    const submitBtn = page.locator('button:has-text("Invia")')
-    await expect(submitBtn).toBeVisible({ timeout: 5000 })
-    await submitBtn.click()
-
+    await submitPage.clickSubmit()
     await page.waitForTimeout(5000)
 
     const submissionCreated = networkLog.some(e =>
@@ -107,10 +76,7 @@ test.describe('Gestione Fixes', () => {
 
     if (!submissionCreated) { test.skip('Submission non creata'); return }
 
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+    await loginAs(page, 'verificatore', auth)
 
     await page.goto('/riconciliazione')
     await page.waitForTimeout(3000)
@@ -134,10 +100,7 @@ test.describe('Gestione Fixes', () => {
   })
 
   test('GF-03: Telefono visibile nella lista submission @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+    await loginAs(page, 'verificatore', auth)
 
     await page.goto('/gestione')
     await page.waitForTimeout(2000)

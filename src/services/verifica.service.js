@@ -7,16 +7,18 @@ export const verificaService = {
       page,
       sort: sort || 'Famiglia,AnnoBando,Cognome_e__Nome_Beneficiario',
       fields: [
-        'id_progetto',
-        'AnnoBando',
-        'Allocato',
-        'Ambito',
-        'Cognome_e__Nome_Beneficiario',
-        'Titolo_Progetto',
-        'Famiglia',
-        'StatoRendicontazione',
-        'TotaleGiustificativi',
-        'TotaleImporto'
+        'id_progetto', 'AnnoBando', 'Allocato', 'Ambito',
+        'Cognome_e__Nome_Beneficiario', 'Titolo_Progetto', 'Famiglia',
+        'StatoRendicontazione', 'TotaleGiustificativi', 'TotaleImporto',
+        'Data_Inizio_Progetto', 'Data_Fine_Progetto', 'Eta',
+        'Descrizione_Progetto', 'Descrizione_Condizione', 'Dettaglio_Costi',
+        'Relazione_con_il_soggetto_richiedente',
+        'Allegati_Progetto.directus_files_id.id',
+        'Allegati_Progetto.directus_files_id.filename_download',
+        'Allegati_ISEE.directus_files_id.id',
+        'Allegati_ISEE.directus_files_id.filename_download',
+        'Allegati_Giustificativi.directus_files_id.id',
+        'Allegati_Giustificativi.directus_files_id.filename_download'
       ].join(',')
     }
     if (meta) params.meta = meta

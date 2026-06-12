@@ -39,7 +39,7 @@
 
       <q-space />
 
-      <q-btn color="primary" icon="person_add" label="Aggiungi Contatto" @click="openCreate" />
+      <q-btn color="primary" icon="person_add" label="Aggiungi Contatto" data-testid="btn-aggiungi-contatto" @click="openCreate" />
     </div>
 
     <q-table
@@ -126,7 +126,7 @@
 
       <template #body-cell-azioni="props">
         <q-td :props="props">
-          <q-btn flat dense icon="edit" @click="openEdit(props.row)" />
+          <q-btn flat dense icon="edit" data-testid="btn-edit-contatto" @click="openEdit(props.row)" />
           <q-btn
             flat
             dense
@@ -139,6 +139,7 @@
             dense
             icon="person_search"
             color="teal"
+            data-testid="btn-assigna-referente"
             @click="openReferente(props.row)"
           >
             <q-tooltip>Assegna Referente</q-tooltip>

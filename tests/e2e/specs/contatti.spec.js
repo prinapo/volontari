@@ -1,16 +1,13 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
 import { GestionePage } from '../pages/GestionePage.js'
+import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 const expectedHeaders = ['Nome e Cognome', 'Email', 'Cellulare', 'Tipo', 'Stato account', 'Famiglie', 'Azioni']
 
 test.describe('ContattiTab — Caricamento e Layout', () => {
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/)
+    await loginAs(page, 'gestore', auth)
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
   })
@@ -37,17 +34,16 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
     const gp = new GestionePage(page)
     await gp.waitForTable()
     await expect(gp.paginationInfo).toBeVisible({ timeout: 5000 })
+    const total = await gp.getTotalItems()
+    expect(total).toBeGreaterThanOrEqual(0)
     const text = await gp.paginationInfo.innerText()
-    expect(text).toContain('di')
+    expect(text).toMatch(/di\s+\d+/)
   })
 })
 
 test.describe('ContattiTab — Ricerca e Filtri', () => {
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/)
+    await loginAs(page, 'gestore', auth)
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
   })
@@ -70,7 +66,6 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     }
 
     await gp.search(searchTerm)
-    await page.waitForTimeout(1000)
     const rowsAfter = await gp.getRowCount()
 
     // Search should either narrow results or keep same (if all match)
@@ -107,28 +102,21 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     const gp = new GestionePage(page)
     await gp.waitForTable()
     const rows = await gp.getRowCount()
-    if (rows === 0) {
-      test.skip()
-      return
-    }
+    expect(rows).toBeGreaterThan(0)
 
-    // Find the tipo column index
     const headers = await gp.getTableHeaderTexts()
     const tipoIdx = headers.indexOf('Tipo')
-    if (tipoIdx === -1) test.skip()
+    expect(tipoIdx).not.toBe(-1)
 
-    // Check first visible row has a valid tipo
     const tipoText = await gp.getCellText(0, tipoIdx)
-    expect(['Volontario', 'Genitore', 'Contatto']).toContain(tipoText)
+    expect(['Volontario', 'Genitore', 'Referente', 'Contatto']).toContain(tipoText)
+    expect(tipoText.trim()).toBeTruthy()
   })
 })
 
 test.describe('ContattiTab — Directus 11 deep field fix', () => {
   test('CT-08: Contatti con user_id null sono visibili @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/)
+    await loginAs(page, 'gestore', auth)
 
     const gp = new GestionePage(page)
     await gp.waitForTable()
@@ -166,13 +154,9 @@ test.describe('ContattiTab — Directus 11 deep field fix', () => {
 
 test.describe('ContattiTab — CRUD', () => {
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/)
+    await loginAs(page, 'gestore', auth)
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
-    await page.waitForTimeout(1000)
   })
 
   test('CT-09: Crea contatto nuovo @crud', async ({ page }) => {
@@ -180,12 +164,10 @@ test.describe('ContattiTab — CRUD', () => {
     const nome = `Test CT ${timestamp}`
     const cognome = 'AutoTest'
 
-    const addBtn = page.locator('button:has-text("Aggiungi Contatto")')
-    await addBtn.click()
-    await page.waitForTimeout(1000)
+    await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
 
     const dialog = page.locator('.q-dialog:visible')
-    await expect(dialog).toBeVisible({ timeout: 5000 })
 
     await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
     await dialog.locator('[data-testid="contatto-cognome"]').fill(cognome)
@@ -200,23 +182,28 @@ test.describe('ContattiTab — CRUD', () => {
 
     const gp = new GestionePage(page)
     await gp.search(nome)
-    await page.waitForTimeout(1000)
     const rows = await gp.getRowCount()
     expect(rows).toBeGreaterThanOrEqual(1)
+
+    // Verifica persistenza dopo reload
+    await page.reload()
+    await gp.selectContattiTab()
+    await gp.search(nome)
+    const rowsAfterReload = await gp.getRowCount()
+    expect(rowsAfterReload).toBeGreaterThanOrEqual(1)
   })
 
   test('CT-10: Modifica contatto esistente @crud', async ({ page }) => {
     const gp = new GestionePage(page)
     await gp.waitForTable()
 
-    await gp.search('TEST_01')
-    await page.waitForTimeout(1000)
+    await gp.search('test.volontario@test.com')
 
     const rows = await gp.getRowCount()
-    if (rows === 0) { test.skip('TEST_01 non trovato'); return }
+    expect(rows).toBeGreaterThan(0)
 
-    const editBtn = page.locator('.q-table tbody tr').first().locator('button:has(i:text-is("edit"))')
-    if (await editBtn.count() === 0) { test.skip('Nessun pulsante edit'); return }
+    const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
+    await expect(editBtn).toBeVisible({ timeout: 5000 })
     await editBtn.click()
 
     const dialog = page.locator('.q-dialog:visible')
@@ -236,13 +223,11 @@ test.describe('ContattiTab — CRUD', () => {
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
 
     await gp.search(newNome)
-    await page.waitForTimeout(1000)
     const rowsAfter = await gp.getRowCount()
     expect(rowsAfter).toBeGreaterThanOrEqual(1)
 
     await gp.search(newNome)
-    await page.waitForTimeout(500)
-    const editBtnAfter = page.locator('.q-table tbody tr').first().locator('button:has(i:text-is("edit"))')
+    const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtnAfter.count() > 0) {
       await editBtnAfter.click()
       await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -260,12 +245,10 @@ test.describe('ContattiTab — CRUD', () => {
     const gp = new GestionePage(page)
     await gp.waitForTable()
 
-    const addBtn = page.locator('button:has-text("Aggiungi Contatto")')
-    await addBtn.click()
-    await page.waitForTimeout(1000)
+    await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
 
     const dialog = page.locator('.q-dialog:visible')
-    await expect(dialog).toBeVisible({ timeout: 5000 })
 
     await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
     await dialog.locator('[data-testid="contatto-cognome"]').fill('TestEmail')
@@ -273,7 +256,7 @@ test.describe('ContattiTab — CRUD', () => {
     const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
     if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await addEmailBtn.click()
-      await page.waitForTimeout(500)
+      await dialog.locator('[data-testid^="contatto-email-"]').first().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
     }
 
     const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
@@ -291,13 +274,11 @@ test.describe('ContattiTab — CRUD', () => {
     ])
     expect(postResp.status()).toBe(200)
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
-    await page.waitForTimeout(1000)
 
     await gp.search(nome)
-    await page.waitForTimeout(1000)
 
-    const editBtn = page.locator('.q-table tbody tr').first().locator('button:has(i:text-is("edit"))')
-    if (await editBtn.count() === 0) { test.skip('Nessun pulsante edit'); return }
+    const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
+    await expect(editBtn).toBeVisible({ timeout: 5000 })
     await editBtn.click()
 
     const editDialog = page.locator('.q-dialog:visible')
@@ -312,7 +293,7 @@ test.describe('ContattiTab — CRUD', () => {
       return
     }
 
-    const deleteEmailBtn = editDialog.locator('button:has(i:text-is("delete"))').first()
+    const deleteEmailBtn = editDialog.locator('[data-testid="btn-delete-email"]').first()
     if (await deleteEmailBtn.count() === 0) {
       await editDialog.locator('button:has-text("Annulla")').click()
       test.skip('Nessun pulsante elimina email')
@@ -320,30 +301,49 @@ test.describe('ContattiTab — CRUD', () => {
     }
 
     await deleteEmailBtn.click()
-    await page.waitForTimeout(500)
 
     const emailCountAfter = await editDialog.locator('[data-testid^="contatto-email-"]').count()
     console.log(`[CT-11] email count dopo: ${emailCountAfter}`)
     expect(emailCountAfter).toBeLessThan(emailCount)
 
     await editDialog.locator('button:has-text("Annulla")').click()
-    await page.waitForTimeout(500)
+    await expect(editDialog).not.toBeVisible({ timeout: 3000 }).catch(() => {})
   })
 
   test('CT-12: Aggiungi email a contatto @crud', async ({ page }) => {
+    const timestamp = Date.now()
+    const nome = `CT12 ${timestamp}`
+    const cognome = 'TestEmail'
+    const testEmail = `ct12_email_${timestamp}@test.com`
+
+    // Crea contatto dedicato
+    await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
+
+    const createDialog = page.locator('.q-dialog:visible')
+    await expect(createDialog).toBeVisible({ timeout: 5000 })
+
+    await createDialog.locator('[data-testid="contatto-nome"]').fill(nome)
+    await createDialog.locator('[data-testid="contatto-cognome"]').fill(cognome)
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
+      createDialog.locator('button:has-text("Salva")').click()
+    ])
+    expect(postResp.status()).toBe(200)
+    await expect(createDialog).not.toBeVisible({ timeout: 10000 })
+
+    const createdContatto = await postResp.json()
+    const contattoId = createdContatto?.data?.[0]?.id_contatto || createdContatto?.data?.id_contatto
+
+    if (!contattoId) { test.skip('ID contatto non ottenuto'); return }
+
+    // Modifica contatto per aggiungere email
     const gp = new GestionePage(page)
-    await gp.waitForTable()
-    const rows = await gp.getRowCount()
-    if (rows === 0) { test.skip('No contatti'); return }
+    await gp.search(nome)
 
-    const testEmail = `ct_test_${Date.now()}@test.com`
-
-    const firstNameCell = await gp.tableRows.first().locator('td').nth(0).innerText()
-    const searchTerm = firstNameCell.trim().split(' ')[0]
-    if (!searchTerm || searchTerm === '—') { test.skip('Nome non valido'); return }
-
-    const editBtn = page.locator('.q-table tbody tr').first().locator('button:has(i:text-is("edit"))')
-    if (await editBtn.count() === 0) { test.skip('Nessun pulsante edit'); return }
+    const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
+    await expect(editBtn).toBeVisible({ timeout: 5000 })
     await editBtn.click()
 
     const dialog = page.locator('.q-dialog:visible')
@@ -352,11 +352,17 @@ test.describe('ContattiTab — CRUD', () => {
     const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
     if (await addEmailBtn.count() > 0) {
       await addEmailBtn.click()
-      await page.waitForTimeout(500)
+      await dialog.locator('[data-testid^="contatto-email-"]').last().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
 
       const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
       if (await emailInput.count() > 0) {
         await emailInput.fill(testEmail)
+        // Trigger blur per far completare onEmailBlur prima del salvataggio
+        await dialog.locator('[data-testid="contatto-nome"]').click()
+        await page.waitForResponse(
+          resp => resp.url().includes('/items/email') && resp.request().method() === 'POST',
+          { timeout: 5000 }
+        ).catch(() => {})
 
         const [patchResp] = await Promise.all([
           page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),

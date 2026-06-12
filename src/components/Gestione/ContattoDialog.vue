@@ -84,6 +84,7 @@
               icon="delete"
               color="negative"
               size="sm"
+              data-testid="btn-delete-email"
               :disable="hasAccount"
               @click="removeEmail(idx)"
             >

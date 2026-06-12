@@ -20,7 +20,7 @@
         </div>
         <div v-for="r in assignedReferenti" :key="r.id" class="row items-center q-gutter-xs q-mb-xs">
           <span class="text-body2 col">{{ r.Nome }} {{ r.Cognome }}</span>
-          <q-btn flat round dense icon="delete" color="negative" size="sm" @click="removeReferente(r)" />
+          <q-btn flat round dense icon="delete" color="negative" size="sm" data-testid="btn-remove-referente" @click="removeReferente(r)" />
         </div>
 
         <q-separator class="q-my-md" />
@@ -45,6 +45,7 @@
           <q-btn
             color="primary"
             icon="person_add"
+            data-testid="btn-add-referente"
             :disable="!selectedReferente"
             @click="addReferente"
           />

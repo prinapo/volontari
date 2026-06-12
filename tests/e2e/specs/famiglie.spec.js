@@ -1,9 +1,9 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
 import { GestionePage } from '../pages/GestionePage.js'
+import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
-test.describe.serial('Famiglie Page', () => {
+test.describe('Famiglie Page', () => {
 
   // ── FM-01: assegna TEST_03 (genitore) a TEST_FAM_01 come setup ──
   test('FM-01: Assegna genitore a famiglia via ContattiDialog @setup', async ({ page }) => {
@@ -19,10 +19,7 @@ test.describe.serial('Famiglie Page', () => {
       await page.context().clearCookies()
     }
 
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestione = new GestionePage(page)
     await gestione.famiglieTab.click()
@@ -67,10 +64,7 @@ test.describe.serial('Famiglie Page', () => {
 
   // ── Tutti i test esistenti (serializzati dopo FM-01) ──
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.volontario.email, auth.volontario.password)
-    await expect(page).toHaveURL(/\/famiglie/)
+    await loginAs(page, 'volontario', auth)
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await page.waitForTimeout(1500)
   })

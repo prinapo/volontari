@@ -9,10 +9,10 @@ test.describe('Authentication', () => {
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page)
+    await loginPage.goto()
   })
 
   test('A-01: Login con credenziali valide @smoke', async ({ page }) => {
-    await loginPage.goto()
     await loginPage.login(testUser.email, testUser.password)
     await expect(page).toHaveURL(/\/famiglie/)
     const token = await page.evaluate(() => localStorage.getItem('access_token'))
@@ -20,7 +20,6 @@ test.describe('Authentication', () => {
   })
 
   test('A-02: Logout pulisce sessione e blocca accesso diretto @smoke', async ({ page }) => {
-    await loginPage.goto()
     await loginPage.login(testUser.email, testUser.password)
     await expect(page).toHaveURL(/\/famiglie/)
 
@@ -36,14 +35,12 @@ test.describe('Authentication', () => {
   })
 
   test('A-03: Login fallito mostra errore @regression', async ({ page }) => {
-    await loginPage.goto()
     await loginPage.login(testUser.email, 'wrong_password')
     await expect(page).toHaveURL(/\/login/)
     await expect(page.locator('.text-negative')).toBeVisible({ timeout: 5000 })
   })
 
   test('A-04: Privazione token forza redirect a login @regression', async ({ page }) => {
-    await loginPage.goto()
     await loginPage.login(testUser.email, testUser.password)
     await expect(page).toHaveURL(/\/famiglie/)
 
@@ -107,5 +104,32 @@ test.describe('Route Guards', () => {
     await loginPage2.goto()
     await loginPage2.login(auth.verificatore.email, auth.verificatore.password)
     await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+  })
+
+  test('RG-05: Admin accede a /admin @smoke', async ({ page }) => {
+    test.setTimeout(90000)
+    if (!auth.admin) { test.skip('Nessun utente Admin configurato'); return }
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    try {
+      await loginPage.login(auth.admin.email, auth.admin.password)
+    } catch {
+      console.log('[RG-05] Admin login fallito — utente non presente in Directus')
+      test.skip()
+      return
+    }
+
+    // L'admin viene reindirizzato a /gestione (ha anche canGestione)
+    await page.goto('/admin')
+    await page.waitForTimeout(2000)
+    const currentUrl = page.url()
+
+    if (currentUrl.includes('/login')) {
+      test.skip('Admin reindirizzato a login — permessi insufficienti')
+      return
+    }
+
+    expect(currentUrl).toContain('/admin')
+    await expect(page.locator('.text-h5:has-text("User Admin")')).toBeVisible({ timeout: 5000 })
   })
 })

@@ -17,6 +17,7 @@
           round
           icon="refresh"
           :loading="store.submissionsLoading"
+          data-testid="btn-refresh-riconciliazioni"
           @click="loadData"
         >
           <q-tooltip>Aggiorna</q-tooltip>
@@ -107,13 +108,27 @@
         <template #body-cell-email="props">
           <q-td :props="props">
             <template v-if="props.row._detectState === 'not_found'">
-              <q-input
-                v-model="props.row.email"
-                dense
-                outlined
-                class="text-body2"
-                @blur="handleEmailEdit(props.row)"
-              />
+              <div class="row items-center q-gutter-xs">
+                <q-input
+                  v-model="props.row.email"
+                  dense
+                  outlined
+                  class="text-body2 col"
+                  @blur="handleEmailEdit(props.row)"
+                />
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="save"
+                  color="positive"
+                  size="sm"
+                  data-testid="btn-save-email"
+                  @click="handleEmailEdit(props.row)"
+                >
+                  <q-tooltip>Salva email e ricontrolla</q-tooltip>
+                </q-btn>
+              </div>
             </template>
             <template v-else>
               {{ props.value }}
@@ -142,6 +157,7 @@
                   icon="restore"
                   color="orange"
                   size="md"
+                  data-testid="btn-restore"
                   @click="handleRipristina(props.row)"
                 >
                   <q-tooltip>Recupera</q-tooltip>
@@ -154,6 +170,7 @@
                   icon="fact_check"
                   color="positive"
                   size="md"
+                  data-testid="btn-riconcilia"
                   @click="openRiconcilia(props.row)"
                 >
                   <q-tooltip>Riconcilia</q-tooltip>
@@ -164,6 +181,7 @@
                   icon="group_add"
                   color="accent"
                   size="md"
+                  data-testid="btn-associa-genitore"
                   @click="handleAssociaGenitore(props.row)"
                 >
                   <q-tooltip>Associa come genitore</q-tooltip>
@@ -174,6 +192,7 @@
                   icon="people"
                   color="warning"
                   size="md"
+                  data-testid="btn-associa-famiglia"
                   @click="openAssociaFamiglia(props.row)"
                 >
                   <q-tooltip>Associa famiglia</q-tooltip>
@@ -184,6 +203,7 @@
                   icon="person_add"
                   color="negative"
                   size="md"
+                  data-testid="btn-crea-contatto"
                   @click="openCreaContatto(props.row)"
                 >
                   <q-tooltip>Crea contatto</q-tooltip>
@@ -203,6 +223,7 @@
                   icon="delete"
                   color="negative"
                   size="md"
+                  data-testid="btn-scarta"
                   @click="handleScarta(props.row)"
                 >
                   <q-tooltip>Scarta</q-tooltip>
@@ -250,6 +271,7 @@ import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
 import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { assetUrl } from 'src/utils/assets'
+import { verificaService } from 'src/services/verifica.service'
 
 const $q = useQuasar()
 const store = useVerificaStore()
@@ -346,8 +368,13 @@ async function handleAssociaGenitore(submission) {
   }
 }
 
-function handleEmailEdit(submission) {
+async function handleEmailEdit(submission) {
   if (!submission.email) return
+  try {
+    await verificaService.updateSubmission(submission.id, { email: submission.email })
+  } catch (err) {
+    notifyError($q, err, 'Errore nel salvataggio email')
+  }
   loadData()
 }
 

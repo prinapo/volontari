@@ -5,7 +5,7 @@ export class RiconciliazionePage {
 
   async goto() {
     await this.page.goto('/riconciliazione', { timeout: 15000 })
-    await this.page.waitForTimeout(2000)
+    await this.waitForTable()
   }
 
   get table() {
@@ -25,13 +25,16 @@ export class RiconciliazionePage {
   }
 
   async clickRiconcilia(rowIndex = 0) {
-    const btn = this.tableRows.nth(rowIndex).locator('.q-td:last-child .q-btn').filter({ has: this.page.locator('i:text-is("fact_check")') }).first()
+    const btn = this.tableRows.nth(rowIndex).locator('[data-testid="btn-riconcilia"]').first()
     await btn.click()
   }
 
   async waitForTable() {
     await this.table.waitFor({ state: 'visible', timeout: 15000 })
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
   }
 
   get dialog() {

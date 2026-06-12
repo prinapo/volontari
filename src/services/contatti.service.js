@@ -20,10 +20,10 @@ export const contattiService = {
   },
 
   getByEmails(emails) {
-    const list = Array.isArray(emails) ? emails.join(',') : emails
+    const list = Array.isArray(emails) ? emails : [emails]
     return api.get('/items/contatti', {
       params: {
-        'filter[email][email_address][_in]': list,
+        'filter[email][email_address][_in]': list.map(e => e.toLowerCase()).join(','),
         fields: 'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id',
         limit: -1
       }

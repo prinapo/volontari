@@ -1,3 +1,22 @@
+# v2.5.1
+
+- **ProgettoDetailDialog**: Nuovo pulsante `visibility` per riga in VerificaPage. Dialog con tutti i campi Directus (date, età, descrizioni, relazione, allegati). Rimossa toolbar Dettaglio.
+- **Fix email case-insensitive**: `getByEmails()` usa `_in` con email lowercased per matching case-insensitive su PostgreSQL.
+- **Fix modifica email in riconciliazione**: `handleEmailEdit()` ora salva via API prima di ricaricare. Aggiunto pulsante `save` accanto all'email.
+- **Fix discrepanze solo admin**: `showRendicontazioneNotify()` ora controlla `canAdmin`.
+- **Hard wait riduzione**: Sostituite decine di `waitForTimeout` con `waitForResponse`/`waitForSelector` in tutti i page objects e spec files.
+- **Selettori icon-based eliminati**: 19 selettori `i:text-is`/`i:has-text` sostituiti con `data-testid`.
+- **Test autosufficienti**: Nessun `test.skip()` per mancanza pre-condizioni (RC-02/03/CT-10/ER-04 ora falliscono). Eliminati `describe.serial`.
+- **Error-handling test**: EH-01 con mock 500 API. VR-SS-01 screenshot regression.
+- **Protezioni anti-production**: Global setup + runtime guard in console.js.
+- **Database cleanup**: Global setup pulisce record test precedenti.
+- **API setup helpers**: `helpers/setup.js` con `createContatto()`, `assignToFamiglia()` via API.
+- **Login centralizzato**: `helpers/login.js` con `loginAs()`.
+- **Nuovi test**: 20+ nuovi test (EC-01..04, VF-04/05, RC-04/05/PG-04, VP-DETT-01..06, EH-01, VR-SS-01, RG-COMB-01, LB-05, DP-01/02, RG-05).
+- **Test E2E**: ~151 passano, 0 falliti, 0 skip. Suite completa e affidabile.
+- **Deploy FTP**: `scripts/deploy-ftp.mjs` con `basic-ftp`. Comando `npm run deploy`.
+- **Version bump**: 2.5.0 → 2.5.1
+
 # v2.3.0
 
 - **Tranche rimosso**: Eliminato il sistema Tranche da tutto il codice. `recalculateRowTotals()` ora somma direttamente tutti i giustificativi con stato `inviato/verificato/approvato`.
@@ -11,7 +30,7 @@
 - **FamiglieTab**: Ordinamento funzionante (sort mappato a Directus field names). Genitori prima, poi separator, poi Volontari nell riga espandibile.
 - **FamigliaInfoCard**: Mostra referente di ogni volontario.
 - **Email layout**: Email verticali nella tabella Contatti (non orizzontali).
-- **Test E2E**: 112 test passano, 0 falliti, 4 skip (Deduplica hardcoded).
+- **Test E2E**: 112 passano, 0 falliti, 4 skip (Deduplica hardcoded).
 - **Version bump**: 2.2.0 → 2.3.0
 
 # v2.1.0
@@ -343,7 +362,36 @@ I dati arrivano da `famiglie.store.js:loadVolontari(famigliaId)`:
 # DeduplicaPage — Gestione duplicati email
 
 Pagina `/deduplica` accessibile solo a ruoli `administrator`/`admin` (getter `canAdmin`).
-**I test E2E su questa pagina skippano** perché nessun utente test ha ruolo Admin.
+
+## Configurazione Directus locale necessaria
+
+Per sbloccare tutti i test (Admin, Deduplica, Submit pubblica, Reset password):
+
+### Utente Admin
+Creare in Directus (Settings → Users):
+- Email: `test.admin@test.com`
+- Password: `TestAdmin_2026!`
+- Ruolo: `Administrator` (con admin_access = true)
+
+Il nome del ruolo deve corrispondere a uno dei valori in `ADMIN_ROLE_NAMES` (`['administrator', 'admin']`).
+
+### Submit pubblica (SP-07/08/09)
+In Settings → Permissions → Ruolo `Public`:
+- `InviiGiustificativiNoLogin` → Create
+- `directus_files` → Create
+- Folder `Invii_Pubblici` (UUID: `25cd095a-20a2-48fd-9827-9b6754b429f6`) → Read
+
+### Reset password (RP-10)
+Configurare SMTP in Directus (`.env` o Admin Settings):
+```
+EMAIL_FROM="noreply@sostienilsostegno.com"
+EMAIL_TRANSPORT="smtp"
+EMAIL_SMTP_HOST="smtp.gmail.com"
+EMAIL_SMTP_PORT=465
+EMAIL_SMTP_USER="test.validatore.sis@gmail.com"
+EMAIL_SMTP_PASSWORD="(app password Gmail)"
+EMAIL_SMTP_SECURE=true
+```
 
 **Logica:** raggruppa contatti che condividono la stessa `email_address` nella tabella `email`.
 
@@ -471,4 +519,48 @@ npm run test:e2e -- --grep "RP-0"
 
 # Test full E2E (email reale)
 npm run test:e2e -- --grep "RP-10"
+```
+
+# Deploy FTP
+
+## Prerequisiti
+
+Le credenziali FTP sono nel file `.env` (non condiviso su git):
+
+```env
+FTP_HOST=ftp.sostienilsostegno.com
+FTP_PORT=21
+FTP_USER=app.volontari.deploy@sostienilsostegno.com
+FTP_PASSWORD=...
+FTP_REMOTE_DIR=/public_html
+```
+
+## Build e deploy
+
+```bash
+# Solo build
+npm run build
+
+# Build + deploy
+npm run release
+
+# Solo deploy (dopo build manuale)
+npm run deploy
+```
+
+## Script di deploy
+
+`scripts/deploy-ftp.mjs` usa la libreria `basic-ftp` per:
+
+1. Leggere le credenziali da `.env` (`.env.local` sovrascrive `.env`)
+2. Connettersi via FTP (plain, porta 21 — il server supporta AUTH TLS ma non lo richiede)
+3. Creare la directory remota `/public_html` se non esiste
+4. Pulire la directory remota
+5. Caricare tutto `dist/spa/` (build Quasar)
+
+## Note
+
+- Il server FTP supporta `PASV` ma non `EPSV` (EPSV dà errore 500, PASV funziona)
+- La connessione non è criptata (plain FTP). Usare solo per deploy su server di proprietà.
+- Per deploy sicuro via FTPS esplicito, modificare `scripts/deploy-ftp.mjs`: impostare `secure: 'explicit'` (il server supporta AUTH TLS)
 ```

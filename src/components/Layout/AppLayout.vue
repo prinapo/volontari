@@ -257,12 +257,12 @@ function showRendicontazioneNotify() {
 watch(
   () => authStore.rendicontazioneCheck.checked,
   (checked) => {
-    if (checked) showRendicontazioneNotify()
+    if (checked && authStore.canAdmin) showRendicontazioneNotify()
   }
 )
 
 onMounted(() => {
-  if (authStore.rendicontazioneCheck.checked) {
+  if (authStore.rendicontazioneCheck.checked && authStore.canAdmin) {
     showRendicontazioneNotify()
   }
 })

@@ -1,13 +1,10 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
+import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('AppLayout — Sidebar Navigation', () => {
   test('LB-01: Volontario vede solo Famiglie @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.volontario.email, auth.volontario.password)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await loginAs(page, 'volontario', auth)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -25,10 +22,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
   })
 
   test('LB-02: Gestore vede Gestione ma non Verifica @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -44,10 +38,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
   })
 
   test('LB-03: Verificatore vede Verifica e Riconciliazione @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+    await loginAs(page, 'verificatore', auth)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -66,10 +57,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
   })
 
   test('LB-04: Click menu item naviga alla pagina corretta @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.volontario.email, auth.volontario.password)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await loginAs(page, 'volontario', auth)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -77,5 +65,11 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     const famiglieItem = drawer.locator('.q-item:has-text("Famiglie")').first()
     await famiglieItem.click()
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 5000 })
+  })
+
+  test('LB-05: Genitore loggato arriva a /famiglie @smoke', async ({ page }) => {
+    // Il genitore condivide il ruolo Volontario in Directus
+    await loginAs(page, 'genitore', auth)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
   })
 })

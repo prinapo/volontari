@@ -1,6 +1,11 @@
 import axios from 'axios'
-import { API_URL, STORAGE_KEYS } from 'src/utils/constants'
+import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
 import { useAuthStore } from 'src/stores/auth.store'
+
+const API_URL = (
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+) ? 'http://localhost:8055' : ENV_API_URL
 
 const api = axios.create({
   baseURL: API_URL,

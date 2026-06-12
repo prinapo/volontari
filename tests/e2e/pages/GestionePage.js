@@ -13,12 +13,26 @@ export class GestionePage {
     return this.page.locator('.q-tab:has-text("Contatti")')
   }
 
+  async _waitForContattiApi() {
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
+  }
+
+  async _waitForFamiglieApi() {
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
+  }
+
   /**
    * Selects the Contatti tab (Famiglie tab is first after reorder)
    */
   async selectContattiTab() {
     await this.contattiTab.click()
-    await this.page.waitForTimeout(500)
+    await this._waitForContattiApi()
     await this.waitForTable()
   }
 
@@ -31,11 +45,15 @@ export class GestionePage {
   }
 
   get table() {
-    return this.page.locator('table')
+    return this.page.locator('.q-table')
   }
 
   get tableRows() {
-    return this.page.locator('.q-table tbody tr')
+    return this.activePanel.locator('.q-table tbody tr')
+  }
+
+  get activePanel() {
+    return this.page.locator('.q-tab-panel:not([hidden])')
   }
 
   get paginationInfo() {
@@ -43,8 +61,8 @@ export class GestionePage {
   }
 
   async waitForTable() {
-    await this.page.locator('.q-table tbody tr').first().waitFor({ state: 'attached', timeout: 20000 }).catch(() => {})
-    await this.page.waitForTimeout(500)
+    await this.activePanel.locator('.q-table tbody tr').first().waitFor({ state: 'attached', timeout: 20000 }).catch(() => {})
+    await this.page.waitForTimeout(200)
   }
 
   async getTotalItems() {
@@ -59,14 +77,15 @@ export class GestionePage {
 
   async search(text) {
     await this.searchInput.fill(text)
-    await this.page.waitForTimeout(500)
+    await this.page.waitForTimeout(350)
+    await this._waitForContattiApi()
     await this.waitForTable()
   }
 
   async setTipoFilter(tipo) {
     await this.tipoFilter.click()
     await this.page.locator(`.q-item:has-text("${tipo}")`).click()
-    await this.page.waitForTimeout(500)
+    await this._waitForContattiApi()
     await this.waitForTable()
   }
 
@@ -98,7 +117,7 @@ export class GestionePage {
 
   async searchFamiglie(text) {
     await this.famiglieSearch.fill(text)
-    await this.page.waitForTimeout(500)
+    await this._waitForFamiglieApi()
     await this.waitForTable()
   }
 
@@ -108,12 +127,8 @@ export class GestionePage {
 
   /**
    * Clicca icona contacts sulla riga famiglia nella q-table delle Famiglie.
-   * Ritorna true se trovata e cliccata.
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Trova la riga nella tabella che ha Nome_Famiglia = nomeFamiglia
-    // Ogni riga q-table custom body ha 2 q-tr: principale + espansa (colspan)
-    // Usiamo nth(i*2) per saltare le righe espanse
     const rows = this.page.locator('.q-table tbody tr')
     const count = await rows.count()
     const mainRowCount = Math.floor(count / 2)
@@ -121,8 +136,6 @@ export class GestionePage {
       const mainRow = rows.nth(i * 2)
       const cellText = await mainRow.locator('td').nth(1).innerText()
       if (cellText.trim().includes(nomeFamiglia)) {
-        // Clicca icona contacts nell'ultima cella (azioni)
-        // icon="contacts" rende <i class="q-icon material-icons">contacts</i>
         const actionCell = mainRow.locator('td').last()
         await actionCell.locator('.q-btn').filter({ hasText: 'contacts' }).click()
         await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
@@ -134,25 +147,15 @@ export class GestionePage {
 
   /**
    * Assegna un contatto come Genitore tramite ContattiDialog.
-   * Cerca nel testo degli item del dropdown per email o nome.
-   * Non usa fallback — se non trova il match, il test deve fallire.
    */
   async assignGenitore(searchTerm) {
     const select = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto"))')
     const input = select.locator('input')
-
     await input.click()
-    await this.page.waitForTimeout(500)
-    await input.type(searchTerm, { delay: 50 })
-    await this.page.waitForTimeout(3000)
-
-    const firstItem = this.page.locator('.q-menu .q-item').first()
-    await firstItem.waitFor({ state: 'visible', timeout: 5000 })
-    await firstItem.click()
-
-    await this.page.waitForTimeout(300)
+    await input.fill(searchTerm)
+    await this.page.locator('.q-menu .q-item').first().waitFor({ state: 'visible', timeout: 5000 })
+    await this.page.locator('.q-menu .q-item').first().click()
     await this.contattiDialog.locator('button:has-text("Associa come Genitore")').click()
-    await this.page.waitForTimeout(500)
   }
 
   /**
@@ -161,62 +164,13 @@ export class GestionePage {
   async assignVolontario(searchTerm, fullName) {
     const input = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto")) input')
     await input.fill(searchTerm)
-    await this.page.waitForTimeout(600)
     const item = this.page.locator('.q-menu .q-item').filter({ hasText: fullName }).first()
     await item.waitFor({ state: 'visible', timeout: 5000 })
     await item.click()
-    await this.page.waitForTimeout(300)
     await this.contattiDialog.locator('button:has-text("Associa come Volontario")').click()
-    await this.page.waitForTimeout(500)
   }
 
-  /**
-   * Assegna un contatto come Referente tramite AssegnaFamigliaDialog.
-   */
-  async assignReferente(searchTerm, fullName) {
-    const dialog = this.page.locator('.q-dialog:has(.text-h6:has-text("Associa a famiglia"))')
-    await dialog.waitFor({ state: 'visible', timeout: 5000 })
-
-    const roleSelect = dialog.locator('.q-select').first()
-    await roleSelect.click()
-    await this.page.waitForTimeout(500)
-    await this.page.locator('.q-item:has-text("Referente")').click()
-    await this.page.waitForTimeout(500)
-
-    const famigliaSelect = dialog.locator('.q-select:has(.q-field__label:has-text("Aggiungi famiglia"))')
-    const famigliaInput = famigliaSelect.locator('input')
-    await famigliaInput.click()
-    await this.page.waitForTimeout(500)
-    await famigliaInput.type(searchTerm, { delay: 50 })
-    await this.page.waitForTimeout(3000)
-
-    const firstItem = this.page.locator('.q-menu .q-item').first()
-    await firstItem.waitFor({ state: 'visible', timeout: 5000 })
-    await firstItem.click()
-    await this.page.waitForTimeout(300)
-
-    await dialog.locator('button:has-text("Assegna")').click()
-    await this.page.waitForTimeout(1000)
-  }
-
-  /**
-   * Check if a name is already in the ContattiDialog list.
-   */
-  async isInList(fullName) {
-    const dialog = this.contattiDialog
-    const items = dialog.locator('.q-table tbody tr')
-    const count = await items.count()
-    for (let i = 0; i < count; i++) {
-      const text = await items.nth(i).innerText()
-      if (text.includes(fullName)) return true
-    }
-    return false
-  }
-
-  /**
-   * Remove a contact from a family via the delete button in ContattiDialog/AssegnaFamigliaDialog.
-   */
-  async removeFromFamiglia(_fullName) {
+  async removeFromFamiglia(fullName) {
     const dialog = this.page.locator('.q-dialog:visible')
     const rows = dialog.locator('.q-table tbody tr')
     const count = await rows.count()
@@ -224,7 +178,6 @@ export class GestionePage {
       const text = await rows.nth(i).innerText()
       if (text.includes(fullName)) {
         await rows.nth(i).locator('.q-btn:has-text("delete")').click()
-        await this.page.waitForTimeout(1000)
         return true
       }
     }

@@ -45,6 +45,7 @@
                   label="Nuova password"
                   :type="showPwd1 ? 'text' : 'password'"
                   filled
+                  data-testid="reset-password"
                   :rules="[val => !!val || 'Inserisci la nuova password']"
                   lazy-rules
                 >
@@ -62,6 +63,7 @@
                   label="Conferma password"
                   :type="showPwd2 ? 'text' : 'password'"
                   filled
+                  data-testid="reset-confirm-password"
                   :rules="[
                     val => !!val || 'Conferma la password',
                     val => val === newPassword || 'Le password non coincidono'
@@ -82,6 +84,7 @@
                   color="primary"
                   label="Reimposta password"
                   class="full-width"
+                  data-testid="reset-submit"
                   :loading="loading"
                 />
               </q-form>

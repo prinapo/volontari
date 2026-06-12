@@ -1,5 +1,5 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
+import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -10,17 +10,16 @@ const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf
 
 async function createBozzaViaUI(page, descPrefix) {
   const testDesc = `${descPrefix}_${Date.now()}`
-  await page.waitForTimeout(500)
-  if (await page.locator('button:has-text("Aggiungi")').isDisabled()) {
-    console.log(`createBozzaViaUI: Aggiungi button disabled for ${descPrefix} — skipping`)
+    if (await page.locator('button:has-text("Aggiungi")').isDisabled()) {
+      console.log(`createBozzaViaUI: Aggiungi button disabled for ${descPrefix} — skipping`)
     return null
   }
   await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
       await page.locator('button:has-text("Aggiungi")').click()
   await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
   const dialog = page.locator('.q-dialog')
-  await dialog.locator('input').first().fill(testDesc)
-  await dialog.locator('input').nth(1).fill('50.00')
+  await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
+  await dialog.locator('[data-testid="giustform-importo"]').fill('75.00')
   await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
   const [postResp] = await Promise.all([
     page.waitForResponse(
@@ -40,10 +39,7 @@ async function createBozzaViaUI(page, descPrefix) {
 }
 
 async function loginAndSelectProgetto(page) {
-  const loginPage = new LoginPage(page)
-  await loginPage.goto()
-  await loginPage.login(auth.volontario.email, auth.volontario.password)
-  await expect(page).toHaveURL(/\/famiglie/)
+  await loginAs(page, 'volontario', auth)
   await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
   const select = page.locator('.q-select').first()
   await select.locator('.q-field__native').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
@@ -53,13 +49,13 @@ async function loginAndSelectProgetto(page) {
   })
   if (await page.locator('.q-menu .q-item').count() > 0) {
     await page.locator('.q-menu .q-item').first().click()
-    await page.waitForTimeout(500)
+    await page.locator('button:has-text("Aggiungi")').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     return true
   }
   return false
 }
 
-test.describe.serial('Giustificativi', () => {
+test.describe('Giustificativi', () => {
 
   // ── CG: Creazione ──
   test.describe('GiustificativoForm — Creazione', () => {
@@ -88,9 +84,9 @@ test.describe.serial('Giustificativi', () => {
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
-      await dialog.locator('input').nth(1).fill('50.00')
+      await dialog.locator('[data-testid="giustform-importo"]').fill('50.00')
       await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
-      await dialog.locator('button:has-text("Salva")').click()
+      await dialog.locator('[data-testid="giustform-salva"]').click()
       await page.waitForTimeout(500)
 
       await expect(dialog).toBeVisible({ timeout: 3000 })
@@ -107,9 +103,9 @@ test.describe.serial('Giustificativi', () => {
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
-      await dialog.locator('input').first().fill(`__TEST_NoImp_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NoImp_${Date.now()}`)
       await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
-      await dialog.locator('button:has-text("Salva")').click()
+      await dialog.locator('[data-testid="giustform-salva"]').click()
       await page.waitForTimeout(500)
 
       await expect(dialog).toBeVisible({ timeout: 3000 })
@@ -126,9 +122,9 @@ test.describe.serial('Giustificativi', () => {
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
-      await dialog.locator('input').first().fill(`__TEST_NoFile_${Date.now()}`)
-      await dialog.locator('input').nth(1).fill('50.00')
-      await dialog.locator('button:has-text("Salva")').click()
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NoFile_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-importo"]').fill('50.00')
+      await dialog.locator('[data-testid="giustform-salva"]').click()
       await page.waitForTimeout(500)
 
       await expect(dialog).toBeVisible({ timeout: 3000 })
@@ -165,14 +161,14 @@ test.describe.serial('Giustificativi', () => {
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
 
-      await dialog.locator('input').first().fill(testDesc)
-      await dialog.locator('input').nth(1).fill(testImporto)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
+      await dialog.locator('[data-testid="giustform-importo"]').fill(testImporto)
       await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       const [postResp] = await Promise.all([
         page.waitForResponse(
           resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'
         ),
-        dialog.locator('button:has-text("Salva")').click()
+    dialog.locator('[data-testid="giustform-salva"]').click()
       ])
       expect(postResp.status()).toBe(200)
 
@@ -180,7 +176,7 @@ test.describe.serial('Giustificativi', () => {
       await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 5000 })
 
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 5000 })
     })
 
@@ -204,8 +200,12 @@ test.describe.serial('Giustificativi', () => {
 
   // ── IE: Inline Edit (usa bozze create da CG-06) ──
   test.describe('GiustificativoCard — Inline Edit', () => {
+    let lastDraftId = null
+
     test.beforeEach(async ({ page }) => {
       await loginAndSelectProgetto(page)
+      const draft = await createBozzaViaUI(page, '__TEST_IE')
+      if (draft) lastDraftId = draft.id
     })
 
     async function findDraftCard(page) {
@@ -241,7 +241,7 @@ test.describe.serial('Giustificativi', () => {
       await expect(descField.locator('.text-body1')).toContainText(newDesc, { timeout: 5000 })
 
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       await expect(page.locator(`text=${newDesc}`)).toBeVisible({ timeout: 10000 })
     })
 
@@ -303,7 +303,7 @@ test.describe.serial('Giustificativi', () => {
 
       const commaImporto = savedImporto.replace('.', ',')
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       await expect(page.getByText(commaImporto).first()).toBeVisible({ timeout: 10000 })
     })
 
@@ -356,7 +356,7 @@ test.describe.serial('Giustificativi', () => {
       await expect(dataFieldById).toContainText('15/06/2025', { timeout: 5000 })
 
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       await expect(dataFieldById).toContainText('15/06/2025', { timeout: 10000 })
     })
 
@@ -506,18 +506,17 @@ test.describe.serial('Giustificativi', () => {
       await page.locator('button:has-text("Aggiungi")').click()
         await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
         const dialog = page.locator('.q-dialog')
-        await dialog.locator('input').first().fill(testDesc)
-        await dialog.locator('input').nth(1).fill('30.00')
-        await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+        await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
+        await dialog.locator('[data-testid="giustform-importo"]').fill('30.00')
+  await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
         const [createResp] = await Promise.all([
           page.waitForResponse(
             resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'
           ),
-          dialog.locator('button:has-text("Salva")').click()
+    dialog.locator('[data-testid="giustform-salva"]').click()
         ])
         expect(createResp.status()).toBe(200)
         await expect(dialog).not.toBeVisible({ timeout: 10000 })
-        await page.waitForTimeout(1000)
 
         targetCard = page.locator('.q-card').filter({ hasText: testDesc })
         await expect(targetCard).toBeVisible({ timeout: 5000 })
@@ -525,7 +524,7 @@ test.describe.serial('Giustificativi', () => {
 
       const oldHref = await targetCard.locator('a[href*="/assets/"]').first().getAttribute('href')
 
-      const fileInput = targetCard.locator('input[type="file"]')
+      const fileInput = targetCard.locator('input[type="file"]').first()
       const [patchResp] = await Promise.all([
         page.waitForResponse(
           resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH'
@@ -533,13 +532,12 @@ test.describe.serial('Giustificativi', () => {
         fileInput.setInputFiles(FIXTURE_PDF)
       ])
       expect(patchResp.status()).toBe(200)
-      await page.waitForTimeout(500)
 
       const newHref = await targetCard.locator('a[href*="/assets/"]').first().getAttribute('href')
       expect(newHref).not.toBe(oldHref)
 
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       const cardAfter = page.locator('.q-card').filter({ hasText: testDesc })
       await expect(cardAfter).toBeVisible({ timeout: 5000 })
     })
@@ -609,10 +607,12 @@ test.describe.serial('Giustificativi', () => {
       await draftCard.locator('button:has-text("Elimina")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
       await page.locator('.q-dialog button:has-text("Elimina")').click()
-      await page.waitForTimeout(1000)
-
+      await page.waitForResponse(
+        resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'DELETE',
+        { timeout: 5000 }
+      ).catch(() => {})
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       await expect(page.locator(`text=${descText}`)).not.toBeVisible({ timeout: 5000 })
     })
   })
@@ -650,8 +650,10 @@ test.describe.serial('Giustificativi', () => {
       const cleanDesc = descText.replace(/\s*edit\s*$/, '')
 
       await draftCard.locator('button:has-text("Invia")').click()
-      await page.waitForTimeout(1000)
-
+      await page.waitForResponse(
+        resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH',
+        { timeout: 5000 }
+      ).catch(() => {})
       const sentCard = page.locator('.q-card').filter({ hasText: cleanDesc }).first()
       await expect(sentCard.locator('button:has-text("Invia")')).not.toBeVisible()
       await expect(sentCard.locator('button:has-text("Elimina")')).not.toBeVisible()
@@ -668,10 +670,12 @@ test.describe.serial('Giustificativi', () => {
       const cleanDesc = descText.replace(/\s*edit\s*$/, '')
 
       await draftCard.locator('button:has-text("Invia")').click()
-      await page.waitForTimeout(1000)
-
+      await page.waitForResponse(
+        resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH',
+        { timeout: 5000 }
+      ).catch(() => {})
       await page.reload()
-      await page.waitForTimeout(2000)
+      await page.locator('.text-h6').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
       const cardAfter = page.locator('.q-card').filter({ hasText: cleanDesc }).first()
       await expect(cardAfter.locator('.q-badge').first()).toHaveText('Inviato', { timeout: 10000 })
     })

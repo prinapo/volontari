@@ -1,14 +1,11 @@
 import { test, expect } from '../helpers/console.js'
-import { LoginPage } from '../pages/LoginPage.js'
 import { GestionePage } from '../pages/GestionePage.js'
+import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Referente Role', () => {
   test('RF-01: Bottone Assegna Referente visibile solo per Volontari @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -27,7 +24,7 @@ test.describe('Referente Role', () => {
     }
 
     const actionCell = firstRow.locator('td').last()
-    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') })
+    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
 
     if (hasVolontario) {
       expect(await referenteBtn.count()).toBeGreaterThan(0)
@@ -37,10 +34,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-02: Assegna Referente a Volontario @crud', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -54,14 +48,14 @@ test.describe('Referente Role', () => {
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') })
+      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
       if (await btn.count() > 0) { targetRow = rows.nth(i); break }
     }
 
     if (!targetRow) { test.skip('Nessun contatto con bottone Assegna Referente'); return }
 
     const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') }).click()
+    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') }).click()
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')
@@ -70,10 +64,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-03: Filtro Referente in ContattiTab @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -93,10 +84,7 @@ test.describe('Referente Role', () => {
   test('RF-04: Rimuovi Referente da Volontario @crud', async ({ page }) => {
     test.setTimeout(90000)
 
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -115,7 +103,7 @@ test.describe('Referente Role', () => {
 
     const targetRow = gestionePage.tableRows.first()
     const actionCell = targetRow.locator('td').last()
-    const personBtn = actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') })
+    const personBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
     if (await personBtn.count() === 0) {
       test.skip('Volontario non ha bottone Assegna Referente')
       return
@@ -148,7 +136,7 @@ test.describe('Referente Role', () => {
     await qMenuItems.first().click()
     await page.waitForTimeout(500)
 
-    const addRefBtn = refDialog.locator('button:has(i:has-text("person_add"))')
+    const addRefBtn = refDialog.locator('[data-testid="btn-add-referente"]')
     await addRefBtn.click()
     await page.waitForTimeout(2000)
 
@@ -164,7 +152,7 @@ test.describe('Referente Role', () => {
       return
     }
 
-    const removeBtn = refDialog.locator('.q-btn:has(i:has-text("delete"))').first()
+    const removeBtn = refDialog.locator('[data-testid="btn-remove-referente"]').first()
     await removeBtn.click()
     await page.waitForTimeout(1500)
 
@@ -177,10 +165,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-05: Bottone non visibile per non-Volontari @regression', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -195,15 +180,12 @@ test.describe('Referente Role', () => {
 
     const firstRow = gestionePage.tableRows.first()
     const actionCell = firstRow.locator('td').last()
-    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') })
+    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
     expect(await referenteBtn.count()).toBe(0)
   })
 
   test('RF-06: Dialog chiude correttamente @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -217,14 +199,14 @@ test.describe('Referente Role', () => {
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') })
+      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
       if (await btn.count() > 0) { targetRow = rows.nth(i); break }
     }
 
     if (!targetRow) { test.skip('Nessun contatto con bottone Assegna Referente'); return }
 
     const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('i:has-text("person_search")') }).click()
+    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') }).click()
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')

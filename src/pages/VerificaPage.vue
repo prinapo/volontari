@@ -62,7 +62,19 @@
               />
             </div>
           </div>
-
+          <div class="col-12 col-sm-6 col-md-4">
+            <q-select
+              v-model="selectedProgetto"
+              :options="progettoOptions"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              label="Seleziona progetto"
+              data-testid="select-progetto"
+            />
+          </div>
           <div class="summary-grid q-mb-md">
             <div class="summary-cell">
               <div class="text-caption text-grey-7">
@@ -129,6 +141,7 @@
                     round
                     dense
                     :icon="props.expand ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+                    data-testid="expand-row"
                     @click="toggleExpand(props)"
                   >
                     <q-tooltip>{{ props.expand ? 'Chiudi' : 'Apri dettagli' }}</q-tooltip>
@@ -163,6 +176,7 @@
                         dense
                         size="sm"
                         icon="edit"
+                        data-testid="btn-edit-bancari"
                         @click="openBancariDialog(props.row)"
                       >
                         <q-tooltip>Modifica dati bancari</q-tooltip>
@@ -205,6 +219,7 @@
                       dense
                       icon="add_circle"
                       color="secondary"
+                      data-testid="btn-add-giust"
                       @click="addingForRow = props.row"
                     >
                       <q-tooltip>Aggiungi giustificativo</q-tooltip>
@@ -213,7 +228,18 @@
                       flat
                       round
                       dense
+                      icon="visibility"
+                      data-testid="btn-detail-row"
+                      @click="openRowDetail(props.row)"
+                    >
+                      <q-tooltip>Dettaglio progetto</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      round
+                      dense
                       icon="content_copy"
+                      data-testid="btn-copy-aspi"
                       @click="copyAspiLine(props.row)"
                     >
                       <q-tooltip>Copia riga ASPI</q-tooltip>
@@ -343,6 +369,7 @@
                               icon="check_circle"
                               color="primary"
                               size="md"
+                              data-testid="btn-verify"
                               :loading="verifyingId === g.id"
                               @click="handleVerify(props.row.idProgetto, g)"
                             >
@@ -354,6 +381,7 @@
                               icon="cancel"
                               color="negative"
                               size="md"
+                              data-testid="btn-reject"
                               @click="handleReject(props.row.idProgetto, g)"
                             >
                               <q-tooltip>Rifiuta</q-tooltip>
@@ -379,6 +407,7 @@
                               icon="send"
                               color="secondary"
                               size="md"
+                              data-testid="btn-send"
                               :loading="verifyingId === g.id"
                               @click="handleSendDraft(props.row.idProgetto, g)"
                             >
@@ -454,6 +483,11 @@
         :anno-bando="addingForRow?.annoBando || ''"
         @save="handleAddSave"
       />
+
+      <ProgettoDetailDialog
+        v-model="detailDialog"
+        :progetto="selectedProgettoRow"
+      />
     </div>
   </q-page>
 </template>
@@ -470,6 +504,7 @@ import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
 import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
+import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
 
 const $q = useQuasar()
 const store = useVerificaStore()
@@ -498,6 +533,20 @@ const rejectDialog = ref(false)
 const rejectNota = ref('')
 const rejectItem = ref(null)
 const rejectProgettoId = ref(null)
+
+const selectedProgetto = ref(null)
+const detailDialog = ref(false)
+
+const progettoOptions = computed(() =>
+  filteredRows.value.map(r => ({
+    label: `${r.famiglia} — ${r.beneficiario} (${r.annoBando})`,
+    value: r.idProgetto
+  }))
+)
+
+const selectedProgettoRow = computed(() =>
+  filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {}
+)
 
 const pagination = ref({
   sortBy: 'famiglia',
@@ -732,6 +781,11 @@ function exportAspi() {
 async function copyAspiLine(row) {
   await copyToClipboard(aspiLine(row).join('\t'))
   $q.notify({ type: 'positive', message: 'Riga ASPI copiata' })
+}
+
+function openRowDetail(row) {
+  selectedProgetto.value = row.idProgetto
+  detailDialog.value = true
 }
 </script>
 

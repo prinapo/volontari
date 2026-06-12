@@ -122,6 +122,7 @@
                       :color="isFieldDifferent(field.key) ? 'positive' : 'grey-5'"
                       :disable="!isFieldDifferent(field.key) || savingField !== null"
                       :loading="savingField === field.key"
+                      data-testid="btn-save-field"
                       @click="saveField(field.key)"
                     >
                       <q-tooltip>{{ isFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato' }}</q-tooltip>
@@ -153,6 +154,7 @@
                 emit-value
                 map-options
                 class="q-mb-sm"
+                data-testid="select-progetto-riconcilia"
               />
               <q-card v-if="selectedProgetto" flat bordered>
                 <div class="q-pa-sm" style="display: grid; gap: 0;">
@@ -262,6 +264,7 @@
                   outlined
                   dense
                   type="textarea"
+                  data-testid="riconcilia-descrizione"
                   rows="2"
                 />
                 <div class="row q-col-gutter-md q-mt-sm">
@@ -272,6 +275,7 @@
                       outlined
                       dense
                       type="number"
+                      data-testid="riconcilia-importo"
                     />
                   </div>
                   <div class="col-6">
@@ -312,6 +316,7 @@
           color="primary"
           :disable="!selectedProgettoId || savingField !== null"
           :loading="saving"
+          data-testid="btn-crea-giustificativo"
           @click="confirmReconcile"
         />
       </q-card-actions>

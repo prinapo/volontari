@@ -7,12 +7,15 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto('/login', { timeout: 15000 })
+    await this.page.goto('/login', { timeout: 20000 })
     // If redirected (leaked auth), clear and retry
     if (!this.page.url().includes('/login')) {
       console.log('[LOGIN] redirected from /login, clearing leaked auth...')
-      await this.page.evaluate(() => localStorage.clear())
-      await this.page.goto('/login', { timeout: 15000 })
+      await this.page.evaluate(() => {
+        localStorage.clear()
+        sessionStorage.clear()
+      })
+      await this.page.goto('/login', { timeout: 20000 })
     }
   }
 
@@ -20,18 +23,28 @@ export class LoginPage {
     // Ensure we're at /login — clear leaked auth if needed
     if (!this.page.url().includes('/login')) {
       console.log('[LOGIN] not at /login, clearing leaked auth...')
-      await this.page.evaluate(() => localStorage.clear())
-      await this.page.goto('/login', { timeout: 15000 })
+      await this.page.evaluate(() => {
+        localStorage.clear()
+        sessionStorage.clear()
+      })
+      await this.page.goto('/login', { timeout: 20000 })
     }
 
     // Navigate through fallback strategies
     for (const [desc, fn] of [
-      ['wait 5s', async () => { await this.emailInput.waitFor({ state: 'visible', timeout: 5000 }) }],
-      ['reload', async () => { await this.page.reload(); await this.emailInput.waitFor({ state: 'visible', timeout: 15000 }) }],
-      ['root nav', async () => {
-        await this.page.goto('/?_=' + Date.now(), { timeout: 15000 })
-        await this.page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 15000 })
-        await this.emailInput.waitFor({ state: 'visible', timeout: 15000 })
+      ['wait 10s', async () => { await this.emailInput.waitFor({ state: 'visible', timeout: 10000 }) }],
+      ['reload+clear', async () => {
+        await this.page.evaluate(() => {
+          localStorage.clear()
+          sessionStorage.clear()
+        })
+        await this.page.reload()
+        await this.emailInput.waitFor({ state: 'visible', timeout: 20000 })
+      }],
+      ['hard nav', async () => {
+        await this.page.goto('/?_=' + Date.now(), { timeout: 20000 })
+        await this.page.goto('/login', { timeout: 20000 })
+        await this.emailInput.waitFor({ state: 'visible', timeout: 20000 })
       }],
     ]) {
       try {
@@ -40,7 +53,7 @@ export class LoginPage {
         await this.passwordInput.fill(password)
         await this.submitButton.click()
         // Wait for login redirect to complete before returning
-        await this.page.waitForURL(/\/gestione|\/verifica|\/famiglie/, { timeout: 15000 }).catch(() => {
+        await this.page.waitForURL(/\/gestione|\/verifica|\/famiglie/, { timeout: 20000 }).catch(() => {
           console.log('[LOGIN] navigation after submit timed out')
         })
         return

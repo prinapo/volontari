@@ -64,7 +64,7 @@
               {{ truncateIban(props.row.IBAN) }}
             </template>
             <template v-else-if="col.name === 'azioni'">
-              <q-btn flat dense icon="edit" @click="openEdit(props.row)" />
+              <q-btn flat dense icon="edit" data-testid="btn-edit-famiglia" @click="openEdit(props.row)" />
               <q-btn
                 flat
                 dense

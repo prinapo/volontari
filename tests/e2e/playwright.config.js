@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  globalSetup: resolve(__dirname, 'global-setup.mjs'),
   testDir: './specs',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -15,6 +16,7 @@ export default defineConfig({
     baseURL: 'http://localhost:9000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    permissions: ['clipboard-read', 'clipboard-write'],
     video: 'retry-with-video'
   },
   projects: [

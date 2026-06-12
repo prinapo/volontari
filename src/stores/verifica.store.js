@@ -47,6 +47,16 @@ function normalizeProject(project, famiglia = {}) {
     statoRendicontazione: project.StatoRendicontazione || 'nessuno',
     totaleGiustificativi: project.TotaleGiustificativi || 0,
     totaleImporto: toNumber(project.TotaleImporto),
+    dataInizio: project.Data_Inizio_Progetto || '',
+    dataFine: project.Data_Fine_Progetto || '',
+    eta: project.Eta || '',
+    descrizioneProgetto: project.Descrizione_Progetto || '',
+    descrizioneCondizione: project.Descrizione_Condizione || '',
+    dettaglioCosti: project.Dettaglio_Costi || '',
+    relazioneRichiedente: project.Relazione_con_il_soggetto_richiedente || '',
+    allegatiProgetto: project.Allegati_Progetto || [],
+    allegatiISEE: project.Allegati_ISEE || [],
+    allegatiGiustificativi: project.Allegati_Giustificativi || [],
     giustificativi: []
   }
 }

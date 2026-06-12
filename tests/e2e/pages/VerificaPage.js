@@ -21,7 +21,6 @@ export class VerificaPage {
 
   async waitForTable() {
     await this.table.waitFor({ state: 'visible', timeout: 15000 })
-    await this.page.waitForTimeout(1000)
   }
 
   async getRowCount() {
@@ -30,16 +29,25 @@ export class VerificaPage {
 
   async searchFamiglia(text) {
     const input = this.searchInput
-    if (await input.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await input.fill(text)
-      await this.page.waitForTimeout(4000)
-    }
+    if (!(await input.isVisible({ timeout: 3000 }).catch(() => false))) return
+
+    await input.fill(text)
+
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/Progetti') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
+
+    await this.table.locator('tbody tr').first().waitFor({ state: 'attached', timeout: 5000 }).catch(() => {})
   }
 
   async expandRow(index = 0) {
-    const expandBtn = this.rows.nth(index).locator('td').first().locator('.q-btn')
+    const expandBtn = this.page.locator('[data-testid="expand-row"]').nth(index)
     await expandBtn.click()
-    await this.page.waitForTimeout(2000)
+
+    await this.page.locator('.expandable-content').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {
+      console.log('[VerificaPage] expandable-content not found within timeout')
+    })
   }
 
   async getGiustificativiInRow(index = 0) {
@@ -67,43 +75,36 @@ export class VerificaPage {
   }
 
   async openBancariDialog(index = 0) {
-    const editBtn = this.rows.nth(index).locator('.q-btn').filter({ has: this.page.locator('i:text-is("edit")') }).first()
+    const editBtn = this.page.locator('[data-testid="btn-edit-bancari"]').nth(index)
     if (await editBtn.count() > 0) {
       await editBtn.click()
-      await this.page.waitForTimeout(1000)
+      await this.page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
       return true
     }
     return false
   }
 
   async copyRow(index = 0) {
-    const copyBtn = this.rows.nth(index).locator('.q-btn').filter({ has: this.page.locator('i:text-is("content_copy")') }).first()
+    const copyBtn = this.page.locator('[data-testid="btn-copy-aspi"]').nth(index)
     if (await copyBtn.count() > 0) {
       await copyBtn.click()
-      await this.page.waitForTimeout(1000)
       return true
     }
     return false
   }
 
-  async verifyGiustificativo(rowIndex = 0, giustIndex = 0) {
-    const giustItem = this.rows.nth(rowIndex).locator('.giust-item').nth(giustIndex)
-    const btn = giustItem.locator('button:has(i:has-text("check_circle"))')
+  async verifyGiustificativo(rowIndex = 0, _giustIndex = 0) {
+    const btn = this.page.locator('[data-testid="btn-verify"]').first()
     await btn.click()
-    await this.page.waitForTimeout(1000)
   }
 
-  async rejectGiustificativo(rowIndex = 0, giustIndex = 0) {
-    const giustItem = this.rows.nth(rowIndex).locator('.giust-item').nth(giustIndex)
-    const btn = giustItem.locator('button:has(i:has-text("cancel"))')
+  async rejectGiustificativo(rowIndex = 0, _giustIndex = 0) {
+    const btn = this.page.locator('[data-testid="btn-reject"]').first()
     await btn.click()
-    await this.page.waitForTimeout(1000)
   }
 
-  async sendGiustificativo(rowIndex = 0, giustIndex = 0) {
-    const giustItem = this.rows.nth(rowIndex).locator('.giust-item').nth(giustIndex)
-    const btn = giustItem.locator('button:has(i:has-text("send"))')
+  async sendGiustificativo(rowIndex = 0, _giustIndex = 0) {
+    const btn = this.page.locator('[data-testid="btn-send"]').first()
     await btn.click()
-    await this.page.waitForTimeout(1000)
   }
 }

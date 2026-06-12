@@ -1,8 +1,13 @@
 import { test as base, expect } from '@playwright/test'
 
+const PRODUCTION_DOMAINS = ['sostienilsostegno.com', 'app.sostienilsostegno']
+
 const EXPECTED_API_ERRORS = [
   '/auth/login',       // 401 — intentional wrong credentials (A-03)
+  '/auth/password/request',  // 400 — local Directus without SMTP (RP-10)
   '/auth/password/reset',  // 422/401 — intentional bad token (RP-04, RP-10)
+  '/items/Progetti',   // 500 — intentional API error test (EH-01)
+  '/items/Giustificativi', // 403 — GestoreVerifica senza permessi scrittura (RC-05)
 ]
 
 const EXPECTED_CONSOLE_ERROR_PATTERNS = [
@@ -14,6 +19,16 @@ export const test = base.extend({
     const errors = []
     const warnings = []
     const pendingExpectedErrors = []
+
+    // Runtime guard: detect API calls going to production
+    page.on('response', (resp) => {
+      const url = resp.url()
+      const isProduction = PRODUCTION_DOMAINS.some(d => url.includes(d))
+      if (isProduction) {
+        errors.push(`[PRODUCTION GUARD] API call to production domain: ${url}`)
+        console.error(`\n❌ RUNTIME GUARD: API call to PRODUCTION detected!\n   URL: ${url}\n`)
+      }
+    })
 
     page.on('console', (msg) => {
       const text = msg.text()
