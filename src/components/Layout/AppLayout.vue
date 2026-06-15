@@ -144,7 +144,7 @@
     </q-page-container>
 
     <q-dialog v-model="showChangePassword" persistent>
-      <q-card style="min-width: 350px">
+      <q-card style="width: 100%; max-width: 400px; min-width: unset">
         <q-card-section class="row items-center">
           <div class="text-h6">
             Cambia password

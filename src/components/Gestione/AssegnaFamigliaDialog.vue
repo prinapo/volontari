@@ -1,6 +1,6 @@
 <template>
-  <q-dialog v-model="visible" persistent style="min-width: 600px; max-width: 800px">
-    <q-card>
+  <q-dialog v-model="visible" persistent>
+    <q-card style="width: 100%; max-width: 800px; min-width: unset">
       <q-card-section class="row items-center">
         <div class="text-h6">
           Associa a famiglia
@@ -34,41 +34,10 @@
           </template>
         </q-table>
 
-        <div class="row items-center q-mt-md q-gutter-sm">
-          <q-select
-            v-model="selectedRuolo"
-            :options="ruoloOptions"
-            emit-value
-            map-options
-            dense
-            outlined
-            label="Ruolo"
-            class="col"
-            style="max-width: 200px"
-          />
-          <q-select
-            v-model="selectedFamiglia"
-            :options="famigliaOptions"
-            option-label="Nome_Famiglia"
-            option-value="id_famiglia"
-            emit-value
-            map-options
-            dense
-            outlined
-            use-input
-            input-debounce="300"
-            label="Aggiungi famiglia..."
-            class="col"
-            style="max-width: 400px"
-            @filter="filterFamiglie"
-          />
-          <q-btn
-            color="primary"
-            icon="add"
-            label="Assegna"
-            :disable="!selectedFamiglia"
-            @click="handleAssign"
-          />
+        <div class="row items-start q-mt-md q-gutter-sm">
+          <q-select v-model="selectedRuolo" :options="ruoloOptions" emit-value map-options dense outlined label="Ruolo" class="col-12 col-sm-auto" style="min-width: 120px" />
+          <q-select v-model="selectedFamiglia" :options="famigliaOptions" option-label="Nome_Famiglia" option-value="id_famiglia" emit-value map-options dense outlined use-input input-debounce="300" label="Aggiungi famiglia..." class="col-12 col-sm" @filter="filterFamiglie" />
+          <q-btn color="primary" icon="add" label="Assegna" :disable="!selectedFamiglia" class="col-12 col-sm-auto q-mt-sm-sm" @click="handleAssign" />
         </div>
       </q-card-section>
 

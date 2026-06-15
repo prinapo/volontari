@@ -9,89 +9,28 @@
         <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
       <q-separator />
-      <q-card-section>
-        <q-form ref="formRef" class="q-gutter-y-md" @submit.prevent="handleSave">
-          <q-input
-            v-model="form.Descrizione"
-            label="Descrizione"
-            filled
-            data-testid="giustform-descrizione"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-          />
-          <q-input
-            v-model="form.Importo"
-            label="Importo (€)"
-            type="number"
-            filled
-            data-testid="giustform-importo"
-            step="0.01"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-          />
-          <q-input
-            v-model="form.Data"
-            label="Data"
-            filled
-            readonly
-            data-testid="giustform-data"
-            class="cursor-pointer"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-            @click="dateProxy?.show()"
-          >
-            <template #prepend>
-              <q-icon name="event" class="cursor-pointer">
-                <q-popup-proxy ref="dateProxy" cover transition-show="scale" transition-hide="scale">
-                  <q-date v-model="form.Data" mask="YYYY-MM-DD" today-btn />
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
-          <q-input
-            v-model="form.NotaVolontario"
-            label="Nota (opzionale)"
-            type="textarea"
-            filled
-            data-testid="giustform-nota"
-            :maxlength="500"
-          />
+      <q-card-section class="q-pt-sm">
+        <q-form ref="formRef" @submit.prevent="handleSave">
+          <q-input v-model="form.Descrizione" label="Descrizione *" outlined dense data-testid="giustform-descrizione" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules class="q-mb-sm" />
+          <div class="row q-col-gutter-sm q-mb-sm">
+            <q-input class="col-12 col-sm-6" v-model="form.Importo" label="Importo (€)" type="number" outlined dense data-testid="giustform-importo" step="0.01" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules />
+            <q-input class="col-12 col-sm-6 cursor-pointer" v-model="form.Data" label="Data" outlined dense readonly data-testid="giustform-data" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules @click="dateProxy?.show()">
+              <template #append>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy ref="dateProxy" cover transition-show="scale" transition-hide="scale">
+                    <q-date v-model="form.Data" mask="YYYY-MM-DD" today-btn />
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+          </div>
+          <q-input v-model="form.NotaVolontario" label="Nota (opzionale)" type="textarea" outlined dense data-testid="giustform-nota" :maxlength="500" class="q-mb-sm" rows="2" />
           <div class="row q-gutter-sm items-center">
-            <q-file
-              v-model="form.File"
-              label="Allega file"
-              :accept="FILE_ACCEPT"
-              :max-file-size="FILE_MAX_SIZE"
-              filled
-              clearable
-              class="col"
-              data-testid="giustform-file"
-              :rules="[val => !!val || 'Campo obbligatorio']"
-              lazy-rules
-            >
-              <template #prepend>
-                <q-icon name="attach_file" />
-              </template>
-              <template #hint>
-                Formati: {{ FILE_ACCEPT }}
-              </template>
+            <q-file v-model="form.File" label="Allega file *" :accept="FILE_ACCEPT" :max-file-size="FILE_MAX_SIZE" outlined dense clearable class="col" data-testid="giustform-file" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules hide-hint>
+              <template #prepend><q-icon name="attach_file" /></template>
             </q-file>
-            <input
-              ref="cameraInput"
-              type="file"
-              :accept="FILE_ACCEPT"
-              capture="environment"
-              class="hidden"
-              @change="onCameraCapture"
-            >
-            <q-btn
-              outline
-              color="secondary"
-              icon="photo_camera"
-              @click="$refs.cameraInput.click()"
-            >
-              <q-tooltip>Foto</q-tooltip>
-            </q-btn>
+            <input ref="cameraInput" type="file" :accept="FILE_ACCEPT" capture="environment" class="hidden" @change="onCameraCapture">
+            <q-btn v-if="$q.platform.is.mobile" outline color="secondary" icon="photo_camera" @click="$refs.cameraInput.click()"><q-tooltip>Foto</q-tooltip></q-btn>
           </div>
         </q-form>
       </q-card-section>

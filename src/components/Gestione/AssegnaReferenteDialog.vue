@@ -1,6 +1,6 @@
 <template>
-  <q-dialog v-model="visible" persistent style="min-width: 500px; max-width: 800px">
-    <q-card>
+  <q-dialog v-model="visible" persistent>
+    <q-card style="width: 100%; max-width: 800px; min-width: unset">
       <q-card-section class="row items-center">
         <div class="text-h6">
           Assegna Referente
@@ -26,7 +26,7 @@
         <q-separator class="q-my-md" />
 
         <div class="text-subtitle2 q-mb-sm">Aggiungi referente</div>
-        <div class="row items-center q-gutter-sm">
+        <div class="row items-start q-gutter-sm">
           <q-select
             v-model="selectedReferente"
             :options="referenteOptions"
@@ -38,7 +38,7 @@
             input-debounce="300"
             dense
             outlined
-            class="col"
+            class="col-12 col-sm"
             label="Cerca referente..."
             @filter="filterReferenti"
           />
@@ -47,6 +47,7 @@
             icon="person_add"
             data-testid="btn-add-referente"
             :disable="!selectedReferente"
+            class="q-mt-sm-sm"
             @click="addReferente"
           />
         </div>

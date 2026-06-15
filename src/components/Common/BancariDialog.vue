@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="model" persistent>
-    <q-card style="min-width: 400px">
+    <q-card style="width: 100%; max-width: 500px; min-width: unset">
       <q-card-section>
         <div class="text-h6">
           Modifica dati bancari

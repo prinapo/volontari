@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="visible" persistent>
-    <q-card style="min-width: 500px; max-width: 700px">
+    <q-card style="width: 100%; max-width: 700px; min-width: unset">
       <q-card-section class="row items-center">
         <div class="text-h6">
           {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
@@ -11,41 +11,16 @@
 
       <q-card-section>
         <q-form @submit.prevent="handleSave">
-          <q-input
-            v-model="form.Nome"
-            label="Nome *"
-            data-testid="contatto-nome"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-            class="q-mb-md"
-          />
-          <q-input
-            v-model="form.Cognome"
-            label="Cognome *"
-            data-testid="contatto-cognome"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-            class="q-mb-md"
-          />
-          <q-input
-            v-model="form.Numero_di_cellulare"
-            label="Numero di cellulare"
-            data-testid="contatto-cellulare"
-            class="q-mb-md"
-          />
-          <q-input
-            v-model="form.Numero_di_telefono"
-            label="Numero di telefono"
-            data-testid="contatto-telefono"
-            class="q-mb-md"
-          />
+          <div class="row q-col-gutter-sm q-mb-md">
+            <q-input class="col-12 col-sm-6" v-model="form.Nome" label="Nome *" data-testid="contatto-nome" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules dense />
+            <q-input class="col-12 col-sm-6" v-model="form.Cognome" label="Cognome *" data-testid="contatto-cognome" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules dense />
+          </div>
+          <div class="row q-col-gutter-sm q-mb-md">
+            <q-input class="col-12 col-sm-6" v-model="form.Numero_di_cellulare" label="Numero di cellulare" data-testid="contatto-cellulare" dense />
+            <q-input class="col-12 col-sm-6" v-model="form.Numero_di_telefono" label="Numero di telefono" data-testid="contatto-telefono" dense />
+          </div>
 
-          <q-toggle
-            v-model="form.IsReferente"
-            label="Referente"
-            data-testid="contatto-referente"
-            class="q-mb-md"
-          />
+          <q-toggle v-model="form.IsReferente" label="Referente" data-testid="contatto-referente" class="q-mb-md" dense />
 
           <div class="text-subtitle2 q-mb-sm">Email</div>
           <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">

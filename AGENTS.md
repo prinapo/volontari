@@ -1,3 +1,10 @@
+# v2.5.2
+
+- **Responsive dialog**: RiconciliaDialog layout verticale, max-width 600px. Email rimossa dal confronto. ContattoDialog Nome/Cognome affiancati. GiustificativoForm più compatto (outlined dense). AssegnaFamigliaDialog tre campi responsive.
+- **Camera solo mobile**: Pulsante photo_camera in GiustificativoForm nascosto su desktop.
+- **Fix min-width dialog**: 9 dialog con `min-width` fissi convertiti a `width: 100%; max-width`.
+- **Version bump**: 2.5.1 → 2.5.2
+
 # v2.5.1
 
 - **ProgettoDetailDialog**: Nuovo pulsante `visibility` per riga in VerificaPage. Dialog con tutti i campi Directus (date, età, descrizioni, relazione, allegati). Rimossa toolbar Dettaglio.

@@ -1,6 +1,6 @@
 <template>
-  <q-dialog v-model="visible" persistent style="min-width: 700px; max-width: 900px">
-    <q-card style="min-width: 700px">
+  <q-dialog v-model="visible" persistent>
+    <q-card style="width: 100%; max-width: 900px; min-width: unset">
       <q-card-section class="row items-center">
         <div class="text-h6">
           Contatti di {{ famiglia?.Nome_Famiglia }}
@@ -82,7 +82,7 @@
           </template>
         </q-table>
 
-        <div class="row items-center q-mt-lg q-gutter-sm">
+        <div class="row items-start q-mt-lg q-gutter-sm">
           <q-select
             v-model="selectedContatto"
             :options="contattoOptions"
@@ -96,14 +96,15 @@
             input-debounce="300"
             label="Cerca contatto..."
             clearable
-            class="col"
+            class="col-12 col-sm"
             @filter="filterContatti"
           />
-          <div class="column q-gutter-xs">
+          <div class="row q-gutter-xs q-mt-sm-sm">
             <q-btn
               color="secondary"
               icon="person_add"
               label="Genitore"
+              size="sm"
               :disable="!selectedContatto"
               @click="() => handleAssign('Genitore')"
             />
@@ -111,6 +112,7 @@
               color="primary"
               icon="badge"
               label="Volontario"
+              size="sm"
               :disable="!selectedContatto"
               @click="() => handleAssign('Volontario')"
             />
@@ -119,6 +121,7 @@
               color="teal"
               icon="person_add"
               label="Crea contatto"
+              size="sm"
               @click="showNewContatto = true"
             />
           </div>
@@ -137,7 +140,7 @@
   />
 
   <q-dialog v-model="showRoleDialog" persistent>
-    <q-card style="min-width: 400px">
+    <q-card style="width: 100%; max-width: 450px; min-width: unset">
       <q-card-section class="text-center">
         <div class="text-h6 q-mb-md">
           Associare {{ newContattoNome }} alla famiglia?
