@@ -130,6 +130,7 @@
                       flat
                       dense
                       color="negative"
+                      aria-label="Rimuovi"
                       @click="removeGiustificativo(i)"
                     >
                       <q-tooltip>Rimuovi</q-tooltip>
@@ -271,7 +272,18 @@ async function handleSubmit() {
 
     resetForm()
   } catch (err) {
-    notifyError($q, err, "Errore nell'invio. Riprova più tardi.")
+    const status = err?.response?.status
+    if (status === 413) {
+      notifyError($q, null, 'Il file è troppo grande. Il limite è 5MB per file.')
+    } else if (err?.message?.includes('Network Error') || !status) {
+      notifyError($q, null, 'Errore di connessione. Controlla la rete e riprova.')
+    } else if (status === 403) {
+      notifyError($q, null, 'Permessi insufficienti. Contatta l\'amministratore.')
+    } else if (status >= 500) {
+      notifyError($q, null, 'Errore del server. Riprova più tardi.')
+    } else {
+      notifyError($q, err, "Errore nell'invio. Riprova più tardi.")
+    }
   } finally {
     saving.value = false
   }

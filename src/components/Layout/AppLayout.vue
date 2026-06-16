@@ -150,7 +150,14 @@
             Cambia password
           </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense>
+          <q-btn
+            v-close-popup
+            icon="close"
+            flat
+            round
+            dense
+            aria-label="Chiudi"
+          >
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
@@ -226,5 +233,4 @@ async function handleChangePassword() {
   }
 }
 
-// showRendicontazioneNotify() — nascosta in attesa di revisione
 </script>

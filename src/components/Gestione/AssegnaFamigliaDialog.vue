@@ -6,7 +6,14 @@
           Associa a famiglia
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -39,6 +46,7 @@
                     dense
                     icon="delete"
                     color="negative"
+                    aria-label="Rimuovi"
                     @click="handleRemove(slotProps.row)"
                   >
                     <q-tooltip>Rimuovi</q-tooltip>
@@ -72,8 +80,7 @@
             dense
             outlined
             label="Ruolo"
-            class="col-12 col-sm-auto"
-            style="min-width: 120px"
+            class="col-12 col-sm-auto assegna-ruolo-min-width"
           />
           <q-select
             v-model="selectedFamiglia"
@@ -199,7 +206,7 @@ async function handleAssign() {
     selectedFamiglia.value = null
     await loadFamiglie()
   } else if (store.error) {
-    notifyError($q, store.error)
+    notifyError($q, store.error, "Errore nell'assegnazione della famiglia")
   }
 }
 
@@ -209,7 +216,13 @@ async function handleRemove(row) {
     notifySuccess($q, 'Famiglia rimossa')
     await loadFamiglie()
   } else if (store.error) {
-    notifyError($q, store.error)
+    notifyError($q, store.error, "Errore nella rimozione della famiglia")
   }
 }
 </script>
+
+<style scoped>
+.assegna-ruolo-min-width {
+  min-width: 120px;
+}
+</style>

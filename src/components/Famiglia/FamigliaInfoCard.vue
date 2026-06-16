@@ -16,7 +16,7 @@
           <div class="text-body2 text-grey">
             <div v-for="em in g._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <span class="text-caption">{{ em.email_address }}</span>
+              <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="g.Numero_di_cellulare">
@@ -42,7 +42,7 @@
           <div class="text-body2 text-grey">
             <div v-for="em in v._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <span class="text-caption">{{ em.email_address }}</span>
+              <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="v.Numero_di_cellulare">

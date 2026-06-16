@@ -84,13 +84,13 @@
                     </div>
                     <template v-if="props.row.user_id?.email">
                       <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                      <span class="text-caption">{{ props.row.user_id.email }}</span>
+                      <a :href="'mailto:'+props.row.user_id.email" class="text-primary text-caption">{{ props.row.user_id.email }}</a>
                       <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
                     </template>
                     <template v-else-if="props.row._emails?.length">
                       <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
                         <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                        {{ em.email_address }}
+                        <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                         <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
                       </div>
                     </template>
@@ -100,13 +100,13 @@
                     <div class="text-caption text-grey-7">
                       Cellulare
                     </div>
-                    <div>{{ props.row.Numero_di_cellulare || '—' }}</div>
+                    <div><a v-if="props.row.Numero_di_cellulare" :href="'tel:'+props.row.Numero_di_cellulare" class="text-primary">{{ props.row.Numero_di_cellulare }}</a><span v-else class="text-grey-5">—</span></div>
                   </div>
                   <div class="col-6">
                     <div class="text-caption text-grey-7">
                       Telefono
                     </div>
-                    <div>{{ props.row.Numero_di_telefono || '—' }}</div>
+                    <div><a v-if="props.row.Numero_di_telefono" :href="'tel:'+props.row.Numero_di_telefono" class="text-primary">{{ props.row.Numero_di_telefono }}</a><span v-else class="text-grey-5">—</span></div>
                   </div>
                   <div class="col-12">
                     <div class="text-caption text-grey-7">
@@ -134,6 +134,7 @@
                   icon="edit"
                   size="sm"
                   data-testid="btn-edit-contatto"
+                  aria-label="Modifica"
                   @click="openEdit(props.row)"
                 >
                   <q-tooltip>Modifica</q-tooltip>
@@ -144,6 +145,7 @@
                   dense
                   icon="groups"
                   size="sm"
+                  aria-label="Assegna famiglia"
                   @click="openFamiglie(props.row)"
                 >
                   <q-tooltip>Assegna famiglia</q-tooltip>
@@ -157,6 +159,7 @@
                   color="accent"
                   size="sm"
                   data-testid="btn-assigna-referente"
+                  aria-label="Assegna Referente"
                   @click="openReferente(props.row)"
                 >
                   <q-tooltip>Assegna Referente</q-tooltip>
@@ -177,13 +180,13 @@
         <q-td :props="props">
           <template v-if="props.row.user_id?.email">
             <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-            <span class="text-caption">{{ props.row.user_id.email }}</span>
+            <a :href="'mailto:'+props.row.user_id.email" class="text-primary text-caption">{{ props.row.user_id.email }}</a>
             <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
           </template>
           <template v-else-if="props.row._emails?.length">
             <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              {{ em.email_address }}
+              <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
             </div>
           </template>
@@ -193,13 +196,13 @@
 
       <template #body-cell-cellulare="props">
         <q-td :props="props">
-          {{ props.row.Numero_di_cellulare || '—' }}
+          <a v-if="props.row.Numero_di_cellulare" :href="'tel:'+props.row.Numero_di_cellulare" class="text-primary">{{ props.row.Numero_di_cellulare }}</a><span v-else class="text-grey-5">—</span>
         </q-td>
       </template>
 
       <template #body-cell-telefono="props">
         <q-td :props="props">
-          {{ props.row.Numero_di_telefono || '—' }}
+          <a v-if="props.row.Numero_di_telefono" :href="'tel:'+props.row.Numero_di_telefono" class="text-primary">{{ props.row.Numero_di_telefono }}</a><span v-else class="text-grey-5">—</span>
         </q-td>
       </template>
 
@@ -252,11 +255,12 @@
             dense
             icon="edit"
             data-testid="btn-edit-contatto"
+            aria-label="Modifica"
             @click="openEdit(props.row)"
           >
             <q-tooltip>Modifica</q-tooltip>
           </q-btn>
-          <q-btn flat dense icon="groups" @click="openFamiglie(props.row)">
+          <q-btn flat dense icon="groups" aria-label="Assegna famiglia" @click="openFamiglie(props.row)">
             <q-tooltip>Assegna famiglia</q-tooltip>
           </q-btn>
           <q-btn
@@ -266,6 +270,7 @@
             icon="person_search"
             color="accent"
             data-testid="btn-assigna-referente"
+            aria-label="Assegna Referente"
             @click="openReferente(props.row)"
           >
             <q-tooltip>Assegna Referente</q-tooltip>

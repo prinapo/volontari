@@ -75,7 +75,7 @@
           </q-card-section>
         </q-card>
 
-        <q-card flat bordered class="q-mt-md" style="max-width: 420px; width: 100%;">
+        <q-card flat bordered class="q-mt-md" style="max-width: 420px">
           <q-card-section class="text-center">
             <div class="text-body2 text-grey-8 q-mb-sm">
               Non hai un account?
@@ -104,7 +104,14 @@
             Recupera password
           </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense>
+          <q-btn
+            v-close-popup
+            icon="close"
+            flat
+            round
+            dense
+            aria-label="Chiudi"
+          >
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
@@ -170,7 +177,7 @@ async function handleForgotPassword() {
   try {
     await authService.requestPasswordReset(
       resetEmail.value,
-      'https://volontari.sostienilsostegno.com/reset-password?token='
+      import.meta.env.RESET_URL
     )
     notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")
     showForgotPassword.value = false

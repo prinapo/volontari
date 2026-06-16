@@ -51,6 +51,7 @@
           size="xs"
           flat
           :loading="saving"
+          aria-label="Salva"
           @click.stop="save"
         >
           <q-tooltip>Salva</q-tooltip>
@@ -62,6 +63,7 @@
           dense
           size="xs"
           flat
+          aria-label="Annulla"
           @click.stop="cancel"
         >
           <q-tooltip>Annulla</q-tooltip>

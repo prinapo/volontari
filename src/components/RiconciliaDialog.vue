@@ -6,7 +6,14 @@
           Riconcilia giustificativo
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -34,9 +41,9 @@
             <div v-for="g in genitoriList" :key="'g-'+g.id" class="text-body2 q-ml-sm">
               <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
               {{ g.Contatto?.Nome || '' }} {{ g.Contatto?.Cognome || '' }}
-              <span v-if="g._emails?.[0]" class="text-grey-7"> — {{ g._emails[0].email_address }}</span>
-              <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. {{ g.Contatto.Numero_di_cellulare }}</span>
-              <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. {{ g.Contatto.Numero_di_telefono }}</span>
+              <span v-if="g._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+g._emails[0].email_address" class="text-primary">{{ g._emails[0].email_address }}</a></span>
+              <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+g.Contatto.Numero_di_cellulare" class="text-primary">{{ g.Contatto.Numero_di_cellulare }}</a></span>
+              <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+g.Contatto.Numero_di_telefono" class="text-primary">{{ g.Contatto.Numero_di_telefono }}</a></span>
             </div>
           </div>
           <div v-if="volontariList.length > 0" class="q-mb-md">
@@ -46,9 +53,9 @@
             <div v-for="v in volontariList" :key="'v-'+v.id" class="text-body2 q-ml-sm">
               <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
               {{ v.Contatto?.Nome || '' }} {{ v.Contatto?.Cognome || '' }}
-              <span v-if="v._emails?.[0]" class="text-grey-7"> — {{ v._emails[0].email_address }}</span>
-              <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. {{ v.Contatto.Numero_di_cellulare }}</span>
-              <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. {{ v.Contatto.Numero_di_telefono }}</span>
+              <span v-if="v._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+v._emails[0].email_address" class="text-primary">{{ v._emails[0].email_address }}</a></span>
+              <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+v.Contatto.Numero_di_cellulare" class="text-primary">{{ v.Contatto.Numero_di_cellulare }}</a></span>
+              <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+v.Contatto.Numero_di_telefono" class="text-primary">{{ v.Contatto.Numero_di_telefono }}</a></span>
             </div>
           </div>
 
@@ -77,6 +84,7 @@
                     icon="arrow_downward"
                     color="primary"
                     size="md"
+                    aria-label="Copia dal richiedente"
                     @click="copyField(field.key)"
                   >
                     <q-tooltip>Copia dal richiedente</q-tooltip>
@@ -109,6 +117,7 @@
                     round
                     flat
                     size="md"
+                    aria-label="Dato già corretto"
                     @click="confirmField(field.key)"
                   >
                     <q-tooltip>Dato già corretto</q-tooltip>
@@ -122,6 +131,7 @@
                     flat
                     size="md"
                     data-testid="btn-save-field"
+                    :aria-label="isFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato'"
                     @click="saveField(field.key)"
                   >
                     <q-tooltip>{{ isFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato' }}</q-tooltip>
@@ -175,6 +185,7 @@
                         icon="arrow_downward"
                         color="primary"
                         size="md"
+                        aria-label="Copia dal submission"
                         @click="copyProjectField(field.key)"
                       >
                         <q-tooltip>Copia dal submission</q-tooltip>
@@ -203,6 +214,7 @@
                         round
                         flat
                         size="md"
+                        aria-label="Dato già corretto"
                         @click="confirmProjectField(field.key)"
                       >
                         <q-tooltip>Dato già corretto</q-tooltip>
@@ -215,6 +227,7 @@
                         round
                         flat
                         size="md"
+                        :aria-label="isProjectFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato'"
                         @click="saveProjectField(field.key)"
                       >
                         <q-tooltip>{{ isProjectFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato' }}</q-tooltip>
@@ -262,6 +275,7 @@
                   type="textarea"
                   data-testid="riconcilia-descrizione"
                   rows="2"
+                  :rules="[val => !!val || 'Campo obbligatorio']"
                 />
                 <div class="row q-col-gutter-sm q-mt-sm">
                   <div class="col-12 col-sm-6">
@@ -272,10 +286,18 @@
                       dense
                       type="number"
                       data-testid="riconcilia-importo"
+                      :rules="[val => !!val || 'Inserisci un importo']"
                     />
                   </div>
                   <div class="col-12 col-sm-6">
-                    <q-input v-model="giustData" label="Data" outlined dense type="date" />
+                    <q-input
+                      v-model="giustData"
+                      label="Data"
+                      outlined
+                      dense
+                      type="date"
+                      :rules="[val => !!val || 'Inserisci una data']"
+                    />
                   </div>
                 </div>
               </q-card-section>

@@ -6,7 +6,14 @@
           Contatti di {{ famiglia?.Nome_Famiglia }}
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -33,13 +40,17 @@
                   </div>
                   <div class="text-caption q-mt-xs">
                     <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />{{ em.email_address }}
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                       <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                     </template>
                     <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
                   </div>
                   <div class="text-caption text-grey-7">
-                    {{ slotPropsV.row.Contatto?.Numero_di_cellulare || '' }} {{ slotPropsV.row.Contatto?.Numero_di_telefono || '' }}
+                    <template v-if="slotPropsV.row.Contatto?.Numero_di_cellulare">
+                      <a :href="'tel:'+slotPropsV.row.Contatto?.Numero_di_cellulare" class="text-primary">{{ slotPropsV.row.Contatto?.Numero_di_cellulare }}</a>
+                    </template><template v-if="slotPropsV.row.Contatto?.Numero_di_telefono">
+                      <a :href="'tel:'+slotPropsV.row.Contatto?.Numero_di_telefono" class="text-primary">{{ slotPropsV.row.Contatto?.Numero_di_telefono }}</a>
+                    </template>
                   </div>
                   <div class="row q-mt-sm justify-end">
                     <q-btn
@@ -48,6 +59,7 @@
                       icon="delete"
                       color="negative"
                       size="sm"
+                      aria-label="Rimuovi"
                       @click="handleRemove(slotPropsV.row)"
                     >
                       <q-tooltip>Rimuovi</q-tooltip>
@@ -61,7 +73,7 @@
             <q-td :props="slotPropsV">
               <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
                 <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                <span class="text-caption">{{ em.email_address }}</span>
+                <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
                 <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
               </template>
               <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
@@ -74,6 +86,7 @@
                 dense
                 icon="delete"
                 color="negative"
+                aria-label="Rimuovi"
                 @click="handleRemove(slotPropsV.row)"
               >
                 <q-tooltip>Rimuovi</q-tooltip>
@@ -103,13 +116,17 @@
                   </div>
                   <div class="text-caption q-mt-xs">
                     <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />{{ em.email_address }}
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                       <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                     </template>
                     <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
                   </div>
                   <div class="text-caption text-grey-7">
-                    {{ slotPropsG.row.Contatto?.Numero_di_cellulare || '' }} {{ slotPropsG.row.Contatto?.Numero_di_telefono || '' }}
+                    <template v-if="slotPropsG.row.Contatto?.Numero_di_cellulare">
+                      <a :href="'tel:'+slotPropsG.row.Contatto?.Numero_di_cellulare" class="text-primary">{{ slotPropsG.row.Contatto?.Numero_di_cellulare }}</a>
+                    </template><template v-if="slotPropsG.row.Contatto?.Numero_di_telefono">
+                      <a :href="'tel:'+slotPropsG.row.Contatto?.Numero_di_telefono" class="text-primary">{{ slotPropsG.row.Contatto?.Numero_di_telefono }}</a>
+                    </template>
                   </div>
                   <div class="row q-mt-sm justify-end">
                     <q-btn
@@ -131,7 +148,7 @@
             <q-td :props="slotPropsG">
               <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
                 <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                <span class="text-caption">{{ em.email_address }}</span>
+                <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
                 <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
               </template>
               <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
@@ -374,7 +391,7 @@ async function handleAssign(ruolo) {
     await loadContatti()
     await preloadOptions()
   } else if (store.error) {
-    notifyError($q, store.error)
+    notifyError($q, store.error, "Errore nell'assegnazione del contatto")
   }
 }
 
@@ -398,7 +415,7 @@ async function assignNewContatto(ruolo) {
     await loadContatti()
     await preloadOptions()
   } else if (store.error) {
-    notifyError($q, store.error)
+    notifyError($q, store.error, "Errore nell'associazione del contatto")
   }
 }
 
@@ -410,7 +427,7 @@ async function handleRemove(row) {
     await loadContatti()
     await preloadOptions()
   } else if (store.error) {
-    notifyError($q, store.error)
+    notifyError($q, store.error, "Errore nella rimozione del contatto")
   }
 }
 </script>

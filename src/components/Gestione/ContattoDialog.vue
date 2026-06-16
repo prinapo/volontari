@@ -6,7 +6,14 @@
           {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -82,6 +89,7 @@
               icon="star_outline"
               color="grey"
               size="sm"
+              aria-label="Imposta come primaria"
               :disable="hasAccount"
               @click="setPrimary(idx)"
             >
@@ -96,6 +104,7 @@
               color="negative"
               size="sm"
               data-testid="btn-delete-email"
+              aria-label="Elimina email"
               :disable="hasAccount"
               @click="removeEmail(idx)"
             >
@@ -229,7 +238,11 @@ function setPrimary(idx) {
 async function onEmailBlur(em, _idx) {
   if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
   if (em.id) {
-    await emailService.update(em.id, { email_address: em.email_address })
+    try {
+      await emailService.update(em.id, { email_address: em.email_address })
+    } catch (err) {
+      notifyError($q, err, "Errore nell'aggiornamento dell'email")
+    }
   } else {
     try {
       const res = await emailService.create({
@@ -260,21 +273,25 @@ async function handleSave() {
       IsReferente: form.value.IsReferente
     })
     if (ok) {
-      for (const em of emails.value) {
-        if (em.id && em.email_address) {
-          await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
-        } else if (!em.id && em.email_address) {
-          await emailService.create({
-            email_address: em.email_address,
-            Contatto_Relation: props.editItem.id_contatto,
-            Primary: em.Primary
-          })
+      try {
+        for (const em of emails.value) {
+          if (em.id && em.email_address) {
+            await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
+          } else if (!em.id && em.email_address) {
+            await emailService.create({
+              email_address: em.email_address,
+              Contatto_Relation: props.editItem.id_contatto,
+              Primary: em.Primary
+            })
+          }
         }
-      }
-      for (const origId of originalEmailIds.value) {
-        if (!emails.value.some(e => e.id === origId)) {
-          await emailService.remove(origId)
+        for (const origId of originalEmailIds.value) {
+          if (!emails.value.some(e => e.id === origId)) {
+            await emailService.remove(origId)
+          }
         }
+      } catch (err) {
+        notifyError($q, err, "Errore nell'aggiornamento delle email")
       }
       emit('saved')
       visible.value = false

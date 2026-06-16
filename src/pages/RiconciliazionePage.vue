@@ -18,6 +18,7 @@
           icon="refresh"
           :loading="store.submissionsLoading"
           data-testid="btn-refresh-riconciliazioni"
+          aria-label="Aggiorna"
           @click="loadData"
         >
           <q-tooltip>Aggiorna</q-tooltip>
@@ -82,7 +83,7 @@
                       <div class="text-caption text-grey-7">
                         Telefono
                       </div>
-                      <div>{{ props.row.telefono || '—' }}</div>
+                      <div><a v-if="props.row.telefono" :href="'tel:'+props.row.telefono" class="text-primary">{{ props.row.telefono }}</a><span v-else class="text-grey-5">—</span></div>
                     </div>
                     <div class="col-6">
                       <div class="text-caption text-grey-7">
@@ -125,6 +126,7 @@
                         color="positive"
                         size="sm"
                         data-testid="btn-save-email"
+                        aria-label="Salva email e ricontrolla"
                         @click="handleEmailEdit(props.row)"
                       >
                         <q-tooltip>Salva email e ricontrolla</q-tooltip>
@@ -315,14 +317,14 @@
               </div>
             </template>
             <template v-else>
-              {{ props.value }}
+              <a :href="'mailto:'+props.value" class="text-primary">{{ props.value }}</a>
             </template>
           </q-td>
         </template>
 
         <template #body-cell-telefono="props">
           <q-td :props="props">
-            {{ props.value || '—' }}
+            <a v-if="props.value" :href="'tel:'+props.value" class="text-primary">{{ props.value }}</a><span v-else class="text-grey-5">—</span>
           </q-td>
         </template>
 

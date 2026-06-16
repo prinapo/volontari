@@ -6,7 +6,14 @@
           Nuovo giustificativo
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -95,7 +102,14 @@
               class="hidden"
               @change="onCameraCapture"
             >
-            <q-btn v-if="$q.platform.is.mobile" flat color="secondary" icon="photo_camera" @click="$refs.cameraInput.click()">
+            <q-btn
+              v-if="$q.platform.is.mobile"
+              flat
+              color="secondary"
+              icon="photo_camera"
+              aria-label="Foto"
+              @click="$refs.cameraInput.click()"
+            >
               <q-tooltip>Foto</q-tooltip>
             </q-btn>
           </div>

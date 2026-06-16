@@ -95,7 +95,7 @@
                         </q-item-label>
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" />{{ em.email_address }}
+                            <q-icon name="email" size="xs" class="q-mr-xs" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                         </q-item-label>
@@ -113,7 +113,7 @@
                         </q-item-label>
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" />{{ em.email_address }}
+                            <q-icon name="email" size="xs" class="q-mr-xs" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                         </q-item-label>
@@ -130,6 +130,7 @@
                   icon="edit"
                   size="sm"
                   data-testid="btn-edit-famiglia"
+                  aria-label="Modifica"
                   @click="openEdit(props.row)"
                 >
                   <q-tooltip>Modifica</q-tooltip>
@@ -140,6 +141,7 @@
                   dense
                   icon="contacts"
                   size="sm"
+                  aria-label="Gestisci contatti"
                   @click="openContatti(props.row)"
                 >
                   <q-tooltip>Gestisci contatti</q-tooltip>
@@ -158,6 +160,7 @@
               round
               dense
               :icon="props.expand ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+              :aria-label="props.expand ? 'Chiudi' : 'Mostra contatti'"
               @click="props.expand = !props.expand; loadExpanded(props.row)"
             >
               <q-tooltip>{{ props.expand ? 'Chiudi' : 'Mostra contatti' }}</q-tooltip>
@@ -178,6 +181,7 @@
                 dense
                 icon="edit"
                 data-testid="btn-edit-famiglia"
+                aria-label="Modifica"
                 @click="openEdit(props.row)"
               >
                 <q-tooltip>Modifica</q-tooltip>
@@ -186,6 +190,7 @@
                 flat
                 dense
                 icon="contacts"
+                aria-label="Gestisci contatti"
                 @click="openContatti(props.row)"
               >
                 <q-tooltip>Gestisci contatti</q-tooltip>
@@ -225,19 +230,19 @@
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
                             <q-icon name="email" size="xs" class="q-mr-xs" />
-                            {{ em.email_address }}
+                            <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                           <template v-if="c.Contatto?.Numero_di_cellulare">
                             <span class="q-ml-sm">
                               <q-icon name="smartphone" size="xs" class="q-mr-xs" />
-                              {{ c.Contatto.Numero_di_cellulare }}
+                              <a :href="'tel:'+c.Contatto.Numero_di_cellulare" class="text-primary">{{ c.Contatto.Numero_di_cellulare }}</a>
                             </span>
                           </template>
                           <template v-if="c.Contatto?.Numero_di_telefono">
                             <span class="q-ml-sm">
                               <q-icon name="phone" size="xs" class="q-mr-xs" />
-                              {{ c.Contatto.Numero_di_telefono }}
+                              <a :href="'tel:'+c.Contatto.Numero_di_telefono" class="text-primary">{{ c.Contatto.Numero_di_telefono }}</a>
                             </span>
                           </template>
                         </q-item-label>
@@ -262,19 +267,19 @@
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
                             <q-icon name="email" size="xs" class="q-mr-xs" />
-                            {{ em.email_address }}
+                            <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                           <template v-if="c.Contatto?.Numero_di_cellulare">
                             <span class="q-ml-sm">
                               <q-icon name="smartphone" size="xs" class="q-mr-xs" />
-                              {{ c.Contatto.Numero_di_cellulare }}
+                              <a :href="'tel:'+c.Contatto.Numero_di_cellulare" class="text-primary">{{ c.Contatto.Numero_di_cellulare }}</a>
                             </span>
                           </template>
                           <template v-if="c.Contatto?.Numero_di_telefono">
                             <span class="q-ml-sm">
                               <q-icon name="phone" size="xs" class="q-mr-xs" />
-                              {{ c.Contatto.Numero_di_telefono }}
+                              <a :href="'tel:'+c.Contatto.Numero_di_telefono" class="text-primary">{{ c.Contatto.Numero_di_telefono }}</a>
                             </span>
                           </template>
                         </q-item-label>

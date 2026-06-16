@@ -6,7 +6,7 @@ import { usersService } from 'src/services/users.service'
 import { referentiService } from 'src/services/referenti.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 
-const RESET_URL = 'https://volontari.sostienilsostegno.com/reset-password'
+const RESET_URL = import.meta.env.RESET_URL
 
 export const useGestioneStore = defineStore('gestione', {
   state: () => ({

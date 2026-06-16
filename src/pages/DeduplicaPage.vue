@@ -15,6 +15,7 @@
               icon="refresh"
               :loading="store.loading"
               class="q-ml-sm"
+              aria-label="Aggiorna"
               @click="store.fetchDuplicates"
             >
               <q-tooltip>Aggiorna</q-tooltip>
@@ -91,7 +92,7 @@
                 </template>
               </div>
             </div>
-            <q-btn flat round icon="chevron_right" color="primary">
+            <q-btn flat round icon="chevron_right" color="primary" aria-label="Apri gruppo">
               <q-tooltip>Apri gruppo</q-tooltip>
             </q-btn>
           </q-card-section>
@@ -117,7 +118,14 @@
                 </q-badge>
               </div>
             </div>
-            <q-btn v-close-popup icon="close" flat round dense>
+            <q-btn
+              v-close-popup
+              icon="close"
+              flat
+              round
+              dense
+              aria-label="Chiudi"
+            >
               <q-tooltip>Chiudi</q-tooltip>
             </q-btn>
           </q-card-section>
@@ -128,7 +136,7 @@
             <template v-if="selectedGroup.types.includes('cross-contatto')">
               <div v-for="(pair, pi) in crossPairs" :key="pi" class="q-mb-lg">
                 <div class="text-subtitle2 q-mb-sm">
-                  {{ formatContatto(pair.aData.contatto) }} (sopravvissuto) ↔
+                  {{ formatContatto(pair.aData.contatto) }} (principale) ↔
                   {{ formatContatto(pair.bData.contatto) }}
                 </div>
 
@@ -161,42 +169,22 @@
                                 v-if="props.row.differs"
                                 v-model="pair.fieldChoices[props.row.field]"
                                 :val="'a'"
-                                label="A"
+                                label="Principale"
                                 size="xs"
                               />
                               <q-radio
                                 v-if="props.row.differs"
                                 v-model="pair.fieldChoices[props.row.field]"
                                 :val="'b'"
-                                label="B"
+                                label="Secondario"
                                 size="xs"
                               />
-                              <span v-else class="text-grey text-caption">=</span>
+                              <span v-else class="text-grey">=</span>
                             </div>
                           </div>
                         </q-card-section>
                       </q-card>
                     </div>
-                  </template>
-
-                  <template #body-cell-scelta="props">
-                    <q-td :props="props">
-                      <q-radio
-                        v-if="props.row.differs"
-                        v-model="pair.fieldChoices[props.row.field]"
-                        :val="'a'"
-                        label="A"
-                        size="xs"
-                      />
-                      <q-radio
-                        v-if="props.row.differs"
-                        v-model="pair.fieldChoices[props.row.field]"
-                        :val="'b'"
-                        label="B"
-                        size="xs"
-                      />
-                      <span v-else class="text-grey">=</span>
-                    </q-td>
                   </template>
                 </q-table>
 
@@ -209,7 +197,7 @@
                       <q-card-section class="q-pt-none">
                         <div v-for="e in pair.aData.emailEntries" :key="e.id" class="row items-center q-gutter-xs q-py-xs">
                           <div class="col">
-                            {{ e.email_address }}
+                            <a :href="'mailto:'+e.email_address" class="text-primary">{{ e.email_address }}</a>
                           </div>
                           <q-badge v-if="e.Primary === true" color="primary" label="Primaria" size="xs" />
                         </div>
@@ -228,14 +216,14 @@
                           size="sm"
                           icon="forward"
                           color="primary"
-                          label="Sposta in A"
+                          label="Sposta in Principale"
                           @click="moveBEmailsToA(pair)"
                         />
                       </q-card-section>
                       <q-card-section class="q-pt-none">
                         <div v-for="e in pair.bData.emailEntries" :key="e.id" class="row items-center q-gutter-xs q-py-xs">
                           <div class="col">
-                            {{ e.email_address }}
+                            <a :href="'mailto:'+e.email_address" class="text-primary">{{ e.email_address }}</a>
                           </div>
                           <q-badge v-if="e.Primary === true" color="primary" label="Primaria" size="xs" />
                           <q-btn
@@ -244,6 +232,7 @@
                             icon="delete"
                             size="xs"
                             color="negative"
+                            aria-label="Elimina"
                             @click="handleDeleteEmail(e.id)"
                           >
                             <q-tooltip>Elimina</q-tooltip>
@@ -283,7 +272,7 @@
                           size="sm"
                           icon="forward"
                           color="primary"
-                          label="Sposta in A"
+                          label="Sposta in Principale"
                           @click="moveBFamiliesToA(pair)"
                         />
                       </q-card-section>
@@ -311,7 +300,7 @@
                         size="sm"
                         icon="forward"
                         color="primary"
-                        label="Sposta in A"
+                        label="Sposta in Principale"
                         :disable="pair.moveUser"
                         @click="pair.moveUser = true"
                       />
@@ -351,7 +340,7 @@
                         <q-card-section class="q-py-sm row items-center">
                           <div class="col">
                             <div class="text-body2">
-                              {{ props.row.email_address }}
+                              <a :href="'mailto:'+props.row.email_address" class="text-primary">{{ props.row.email_address }}</a>
                             </div>
                             <q-badge v-if="props.row.Primary === 'true' || props.row.Primary === true" color="primary" label="Primaria" size="xs" />
                             <span v-else class="text-grey text-caption">No</span>
@@ -362,6 +351,7 @@
                             icon="delete"
                             size="xs"
                             color="negative"
+                            aria-label="Elimina"
                             @click="handleDeleteEmail(props.row.id)"
                           >
                             <q-tooltip>Elimina</q-tooltip>
@@ -420,7 +410,7 @@
                         <q-card-section class="q-py-sm row items-center">
                           <div class="col">
                             <div class="text-body2">
-                              {{ props.row.email_address }}
+                              <a :href="'mailto:'+props.row.email_address" class="text-primary">{{ props.row.email_address }}</a>
                             </div>
                             <q-badge v-if="props.row.Primary === 'true' || props.row.Primary === true" color="primary" label="Primaria" size="xs" />
                             <span v-else class="text-grey text-caption">No</span>
@@ -431,6 +421,7 @@
                             icon="delete"
                             size="xs"
                             color="negative"
+                            aria-label="Elimina"
                             @click="handleDeleteEmail(props.row.id)"
                           >
                             <q-tooltip>Elimina</q-tooltip>
@@ -472,13 +463,13 @@
             <template v-if="selectedGroup.types.includes('cross-contatto')">
               <q-btn
                 flat
-                label="Elimina contatti B"
+                label="Elimina contatti secondari"
                 color="negative"
                 @click="confirmDeleteB"
               />
               <q-btn
                 flat
-                label="Unisci tutto in A"
+                label="Unisci tutto in Principale"
                 color="primary"
                 @click="confirmMerge"
               />
@@ -505,6 +496,7 @@
               icon="refresh"
               :loading="store.idLoading"
               class="q-mr-sm"
+              aria-label="Aggiorna"
               @click="loadIdDuplicates"
             >
               <q-tooltip>Aggiorna</q-tooltip>
@@ -515,6 +507,7 @@
               flat
               round
               dense
+              aria-label="Chiudi"
               @click="idDialog = false"
             >
               <q-tooltip>Chiudi</q-tooltip>
@@ -569,6 +562,7 @@
                           icon="search"
                           size="sm"
                           color="primary"
+                          aria-label="Vedi dettagli"
                           @click="viewIdDuplicates(props.row)"
                         >
                           <q-tooltip>Vedi dettagli</q-tooltip>
@@ -613,7 +607,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useDeduplicaStore } from 'stores/deduplica.store'
 import { notifyError, notifySuccess } from 'src/utils/notify'
@@ -638,12 +632,12 @@ const idBadgeColor = computed(() => store.idDuplicateGroups.length > 0 ? 'warnin
 
 const fieldColumns = [
   { name: 'field', label: 'Campo', field: 'field', align: 'left', style: 'width: 120px' },
-  { name: 'a', label: 'A (sopravvissuto)', field: 'a', align: 'left' },
+  { name: 'a', label: 'A (principale)', field: 'a', align: 'left' },
   { name: 'b', label: 'B', field: 'b', align: 'left' },
   { name: 'scelta', label: 'Scegli', field: 'scelta', align: 'center' }
 ]
 
-store.fetchDuplicates()
+onMounted(() => { store.fetchDuplicates() })
 
 function formatContatto(c) {
   if (!c) return '?'
@@ -724,7 +718,7 @@ async function moveBEmailsToA(pair) {
       await deduplicaService.updateEmail(e.id, { Contatto_Relation: pair.aId })
     }
     pair.bData.emailEntries = []
-    notifySuccess($q, 'Email spostate in A')
+    notifySuccess($q, 'Email spostate nel contatto principale')
   } catch (err) {
     notifyError($q, err, 'Errore nello spostamento email')
   }
@@ -736,7 +730,7 @@ async function moveBFamiliesToA(pair) {
       await deduplicaService.updateFamigliaContatto(fc.id, { Contatto: pair.aId })
     }
     pair.bData.famiglieContatti = []
-    notifySuccess($q, 'Famiglie spostate in A')
+    notifySuccess($q, 'Famiglie spostate nel contatto principale')
   } catch (err) {
     notifyError($q, err, 'Errore nello spostamento famiglie')
   }
@@ -755,7 +749,7 @@ async function handleDeleteEmail(emailId) {
 function confirmMerge() {
   $q.dialog({
     title: 'Conferma unione',
-    message: "Unire tutti i contatti secondari nel primo (sopravvissuto)? Email e famiglie verranno spostate.",
+    message: "Unire tutti i contatti secondari nel primo (principale)? Email e famiglie verranno spostate.",
     cancel: true,
     persistent: true
   }).onOk(() => handleMerge())
@@ -786,11 +780,11 @@ async function handleMerge() {
 function confirmDeleteB() {
   const pairsWithFB = crossPairs.value.filter(p => p.bData.famiglieContatti.length > 0)
   if (pairsWithFB.length > 0) {
-    $q.notify({ type: 'warning', message: 'Sposta prima le famiglie di B in A per ogni contatto' })
+    $q.notify({ type: 'warning', message: 'Sposta prima tutte le famiglie nel contatto principale' })
     return
   }
   $q.dialog({
-    title: 'Eliminare i contatti B?',
+    title: 'Eliminare i contatti secondari?',
     message: "Questa operazione eliminerà tutti i contatti secondari. Le email sono già state spostate?",
     cancel: true,
     persistent: true

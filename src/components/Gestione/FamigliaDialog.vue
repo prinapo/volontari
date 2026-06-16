@@ -6,7 +6,14 @@
           {{ isEdit ? 'Modifica Famiglia' : 'Nuova Famiglia' }}
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -33,7 +40,7 @@
           />
           <q-input
             v-model="form.Intestatario_CC"
-            label="Intestatario CC"
+            label="Intestatario conto corrente"
             data-testid="famiglia-intestatario"
             outlined
             dense
@@ -113,7 +120,7 @@ async function handleSave() {
       emit('saved')
       visible.value = false
     } else if (store.error) {
-      notifyError($q, store.error)
+      notifyError($q, store.error, "Errore nella modifica della famiglia")
     }
   } else {
     const ok = await store.createFamiglia({
@@ -126,7 +133,7 @@ async function handleSave() {
       emit('saved')
       visible.value = false
     } else if (store.error) {
-      notifyError($q, store.error)
+      notifyError($q, store.error, "Errore nella creazione della famiglia")
     }
   }
 }

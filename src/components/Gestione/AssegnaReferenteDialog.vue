@@ -6,7 +6,14 @@
           Assegna Referente
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense>
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -32,6 +39,7 @@
             color="negative"
             size="sm"
             data-testid="btn-remove-referente"
+            aria-label="Rimuovi referente"
             @click="removeReferente(r)"
           >
             <q-tooltip>Rimuovi referente</q-tooltip>
@@ -63,6 +71,7 @@
             color="primary"
             icon="person_add"
             data-testid="btn-add-referente"
+            aria-label="Aggiungi referente"
             :disable="!selectedReferente"
             class="q-mt-sm-sm"
             @click="addReferente"

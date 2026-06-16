@@ -22,6 +22,7 @@
               round
               icon="refresh"
               :loading="store.loading"
+              aria-label="Aggiorna dati"
               @click="loadData"
             >
               <q-tooltip>Aggiorna dati</q-tooltip>
@@ -155,6 +156,7 @@
                               size="sm"
                               icon="edit"
                               data-testid="btn-edit-bancari"
+                              aria-label="Modifica dati bancari"
                               @click="openBancariDialog(props.row)"
                             >
                               <q-tooltip>Modifica dati bancari</q-tooltip>
@@ -272,6 +274,7 @@
                                       color="primary"
                                       size="md"
                                       data-testid="btn-verify"
+                                      aria-label="Verifica"
                                       :loading="verifyingId === g.id"
                                       @click="handleVerify(props.row.idProgetto, g)"
                                     >
@@ -284,6 +287,7 @@
                                       color="negative"
                                       size="md"
                                       data-testid="btn-reject"
+                                      aria-label="Rifiuta"
                                       @click="handleReject(props.row.idProgetto, g)"
                                     >
                                       <q-tooltip>Rifiuta</q-tooltip>
@@ -308,6 +312,7 @@
                                       color="secondary"
                                       size="md"
                                       data-testid="btn-send"
+                                      aria-label="Invia"
                                       :loading="verifyingId === g.id"
                                       @click="handleSendDraft(props.row.idProgetto, g)"
                                     >
@@ -333,6 +338,7 @@
                         icon="add_circle"
                         color="secondary"
                         size="sm"
+                        aria-label="Aggiungi giustificativo"
                         @click="addingForRow = props.row"
                       >
                         <q-tooltip>Aggiungi giustificativo</q-tooltip>
@@ -343,6 +349,7 @@
                         dense
                         icon="visibility"
                         size="sm"
+                        aria-label="Dettaglio progetto"
                         @click="openRowDetail(props.row)"
                       >
                         <q-tooltip>Dettaglio progetto</q-tooltip>
@@ -353,9 +360,10 @@
                         dense
                         icon="content_copy"
                         size="sm"
+                        aria-label="Copia riga esportazione"
                         @click="copyAspiLine(props.row)"
                       >
-                        <q-tooltip>Copia riga ASPI</q-tooltip>
+                        <q-tooltip>Copia riga esportazione</q-tooltip>
                       </q-btn>
                     </q-card-actions>
                   </q-card>
@@ -372,6 +380,7 @@
                     dense
                     :icon="props.expand ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
                     data-testid="expand-row"
+                    :aria-label="props.expand ? 'Chiudi' : 'Apri dettagli'"
                     @click="toggleExpand(props)"
                   >
                     <q-tooltip>{{ props.expand ? 'Chiudi' : 'Apri dettagli' }}</q-tooltip>
@@ -417,6 +426,7 @@
                       icon="add_circle"
                       color="secondary"
                       data-testid="btn-add-giust"
+                      aria-label="Aggiungi giustificativo"
                       @click="addingForRow = props.row"
                     >
                       <q-tooltip>Aggiungi giustificativo</q-tooltip>
@@ -427,6 +437,7 @@
                       dense
                       icon="visibility"
                       data-testid="btn-detail-row"
+                      aria-label="Dettaglio progetto"
                       @click="openRowDetail(props.row)"
                     >
                       <q-tooltip>Dettaglio progetto</q-tooltip>
@@ -437,9 +448,10 @@
                       dense
                       icon="content_copy"
                       data-testid="btn-copy-aspi"
+                      aria-label="Copia riga esportazione"
                       @click="copyAspiLine(props.row)"
                     >
-                      <q-tooltip>Copia riga ASPI</q-tooltip>
+                      <q-tooltip>Copia riga esportazione</q-tooltip>
                     </q-btn>
                   </template>
 
@@ -472,6 +484,7 @@
                               size="sm"
                               icon="edit"
                               data-testid="btn-edit-bancari"
+                              aria-label="Modifica dati bancari"
                               @click="openBancariDialog(props.row)"
                             >
                               <q-tooltip>Modifica dati bancari</q-tooltip>
@@ -603,6 +616,7 @@
                               color="primary"
                               size="md"
                               data-testid="btn-verify"
+                              aria-label="Verifica"
                               :loading="verifyingId === g.id"
                               @click="handleVerify(props.row.idProgetto, g)"
                             >
@@ -615,6 +629,7 @@
                               color="negative"
                               size="md"
                               data-testid="btn-reject"
+                              aria-label="Rifiuta"
                               @click="handleReject(props.row.idProgetto, g)"
                             >
                               <q-tooltip>Rifiuta</q-tooltip>
@@ -629,7 +644,7 @@
                               <q-icon name="cancel" size="md" />
                               <span class="text-body2">Rifiutato</span>
                             </div>
-                            <div v-if="g.NotaRifiuto" class="text-caption text-grey-7 q-mt-xs" style="max-width: 200px; white-space: normal;">
+                            <div v-if="g.NotaRifiuto" class="text-caption text-grey-7 q-mt-xs">
                               {{ g.NotaRifiuto }}
                             </div>
                           </div>
@@ -641,6 +656,7 @@
                               color="secondary"
                               size="md"
                               data-testid="btn-send"
+                              aria-label="Invia"
                               :loading="verifyingId === g.id"
                               @click="handleSendDraft(props.row.idProgetto, g)"
                             >
@@ -673,7 +689,7 @@
       />
 
       <q-dialog v-model="rejectDialog" persistent>
-        <q-card style="min-width: 400px">
+        <q-card class="reject-dialog-card">
           <q-card-section>
             <div class="text-h6">
               Rifiuta giustificativo
@@ -1004,7 +1020,7 @@ function exportAspi() {
 
 async function copyAspiLine(row) {
   await copyToClipboard(aspiLine(row).join('\t'))
-  $q.notify({ type: 'positive', message: 'Riga ASPI copiata' })
+  $q.notify({ type: 'positive', message: 'Riga esportazione copiata' })
 }
 
 function openRowDetail(row) {
@@ -1047,6 +1063,10 @@ function openRowDetail(row) {
 
 .giust-sub-list .giust-item:last-child {
   border-bottom: none;
+}
+
+.reject-dialog-card {
+  min-width: 400px;
 }
 
 @media (max-width: 720px) {
