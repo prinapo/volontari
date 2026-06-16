@@ -1,6 +1,11 @@
 # Regola — Solo capacità native Quasar
 Ogni modifica UI deve usare esclusivamente componenti, props, classi e API native di Quasar. Niente librerie CSS terze (Tailwind, Bootstrap), niente componenti custom esterni, niente manipolazione DOM diretta. Lo stile va in `src/css/app.scss` con variabili CSS custom e override di classi Quasar. Google Fonts è l'unica eccezione. Vale per TUTTO il codice, esistente e nuovo.
 
+# v2.7.1
+
+- **Fix env vars**: tutte rinominte con prefisso `VITE_` per matchare il build di Quasar.
+- **Version bump**: 2.7.0 → 2.7.1
+
 # v2.7.0
 
 - **Audit qualità senior**: .env rimosso da git, error handling ContattoDialog/DeduplicaPage, validazione RiconciliaDialog, messaggi espliciti (413/network/403/500), A/B → Principale/Secondario.

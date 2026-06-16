@@ -6,7 +6,7 @@ import { usersService } from 'src/services/users.service'
 import { referentiService } from 'src/services/referenti.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 
-const RESET_URL = import.meta.env.RESET_URL
+const RESET_URL = import.meta.env.VITE_RESET_URL
 
 export const useGestioneStore = defineStore('gestione', {
   state: () => ({
@@ -187,7 +187,7 @@ export const useGestioneStore = defineStore('gestione', {
                 password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
                 first_name: contatto.Nome || '',
                 last_name: contatto.Cognome || '',
-                role: import.meta.env.VOLONTARIO_ROLE_ID
+                role: import.meta.env.VITE_VOLONTARIO_ROLE_ID
               })
               const newUserId = newUserRes.data.data?.id
               if (newUserId) {

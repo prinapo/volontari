@@ -177,7 +177,7 @@ async function handleForgotPassword() {
   try {
     await authService.requestPasswordReset(
       resetEmail.value,
-      import.meta.env.RESET_URL
+      import.meta.env.VITE_RESET_URL
     )
     notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")
     showForgotPassword.value = false

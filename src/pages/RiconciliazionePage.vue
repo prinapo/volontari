@@ -71,7 +71,9 @@
                       <div class="text-caption text-grey-7">
                         Descrizione
                       </div>
-                      <div class="text-caption" style="white-space: pre-wrap; word-break: break-word;">{{ props.row.descrizione || '—' }}</div>
+                      <div class="text-caption" style="white-space: pre-wrap; word-break: break-word;">
+                        {{ props.row.descrizione || '—' }}
+                      </div>
                     </div>
                     <div class="col-6">
                       <div class="text-caption text-grey-7">
@@ -332,7 +334,15 @@
           <q-td :props="props">
             <div class="row items-center no-wrap" style="max-width: 220px;">
               <span class="text-caption ellipsis">{{ props.value || '—' }}</span>
-              <q-btn v-if="props.value?.length > 40" flat round dense icon="open_in_full" size="xs" @click="showDescrizioneDialog(props.value)">
+              <q-btn
+                v-if="props.value?.length > 40"
+                flat
+                round
+                dense
+                icon="open_in_full"
+                size="xs"
+                @click="showDescrizioneDialog(props.value)"
+              >
                 <q-tooltip>Leggi descrizione completa</q-tooltip>
               </q-btn>
             </div>
@@ -462,7 +472,9 @@
       <q-dialog v-model="descrizioneDialog.visible">
         <q-card style="width: 100%; max-width: 500px; min-width: unset">
           <q-card-section class="row items-center">
-            <div class="text-h6">Descrizione</div>
+            <div class="text-h6">
+              Descrizione
+            </div>
             <q-space />
             <q-btn v-close-popup icon="close" flat round dense />
           </q-card-section>
