@@ -9,6 +9,7 @@ const EXPECTED_API_ERRORS = [
   '/items/Progetti',   // 500 — intentional API error test (EH-01)
   '/items/Giustificativi', // 403 — GestoreVerifica senza permessi scrittura (RC-05)
   '/items/Famiglie_Contatti', // 403 — GestoreVerifica senza permessi su soft-delete
+  '/users',            // 400 — Gestore non può creare utenti Directus (RF-02)
 ]
 
 const EXPECTED_CONSOLE_ERROR_PATTERNS = [

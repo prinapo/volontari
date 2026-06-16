@@ -186,7 +186,8 @@ export const useGestioneStore = defineStore('gestione', {
                 email,
                 password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
                 first_name: contatto.Nome || '',
-                last_name: contatto.Cognome || ''
+                last_name: contatto.Cognome || '',
+                role: import.meta.env.VOLONTARIO_ROLE_ID
               })
               const newUserId = newUserRes.data.data?.id
               if (newUserId) {

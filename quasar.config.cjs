@@ -15,7 +15,8 @@ module.exports = function (ctx) {
         RESET_URL: ctx.dev
           ? 'http://localhost:9000/reset-password?token='
           : 'https://volontari.sostienilsostegno.com/reset-password?token=',
-        INVII_PUBBLICI_FOLDER: '25cd095a-20a2-48fd-9827-9b6754b429f6'
+        INVII_PUBBLICI_FOLDER: '25cd095a-20a2-48fd-9827-9b6754b429f6',
+        VOLONTARIO_ROLE_ID: '15c6d5a4-e739-452f-920d-e5db0824e213'
       }
     },
     devServer: {

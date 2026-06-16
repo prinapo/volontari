@@ -1,7 +1,14 @@
 import { test, expect } from '../helpers/console.js'
 import { LoginPage } from '../pages/LoginPage.js'
-import auth from '../fixtures/auth-email.json' with { type: 'json' }
 import { waitForResetLink } from '../helpers/email.js'
+import { readFileSync, existsSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const AUTH_EMAIL_PATH = resolve(__dirname, '..', 'fixtures', 'auth-email.json')
+const hasAuthEmail = existsSync(AUTH_EMAIL_PATH)
+const auth = hasAuthEmail ? JSON.parse(readFileSync(AUTH_EMAIL_PATH, 'utf-8')) : null
 
 const TEMP_PWD = 'TempPwdRound1!'
 
@@ -65,9 +72,9 @@ test.describe('ResetPasswordPage — UI', () => {
 })
 
 test.describe('ResetPasswordPage — Full E2E', () => {
-  test.skip('RP-10: Reset password reale via email e ripristino @e2e', async ({ page }) => {
+  test('RP-10: Reset password reale via email e ripristino @e2e', async ({ page }) => {
     test.setTimeout(120000)
-    // Skip: richiede Directus con SMTP configurato (non disponibile in locale)
+    if (!hasAuthEmail || !auth?.email) { test.skip('auth-email.json non trovato'); return }
     // 1. Forgot password — richiedi reset
     await page.goto('/login')
     await page.locator('button:has-text("Password dimenticata")').click()

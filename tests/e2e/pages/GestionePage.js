@@ -184,7 +184,7 @@ export class GestionePage {
     const item = this.page.locator('.q-menu .q-item').filter({ hasText: fullName }).first()
     await item.waitFor({ state: 'visible', timeout: 5000 })
     await item.click()
-    await this.contattiDialog.locator('button:has-text("Associa come Volontario")').click()
+    await this.contattiDialog.locator('button:has-text("Volontario")').first().click()
   }
 
   async removeFromFamiglia(fullName) {

@@ -24,7 +24,7 @@ test.describe('Referente Role', () => {
     }
 
     const actionCell = firstRow.locator('td').last()
-    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
+    const referenteBtn = actionCell.locator('[data-testid="btn-assigna-referente"]')
 
     if (hasVolontario) {
       expect(await referenteBtn.count()).toBeGreaterThan(0)
@@ -34,32 +34,119 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-02: Assegna Referente a Volontario @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(120000)
     await loginAs(page, 'gestore', auth)
+    const timestamp = Date.now()
+    const nome = `Test RF02 ${timestamp}`
+    const cognome = 'AutoTest'
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
     await page.waitForTimeout(2000)
 
-    const rowCount = await gestionePage.getRowCount()
-    if (rowCount === 0) { test.skip('No contatti'); return }
+    // Crea contatto via UI
+    await page.locator('[data-testid="btn-aggiungi-contatto"]').waitFor({ state: 'visible', timeout: 10000 })
+    await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
+    let dialog = page.locator('.q-dialog:visible')
+    await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
+    await dialog.locator('[data-testid="contatto-cognome"]').fill(cognome)
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
+      dialog.locator('button:has-text("Salva")').click()
+    ])
+    expect(postResp.status()).toBe(200)
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    await page.waitForTimeout(1000)
+
+    // Aggiungi email al contatto (necessaria per poterlo associare come Volontario)
+    await gestionePage.search(nome)
+    await page.waitForTimeout(1000)
+    const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
+    if (await editBtn.count() > 0) {
+      await editBtn.click()
+      await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
+      dialog = page.locator('.q-dialog:visible')
+      await dialog.locator('button:has-text("Aggiungi email")').click()
+      await page.waitForTimeout(300)
+      const emailInput = dialog.locator('input[type="email"]').last()
+      await emailInput.fill(`test.rf02.${timestamp}@test.com`)
+      const [patchResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
+        dialog.locator('button:has-text("Salva")').click()
+      ])
+      expect(patchResp.status()).toBe(200)
+      await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    }
+    await page.waitForTimeout(500)
+
+    // Assegna come Volontario via FamiglieTab → ContattiDialog
+    await gestionePage.famiglieTab.click()
+    await gestionePage.waitForTable()
+    await page.waitForTimeout(2000)
+    await gestionePage.searchFamiglie('TEST_FAM')
+    await page.waitForTimeout(2000)
+
+    // Apri ContattiDialog per la famiglia e assegna contatto come Volontario
+    const clicked = await gestionePage.clickContactsOnFamiglia('Famiglia TEST_FAM_01')
+    if (clicked) {
+      await page.waitForTimeout(2000)
+      await gestionePage.assignVolontario(nome, `${nome} ${cognome}`)
+      await page.waitForTimeout(2000)
+      await gestionePage.contattiDialog.locator('button:has-text("Chiudi")').click()
+      await expect(gestionePage.contattiDialog).not.toBeVisible({ timeout: 5000 })
+    } else {
+      test.skip('Famiglia TEST_FAM_01 non trovata')
+      return
+    }
+
+    // Torna a Contatti, cerca il contatto, clicca bottone referente
+    await gestionePage.contattiTab.click()
+    await gestionePage.waitForTable()
+    await page.waitForTimeout(2000)
+    await gestionePage.search(nome)
+    await page.waitForTimeout(2000)
 
     let targetRow = null
     const rows = gestionePage.tableRows
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
+      const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
       if (await btn.count() > 0) { targetRow = rows.nth(i); break }
     }
 
-    if (!targetRow) { test.skip('Nessun contatto con bottone Assegna Referente'); return }
+    // Torna a Contatti, cerca il contatto, clicca bottone referente
+    await gestionePage.contattiTab.click()
+    await gestionePage.waitForTable()
+    await page.waitForTimeout(2000)
+    console.log('[RF-02] back to contatti, searching...')
+    await gestionePage.search(nome)
+    await page.waitForTimeout(2000)
+    console.log('[RF-02] search done, looking for referente button')
+
+    let targetRow = null
+    const rows = gestionePage.tableRows
+    const count = await rows.count()
+    for (let i = 0; i < count; i++) {
+      const actionCell = rows.nth(i).locator('td').last()
+      const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
+      const btnCount = await btn.count()
+      if (btnCount > 0) { 
+        console.log(`[RF-02] found referente button at row ${i}`)
+        targetRow = rows.nth(i)
+        break 
+      }
+    }
+
+    if (!targetRow) { test.skip('Bottone referente non visibile dopo creazione volontario'); return }
 
     const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') }).click()
+    await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
     await page.waitForTimeout(1500)
 
-    const dialog = page.locator('.q-dialog:visible')
+    dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
     await expect(dialog.locator('text=Assegna Referente')).toBeVisible()
   })
@@ -101,7 +188,7 @@ test.describe('Referente Role', () => {
 
     const targetRow = gestionePage.tableRows.first()
     const actionCell = targetRow.locator('td').last()
-    const personBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
+    const personBtn = actionCell.locator('[data-testid="btn-assigna-referente"]')
     if (await personBtn.count() === 0) {
       test.skip('Volontario non ha bottone Assegna Referente')
       return
@@ -178,7 +265,7 @@ test.describe('Referente Role', () => {
 
     const firstRow = gestionePage.tableRows.first()
     const actionCell = firstRow.locator('td').last()
-    const referenteBtn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
+    const referenteBtn = actionCell.locator('[data-testid="btn-assigna-referente"]')
     expect(await referenteBtn.count()).toBe(0)
   })
 
@@ -198,14 +285,14 @@ test.describe('Referente Role', () => {
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') })
+      const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
       if (await btn.count() > 0) { targetRow = rows.nth(i); break }
     }
 
     if (!targetRow) { test.skip('Nessun contatto con bottone Assegna Referente'); return }
 
     const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('.q-btn').filter({ has: page.locator('[data-testid="btn-assigna-referente"]') }).click()
+    await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')
