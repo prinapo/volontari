@@ -1,6 +1,19 @@
 # Regola — Solo capacità native Quasar
 Ogni modifica UI deve usare esclusivamente componenti, props, classi e API native di Quasar. Niente librerie CSS terze (Tailwind, Bootstrap), niente componenti custom esterni, niente manipolazione DOM diretta. Lo stile va in `src/css/app.scss` con variabili CSS custom e override di classi Quasar. Google Fonts è l'unica eccezione. Vale per TUTTO il codice, esistente e nuovo.
 
+# v2.7.0
+
+- **Audit qualità senior**: .env rimosso da git, error handling ContattoDialog/DeduplicaPage, validazione RiconciliaDialog, messaggi espliciti (413/network/403/500), A/B → Principale/Secondario.
+- **Email/tel cliccabili**: 44 link mailto:/tel: in 8 file (ContattiTab, ContattiDialog, FamiglieTab, FamigliaInfoCard, ContattoInfoLine, RiconciliaDialog, RiconciliazionePage, DeduplicaPage).
+- **Accessibilità**: aria-label su 60+ bottoni icona, 0 immagini senza alt.
+- **Hardcoded URLs → env vars**: RESET_URL, INVII_PUBBLICI_FOLDER via `import.meta.env`.
+- **UUID inutilizzati rimossi**: GIUSTIFICATIVI, ISEE, PROGETTI (dead code).
+- **Hide rendicontazione notify**: Messaggio discrepanze DB nascosto in attesa di revisione.
+- **npm audit**: 6/8 vulnerabilità fixate.
+- **Test file**: SP-10 file troppo grande, SP-11 estensione non valida.
+- **Page object**: GestionePage.waitForTable/getRowCount supportano grid mode mobile.
+- **Version bump**: 2.6.0 → 2.7.0
+
 # v2.6.0
 
 - **Restyling completo**: Palette colori CSS custom, font Inter, card/pulsanti/input uniformati, drawer scuro, header con bordo.
