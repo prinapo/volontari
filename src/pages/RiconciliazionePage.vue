@@ -25,16 +25,200 @@
       </div>
 
       <q-table
+        v-model:pagination="pagination"
         flat
         bordered
         row-key="id"
+        :grid="$q.screen.lt.sm"
         :rows="store.submissions"
         :columns="submissionColumns"
         :loading="store.submissionsLoading"
-        v-model:pagination="pagination"
         :rows-per-page-options="[10, 25, 50]"
         @request="onRequest"
       >
+        <template #item="props">
+          <div class="q-pa-xs col-12">
+            <q-expansion-item
+              dense
+              dense-toggle
+              expand-separator
+              :label="props.row.richiedente || 'Richiedente sconosciuto'"
+              :caption="props.row.email || ''"
+              :header-style="{
+                borderRadius: '8px',
+                borderLeft: `4px solid ${cardStateColor(props.row._detectState, props.row.stato)}`
+              }"
+            >
+              <q-card flat bordered>
+                <q-card-section class="q-pa-sm">
+                  <div class="row items-center q-gutter-x-sm q-mb-sm">
+                    <div class="col">
+                      <div class="text-weight-medium">
+                        {{ props.row.beneficiario || '—' }}
+                      </div>
+                    </div>
+                    <q-badge v-if="props.row.stato_submission === 'scartato'" color="grey-6" class="q-px-sm q-py-xs">
+                      Scartato
+                    </q-badge>
+                    <q-badge v-else color="positive" class="q-px-sm q-py-xs">
+                      In attesa
+                    </q-badge>
+                  </div>
+                  <q-separator class="q-mb-sm" />
+                  <div class="row q-col-gutter-sm">
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7">
+                        Data invio
+                      </div>
+                      <div>{{ formatDate(props.row.data_invio) || '—' }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7">
+                        Importo
+                      </div>
+                      <div>{{ formatCurrency(props.row.importo) }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7">
+                        Telefono
+                      </div>
+                      <div>{{ props.row.telefono || '—' }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7">
+                        Allegato
+                      </div>
+                      <a v-if="props.row.allegato" :href="assetUrl(props.row.allegato)" target="_blank" class="text-body2">Apri</a>
+                      <span v-else class="text-grey-5">—</span>
+                    </div>
+                  </div>
+                  <q-separator class="q-my-md" />
+                  <div class="text-caption text-grey-7 q-mb-xs">
+                    Stato contatto
+                  </div>
+                  <div class="q-mb-sm">
+                    <q-badge v-if="props.row._detectState === 'linked'" color="positive" class="q-px-sm q-py-xs">
+                      <q-icon name="check_circle" size="sm" class="q-mr-xs" />Contatto verificato
+                    </q-badge>
+                    <q-badge v-else-if="props.row._detectState === 'not_parent'" color="accent" class="q-px-sm q-py-xs">
+                      <q-icon name="group_add" size="sm" class="q-mr-xs" />Non è genitore
+                    </q-badge>
+                    <q-badge v-else-if="props.row._detectState === 'not_linked'" color="warning" class="q-px-sm q-py-xs text-dark">
+                      <q-icon name="link_off" size="sm" class="q-mr-xs" />Contatto senza famiglia
+                    </q-badge>
+                    <q-badge v-else-if="props.row._detectState === 'not_found'" color="negative" class="q-px-sm q-py-xs">
+                      <q-icon name="person_off" size="sm" class="q-mr-xs" />Contatto da creare
+                    </q-badge>
+                    <q-badge v-else color="grey" class="q-px-sm q-py-xs">
+                      <q-icon name="hourglass_empty" size="sm" class="q-mr-xs" />Verifica in corso
+                    </q-badge>
+                  </div>
+
+                  <div v-if="props.row._detectState === 'not_found'" class="q-mb-sm">
+                    <div class="row items-center q-gutter-xs">
+                      <q-input :model-value="props.row.email" outlined dense class="col" @update:model-value="(val) => props.row.email = val" />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="save"
+                        color="positive"
+                        size="sm"
+                        data-testid="btn-save-email"
+                        @click="handleEmailEdit(props.row)"
+                      >
+                        <q-tooltip>Salva email e ricontrolla</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
+
+                  <q-separator class="q-my-sm" />
+                  <div class="row q-gutter-xs">
+                    <template v-if="props.row.stato === 'scartato'">
+                      <q-btn
+                        flat
+                        icon="restore"
+                        color="warning"
+                        size="md"
+                        data-testid="btn-restore"
+                        @click="handleRipristina(props.row)"
+                      >
+                        Recupera
+                      </q-btn>
+                    </template>
+                    <template v-else>
+                      <q-btn
+                        v-if="props.row._detectState === 'linked'"
+                        flat
+                        icon="fact_check"
+                        color="positive"
+                        size="md"
+                        data-testid="btn-riconcilia"
+                        @click="openRiconcilia(props.row)"
+                      >
+                        Riconcilia
+                      </q-btn>
+                      <q-btn
+                        v-else-if="props.row._detectState === 'not_parent'"
+                        flat
+                        icon="group_add"
+                        color="accent"
+                        size="md"
+                        data-testid="btn-associa-genitore"
+                        @click="handleAssociaGenitore(props.row)"
+                      >
+                        Associa genitore
+                      </q-btn>
+                      <q-btn
+                        v-else-if="props.row._detectState === 'not_linked'"
+                        flat
+                        icon="people"
+                        color="warning"
+                        size="md"
+                        data-testid="btn-associa-famiglia"
+                        @click="openAssociaFamiglia(props.row)"
+                      >
+                        Associa famiglia
+                      </q-btn>
+                      <q-btn
+                        v-else-if="props.row._detectState === 'not_found'"
+                        flat
+                        icon="person_add"
+                        color="negative"
+                        size="md"
+                        data-testid="btn-crea-contatto"
+                        @click="openCreaContatto(props.row)"
+                      >
+                        Crea contatto
+                      </q-btn>
+                      <q-btn
+                        v-else
+                        flat
+                        icon="fact_check"
+                        color="grey"
+                        size="md"
+                        disabled
+                      >
+                        Verifica
+                      </q-btn>
+                      <q-btn
+                        flat
+                        icon="delete"
+                        color="negative"
+                        size="md"
+                        data-testid="btn-scarta"
+                        @click="handleScarta(props.row)"
+                      >
+                        Scarta
+                      </q-btn>
+                    </template>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </q-expansion-item>
+          </div>
+        </template>
+
         <template #body-cell-data_invio="props">
           <q-td :props="props">
             {{ formatDate(props.value) || '—' }}
@@ -155,7 +339,7 @@
                 <q-btn
                   flat
                   icon="restore"
-                  color="orange"
+                  color="warning"
                   size="md"
                   data-testid="btn-restore"
                   @click="handleRipristina(props.row)"
@@ -234,14 +418,12 @@
         </template>
       </q-table>
 
-      <!-- RiconciliaDialog: 🟢 linked -->
-      <q-dialog v-model="riconciliaDialog" persistent>
-        <RiconciliaDialog
-          v-model="riconciliaDialog"
-          :submission="reconcilingSubmission"
-          @reconcile="handleRiconcilia"
-        />
-      </q-dialog>
+      <!-- RiconciliaDialog: il componente ha già il proprio <q-dialog> -->
+      <RiconciliaDialog
+        v-model="riconciliaDialog"
+        :submission="reconcilingSubmission"
+        @reconcile="handleRiconcilia"
+      />
 
       <!-- ContattoDialog: 🔴 not_found -->
       <ContattoDialog
@@ -432,12 +614,22 @@ async function handleRipristina(submission) {
   }
 }
 
+function cardStateColor(detectState, stato) {
+  if (stato === 'scartato') return '#9E9E9E'
+  const colors = {
+    linked: '#4A7C59',
+    not_parent: '#D4956A',
+    not_linked: '#E8B86D',
+    not_found: '#C0503A'
+  }
+  return colors[detectState] || '#9E9E9E'
+}
+
 
 </script>
 
 <style scoped>
 .page-inner {
-  max-width: 1280px;
   margin: 0 auto;
 }
 </style>

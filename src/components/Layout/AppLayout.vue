@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh Lpr lFf">
-    <q-header elevated :class="isDev ? 'bg-orange-9 text-white' : 'bg-primary text-white'">
+    <q-header :class="isDev ? 'bg-orange-9 text-white' : 'bg-primary text-white'">
       <q-toolbar>
         <q-btn
           v-if="authStore.isAuthenticated"
@@ -10,7 +10,9 @@
           icon="menu"
           aria-label="Menu"
           @click="drawerOpen = !drawerOpen"
-        />
+        >
+          <q-tooltip>Menu</q-tooltip>
+        </q-btn>
 
         <q-toolbar-title>
           Portale Volontario
@@ -41,9 +43,7 @@
       v-if="authStore.isAuthenticated"
       v-model="drawerOpen"
       show-if-above
-      bordered
       :width="240"
-      class="bg-white"
     >
       <q-list padding>
         <q-item-label header>
@@ -54,7 +54,7 @@
           v-ripple
           clickable
           :active="$route.name === 'Famiglie'"
-          active-class="bg-primary text-white"
+          active-class="text-white"
           to="/famiglie"
         >
           <q-item-section avatar>
@@ -68,7 +68,7 @@
           v-ripple
           clickable
           :active="$route.name === 'Verifica'"
-          active-class="bg-primary text-white"
+          active-class="text-white"
           to="/verifica"
         >
           <q-item-section avatar>
@@ -82,7 +82,7 @@
           v-ripple
           clickable
           :active="$route.name === 'Riconciliazione'"
-          active-class="bg-primary text-white"
+          active-class="text-white"
           to="/riconciliazione"
         >
           <q-item-section avatar>
@@ -96,7 +96,7 @@
           v-ripple
           clickable
           :active="$route.name === 'Gestione'"
-          active-class="bg-primary text-white"
+          active-class="text-white"
           to="/gestione"
         >
           <q-item-section avatar>
@@ -110,7 +110,7 @@
           v-ripple
           clickable
           :active="$route.name === 'Deduplica'"
-          active-class="bg-primary text-white"
+          active-class="text-white"
           to="/deduplica"
         >
           <q-item-section avatar>
@@ -128,7 +128,7 @@
           v-ripple
           clickable
           :active="$route.name === 'Admin'"
-          active-class="bg-primary text-white"
+          active-class="text-white"
           to="/admin"
         >
           <q-item-section avatar>
@@ -150,7 +150,9 @@
             Cambia password
           </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense />
+          <q-btn v-close-popup icon="close" flat round dense>
+            <q-tooltip>Chiudi</q-tooltip>
+          </q-btn>
         </q-card-section>
         <q-card-section>
           <q-input
@@ -158,6 +160,8 @@
             type="password"
             label="Nuova password"
             :rules="[val => !!val || 'Campo obbligatorio']"
+            outlined
+            dense
             lazy-rules
           />
           <q-input
@@ -168,6 +172,8 @@
               val => !!val || 'Campo obbligatorio',
               val => val === newPassword || 'Le password non coincidono'
             ]"
+            outlined
+            dense
             lazy-rules
           />
         </q-card-section>
@@ -186,13 +192,13 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from 'stores/auth.store'
 import { authService } from 'src/services/auth.service'
 import { useQuasar } from 'quasar'
 import { notifyError, notifySuccess } from 'src/utils/notify'
-const isDev = import.meta.env.VITE_ENV === 'local'
+const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -220,50 +226,5 @@ async function handleChangePassword() {
   }
 }
 
-function showRendicontazioneNotify() {
-  const check = authStore.rendicontazioneCheck
-  if (!check.checked) return
-  if (check.ok) {
-    $q.notify({
-      type: 'positive',
-      message: 'Rendicontazione sincronizzata',
-      timeout: 0,
-      actions: [{ icon: 'close', color: 'white', round: true, dense: true }]
-    })
-  } else {
-    const details = check.discrepancies.map(d => {
-      if (d.errore) return `${d.progettoId}: errore`
-      const parts = []
-      parts.push(`**${d.beneficiario || d.progettoId}**`)
-      parts.push(`Stato: ${d.statoDB} → ${d.statoCalcolato}`)
-      parts.push(`Giust: ${d.countDB} → ${d.countCalcolato}`)
-      parts.push(`Importo: ${d.importoDB} → ${d.importoCalcolato}`)
-      parts.push(`Progetto ID: ${d.progettoId}`)
-      if (d.giustificativi && d.giustificativi.length > 0) {
-        parts.push(`Giustificativi (${d.giustificativi.length}): ${d.giustificativi.map(g => `${g.id} [${g.stato}] €${g.importo}`).join(', ')}`)
-      }
-      return parts.join(' | ')
-    }).join('\n\n')
-    $q.notify({
-      type: 'warning',
-      message: `${check.discrepancies.length} discrepanze trovate:\n\n${details}`,
-      timeout: 0,
-      html: false,
-      actions: [{ icon: 'close', color: 'white', round: true, dense: true }]
-    })
-  }
-}
-
-watch(
-  () => authStore.rendicontazioneCheck.checked,
-  (checked) => {
-    if (checked && authStore.canAdmin) showRendicontazioneNotify()
-  }
-)
-
-onMounted(() => {
-  if (authStore.rendicontazioneCheck.checked && authStore.canAdmin) {
-    showRendicontazioneNotify()
-  }
-})
+// showRendicontazioneNotify() — nascosta in attesa di revisione
 </script>

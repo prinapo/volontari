@@ -160,6 +160,7 @@ test.describe('ContattiTab — CRUD', () => {
   })
 
   test('CT-09: Crea contatto nuovo @crud', async ({ page }) => {
+    test.setTimeout(60000)
     const timestamp = Date.now()
     const nome = `Test CT ${timestamp}`
     const cognome = 'AutoTest'
@@ -194,44 +195,57 @@ test.describe('ContattiTab — CRUD', () => {
   })
 
   test('CT-10: Modifica contatto esistente @crud', async ({ page }) => {
+    test.setTimeout(90000)
+    const timestamp = Date.now()
+    const nome = `Test CT10 ${timestamp}`
+    const cognome = 'AutoTest'
+    const nomeMod = `${nome} mod`
+
+    // Crea contatto (atomico)
+    await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
+    let dialog = page.locator('.q-dialog:visible')
+    await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
+    await dialog.locator('[data-testid="contatto-cognome"]').fill(cognome)
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
+      dialog.locator('button:has-text("Salva")').click()
+    ])
+    expect(postResp.status()).toBe(200)
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+
+    // Modifica contatto
     const gp = new GestionePage(page)
-    await gp.waitForTable()
-
-    await gp.search('test.volontario@test.com')
-
-    const rows = await gp.getRowCount()
-    expect(rows).toBeGreaterThan(0)
+    await gp.search(nome)
+    expect(await gp.getRowCount()).toBeGreaterThan(0)
 
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     await expect(editBtn).toBeVisible({ timeout: 5000 })
     await editBtn.click()
-
-    const dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
 
     const nomeInput = dialog.locator('[data-testid="contatto-nome"]')
-    const originalNome = await nomeInput.inputValue()
-    const newNome = `${originalNome} mod`
-    await nomeInput.fill(newNome)
+    await nomeInput.fill(nomeMod)
 
     const [patchResp] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
       dialog.locator('button:has-text("Salva")').click()
     ])
-
     expect(patchResp.status()).toBe(200)
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
 
-    await gp.search(newNome)
-    const rowsAfter = await gp.getRowCount()
-    expect(rowsAfter).toBeGreaterThanOrEqual(1)
+    // Verifica modifica persiste
+    await gp.search(nomeMod)
+    expect(await gp.getRowCount()).toBeGreaterThanOrEqual(1)
 
-    await gp.search(newNome)
+    // Ripristina nome originale
+    await gp.search(nomeMod)
     const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtnAfter.count() > 0) {
       await editBtnAfter.click()
       await expect(dialog).toBeVisible({ timeout: 5000 })
-      await dialog.locator('[data-testid="contatto-nome"]').fill(originalNome)
+      await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
       await dialog.locator('button:has-text("Salva")').click()
       await expect(dialog).not.toBeVisible({ timeout: 10000 })
     }

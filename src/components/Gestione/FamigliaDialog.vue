@@ -6,7 +6,9 @@
           {{ isEdit ? 'Modifica Famiglia' : 'Nuova Famiglia' }}
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense />
+        <q-btn v-close-popup icon="close" flat round dense>
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
 
       <q-card-section>
@@ -17,18 +19,24 @@
             data-testid="famiglia-nome"
             :rules="[val => !!val || 'Campo obbligatorio']"
             lazy-rules
+            outlined
+            dense
             class="q-mb-md"
           />
           <q-input
             v-model="form.IBAN"
             label="IBAN"
             data-testid="famiglia-iban"
+            outlined
+            dense
             class="q-mb-md"
           />
           <q-input
             v-model="form.Intestatario_CC"
             label="Intestatario CC"
             data-testid="famiglia-intestatario"
+            outlined
+            dense
             class="q-mb-md"
           />
         </q-form>

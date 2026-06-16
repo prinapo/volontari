@@ -6,7 +6,9 @@
           Associa a famiglia
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense />
+        <q-btn v-close-popup icon="close" flat round dense>
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
 
       <q-card-section>
@@ -18,7 +20,34 @@
           bordered
           :loading="loading"
           :pagination="{ rowsPerPage: 10 }"
+          :grid="$q.screen.lt.sm"
         >
+          <template #item="slotProps">
+            <div class="q-pa-xs col-12">
+              <q-card flat bordered>
+                <q-card-section class="q-py-sm row items-center">
+                  <div class="col">
+                    <div class="text-body2">
+                      {{ slotProps.row.Famiglia?.Nome_Famiglia || '' }}
+                    </div>
+                    <div class="text-caption text-grey-7">
+                      {{ slotProps.row.Ruolo_nella_Famiglia }}
+                    </div>
+                  </div>
+                  <q-btn
+                    flat
+                    dense
+                    icon="delete"
+                    color="negative"
+                    @click="handleRemove(slotProps.row)"
+                  >
+                    <q-tooltip>Rimuovi</q-tooltip>
+                  </q-btn>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
+
           <template #body-cell-azioni="slotProps">
             <q-td :props="slotProps">
               <q-btn
@@ -35,9 +64,40 @@
         </q-table>
 
         <div class="row items-start q-mt-md q-gutter-sm">
-          <q-select v-model="selectedRuolo" :options="ruoloOptions" emit-value map-options dense outlined label="Ruolo" class="col-12 col-sm-auto" style="min-width: 120px" />
-          <q-select v-model="selectedFamiglia" :options="famigliaOptions" option-label="Nome_Famiglia" option-value="id_famiglia" emit-value map-options dense outlined use-input input-debounce="300" label="Aggiungi famiglia..." class="col-12 col-sm" @filter="filterFamiglie" />
-          <q-btn color="primary" icon="add" label="Assegna" :disable="!selectedFamiglia" class="col-12 col-sm-auto q-mt-sm-sm" @click="handleAssign" />
+          <q-select
+            v-model="selectedRuolo"
+            :options="ruoloOptions"
+            emit-value
+            map-options
+            dense
+            outlined
+            label="Ruolo"
+            class="col-12 col-sm-auto"
+            style="min-width: 120px"
+          />
+          <q-select
+            v-model="selectedFamiglia"
+            :options="famigliaOptions"
+            option-label="Nome_Famiglia"
+            option-value="id_famiglia"
+            emit-value
+            map-options
+            dense
+            outlined
+            use-input
+            input-debounce="300"
+            label="Aggiungi famiglia..."
+            class="col-12 col-sm"
+            @filter="filterFamiglie"
+          />
+          <q-btn
+            color="primary"
+            icon="add"
+            label="Assegna"
+            :disable="!selectedFamiglia"
+            class="col-12 col-sm-auto q-mt-sm-sm"
+            @click="handleAssign"
+          />
         </div>
       </q-card-section>
 

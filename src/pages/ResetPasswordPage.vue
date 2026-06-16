@@ -44,7 +44,8 @@
                   v-model="newPassword"
                   label="Nuova password"
                   :type="showPwd1 ? 'text' : 'password'"
-                  filled
+                  outlined
+                  dense
                   data-testid="reset-password"
                   :rules="[val => !!val || 'Inserisci la nuova password']"
                   lazy-rules
@@ -62,7 +63,8 @@
                   v-model="confirmPassword"
                   label="Conferma password"
                   :type="showPwd2 ? 'text' : 'password'"
-                  filled
+                  outlined
+                  dense
                   data-testid="reset-confirm-password"
                   :rules="[
                     val => !!val || 'Conferma la password',

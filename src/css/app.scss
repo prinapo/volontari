@@ -1,18 +1,101 @@
-body {
-  font-family: 'Roboto', sans-serif;
-  background: #f5f5f5;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --color-primary: #2E5D6E;
+  --color-primary-dark: #1E3D4E;
+  --color-accent: #D4956A;
+  --color-bg-page: #F5F0E8;
+  --color-bg-card: #FFFFFF;
+  --color-text-main: #1A1A2E;
+  --color-text-secondary: #6B6B7B;
+  --color-success: #4A7C59;
+  --color-error: #C0503A;
+  --color-warning: #E8B86D;
+  --color-border: #E2DBD0;
 }
 
-.text-stato-draft {
-  color: #ff9800;
+* {
+  font-family: 'Inter', sans-serif;
 }
 
-.text-stato-inviato {
-  color: #2196f3;
+.q-page {
+  background-color: var(--color-bg-page);
 }
 
-.text-stato-approvato {
-  color: #4caf50;
+.q-card {
+  background: var(--color-bg-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+}
+
+.q-btn.bg-primary {
+  background: var(--color-primary) !important;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.q-btn.bg-primary:hover {
+  background: var(--color-primary-dark) !important;
+}
+
+.q-btn.q-btn--outline {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  border-radius: 8px;
+}
+
+.q-field__control {
+  border-radius: 8px;
+  border-color: var(--color-border);
+}
+
+.q-field--focused .q-field__control {
+  border-color: var(--color-primary);
+}
+
+.q-header {
+  border-bottom: 1px solid var(--color-primary-dark);
+}
+
+.q-header.bg-orange-9 {
+  border-bottom: 1px solid #bf360c;
+}
+
+.q-drawer {
+  background: var(--color-primary-dark);
+}
+
+.q-drawer .q-item {
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.q-drawer .q-item--active,
+.q-drawer .q-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.inline-editable-field .text-caption {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.text-pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .inline-edit-enter-active,

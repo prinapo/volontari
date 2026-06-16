@@ -62,19 +62,6 @@
               />
             </div>
           </div>
-          <div class="col-12 col-sm-6 col-md-4">
-            <q-select
-              v-model="selectedProgetto"
-              :options="progettoOptions"
-              outlined
-              dense
-              clearable
-              emit-value
-              map-options
-              label="Seleziona progetto"
-              data-testid="select-progetto"
-            />
-          </div>
           <div class="summary-grid q-mb-md">
             <div class="summary-cell">
               <div class="text-caption text-grey-7">
@@ -123,6 +110,8 @@
             :rows="filteredRows"
             :columns="columns"
             :loading="store.loading"
+            :grid="$q.screen.lt.sm"
+            :dense="$q.screen.lt.md"
           >
             <template #header="props">
               <q-tr :props="props">
@@ -131,6 +120,247 @@
                   {{ col.label }}
                 </q-th>
               </q-tr>
+            </template>
+
+            <template #item="props">
+              <div class="q-pa-xs col-12">
+                <q-expansion-item
+                  dense
+                  dense-toggle
+                  expand-separator
+                  :label="props.row.famiglia || 'Famiglia senza nome'"
+                  :caption="`${props.row.beneficiario || ''} — Bando ${props.row.annoBando}`"
+                  :header-style="{ borderRadius: '8px' }"
+                  @show="loadFamigliaContatti(props.row.idFamiglia)"
+                >
+                  <q-card flat bordered>
+                    <q-card-section class="q-pa-sm">
+                      <div class="row q-col-gutter-md q-mb-md">
+                        <div class="col-12 col-sm-6">
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Dati bancari
+                          </div>
+                          <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
+                            Intestatario: {{ props.row.intestatario }}
+                          </div>
+                          <div class="row items-center q-gutter-xs">
+                            <q-badge :color="props.row.iban && props.row.intestatario ? 'positive' : 'warning'" outline>
+                              {{ props.row.iban && props.row.intestatario ? 'Completi' : 'Da completare' }}
+                            </q-badge>
+                            <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
+                            <q-btn
+                              flat
+                              round
+                              dense
+                              size="sm"
+                              icon="edit"
+                              data-testid="btn-edit-bancari"
+                              @click="openBancariDialog(props.row)"
+                            >
+                              <q-tooltip>Modifica dati bancari</q-tooltip>
+                            </q-btn>
+                          </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Rimborsabile 80%
+                          </div>
+                          <div class="text-positive text-weight-medium">
+                            {{ formatCurrency(props.row.totaleRimborsabile) }}
+                          </div>
+                        </div>
+                      </div>
+                      <q-separator class="q-mb-md" />
+                      <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                        Genitori
+                      </div>
+                      <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
+                        <q-spinner size="xs" /> Caricamento...
+                      </div>
+                      <div v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
+                        Nessun genitore assegnato.
+                      </div>
+                      <q-list v-else dense class="q-mb-sm">
+                        <q-item v-for="g in genitoriCache[props.row.idFamiglia]" :key="g.id" dense class="q-px-none q-py-xs">
+                          <q-item-section><ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []" /></q-item-section>
+                        </q-item>
+                      </q-list>
+                      <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">
+                        Volontari
+                      </div>
+                      <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
+                        <q-spinner size="xs" /> Caricamento...
+                      </div>
+                      <div v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
+                        Nessun volontario assegnato.
+                      </div>
+                      <q-list v-else dense class="q-mb-sm">
+                        <q-item v-for="v in volontariCache[props.row.idFamiglia]" :key="v.id" dense class="q-px-none q-py-xs">
+                          <q-item-section><ContattoInfoLine :contact="v.Contatto" :emails="v._emails || []" /></q-item-section>
+                        </q-item>
+                      </q-list>
+                      <q-separator />
+                    </q-card-section>
+                    <q-card-section class="q-pa-sm">
+                      <div class="text-subtitle2 text-grey-8 q-mb-sm">
+                        Giustificativi — {{ props.row.annoBando || 'N/A' }}
+                      </div>
+                      <template v-if="props.row.giustificativi.length > 0">
+                        <div v-for="g in props.row.giustificativi" :key="g.id" class="q-mb-sm">
+                          <q-card flat bordered>
+                            <q-card-section class="q-pa-sm">
+                              <div class="row q-col-gutter-xs items-start">
+                                <div class="col-12">
+                                  <InlineEditableField
+                                    :model-value="g.Descrizione"
+                                    label="Descrizione"
+                                    type="text"
+                                    :readonly="!canVerifica || g.Stato !== 'inviato'"
+                                    :saving="savingField === `${g.id}-Descrizione`"
+                                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
+                                  />
+                                  <div v-if="g.NotaVolontario" class="text-caption text-grey-6 ellipsis-2">
+                                    {{ g.NotaVolontario }}
+                                  </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                  <InlineEditableField
+                                    :model-value="g.Importo"
+                                    label="Importo"
+                                    type="number"
+                                    :readonly="!canVerifica || g.Stato !== 'inviato'"
+                                    :format-display="(v) => formatCurrency(v)"
+                                    :saving="savingField === `${g.id}-Importo`"
+                                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
+                                  />
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                  <InlineEditableField
+                                    :model-value="g.Data"
+                                    label="Data"
+                                    type="date"
+                                    :readonly="!canVerifica || g.Stato !== 'inviato'"
+                                    :format-display="(v) => formatDate(v) || '—'"
+                                    :saving="savingField === `${g.id}-Data`"
+                                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
+                                  />
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                  <div class="text-caption text-grey">
+                                    Allegato
+                                  </div>
+                                  <div v-if="g.Allegato" class="row q-gutter-x-xs">
+                                    <a :href="assetUrl(g.Allegato)" target="_blank" class="text-body2">Apri</a>
+                                    <span class="text-grey-5">|</span>
+                                    <a :href="assetUrl(g.Allegato, true)" class="text-body2">Scarica</a>
+                                  </div>
+                                  <div v-else class="text-grey-5">
+                                    —
+                                  </div>
+                                </div>
+                                <div class="col-3 col-sm-1">
+                                  <q-badge :color="statoColor(g.Stato)" outline>
+                                    {{ statoLabel(g.Stato) }}
+                                  </q-badge>
+                                </div>
+                                <div class="col-12 col-sm-5">
+                                  <div v-if="g.Stato === 'inviato'" class="row q-gutter-xs">
+                                    <q-btn
+                                      dense
+                                      flat
+                                      icon="check_circle"
+                                      color="primary"
+                                      size="md"
+                                      data-testid="btn-verify"
+                                      :loading="verifyingId === g.id"
+                                      @click="handleVerify(props.row.idProgetto, g)"
+                                    >
+                                      <q-tooltip>Verifica</q-tooltip>
+                                    </q-btn>
+                                    <q-btn
+                                      dense
+                                      flat
+                                      icon="cancel"
+                                      color="negative"
+                                      size="md"
+                                      data-testid="btn-reject"
+                                      @click="handleReject(props.row.idProgetto, g)"
+                                    >
+                                      <q-tooltip>Rifiuta</q-tooltip>
+                                    </q-btn>
+                                  </div>
+                                  <div v-else-if="g.Stato === 'verificato'" class="text-positive row items-center q-gutter-xs">
+                                    <q-icon name="check_circle" size="md" /><span class="text-body2">Verificato</span>
+                                  </div>
+                                  <div v-else-if="g.Stato === 'rifiutato'">
+                                    <div class="text-negative row items-center q-gutter-xs">
+                                      <q-icon name="cancel" size="md" /><span class="text-body2">Rifiutato</span>
+                                    </div>
+                                    <div v-if="g.NotaRifiuto" class="text-caption text-grey">
+                                      {{ g.NotaRifiuto }}
+                                    </div>
+                                  </div>
+                                  <div v-else-if="g.Stato === 'draft'" class="row q-gutter-xs">
+                                    <q-btn
+                                      dense
+                                      flat
+                                      icon="send"
+                                      color="secondary"
+                                      size="md"
+                                      data-testid="btn-send"
+                                      :loading="verifyingId === g.id"
+                                      @click="handleSendDraft(props.row.idProgetto, g)"
+                                    >
+                                      <q-tooltip>Invia</q-tooltip>
+                                    </q-btn>
+                                  </div>
+                                </div>
+                              </div>
+                            </q-card-section>
+                          </q-card>
+                        </div>
+                      </template>
+                      <div v-else class="text-caption text-grey">
+                        Nessun giustificativo presente.
+                      </div>
+                    </q-card-section>
+                    <q-card-actions class="q-pa-sm q-gutter-xs">
+                      <q-btn
+                        v-if="canVerifica"
+                        flat
+                        round
+                        dense
+                        icon="add_circle"
+                        color="secondary"
+                        size="sm"
+                        @click="addingForRow = props.row"
+                      >
+                        <q-tooltip>Aggiungi giustificativo</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="visibility"
+                        size="sm"
+                        @click="openRowDetail(props.row)"
+                      >
+                        <q-tooltip>Dettaglio progetto</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="content_copy"
+                        size="sm"
+                        @click="copyAspiLine(props.row)"
+                      >
+                        <q-tooltip>Copia riga ASPI</q-tooltip>
+                      </q-btn>
+                    </q-card-actions>
+                  </q-card>
+                </q-expansion-item>
+              </div>
             </template>
 
             <template #body="props">
@@ -153,34 +383,7 @@
                       {{ props.row.famiglia || 'Famiglia senza nome' }}
                     </div>
                     <div class="text-caption text-grey-7">
-                      {{ props.row.beneficiario || '' }} — ID {{ props.row.idFamiglia || '-' }}
-                    </div>
-                  </template>
-
-                  <template v-else-if="col.name === 'datiBancari'">
-                    <div class="row items-center q-gutter-xs">
-                      <div class="col">
-                        <q-badge
-                          :color="props.row.iban && props.row.intestatario ? 'positive' : 'warning'"
-                          outline
-                        >
-                          {{ props.row.iban && props.row.intestatario ? 'Completi' : 'Da completare' }}
-                        </q-badge>
-                        <div class="text-caption ellipsis">
-                          {{ props.row.iban || 'IBAN mancante' }}
-                        </div>
-                      </div>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        size="sm"
-                        icon="edit"
-                        data-testid="btn-edit-bancari"
-                        @click="openBancariDialog(props.row)"
-                      >
-                        <q-tooltip>Modifica dati bancari</q-tooltip>
-                      </q-btn>
+                      {{ props.row.beneficiario || '' }}
                     </div>
                   </template>
 
@@ -196,12 +399,6 @@
                     </div>
                     <div class="text-caption text-grey-7">
                       {{ totalGiustificativi(props.row) }} giustificativi
-                    </div>
-                  </template>
-
-                  <template v-else-if="col.name === 'rimborsabile'">
-                    <div class="text-positive text-weight-medium">
-                      {{ formatCurrency(props.row.totaleRimborsabile) }}
                     </div>
                   </template>
 
@@ -255,6 +452,42 @@
                 <q-td colspan="100%" class="q-pa-none">
                   <div class="expandable-content">
                     <div class="q-px-md q-pt-md q-pb-xs">
+                      <div class="row q-col-gutter-md q-mb-md">
+                        <div class="col-6">
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Dati bancari
+                          </div>
+                          <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
+                            Intestatario: {{ props.row.intestatario }}
+                          </div>
+                          <div class="row items-center q-gutter-xs">
+                            <q-badge :color="props.row.iban && props.row.intestatario ? 'positive' : 'warning'" outline>
+                              {{ props.row.iban && props.row.intestatario ? 'Completi' : 'Da completare' }}
+                            </q-badge>
+                            <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
+                            <q-btn
+                              flat
+                              round
+                              dense
+                              size="sm"
+                              icon="edit"
+                              data-testid="btn-edit-bancari"
+                              @click="openBancariDialog(props.row)"
+                            >
+                              <q-tooltip>Modifica dati bancari</q-tooltip>
+                            </q-btn>
+                          </div>
+                        </div>
+                        <div class="col-6">
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Rimborsabile 80%
+                          </div>
+                          <div class="text-positive text-weight-medium">
+                            {{ formatCurrency(props.row.totaleRimborsabile) }}
+                          </div>
+                        </div>
+                      </div>
+                      <q-separator class="q-mb-md" />
                       <div class="text-subtitle2 text-grey-8 q-mb-xs">
                         Genitori
                       </div>
@@ -537,13 +770,6 @@ const rejectProgettoId = ref(null)
 const selectedProgetto = ref(null)
 const detailDialog = ref(false)
 
-const progettoOptions = computed(() =>
-  filteredRows.value.map(r => ({
-    label: `${r.famiglia} — ${r.beneficiario} (${r.annoBando})`,
-    value: r.idProgetto
-  }))
-)
-
 const selectedProgettoRow = computed(() =>
   filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {}
 )
@@ -565,10 +791,8 @@ const canVerifica = computed(() => authStore.canVerifica)
 const columns = [
   { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },
   { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left', sortable: true },
-  { name: 'datiBancari', label: 'Dati bancari', field: 'iban', align: 'left' },
   { name: 'allocato', label: 'Allocato', field: 'allocato', align: 'right', sortable: true },
   { name: 'rendicontato', label: 'Rendicontato', field: 'totaleRendicontato', align: 'right', sortable: true },
-  { name: 'rimborsabile', label: 'Rimborsabile', field: 'totaleRimborsabile', align: 'right', sortable: true },
   { name: 'stato', label: 'Stato', field: 'id', align: 'left' },
   { name: 'actions', label: '', field: 'id', align: 'right' }
 ]
@@ -791,7 +1015,6 @@ function openRowDetail(row) {
 
 <style scoped>
 .page-inner {
-  max-width: 1280px;
   margin: 0 auto;
 }
 

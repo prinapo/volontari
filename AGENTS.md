@@ -1,3 +1,19 @@
+# Regola — Solo capacità native Quasar
+Ogni modifica UI deve usare esclusivamente componenti, props, classi e API native di Quasar. Niente librerie CSS terze (Tailwind, Bootstrap), niente componenti custom esterni, niente manipolazione DOM diretta. Lo stile va in `src/css/app.scss` con variabili CSS custom e override di classi Quasar. Google Fonts è l'unica eccezione. Vale per TUTTO il codice, esistente e nuovo.
+
+# v2.6.0
+
+- **Restyling completo**: Palette colori CSS custom, font Inter, card/pulsanti/input uniformati, drawer scuro, header con bordo.
+- **Tabelle responsive**: 13 tabelle migrate a `grid` mode su mobile con card QExpansionItem. VerificaPage, RiconciliazionePage, ContattiTab, FamiglieTab, AdminPage, ProgettoDetailDialog, AssegnaFamigliaDialog, DeduplicaPage (×4), ContattiDialog (×2).
+- **VerificaPage**: Rimossa selezione progetto, colonne Dati bancari/Rimborsabili spostate in expand, intestatario sopra IBAN.
+- **RiconciliazionePage**: Card mobile con tutti i campi + barra colore stato.
+- **ContattiTab**: Aggiunta colonna Telefono a desktop. Card mobile con email/Primaria, stato, famiglie, tutte le azioni.
+- **Test atomici**: RC-PG-03, CT-10, EC-01, IN-01 fixati per essere auto-contenuti.
+- **Icone/tooltip**: 24 tooltip aggiunti, colori non-tema uniformati (teal→accent, orange→warning).
+- **Page object**: GestionePage.waitForTable/getRowCount funzionano in grid mode.
+- **Playwright project**: Aggiunto progetto "mobile" per test su viewport smartphone.
+- **Version bump**: 2.5.2 → 2.6.0
+
 # v2.5.2
 
 - **Responsive dialog**: RiconciliaDialog layout verticale, max-width 600px. Email rimossa dal confronto. ContattoDialog Nome/Cognome affiancati. GiustificativoForm più compatto (outlined dense). AssegnaFamigliaDialog tre campi responsive.
@@ -74,7 +90,16 @@ tramite interazione UI del browser. Vietato usare `fetch`, Axios,
 chiamata di rete.
 
 Un test che usa API non è un test utente. I dati di partenza vanno creati
-manualmente in Directus o tramite UI nei test di setup (es. FM-01).
+tramite UI nel test stesso.
+
+**TEST ATOMICI:** Ogni test deve essere eseguibile singolarmente, senza
+dipendere da test precedenti o da seed data. Ogni test crea i propri dati
+tramite UI (contatti via ContattoDialog, submission via SubmitPage, ecc.).
+Vietati setup seriali (`describe.serial`), hardcoded riferimenti a seed data
+(`TEST_FAM_01`, `test.genitore@test.com`), e dipendenze tra test.
+I test che necessitano di login usano utenti seed (`auth-test.json`) —
+questo è l'unico seed data accettabile perché la creazione di utenti
+Directus non può avvenire via UI.
 
 **RICERCA UNIVOCA NEI TEST:** Ogni test che cerca o modifica dati deve usare
 il campo di filtro/search della pagina, non iterare le righe della tabella
@@ -570,4 +595,73 @@ npm run deploy
 - Il server FTP supporta `PASV` ma non `EPSV` (EPSV dà errore 500, PASV funziona)
 - La connessione non è criptata (plain FTP). Usare solo per deploy su server di proprietà.
 - Per deploy sicuro via FTPS esplicito, modificare `scripts/deploy-ftp.mjs`: impostare `secure: 'explicit'` (il server supporta AUTH TLS)
+
+# Rilevazione ambiente (dev/test/produzione)
+
+L'app usa `import.meta.env.DEV` (built-in Vite, automaticamente `true` con `quasar dev`) combinato con `VITE_APP_ENV` per rilevare l'ambiente.
+
+| Ambiente | Comando | `DEV` | `VITE_APP_ENV` | Banner |
+|----------|---------|-------|----------------|--------|
+| Locale | `quasar dev` | `true` | `development` (da `.env.development`) | ✅ "AMBIENTE DI TEST" |
+| E2E test | Playwright → `quasar dev` | `true` | `development` | ✅ "AMBIENTE DI TEST" |
+| Sito di test/staging | `quasar build --mode test` | `false` | `test` (da `.env.test`) | ✅ "SITO DI TEST" |
+| Produzione | `quasar build` | `false` | `production` (da `.env.production`) | ❌ nessun banner |
+
+## Pattern nel codice:
+
+```js
+// src/components/Layout/AppLayout.vue + src/pages/LoginPage.vue
+const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 ```
+
+Usato in:
+- **AppLayout.vue**: header colorato (`bg-orange-9` in dev, `bg-primary` in produzione)
+- **LoginPage.vue**: banner "🔧 AMBIENTE DI TEST"
+
+## Mode file Vite (.env.{mode})
+
+Al posto di rinominare manualmente `.env`/`.env.local`, Vite carica automaticamente il file corrispondente al mode:
+
+| Mode | File caricati |
+|------|---------------|
+| `development` (default `quasar dev`) | `.env` + `.env.development` + `.env.local` |
+| `production` (default `quasar build`) | `.env` + `.env.production` + `.env.local` |
+| `test` (`quasar build --mode test`) | `.env` + `.env.test` + `.env.local` |
+
+Creare un file `.env.test` con:
+
+```env
+VITE_APP_ENV=test
+# URL Directus di test
+VITE_API_URL=https://test.app.sostienilsostegno.com
+```
+
+Il deploy di staging/test si fa con:
+```bash
+quasar build --mode test
+```
+
+## Guardia anti-produzione nei test E2E
+
+Due livelli di protezione impediscono l'esecuzione di test su ambienti produttivi:
+
+### 1. Global setup (`tests/e2e/global-setup.mjs`)
+Prima dell'avvio di qualsiasi test, legge `VITE_API_URL` da `.env`/`.env.local` e controlla:
+- Se contiene pattern di produzione (`sostienilsostegno.com`) → `process.exit(1)` con messaggio di errore
+- Se non è localhost → stesso blocco
+- Solo se è localhost → procede con cleanup dati test
+
+### 2. Runtime guard (`tests/e2e/helpers/console.js`)
+Durante l'esecuzione dei test, intercepta tutte le response API:
+- Se il dominio contiene `sostienilsostegno.com` → pusha errore → il test fallisce
+- Funziona anche se il global setup venisse aggirato
+- Fa fallire qualsiasi test che accidentalmente chiami produzione
+
+```js
+const PRODUCTION_DOMAINS = ['sostienilsostegno.com', 'app.sostienilsostegno']
+```
+
+Nessun test può essere eseguito su produzione — se tenta, si blocca prima ancora di iniziare.
+```
+
+**(copy exactly including closing backticks)**

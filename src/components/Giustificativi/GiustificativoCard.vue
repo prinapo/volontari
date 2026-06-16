@@ -14,7 +14,7 @@
           icon="send"
           flat
           dense
-          color="primary"
+          color="accent"
           label="Invia"
           @click="$emit('submit', item)"
         />
@@ -101,10 +101,10 @@
             @click="$refs.fileInput.pickFiles()"
           />
           <q-file
+            v-show="false"
             ref="fileInput"
             v-model="newFile"
             :accept="FILE_ACCEPT"
-            style="display: none"
             @update:model-value="onFileChange"
           />
         </div>
@@ -112,7 +112,6 @@
       <div
         v-if="item.Stato === 'rifiutato' && item.NotaRifiuto"
         class="bg-red-1 q-pa-sm q-mx-md q-mb-md rounded-borders"
-        style="border: 1px solid #ffcdd2;"
       >
         <div class="text-caption text-negative text-weight-medium q-mb-xs">
           Motivazione del rifiuto

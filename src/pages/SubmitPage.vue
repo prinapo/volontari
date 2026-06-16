@@ -190,7 +190,6 @@
             <div class="text-center q-mt-md">
               <q-btn
                 icon="add"
-                unelevated
                 color="secondary"
                 label="Aggiungi giustificativo"
                 @click="addGiustificativo"

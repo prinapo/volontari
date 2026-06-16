@@ -10,7 +10,7 @@
     <q-inner-loading :showing="loading && authStore.initialized" />
 
     <template v-if="famiglieStore.famiglia && authStore.initialized">
-      <div class="q-gutter-y-md" style="max-width: 800px; margin: 0 auto;">
+      <div class="q-gutter-y-md famiglia-page-container">
         <FamigliaInfoCard
           :famiglia-name="famiglieStore.famigliaName"
           :iban="famiglieStore.iban"
@@ -44,7 +44,7 @@
                 </div>
               </div>
               <q-space />
-              <div class="text-caption text-grey" style="max-width: 280px">
+              <div class="text-caption text-grey famiglia-caption">
                 Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{ formatCurrency(allocato) }})
               </div>
             </q-card-section>
@@ -128,3 +128,13 @@ function handleProjectChange(progettoId) {
   famiglieStore.selectProgetto(progettoId)
 }
 </script>
+
+<style scoped>
+.famiglia-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.famiglia-caption {
+  max-width: 280px;
+}
+</style>

@@ -39,7 +39,67 @@
       :loading="store.loading"
       :pagination="{ rowsPerPage: 0 }"
       hide-pagination
+      :grid="$q.screen.lt.sm"
     >
+      <template #item="props">
+        <div class="q-pa-xs col-12">
+          <q-card flat bordered>
+            <q-card-section class="q-py-sm">
+              <div class="text-weight-medium">
+                {{ props.row.first_name }} {{ props.row.last_name }}
+              </div>
+              <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
+                —
+              </div>
+              <div class="text-caption">
+                {{ props.row.email }}
+              </div>
+              <div class="row items-center q-gutter-xs q-mt-xs">
+                <q-badge
+                  :color="roleColor(props.row.role?.name)"
+                  outline
+                  class="q-px-sm q-py-xs"
+                >
+                  {{ props.row.role?.name || 'Nessun ruolo' }}
+                </q-badge>
+                <q-space />
+                <q-select
+                  :model-value="props.row.role?.id"
+                  :options="roleOptions"
+                  option-value="id"
+                  option-label="name"
+                  dense
+                  options-dense
+                  outlined
+                  emit-value
+                  map-options
+                  class="admin-role-select"
+                  style="min-width: 120px"
+                  :loading="store.saving"
+                  @update:model-value="(val) => handleRoleChange(props.row.id, val)"
+                >
+                  <template #selected-item="opt">
+                    <div class="text-caption">
+                      {{ opt.opt.name }}
+                    </div>
+                  </template>
+                </q-select>
+                <q-btn
+                  flat
+                  dense
+                  icon="lock_reset"
+                  color="warning"
+                  size="sm"
+                  @click="openResetPasswordDialog(props.row)"
+                >
+                  <q-tooltip>Reset password</q-tooltip>
+                </q-btn>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+      </template>
+
       <template #body-cell-name="props">
         <q-td :props="props">
           <div class="text-weight-medium">
@@ -79,10 +139,10 @@
               option-label="name"
               dense
               options-dense
-              borderless
+              outlined
               emit-value
               map-options
-              style="min-width: 140px"
+              class="admin-role-select"
               :loading="store.saving"
               @update:model-value="(val) => handleRoleChange(props.row.id, val)"
             >
@@ -115,16 +175,18 @@
             Aggiungi utente
           </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense />
+          <q-btn v-close-popup icon="close" flat round dense>
+            <q-tooltip>Chiudi</q-tooltip>
+          </q-btn>
         </q-card-section>
 
         <q-separator />
 
-        <q-card-section class="scroll" style="max-height: 70vh">
+        <q-card-section class="scroll admin-scroll-area">
           <!-- Step 1: Email search -->
           <div class="row q-col-gutter-sm items-end q-mb-md">
             <div class="col">
-              <q-input v-model="searchEmail" label="Email *" filled :disable="userCreated" />
+              <q-input v-model="searchEmail" label="Email *" outlined dense :disable="userCreated" />
             </div>
             <div class="col-auto">
               <q-btn
@@ -146,10 +208,10 @@
           <!-- Contatto not found: show name fields -->
           <div v-if="store.contattoTrovato === null && searchEmail && !userCreated" class="row q-col-gutter-md q-mb-md">
             <div class="col-12 col-sm-6">
-              <q-input v-model="newFirstName" label="Nome" filled />
+              <q-input v-model="newFirstName" label="Nome" outlined dense />
             </div>
             <div class="col-12 col-sm-6">
-              <q-input v-model="newLastName" label="Cognome" filled />
+              <q-input v-model="newLastName" label="Cognome" outlined dense />
             </div>
           </div>
 
@@ -160,7 +222,8 @@
             option-value="id"
             option-label="name"
             label="Ruolo *"
-            filled
+            outlined
+            dense
             emit-value
             map-options
             class="q-mb-md"
@@ -197,11 +260,19 @@
             <div class="text-subtitle2 q-mb-sm">
               Invia email informativa (opzionale)
             </div>
-            <q-input v-model="emailSubject" label="Soggetto" filled class="q-mb-sm" placeholder="Benvenuto sul Portale Volontario" />
+            <q-input
+              v-model="emailSubject"
+              label="Soggetto"
+              outlined
+              dense
+              class="q-mb-sm"
+              placeholder="Benvenuto sul Portale Volontario"
+            />
             <q-input
               v-model="emailBody"
               label="Testo email"
-              filled
+              outlined
+              dense
               type="textarea"
               autogrow
               class="q-mb-sm"
@@ -228,13 +299,15 @@
 
     <!-- Reset Password Dialog -->
     <q-dialog v-model="showResetDialog" persistent>
-      <q-card style="min-width: 350px">
+      <q-card style="width: 100%; max-width: 400px; min-width: unset">
         <q-card-section class="row items-center">
           <div class="text-h6">
             Reset password
           </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense />
+          <q-btn v-close-popup icon="close" flat round dense>
+            <q-tooltip>Chiudi</q-tooltip>
+          </q-btn>
         </q-card-section>
         <q-card-section>
           <div class="text-body2 q-mb-md">
@@ -243,7 +316,8 @@
           <q-input
             v-model="resetPassword"
             label="Nuova password *"
-            filled
+            outlined
+            dense
             :type="showResetPwd ? 'text' : 'password'"
           >
             <template #append>
@@ -393,3 +467,12 @@ onMounted(() => {
   store.fetchAll()
 })
 </script>
+
+<style scoped>
+.admin-role-select {
+  min-width: 140px;
+}
+.admin-scroll-area {
+  max-height: 70vh;
+}
+</style>

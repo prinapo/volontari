@@ -1,6 +1,9 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-page-container>
+      <q-banner v-if="isDev" class="bg-orange-9 text-white text-center q-py-xs">
+        🔧 AMBIENTE DI TEST
+      </q-banner>
       <q-page class="flex flex-center bg-grey-2 column">
         <q-card class="login-card" flat bordered>
           <q-card-section class="text-center q-pt-xl">
@@ -18,8 +21,10 @@
                 v-model="email"
                 label="Email"
                 type="email"
-                filled
+                outlined
+                dense
                 data-testid="login-email"
+                autocomplete="email"
                 :rules="[val => !!val || 'Inserisci la tua email']"
                 lazy-rules
               />
@@ -27,8 +32,10 @@
                 v-model="password"
                 label="Password"
                 :type="showPassword ? 'text' : 'password'"
-                filled
+                outlined
+                dense
                 data-testid="login-password"
+                autocomplete="current-password"
                 :rules="[val => !!val || 'Inserisci la password']"
                 lazy-rules
               >
@@ -74,7 +81,6 @@
               Non hai un account?
             </div>
             <q-btn
-              unelevated
               color="secondary"
               size="md"
               label="Invia un giustificativo senza account →"
@@ -92,13 +98,15 @@
 
     <!-- Forgot Password Dialog -->
     <q-dialog v-model="showForgotPassword" persistent>
-      <q-card style="min-width: 350px">
+      <q-card style="width: 100%; max-width: 400px; min-width: unset">
         <q-card-section class="row items-center">
           <div class="text-h6">
             Recupera password
           </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense />
+          <q-btn v-close-popup icon="close" flat round dense>
+            <q-tooltip>Chiudi</q-tooltip>
+          </q-btn>
         </q-card-section>
         <q-card-section>
           <p class="text-body2 text-grey">
@@ -108,7 +116,8 @@
             v-model="resetEmail"
             label="Email"
             type="email"
-            filled
+            outlined
+            dense
           />
         </q-card-section>
         <q-card-actions align="right">
@@ -134,6 +143,7 @@ import { useAuthStore } from 'stores/auth.store'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { authService } from 'src/services/auth.service'
 
+const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 const $q = useQuasar()
 const router = useRouter()
 const authStore = useAuthStore()

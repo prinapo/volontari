@@ -6,7 +6,9 @@
           Contatti di {{ famiglia?.Nome_Famiglia }}
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense />
+        <q-btn v-close-popup icon="close" flat round dense>
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
 
       <q-card-section>
@@ -19,8 +21,42 @@
           row-key="id"
           flat
           bordered
+          :grid="$q.screen.lt.sm"
           :pagination="{ rowsPerPage: 5 }"
         >
+          <template #item="slotPropsV">
+            <div class="q-pa-xs col-12">
+              <q-card flat bordered>
+                <q-card-section class="q-pa-sm">
+                  <div class="text-weight-medium">
+                    {{ slotPropsV.row.Contatto?.Nome || '' }} {{ slotPropsV.row.Contatto?.Cognome || '' }}
+                  </div>
+                  <div class="text-caption q-mt-xs">
+                    <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />{{ em.email_address }}
+                      <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                    </template>
+                    <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
+                  </div>
+                  <div class="text-caption text-grey-7">
+                    {{ slotPropsV.row.Contatto?.Numero_di_cellulare || '' }} {{ slotPropsV.row.Contatto?.Numero_di_telefono || '' }}
+                  </div>
+                  <div class="row q-mt-sm justify-end">
+                    <q-btn
+                      flat
+                      dense
+                      icon="delete"
+                      color="negative"
+                      size="sm"
+                      @click="handleRemove(slotPropsV.row)"
+                    >
+                      <q-tooltip>Rimuovi</q-tooltip>
+                    </q-btn>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
           <template #body-cell-email="slotPropsV">
             <q-td :props="slotPropsV">
               <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
@@ -55,8 +91,42 @@
           row-key="id"
           flat
           bordered
+          :grid="$q.screen.lt.sm"
           :pagination="{ rowsPerPage: 5 }"
         >
+          <template #item="slotPropsG">
+            <div class="q-pa-xs col-12">
+              <q-card flat bordered>
+                <q-card-section class="q-pa-sm">
+                  <div class="text-weight-medium">
+                    {{ slotPropsG.row.Contatto?.Nome || '' }} {{ slotPropsG.row.Contatto?.Cognome || '' }}
+                  </div>
+                  <div class="text-caption q-mt-xs">
+                    <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />{{ em.email_address }}
+                      <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                    </template>
+                    <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
+                  </div>
+                  <div class="text-caption text-grey-7">
+                    {{ slotPropsG.row.Contatto?.Numero_di_cellulare || '' }} {{ slotPropsG.row.Contatto?.Numero_di_telefono || '' }}
+                  </div>
+                  <div class="row q-mt-sm justify-end">
+                    <q-btn
+                      flat
+                      dense
+                      icon="delete"
+                      color="negative"
+                      size="sm"
+                      @click="handleRemove(slotPropsG.row)"
+                    >
+                      <q-tooltip>Rimuovi</q-tooltip>
+                    </q-btn>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
           <template #body-cell-email="slotPropsG">
             <q-td :props="slotPropsG">
               <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
@@ -117,8 +187,8 @@
               @click="() => handleAssign('Volontario')"
             />
             <q-btn
-              outline
-              color="teal"
+              flat
+              color="accent"
               icon="person_add"
               label="Crea contatto"
               size="sm"
@@ -164,7 +234,7 @@
           <q-btn
             flat
             color="grey"
-            icon="close"
+            icon="person_off"
             label="Solo contatto"
             @click="showRoleDialog = false"
           />

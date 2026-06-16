@@ -20,41 +20,61 @@
         </div>
         <div class="row q-col-gutter-md q-mb-sm">
           <div class="col-6">
-            <div class="text-caption text-grey-7">Anno bando</div>
+            <div class="text-caption text-grey-7">
+              Anno bando
+            </div>
             <div>{{ progetto.annoBando || '—' }}</div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Ambito</div>
+            <div class="text-caption text-grey-7">
+              Ambito
+            </div>
             <div>{{ progetto.ambito || '—' }}</div>
           </div>
           <div class="col-12">
-            <div class="text-caption text-grey-7">Titolo progetto</div>
+            <div class="text-caption text-grey-7">
+              Titolo progetto
+            </div>
             <div>{{ progetto.titolo || '—' }}</div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Allocato</div>
-            <div class="text-weight-medium">{{ formatCurrency(progetto.allocato) }}</div>
+            <div class="text-caption text-grey-7">
+              Allocato
+            </div>
+            <div class="text-weight-medium">
+              {{ formatCurrency(progetto.allocato) }}
+            </div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Stato rendicontazione</div>
+            <div class="text-caption text-grey-7">
+              Stato rendicontazione
+            </div>
             <q-badge :color="statoColor(progetto.statoRendicontazione)" outline>
               {{ statoLabel(progetto.statoRendicontazione) }}
             </q-badge>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Data inizio</div>
+            <div class="text-caption text-grey-7">
+              Data inizio
+            </div>
             <div>{{ progetto.dataInizio || '—' }}</div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Data fine</div>
+            <div class="text-caption text-grey-7">
+              Data fine
+            </div>
             <div>{{ progetto.dataFine || '—' }}</div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Età</div>
+            <div class="text-caption text-grey-7">
+              Età
+            </div>
             <div>{{ progetto.eta || '—' }}</div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Relazione con richiedente</div>
+            <div class="text-caption text-grey-7">
+              Relazione con richiedente
+            </div>
             <div>{{ progetto.relazioneRichiedente || '—' }}</div>
           </div>
         </div>
@@ -66,16 +86,28 @@
           Descrizioni
         </div>
         <div v-if="progetto.descrizioneProgetto" class="q-mb-sm">
-          <div class="text-caption text-grey-7">Descrizione progetto</div>
-          <div class="text-body2" style="white-space: pre-wrap;">{{ progetto.descrizioneProgetto }}</div>
+          <div class="text-caption text-grey-7">
+            Descrizione progetto
+          </div>
+          <div class="text-body2 text-pre-wrap">
+            {{ progetto.descrizioneProgetto }}
+          </div>
         </div>
         <div v-if="progetto.descrizioneCondizione" class="q-mb-sm">
-          <div class="text-caption text-grey-7">Descrizione condizione</div>
-          <div class="text-body2" style="white-space: pre-wrap;">{{ progetto.descrizioneCondizione }}</div>
+          <div class="text-caption text-grey-7">
+            Descrizione condizione
+          </div>
+          <div class="text-body2 text-pre-wrap">
+            {{ progetto.descrizioneCondizione }}
+          </div>
         </div>
         <div v-if="progetto.dettaglioCosti" class="q-mb-sm">
-          <div class="text-caption text-grey-7">Dettaglio costi</div>
-          <div class="text-body2" style="white-space: pre-wrap;">{{ progetto.dettaglioCosti }}</div>
+          <div class="text-caption text-grey-7">
+            Dettaglio costi
+          </div>
+          <div class="text-body2 text-pre-wrap">
+            {{ progetto.dettaglioCosti }}
+          </div>
         </div>
       </q-card-section>
       <q-separator v-if="progetto.descrizioneProgetto || progetto.descrizioneCondizione || progetto.dettaglioCosti" />
@@ -85,19 +117,25 @@
           Allegati
         </div>
         <div v-if="progetto.allegatiProgetto?.length" class="q-mb-sm">
-          <div class="text-caption text-grey-7">Progetto</div>
+          <div class="text-caption text-grey-7">
+            Progetto
+          </div>
           <div v-for="f in progetto.allegatiProgetto" :key="f.directus_files_id?.id" class="q-ml-sm">
             <a :href="assetUrl(f.directus_files_id?.id)" target="_blank" class="text-body2">{{ f.directus_files_id?.filename_download || 'Apri' }}</a>
           </div>
         </div>
         <div v-if="progetto.allegatiISEE?.length" class="q-mb-sm">
-          <div class="text-caption text-grey-7">ISEE</div>
+          <div class="text-caption text-grey-7">
+            ISEE
+          </div>
           <div v-for="f in progetto.allegatiISEE" :key="f.directus_files_id?.id" class="q-ml-sm">
             <a :href="assetUrl(f.directus_files_id?.id)" target="_blank" class="text-body2">{{ f.directus_files_id?.filename_download || 'Apri' }}</a>
           </div>
         </div>
         <div v-if="progetto.allegatiGiustificativi?.length" class="q-mb-sm">
-          <div class="text-caption text-grey-7">Giustificativi</div>
+          <div class="text-caption text-grey-7">
+            Giustificativi
+          </div>
           <div v-for="f in progetto.allegatiGiustificativi" :key="f.directus_files_id?.id" class="q-ml-sm">
             <a :href="assetUrl(f.directus_files_id?.id)" target="_blank" class="text-body2">{{ f.directus_files_id?.filename_download || 'Apri' }}</a>
           </div>
@@ -111,24 +149,44 @@
         </div>
         <div class="row q-col-gutter-md">
           <div class="col-4">
-            <div class="text-caption text-grey-7">N. giustificativi</div>
-            <div class="text-weight-medium" data-testid="detail-totale-giustificativi">{{ progetto.giustificativi.length }}</div>
+            <div class="text-caption text-grey-7">
+              N. giustificativi
+            </div>
+            <div class="text-weight-medium" data-testid="detail-totale-giustificativi">
+              {{ progetto.giustificativi.length }}
+            </div>
           </div>
           <div class="col-4">
-            <div class="text-caption text-grey-7">Totale importo</div>
-            <div class="text-weight-medium">{{ formatCurrency(progetto.totaleImporto) }}</div>
+            <div class="text-caption text-grey-7">
+              Totale importo
+            </div>
+            <div class="text-weight-medium">
+              {{ formatCurrency(progetto.totaleImporto) }}
+            </div>
           </div>
           <div class="col-4">
-            <div class="text-caption text-grey-7">Rendicontato</div>
-            <div class="text-weight-medium text-primary">{{ formatCurrency(progetto.totaleRendicontato) }}</div>
+            <div class="text-caption text-grey-7">
+              Rendicontato
+            </div>
+            <div class="text-weight-medium text-primary">
+              {{ formatCurrency(progetto.totaleRendicontato) }}
+            </div>
           </div>
           <div class="col-4">
-            <div class="text-caption text-grey-7">Rimborsabile 80%</div>
-            <div class="text-weight-medium text-positive">{{ formatCurrency(progetto.totaleRimborsabile) }}</div>
+            <div class="text-caption text-grey-7">
+              Rimborsabile 80%
+            </div>
+            <div class="text-weight-medium text-positive">
+              {{ formatCurrency(progetto.totaleRimborsabile) }}
+            </div>
           </div>
           <div class="col-4">
-            <div class="text-caption text-grey-7">Residuo allocato</div>
-            <div class="text-weight-medium">{{ formatCurrency(progetto.residuoAllocato) }}</div>
+            <div class="text-caption text-grey-7">
+              Residuo allocato
+            </div>
+            <div class="text-weight-medium">
+              {{ formatCurrency(progetto.residuoAllocato) }}
+            </div>
           </div>
         </div>
       </q-card-section>
@@ -140,12 +198,20 @@
         </div>
         <div class="row q-col-gutter-md">
           <div class="col-6">
-            <div class="text-caption text-grey-7">IBAN</div>
-            <div class="text-body2">{{ progetto.iban || '—' }}</div>
+            <div class="text-caption text-grey-7">
+              IBAN
+            </div>
+            <div class="text-body2">
+              {{ progetto.iban || '—' }}
+            </div>
           </div>
           <div class="col-6">
-            <div class="text-caption text-grey-7">Intestatario CC</div>
-            <div class="text-body2">{{ progetto.intestatario || '—' }}</div>
+            <div class="text-caption text-grey-7">
+              Intestatario CC
+            </div>
+            <div class="text-body2">
+              {{ progetto.intestatario || '—' }}
+            </div>
           </div>
         </div>
       </q-card-section>
@@ -164,19 +230,47 @@
           row-key="id"
           hide-pagination
           data-testid="detail-giustificativi-table"
+          :grid="$q.screen.lt.sm"
         >
-          <template #body-cell-stato="props">
-            <q-td :props="props">
-              <q-badge :color="statoColor(props.value)" outline>
-                {{ statoLabel(props.value) }}
+          <template #item="slotProps">
+            <div class="q-pa-xs col-12">
+              <q-card flat bordered>
+                <q-card-section class="q-py-sm">
+                  <div class="text-body2">
+                    {{ slotProps.row.Descrizione }}
+                  </div>
+                  <div class="row items-center q-gutter-xs q-mt-xs">
+                    <span class="text-weight-medium">{{ formatCurrency(slotProps.row.Importo) }}</span>
+                    <span class="text-grey-7">|</span>
+                    <span>{{ slotProps.row.Data }}</span>
+                    <q-badge :color="statoColor(slotProps.row.Stato)" outline>
+                      {{ statoLabel(slotProps.row.Stato) }}
+                    </q-badge>
+                    <q-space />
+                    <a
+                      v-if="slotProps.row.Allegato"
+                      :href="assetUrl(slotProps.row.Allegato)"
+                      target="_blank"
+                      class="text-body2"
+                    >Apri</a>
+                    <span v-else class="text-grey-5 text-caption">—</span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
+          <template #body-cell-stato="cellProps">
+            <q-td :props="cellProps">
+              <q-badge :color="statoColor(cellProps.value)" outline>
+                {{ statoLabel(cellProps.value) }}
               </q-badge>
             </q-td>
           </template>
-          <template #body-cell-allegato="props">
-            <q-td :props="props">
+          <template #body-cell-allegato="cellProps">
+            <q-td :props="cellProps">
               <a
-                v-if="props.value"
-                :href="assetUrl(props.value)"
+                v-if="cellProps.value"
+                :href="assetUrl(cellProps.value)"
                 target="_blank"
                 class="text-body2"
               >Apri</a>

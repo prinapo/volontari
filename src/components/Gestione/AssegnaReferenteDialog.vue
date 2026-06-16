@@ -6,7 +6,9 @@
           Assegna Referente
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense />
+        <q-btn v-close-popup icon="close" flat round dense>
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
 
       <q-card-section v-if="volontario">
@@ -14,18 +16,33 @@
           Volontario: <strong>{{ volontario.Nome }} {{ volontario.Cognome }}</strong>
         </div>
 
-        <div class="text-subtitle2 q-mb-sm">Referenti assegnati</div>
+        <div class="text-subtitle2 q-mb-sm">
+          Referenti assegnati
+        </div>
         <div v-if="assignedReferenti.length === 0" class="text-caption text-grey q-mb-sm">
           Nessun referente assegnato
         </div>
         <div v-for="r in assignedReferenti" :key="r.id" class="row items-center q-gutter-xs q-mb-xs">
           <span class="text-body2 col">{{ r.Nome }} {{ r.Cognome }}</span>
-          <q-btn flat round dense icon="delete" color="negative" size="sm" data-testid="btn-remove-referente" @click="removeReferente(r)" />
+          <q-btn
+            flat
+            round
+            dense
+            icon="delete"
+            color="negative"
+            size="sm"
+            data-testid="btn-remove-referente"
+            @click="removeReferente(r)"
+          >
+            <q-tooltip>Rimuovi referente</q-tooltip>
+          </q-btn>
         </div>
 
         <q-separator class="q-my-md" />
 
-        <div class="text-subtitle2 q-mb-sm">Aggiungi referente</div>
+        <div class="text-subtitle2 q-mb-sm">
+          Aggiungi referente
+        </div>
         <div class="row items-start q-gutter-sm">
           <q-select
             v-model="selectedReferente"
@@ -49,7 +66,9 @@
             :disable="!selectedReferente"
             class="q-mt-sm-sm"
             @click="addReferente"
-          />
+          >
+            <q-tooltip>Aggiungi referente</q-tooltip>
+          </q-btn>
         </div>
       </q-card-section>
 

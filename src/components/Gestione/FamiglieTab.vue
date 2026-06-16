@@ -8,8 +8,7 @@
         placeholder="Cerca per nome famiglia..."
         clearable
         debounce="300"
-        class="col"
-        style="max-width: 320px"
+        class="col famiglia-search-input"
         @update:model-value="onSearchChange"
       >
         <template #prepend>
@@ -30,6 +29,7 @@
       row-key="id_famiglia"
       flat
       bordered
+      :grid="$q.screen.lt.sm"
       :loading="store.loading"
       @request="onRequest"
     >
@@ -40,6 +40,114 @@
             {{ col.label }}
           </q-th>
         </q-tr>
+      </template>
+
+      <template #item="props">
+        <div class="q-pa-xs col-12">
+          <q-expansion-item
+            dense
+            dense-toggle
+            expand-separator
+            :label="props.row.Nome_Famiglia || 'Famiglia senza nome'"
+            :header-style="{ borderRadius: '8px' }"
+            @show="loadExpanded(props.row)"
+          >
+            <q-card flat bordered>
+              <q-card-section class="q-pa-sm">
+                <div class="row q-col-gutter-sm q-mb-sm">
+                  <div class="col-12">
+                    <div class="text-caption text-grey-7">
+                      IBAN
+                    </div>
+                    <div class="text-body2">
+                      {{ props.row.IBAN || '—' }}
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="text-caption text-grey-7">
+                      Intestatario CC
+                    </div>
+                    <div class="text-body2">
+                      {{ props.row.Intestatario_CC || '—' }}
+                    </div>
+                  </div>
+                </div>
+
+                <q-separator class="q-mb-sm" />
+                <div class="text-caption text-grey text-uppercase q-mb-sm">
+                  Contatti
+                </div>
+                <div v-if="expandedLoading && !expandedCache[props.row.id_famiglia]" class="text-center q-py-md">
+                  <q-spinner size="sm" /> Caricamento...
+                </div>
+                <div v-else-if="!expandedCache[props.row.id_famiglia] || expandedCache[props.row.id_famiglia].length === 0" class="text-grey q-py-sm">
+                  Nessun contatto assegnato a questa famiglia.
+                </div>
+                <q-list v-else dense>
+                  <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id">
+                    <q-item v-if="c.Ruolo_nella_Famiglia === 'Genitore'" dense class="q-px-none">
+                      <q-item-section>
+                        <q-item-label>
+                          {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
+                          <q-badge outline color="secondary" class="q-ml-sm">
+                            {{ c.Ruolo_nella_Famiglia }}
+                          </q-badge>
+                        </q-item-label>
+                        <q-item-label caption lines="1">
+                          <template v-for="em in c._emails" :key="em.email_address">
+                            <q-icon name="email" size="xs" class="q-mr-xs" />{{ em.email_address }}
+                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                          </template>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                  <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id + '-vol'">
+                    <q-item v-if="c.Ruolo_nella_Famiglia !== 'Genitore'" dense class="q-px-none">
+                      <q-item-section>
+                        <q-item-label>
+                          {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
+                          <q-badge outline color="primary" class="q-ml-sm">
+                            {{ c.Ruolo_nella_Famiglia }}
+                          </q-badge>
+                        </q-item-label>
+                        <q-item-label caption lines="1">
+                          <template v-for="em in c._emails" :key="em.email_address">
+                            <q-icon name="email" size="xs" class="q-mr-xs" />{{ em.email_address }}
+                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                          </template>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-list>
+              </q-card-section>
+              <q-card-actions class="q-pa-sm q-gutter-xs">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="edit"
+                  size="sm"
+                  data-testid="btn-edit-famiglia"
+                  @click="openEdit(props.row)"
+                >
+                  <q-tooltip>Modifica</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="contacts"
+                  size="sm"
+                  @click="openContatti(props.row)"
+                >
+                  <q-tooltip>Gestisci contatti</q-tooltip>
+                </q-btn>
+              </q-card-actions>
+            </q-card>
+          </q-expansion-item>
+        </div>
       </template>
 
       <template #body="props">
@@ -64,7 +172,16 @@
               {{ truncateIban(props.row.IBAN) }}
             </template>
             <template v-else-if="col.name === 'azioni'">
-              <q-btn flat dense icon="edit" data-testid="btn-edit-famiglia" @click="openEdit(props.row)" />
+              <q-btn
+                flat
+                round
+                dense
+                icon="edit"
+                data-testid="btn-edit-famiglia"
+                @click="openEdit(props.row)"
+              >
+                <q-tooltip>Modifica</q-tooltip>
+              </q-btn>
               <q-btn
                 flat
                 dense
@@ -315,3 +432,9 @@ function onSaved() {
   // nothing to refresh
 }
 </script>
+
+<style scoped>
+.famiglia-search-input {
+  max-width: 320px;
+}
+</style>

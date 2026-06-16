@@ -11,7 +11,7 @@
           <div class="text-caption text-grey">
             {{ label }}
           </div>
-          <div class="text-body1" style="word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap;">
+          <div class="text-body1 text-pre-wrap">
             {{ displayValue || '—' }}
             <q-icon
               v-if="!readonly"
@@ -34,6 +34,7 @@
           ref="inputRef"
           v-model="editValue"
           :type="type"
+          outlined
           dense
           autofocus
           :rules="rules"
@@ -51,7 +52,9 @@
           flat
           :loading="saving"
           @click.stop="save"
-        />
+        >
+          <q-tooltip>Salva</q-tooltip>
+        </q-btn>
         <q-btn
           data-testid="inline-cancel"
           icon="close"
@@ -60,7 +63,9 @@
           size="xs"
           flat
           @click.stop="cancel"
-        />
+        >
+          <q-tooltip>Annulla</q-tooltip>
+        </q-btn>
       </div>
     </template>
   </div>

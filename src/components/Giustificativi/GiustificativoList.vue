@@ -6,7 +6,7 @@
       </div>
       <q-space />
       <q-btn
-        color="primary"
+        color="accent"
         icon="add"
         label="Aggiungi"
         :disable="!progettoId"

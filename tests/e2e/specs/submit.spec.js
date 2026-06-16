@@ -12,17 +12,6 @@ const formData = {
   cognome_beneficiario: 'Rossi'
 }
 
-const formDataLinked = {
-  nome_richiedente: 'Genitore',
-  cognome_richiedente: 'Test',
-  email: 'test.genitore@test.com',
-  telefono: '1234567890',
-  iban: 'IT60X12345678901234567890',
-  intestatario: 'Genitore Test',
-  nome_beneficiario: 'Luigi',
-  cognome_beneficiario: 'Rossi'
-}
-
 const today = new Date().toISOString().slice(0, 10)
 
 function makeGiustificativo(prefix = 'A') {
@@ -114,7 +103,7 @@ test.describe('SubmitPage', () => {
 
   test('SP-08: Submit 3 giustificativi mostra notifica successo @regression', async ({ page }) => {
     await submitPage.goto()
-    await submitPage.fillForm(formDataLinked)
+    await submitPage.fillForm(formData)
 
     await submitPage.clickAddGiustificativo()
     await submitPage.clickAddGiustificativo()

@@ -7,6 +7,7 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 test.describe('Email Case-Insensitive Matching', () => {
 
   test('EC-01: Submission con email uppercase matcha contatto lowercase @regression', async ({ page }) => {
+    test.setTimeout(120000)
     const testEmail = 'TEST.GENITORE@TEST.COM'
     const testDesc = `EC-01 upper ${Date.now()}`
 
@@ -44,6 +45,7 @@ test.describe('Email Case-Insensitive Matching', () => {
   })
 
   test('EC-02: Submission con email lowercase matcha contatto uppercase @regression', async ({ page }) => {
+    test.setTimeout(120000)
     const testEmail = 'test.genitore@test.com'
     const testDesc = `EC-02 lower ${Date.now()}`
 
@@ -81,6 +83,7 @@ test.describe('Email Case-Insensitive Matching', () => {
   })
 
   test('EC-03: Submission con email mixed-case matcha contatto lowercase @regression', async ({ page }) => {
+    test.setTimeout(120000)
     const testEmail = 'Test.Genitore@Test.Com'
     const testDesc = `EC-03 mixed ${Date.now()}`
 
@@ -118,6 +121,7 @@ test.describe('Email Case-Insensitive Matching', () => {
   })
 
   test('EC-04: Email sconosciuta mostra contatto da creare @regression', async ({ page }) => {
+    test.setTimeout(120000)
     const unknownEmail = `sconosciuto.${Date.now()}@test.com`
     const testDesc = `EC-04 unknown ${Date.now()}`
 

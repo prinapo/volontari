@@ -6,7 +6,8 @@
     option-label="Cognome_e__Nome_Beneficiario"
     emit-value
     map-options
-    filled
+    outlined
+    dense
     color="primary"
     clearable
     @update:model-value="$emit('update:modelValue', $event)"

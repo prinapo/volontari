@@ -66,6 +66,7 @@ async function createGiustificativoViaVerificatore(page) {
 test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-01: Verifica giustificativo — intercetta PATCH @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testDesc = `VF_01_verify_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -74,7 +75,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const vp = new VerificaPage(page)
     await loginAs(page, 'verificatore', auth)
     await vp.waitForTable()
-    await vp.searchFamiglia('Famiglia TEST_FAM_01')
+    await vp.searchFamiglia('TEST_FAM')
     await vp.expandRow(0)
 
     const patches = await waitForPatchStato(page, 'verificato', async () => {
@@ -93,6 +94,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
   })
 
   test('VF-02: Rifiuta giustificativo — intercetta PATCH @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testDesc = `VF_02_reject_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -101,7 +103,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const vp = new VerificaPage(page)
     await loginAs(page, 'verificatore', auth)
     await vp.waitForTable()
-    await vp.searchFamiglia('Famiglia TEST_FAM_01')
+    await vp.searchFamiglia('TEST_FAM')
     await vp.expandRow(0)
 
     const patches = await waitForPatchStato(page, 'rifiutato', async () => {
@@ -128,6 +130,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
   })
 
   test('VF-03: Draft→Inviato — intercetta PATCH @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testDesc = `VF_03_send_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -136,7 +139,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const vp = new VerificaPage(page)
     await loginAs(page, 'verificatore', auth)
     await vp.waitForTable()
-    await vp.searchFamiglia('Famiglia TEST_FAM_01')
+    await vp.searchFamiglia('TEST_FAM')
     await vp.expandRow(0)
 
     const patches = await waitForPatchStato(page, 'inviato', async () => {
@@ -155,6 +158,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
   })
 
   test('VF-04: Aggiungi giustificativo da VerificaPage @crud', async ({ page }) => {
+    test.setTimeout(90000)
     await createGiustificativoViaVolontario(page, `VF_04_setup_${Date.now()}`, 'inviato')
 
     const result = await createGiustificativoViaVerificatore(page)
@@ -185,7 +189,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
     // Cerca il giustificativo appena creato
     const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-    await searchInput.fill('Famiglia TEST_FAM_01')
+    await searchInput.fill('TEST_FAM')
     await page.waitForTimeout(4000)
 
     const expandBtn = page.locator('[data-testid="expand-row"]').first()

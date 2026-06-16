@@ -6,23 +6,59 @@
           {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
         </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense />
+        <q-btn v-close-popup icon="close" flat round dense>
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
 
       <q-card-section>
         <q-form @submit.prevent="handleSave">
           <div class="row q-col-gutter-sm q-mb-md">
-            <q-input class="col-12 col-sm-6" v-model="form.Nome" label="Nome *" data-testid="contatto-nome" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules dense />
-            <q-input class="col-12 col-sm-6" v-model="form.Cognome" label="Cognome *" data-testid="contatto-cognome" :rules="[val => !!val || 'Campo obbligatorio']" lazy-rules dense />
+            <q-input
+              v-model="form.Nome"
+              class="col-12 col-sm-6"
+              label="Nome *"
+              data-testid="contatto-nome"
+              :rules="[val => !!val || 'Campo obbligatorio']"
+              lazy-rules
+              outlined
+              dense
+            />
+            <q-input
+              v-model="form.Cognome"
+              class="col-12 col-sm-6"
+              label="Cognome *"
+              data-testid="contatto-cognome"
+              :rules="[val => !!val || 'Campo obbligatorio']"
+              lazy-rules
+              outlined
+              dense
+            />
           </div>
           <div class="row q-col-gutter-sm q-mb-md">
-            <q-input class="col-12 col-sm-6" v-model="form.Numero_di_cellulare" label="Numero di cellulare" data-testid="contatto-cellulare" dense />
-            <q-input class="col-12 col-sm-6" v-model="form.Numero_di_telefono" label="Numero di telefono" data-testid="contatto-telefono" dense />
+            <q-input
+              v-model="form.Numero_di_cellulare"
+              class="col-12 col-sm-6"
+              label="Numero di cellulare"
+              data-testid="contatto-cellulare"
+              outlined
+              dense
+            />
+            <q-input
+              v-model="form.Numero_di_telefono"
+              class="col-12 col-sm-6"
+              label="Numero di telefono"
+              data-testid="contatto-telefono"
+              outlined
+              dense
+            />
           </div>
 
           <q-toggle v-model="form.IsReferente" label="Referente" data-testid="contatto-referente" class="q-mb-md" dense />
 
-          <div class="text-subtitle2 q-mb-sm">Email</div>
+          <div class="text-subtitle2 q-mb-sm">
+            Email
+          </div>
           <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">
             Nessuna email associata
           </div>

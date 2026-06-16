@@ -61,8 +61,18 @@ export class GestionePage {
   }
 
   async waitForTable() {
-    await this.activePanel.locator('.q-table tbody tr').first().waitFor({ state: 'attached', timeout: 20000 }).catch(() => {})
-    await this.page.waitForTimeout(200)
+    await this.page.waitForFunction(() => {
+      const tr = document.querySelector('.q-tab-panel:not([hidden]) .q-table tbody tr')
+      const exp = document.querySelector('.q-tab-panel:not([hidden]) .q-expansion-item')
+      return !!(tr || exp)
+    }, { timeout: 20000 }).catch(() => {})
+    await this.page.waitForTimeout(300).catch(() => {})
+  }
+
+  async getRowCount() {
+    const trCount = await this.activePanel.locator('.q-table tbody tr').count()
+    if (trCount > 0) return trCount
+    return await this.activePanel.locator('.q-expansion-item').count()
   }
 
   async getTotalItems() {
@@ -90,7 +100,14 @@ export class GestionePage {
   }
 
   async getRowCount() {
-    return await this.tableRows.count()
+    // Desktop mode: tbody tr
+    const trCount = await this.activePanel.locator('.q-table tbody tr').count()
+    if (trCount > 0) return trCount
+    // Mobile grid mode: count expansion items
+    const expCount = await this.page.locator('.q-table .q-expansion-item').count()
+    if (expCount > 0) return expCount
+    // Fallback: cards
+    return await this.page.locator('.q-table .q-card').count()
   }
 
   async getTableHeaderTexts() {
@@ -155,7 +172,7 @@ export class GestionePage {
     await input.fill(searchTerm)
     await this.page.locator('.q-menu .q-item').first().waitFor({ state: 'visible', timeout: 5000 })
     await this.page.locator('.q-menu .q-item').first().click()
-    await this.contattiDialog.locator('button:has-text("Associa come Genitore")').click()
+    await this.contattiDialog.locator('button:has-text("Genitore")').last().click()
   }
 
   /**

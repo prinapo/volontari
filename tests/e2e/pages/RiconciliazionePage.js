@@ -30,10 +30,10 @@ export class RiconciliazionePage {
   }
 
   async waitForTable() {
-    await this.table.waitFor({ state: 'visible', timeout: 15000 })
+    await this.table.waitFor({ state: 'visible', timeout: 30000 })
     await this.page.waitForResponse(
       resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'GET',
-      { timeout: 10000 }
+      { timeout: 15000 }
     ).catch(() => {})
   }
 

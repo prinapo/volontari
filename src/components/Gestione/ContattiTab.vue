@@ -21,8 +21,7 @@
         :options="tipoOptions"
         dense
         outlined
-        class="col-auto"
-        style="min-width: 150px"
+        class="col-auto contatti-filter-select"
         @update:model-value="onFilterChange"
       />
 
@@ -32,8 +31,7 @@
         :options="statoOptions"
         dense
         outlined
-        class="col-auto"
-        style="min-width: 150px"
+        class="col-auto contatti-filter-select"
         @update:model-value="onFilterChange"
       />
 
@@ -51,8 +49,124 @@
       flat
       bordered
       binary-state-sort
+      :grid="$q.screen.lt.sm"
       @request="onRequest"
     >
+      <template #item="props">
+        <div class="q-pa-xs col-12 col-sm-6">
+          <q-expansion-item
+            dense
+            dense-toggle
+            expand-separator
+            :label="displayNome(props.row)"
+            :caption="props.row.Email?.[0]?.email_address || props.row._emails?.[0]?.email_address || ''"
+            :header-style="{ borderRadius: '8px' }"
+          >
+            <q-card flat bordered>
+              <q-card-section class="q-pa-sm">
+                <div class="row items-center q-gutter-x-sm q-mb-sm">
+                  <q-badge v-if="props.row.IsReferente" color="primary" class="q-mr-xs">
+                    Referente
+                  </q-badge>
+                  <q-badge v-for="tipo in computedTipi(props.row)" :key="tipo" :color="tipoBadgeColor(tipo)" class="q-mr-xs">
+                    {{ tipo }}
+                  </q-badge>
+                  <q-space />
+                  <q-badge :color="props.row.user_id?.status === 'suspended' ? 'negative' : 'positive'">
+                    {{ props.row.user_id?.status === 'suspended' ? 'Disattivato' : 'Attivo' }}
+                  </q-badge>
+                </div>
+                <q-separator class="q-mb-sm" />
+                <div class="row q-col-gutter-sm">
+                  <div class="col-12">
+                    <div class="text-caption text-grey-7">
+                      Email
+                    </div>
+                    <template v-if="props.row.user_id?.email">
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
+                      <span class="text-caption">{{ props.row.user_id.email }}</span>
+                      <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
+                    </template>
+                    <template v-else-if="props.row._emails?.length">
+                      <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
+                        <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
+                        {{ em.email_address }}
+                        <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
+                      </div>
+                    </template>
+                    <span v-else class="text-grey-5">—</span>
+                  </div>
+                  <div class="col-6">
+                    <div class="text-caption text-grey-7">
+                      Cellulare
+                    </div>
+                    <div>{{ props.row.Numero_di_cellulare || '—' }}</div>
+                  </div>
+                  <div class="col-6">
+                    <div class="text-caption text-grey-7">
+                      Telefono
+                    </div>
+                    <div>{{ props.row.Numero_di_telefono || '—' }}</div>
+                  </div>
+                  <div class="col-12">
+                    <div class="text-caption text-grey-7">
+                      Famiglie
+                    </div>
+                    <q-btn
+                      v-if="famiglieCount[props.row.id_contatto]"
+                      flat
+                      dense
+                      no-caps
+                      :label="String(famiglieCount[props.row.id_contatto])"
+                      color="primary"
+                      size="sm"
+                      @click="openFamiglie(props.row)"
+                    />
+                    <span v-else class="text-grey-5">0</span>
+                  </div>
+                </div>
+              </q-card-section>
+              <q-card-actions class="q-pa-sm q-gutter-xs">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="edit"
+                  size="sm"
+                  data-testid="btn-edit-contatto"
+                  @click="openEdit(props.row)"
+                >
+                  <q-tooltip>Modifica</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="groups"
+                  size="sm"
+                  @click="openFamiglie(props.row)"
+                >
+                  <q-tooltip>Assegna famiglia</q-tooltip>
+                </q-btn>
+                <q-btn
+                  v-if="props.row.IsVolontario"
+                  flat
+                  round
+                  dense
+                  icon="person_search"
+                  color="accent"
+                  size="sm"
+                  data-testid="btn-assigna-referente"
+                  @click="openReferente(props.row)"
+                >
+                  <q-tooltip>Assegna Referente</q-tooltip>
+                </q-btn>
+              </q-card-actions>
+            </q-card>
+          </q-expansion-item>
+        </div>
+      </template>
+
       <template #body-cell-nome="props">
         <q-td :props="props">
           {{ displayNome(props.row) }}
@@ -80,6 +194,12 @@
       <template #body-cell-cellulare="props">
         <q-td :props="props">
           {{ props.row.Numero_di_cellulare || '—' }}
+        </q-td>
+      </template>
+
+      <template #body-cell-telefono="props">
+        <q-td :props="props">
+          {{ props.row.Numero_di_telefono || '—' }}
         </q-td>
       </template>
 
@@ -126,19 +246,25 @@
 
       <template #body-cell-azioni="props">
         <q-td :props="props">
-          <q-btn flat dense icon="edit" data-testid="btn-edit-contatto" @click="openEdit(props.row)" />
           <q-btn
             flat
+            round
             dense
-            icon="groups"
-            @click="openFamiglie(props.row)"
-          />
+            icon="edit"
+            data-testid="btn-edit-contatto"
+            @click="openEdit(props.row)"
+          >
+            <q-tooltip>Modifica</q-tooltip>
+          </q-btn>
+          <q-btn flat dense icon="groups" @click="openFamiglie(props.row)">
+            <q-tooltip>Assegna famiglia</q-tooltip>
+          </q-btn>
           <q-btn
             v-if="props.row.IsVolontario"
             flat
             dense
             icon="person_search"
-            color="teal"
+            color="accent"
             data-testid="btn-assigna-referente"
             @click="openReferente(props.row)"
           >
@@ -212,6 +338,7 @@ const columns = [
   { name: 'nome', label: 'Nome e Cognome', field: row => displayNome(row), align: 'left', sortable: true, sort: 'Cognome' },
   { name: 'email', label: 'Email', field: row => row.user_id?.email || row._emails?.[0]?.email_address || '', align: 'left' },
   { name: 'cellulare', label: 'Cellulare', field: 'Numero_di_cellulare', align: 'left' },
+  { name: 'telefono', label: 'Telefono', field: 'Numero_di_telefono', align: 'left' },
   { name: 'tipo', label: 'Tipo', field: '_tipo', align: 'center' },
   { name: 'stato', label: 'Stato account', align: 'center' },
   { name: 'famiglie', label: 'Famiglie', align: 'center' },
@@ -387,3 +514,9 @@ async function onSaved() {
   })
 }
 </script>
+
+<style scoped>
+.contatti-filter-select {
+  min-width: 150px;
+}
+</style>

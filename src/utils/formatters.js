@@ -29,11 +29,11 @@ export function statoLabel(stato) {
 
 export function statoColor(stato) {
   const colors = {
-    draft: 'orange',
-    inviato: 'blue',
-    verificato: 'teal',
-    rifiutato: 'red',
-    approvato: 'green'
+    draft: 'warning',
+    inviato: 'primary',
+    verificato: 'positive',
+    rifiutato: 'negative',
+    approvato: 'positive'
   }
   return colors[stato] || 'grey'
 }

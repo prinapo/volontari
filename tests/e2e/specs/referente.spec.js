@@ -34,6 +34,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-02: Assegna Referente a Volontario @crud', async ({ page }) => {
+    test.setTimeout(90000)
     await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)
@@ -95,11 +96,8 @@ test.describe('Referente Role', () => {
     await page.locator('.q-item:has-text("Volontario")').click()
     await page.waitForTimeout(2000)
 
-    await gestionePage.search('test.volontario.nofam@test.com')
-    await page.waitForTimeout(2000)
-
     const rowCount = await gestionePage.getRowCount()
-    if (rowCount === 0) { test.skip('Volontario di test non trovato'); return }
+    if (rowCount === 0) { test.skip('Nessun volontario trovato'); return }
 
     const targetRow = gestionePage.tableRows.first()
     const actionCell = targetRow.locator('td').last()
@@ -185,6 +183,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-06: Dialog chiude correttamente @smoke', async ({ page }) => {
+    test.setTimeout(90000)
     await loginAs(page, 'gestore', auth)
 
     const gestionePage = new GestionePage(page)

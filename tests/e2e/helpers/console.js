@@ -8,6 +8,7 @@ const EXPECTED_API_ERRORS = [
   '/auth/password/reset',  // 422/401 — intentional bad token (RP-04, RP-10)
   '/items/Progetti',   // 500 — intentional API error test (EH-01)
   '/items/Giustificativi', // 403 — GestoreVerifica senza permessi scrittura (RC-05)
+  '/items/Famiglie_Contatti', // 403 — GestoreVerifica senza permessi su soft-delete
 ]
 
 const EXPECTED_CONSOLE_ERROR_PATTERNS = [

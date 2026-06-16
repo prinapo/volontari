@@ -15,16 +15,16 @@
           </div>
           <div class="text-body2 text-grey">
             <div v-for="em in g._emails" :key="em.email_address" class="q-py-xs">
-              <q-icon name="email" size="xs" class="q-mr-xs text-grey-5" />
+              <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
               <span class="text-caption">{{ em.email_address }}</span>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="g.Numero_di_cellulare">
-              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-5" />
+              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
               <a :href="'tel:' + g.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ g.Numero_di_cellulare }}</a>
             </template>
             <template v-if="g.Numero_di_telefono">
-              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-5" />
+              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
               <a :href="'tel:' + g.Numero_di_telefono" class="text-primary text-caption">{{ g.Numero_di_telefono }}</a>
             </template>
           </div>
@@ -41,21 +41,21 @@
           </div>
           <div class="text-body2 text-grey">
             <div v-for="em in v._emails" :key="em.email_address" class="q-py-xs">
-              <q-icon name="email" size="xs" class="q-mr-xs text-grey-5" />
+              <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
               <span class="text-caption">{{ em.email_address }}</span>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="v.Numero_di_cellulare">
-              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-5" />
+              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
               <a :href="'tel:' + v.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ v.Numero_di_cellulare }}</a>
             </template>
             <template v-if="v.Numero_di_telefono">
-              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-5" />
+              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
               <a :href="'tel:' + v.Numero_di_telefono" class="text-primary text-caption">{{ v.Numero_di_telefono }}</a>
             </template>
             <template v-if="v._referenti?.length">
               <div v-for="ref in v._referenti" :key="ref.id_contatto" class="q-py-xs">
-                <q-icon name="person" size="xs" class="q-mr-xs text-grey-5" />
+                <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
                 <span class="text-caption text-secondary">Referente: {{ ref.Nome }} {{ ref.Cognome }}</span>
               </div>
             </template>

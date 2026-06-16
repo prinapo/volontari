@@ -91,7 +91,9 @@
                 </template>
               </div>
             </div>
-            <q-btn flat round icon="chevron_right" color="primary" />
+            <q-btn flat round icon="chevron_right" color="primary">
+              <q-tooltip>Apri gruppo</q-tooltip>
+            </q-btn>
           </q-card-section>
         </q-card>
       </div>
@@ -115,12 +117,14 @@
                 </q-badge>
               </div>
             </div>
-            <q-btn v-close-popup icon="close" flat round dense />
+            <q-btn v-close-popup icon="close" flat round dense>
+              <q-tooltip>Chiudi</q-tooltip>
+            </q-btn>
           </q-card-section>
 
           <q-separator />
 
-          <q-card-section class="scroll" style="max-height: 70vh">
+          <q-card-section class="scroll deduplica-scroll-70">
             <template v-if="selectedGroup.types.includes('cross-contatto')">
               <div v-for="(pair, pi) in crossPairs" :key="pi" class="q-mb-lg">
                 <div class="text-subtitle2 q-mb-sm">
@@ -136,7 +140,45 @@
                   row-key="field"
                   hide-pagination
                   :pagination="{ rowsPerPage: 0 }"
+                  :grid="$q.screen.lt.sm"
                 >
+                  <template #item="props">
+                    <div class="q-pa-xs col-12">
+                      <q-card flat bordered>
+                        <q-card-section class="q-py-sm">
+                          <div class="text-caption text-weight-medium">
+                            {{ props.row.field }}
+                          </div>
+                          <div class="row q-gutter-sm items-center q-mt-xs">
+                            <div class="col">
+                              <span class="text-caption">A: {{ props.row.a }}</span>
+                            </div>
+                            <div class="col">
+                              <span class="text-caption">B: {{ props.row.b }}</span>
+                            </div>
+                            <div>
+                              <q-radio
+                                v-if="props.row.differs"
+                                v-model="pair.fieldChoices[props.row.field]"
+                                :val="'a'"
+                                label="A"
+                                size="xs"
+                              />
+                              <q-radio
+                                v-if="props.row.differs"
+                                v-model="pair.fieldChoices[props.row.field]"
+                                :val="'b'"
+                                label="B"
+                                size="xs"
+                              />
+                              <span v-else class="text-grey text-caption">=</span>
+                            </div>
+                          </div>
+                        </q-card-section>
+                      </q-card>
+                    </div>
+                  </template>
+
                   <template #body-cell-scelta="props">
                     <q-td :props="props">
                       <q-radio
@@ -203,7 +245,9 @@
                             size="xs"
                             color="negative"
                             @click="handleDeleteEmail(e.id)"
-                          />
+                          >
+                            <q-tooltip>Elimina</q-tooltip>
+                          </q-btn>
                         </div>
                       </q-card-section>
                     </q-card>
@@ -299,7 +343,34 @@
                   row-key="id"
                   hide-pagination
                   :pagination="{ rowsPerPage: 0 }"
+                  :grid="$q.screen.lt.sm"
                 >
+                  <template #item="props">
+                    <div class="q-pa-xs col-12">
+                      <q-card flat bordered>
+                        <q-card-section class="q-py-sm row items-center">
+                          <div class="col">
+                            <div class="text-body2">
+                              {{ props.row.email_address }}
+                            </div>
+                            <q-badge v-if="props.row.Primary === 'true' || props.row.Primary === true" color="primary" label="Primaria" size="xs" />
+                            <span v-else class="text-grey text-caption">No</span>
+                          </div>
+                          <q-btn
+                            flat
+                            dense
+                            icon="delete"
+                            size="xs"
+                            color="negative"
+                            @click="handleDeleteEmail(props.row.id)"
+                          >
+                            <q-tooltip>Elimina</q-tooltip>
+                          </q-btn>
+                        </q-card-section>
+                      </q-card>
+                    </div>
+                  </template>
+
                   <template #body-cell-primary="props">
                     <q-td :props="props">
                       <q-badge v-if="props.value === 'true'" color="primary" label="Sì" size="xs" />
@@ -315,7 +386,9 @@
                         size="xs"
                         color="negative"
                         @click="handleDeleteEmail(props.row.id)"
-                      />
+                      >
+                        <q-tooltip>Elimina</q-tooltip>
+                      </q-btn>
                     </q-td>
                   </template>
                 </q-table>
@@ -339,7 +412,34 @@
                   row-key="id"
                   hide-pagination
                   :pagination="{ rowsPerPage: 0 }"
+                  :grid="$q.screen.lt.sm"
                 >
+                  <template #item="props">
+                    <div class="q-pa-xs col-12">
+                      <q-card flat bordered>
+                        <q-card-section class="q-py-sm row items-center">
+                          <div class="col">
+                            <div class="text-body2">
+                              {{ props.row.email_address }}
+                            </div>
+                            <q-badge v-if="props.row.Primary === 'true' || props.row.Primary === true" color="primary" label="Primaria" size="xs" />
+                            <span v-else class="text-grey text-caption">No</span>
+                          </div>
+                          <q-btn
+                            flat
+                            dense
+                            icon="delete"
+                            size="xs"
+                            color="negative"
+                            @click="handleDeleteEmail(props.row.id)"
+                          >
+                            <q-tooltip>Elimina</q-tooltip>
+                          </q-btn>
+                        </q-card-section>
+                      </q-card>
+                    </div>
+                  </template>
+
                   <template #body-cell-primary="props">
                     <q-td :props="props">
                       <q-badge v-if="props.value === 'true'" color="primary" label="Sì" size="xs" />
@@ -355,7 +455,9 @@
                         size="xs"
                         color="negative"
                         @click="handleDeleteEmail(props.row.id)"
-                      />
+                      >
+                        <q-tooltip>Elimina</q-tooltip>
+                      </q-btn>
                     </q-td>
                   </template>
                 </q-table>
@@ -404,7 +506,9 @@
               :loading="store.idLoading"
               class="q-mr-sm"
               @click="loadIdDuplicates"
-            />
+            >
+              <q-tooltip>Aggiorna</q-tooltip>
+            </q-btn>
             <q-btn
               v-close-popup
               icon="close"
@@ -412,12 +516,14 @@
               round
               dense
               @click="idDialog = false"
-            />
+            >
+              <q-tooltip>Chiudi</q-tooltip>
+            </q-btn>
           </q-card-section>
 
           <q-separator />
 
-          <q-card-section class="scroll" style="max-height: 75vh">
+          <q-card-section class="scroll deduplica-scroll-75">
             <div v-if="store.idLoading" class="text-center q-py-xl text-grey">
               <q-spinner size="md" /> Controllo in corso...
             </div>
@@ -440,7 +546,38 @@
                 hide-pagination
                 :pagination="{ rowsPerPage: 0 }"
                 :filter="idFilter"
+                :grid="$q.screen.lt.sm"
               >
+                <template #item="props">
+                  <div class="q-pa-xs col-12">
+                    <q-card flat bordered>
+                      <q-card-section class="q-py-sm row items-center">
+                        <div class="col">
+                          <div class="text-body2">
+                            {{ props.row.label }}
+                          </div>
+                          <div class="text-caption">
+                            ID: {{ props.row.id }}
+                          </div>
+                          <q-badge :color="props.row.count > 2 ? 'negative' : 'warning'">
+                            {{ props.row.count }}x
+                          </q-badge>
+                        </div>
+                        <q-btn
+                          flat
+                          dense
+                          icon="search"
+                          size="sm"
+                          color="primary"
+                          @click="viewIdDuplicates(props.row)"
+                        >
+                          <q-tooltip>Vedi dettagli</q-tooltip>
+                        </q-btn>
+                      </q-card-section>
+                    </q-card>
+                  </div>
+                </template>
+
                 <template #body-cell-count="props">
                   <q-td :props="props">
                     <q-badge :color="props.row.count > 2 ? 'negative' : 'warning'">
@@ -688,5 +825,11 @@ function confirmDeleteB() {
 }
 .group-card:hover {
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.deduplica-scroll-70 {
+  max-height: 70vh;
+}
+.deduplica-scroll-75 {
+  max-height: 75vh;
 }
 </style>

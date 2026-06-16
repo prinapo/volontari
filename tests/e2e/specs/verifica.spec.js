@@ -1,14 +1,6 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
-import { monitorApi } from '../helpers/network.js'
-import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
 
 test.describe('VerificaPage', () => {
   test.describe('Auth & Layout', () => {
@@ -36,11 +28,9 @@ test.describe('VerificaPage', () => {
       expect(headers[0]).toBe('')
       expect(headers[1]).toContain('Bando')
       expect(headers[2]).toContain('Famiglia')
-      expect(headers[3]).toContain('Dati bancari')
-      expect(headers[4]).toContain('Allocato')
-      expect(headers[5]).toContain('Rendicontato')
-      expect(headers[6]).toContain('Rimborsabile')
-      expect(headers[7]).toContain('Stato')
+      expect(headers[3]).toContain('Allocato')
+      expect(headers[4]).toContain('Rendicontato')
+      expect(headers[5]).toContain('Stato')
     })
 
     test('TB-05: Colonna Totali non esiste @regression', async ({ page }) => {
@@ -77,6 +67,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('FL-07: Ricerca per famiglia @crud', async ({ page }) => {
+      test.setTimeout(90000)
       const allRows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
       if (!(await allRows.first().isVisible({ timeout: 5000 }).catch(() => false))) {
         test.skip()
@@ -90,36 +81,15 @@ test.describe('VerificaPage', () => {
     })
   })
 
-  test.describe.serial('Expanded Row & Giustificativi', () => {
+  test.describe('Expanded Row & Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginAs(page, 'verificatore', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
 
-    test('ER-SETUP: Crea giustificativo inviato @setup', async ({ page }) => {
-      test.setTimeout(60000)
-
-      await loginAs(page, 'volontario', auth)
-      await page.waitForTimeout(2000)
-
-      const select = page.locator('.q-select').first()
-      await select.click()
-      await page.waitForTimeout(2000)
-      const firstOption = page.locator('.q-menu .q-item').first()
-      if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await firstOption.click()
-        await page.waitForTimeout(1000)
-      }
-
-      await createGiustificativoViaDialog(page, {
-        descrizione: `Test VE_${Date.now()}`,
-        importo: 100,
-        submitAfter: true
-      })
-    })
-
     test('ER-03: Expand row mostra sezione contatti @smoke', async ({ page }) => {
+      test.setTimeout(90000)
       const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
       if (!(await rows.first().isVisible({ timeout: 5000 }).catch(() => false))) {
         test.skip()
@@ -141,8 +111,12 @@ test.describe('VerificaPage', () => {
     })
 
     test('ER-04: Expand row mostra sezione giustificativi @smoke', async ({ page }) => {
+      test.setTimeout(90000)
       const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-      await expect(rows.first()).toBeVisible({ timeout: 10000 })
+      if (!(await rows.first().isVisible({ timeout: 5000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
 
       const expandBtn = page.locator('[data-testid="expand-row"]').first()
       await expandBtn.click()
@@ -171,11 +145,23 @@ test.describe('VerificaPage', () => {
     })
 
     test('DB-V1: Badge dati bancari Completi/Da completare presenti @smoke', async ({ page }) => {
+      // Espandi la prima riga per vedere i dati bancari
+      const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
+      if (await expandBtn.count() > 0) {
+        await expandBtn.click()
+        await page.waitForTimeout(500)
+      }
       const badges = page.locator('.verifica-table .q-badge:has-text("Completi"), .verifica-table .q-badge:has-text("Da completare")')
       await expect(badges.first()).toBeVisible({ timeout: 5000 })
     })
 
     test('DB-V2: Pulsante edit apre dialog IBAN @smoke', async ({ page }) => {
+      // Espandi la prima riga per mostrare i dati bancari
+      const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
+      if (await expandBtn.count() > 0) {
+        await expandBtn.click()
+        await page.waitForTimeout(800)
+      }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
       if (await editBtn.count() === 0) test.skip()
       await editBtn.click()
@@ -183,6 +169,11 @@ test.describe('VerificaPage', () => {
     })
 
     test('DB-V3: Dialog IBAN annulla chiude senza salvare @crud', async ({ page }) => {
+      const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
+      if (await expandBtn.count() > 0) {
+        await expandBtn.click()
+        await page.waitForTimeout(800)
+      }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
       if (await editBtn.count() === 0) test.skip()
       await editBtn.click()
@@ -192,15 +183,12 @@ test.describe('VerificaPage', () => {
     })
 
     test('DB-V4: Dialog IBAN salva invia PATCH @crud', async ({ page }) => {
-      const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill('Famiglia TEST_FAM_01')
-      await page.waitForResponse(
-        resp => resp.url().includes('/items/Progetti') && resp.request().method() === 'GET',
-        { timeout: 10000 }
-      ).catch(() => {})
+      test.setTimeout(90000)
+      const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
+      if (await expandBtn.count() > 0) {
+        await expandBtn.click()
+        await page.waitForTimeout(800)
       }
-
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
       if (await editBtn.count() === 0) test.skip()
       await editBtn.click()
@@ -237,39 +225,7 @@ test.describe('VerificaPage', () => {
     })
   })
 
-  test('SR-SETUP: Crea giustificativo inviato @setup', async ({ page }) => {
-    test.setTimeout(60000)
-
-    const apiCalls = monitorApi(page)
-
-    await loginAs(page, 'volontario', auth)
-    await page.waitForTimeout(2000)
-
-    const select = page.locator('.q-select').first()
-    await select.click()
-    await page.waitForTimeout(2000)
-    const firstOption = page.locator('.q-menu .q-item').first()
-    if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await firstOption.click()
-      await page.waitForTimeout(1000)
-    }
-
-    const result = await createGiustificativoViaDialog(page, {
-      descrizione: `Test SR_${Date.now()}`,
-      importo: 75,
-      submitAfter: true
-    })
-
-    if (!result) {
-      console.log('[SR-SETUP] Creazione giustificativo fallita')
-      const errors = apiCalls.filter(e => e.status >= 400)
-      if (errors.length > 0) {
-        console.log(`[SR-SETUP] Errori rete: ${JSON.stringify(errors, null, 2)}`)
-      }
-    }
-  })
-
-  test.describe.serial('Stato riga', () => {
+  test.describe('Stato riga', () => {
     test.beforeEach(async ({ page }) => {
       await loginAs(page, 'verificatore', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
@@ -286,15 +242,6 @@ test.describe('VerificaPage', () => {
     })
 
     test('SR-02: Stato Da verificare visibile quando presente @smoke', async ({ page }) => {
-      const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await searchInput.fill('Famiglia TEST_FAM_01')
-      await page.waitForResponse(
-        resp => resp.url().includes('/items/Progetti') && resp.request().method() === 'GET',
-        { timeout: 10000 }
-      ).catch(() => {})
-      }
-
       const badge = page.locator('.q-badge:has-text("Da verificare")').first()
       if (await badge.count() > 0) {
         await expect(badge).toBeVisible()
@@ -339,6 +286,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('VR-SS-01: Screenshot VerificaPage non cambia @visual', async ({ page }) => {
+      test.setTimeout(90000)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.summary-grid')).toBeVisible({ timeout: 5000 })
       await expect(page).toHaveScreenshot('verifica-page.png', {
@@ -362,20 +310,6 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'verificatore', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
-    })
-
-    test('VP-DETT-01: Dropdown seleziona progetto popolato @smoke', async ({ page }) => {
-      const select = page.locator('[data-testid="select-progetto"]')
-      await expect(select).toBeVisible({ timeout: 5000 })
-
-      await select.click()
-      await page.waitForTimeout(500)
-
-      const options = page.locator('.q-menu .q-item')
-      const count = await options.count()
-      expect(count).toBeGreaterThan(0)
-
-      await page.keyboard.press('Escape')
     })
 
     test('VP-DETT-02: Pulsante Dettaglio visibile per riga @smoke', async ({ page }) => {

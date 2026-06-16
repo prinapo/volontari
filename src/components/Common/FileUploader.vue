@@ -4,7 +4,8 @@
     :label="label"
     :accept="accept"
     :max-file-size="maxSize"
-    filled
+    outlined
+    dense
     clearable
     @update:model-value="onFileChange"
   >

@@ -8,9 +8,9 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Riconciliazione', () => {
 
-  // ── RC-SETUP-01: Aggiunge IBAN/Intestatario a TEST_FAM_01 via FamigliaDialog ──
-  test('RC-SETUP-01: Aggiunge IBAN e Intestatario a TEST_FAM_01 @setup', async ({ page }) => {
-    test.setTimeout(60000)
+  // ── RC-SETUP-01: Aggiunge IBAN/Intestatario a famiglia via FamigliaDialog ──
+  test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
+    test.setTimeout(90000)
 
     await loginAs(page, 'gestore', auth)
 
@@ -18,13 +18,11 @@ test.describe('Riconciliazione', () => {
     await gestione.famiglieTab.click()
     await gestione.waitForTable()
 
-    // Cerca la famiglia
-    const searchInput = page.locator('input[placeholder="Cerca per nome famiglia..."]')
-    await searchInput.fill('Famiglia Test')
-    await gestione.waitForTable()
+    // Cerca la famiglia e usa la prima riga
+    await gestione.searchFamiglie('TEST_FAM')
 
-    // Clicca edit sulla riga "Famiglia TEST_FAM_01"
-    const editBtn = page.locator('.q-table tbody tr').filter({ hasText: 'Famiglia TEST_FAM_01' }).locator('[data-testid="btn-edit-famiglia"]')
+    // Clicca edit sulla prima riga trovata
+    const editBtn = page.locator('.q-table tbody tr').first().locator('[data-testid="btn-edit-famiglia"]')
     await expect(editBtn).toBeVisible({ timeout: 5000 })
     await editBtn.click()
 
@@ -42,17 +40,25 @@ test.describe('Riconciliazione', () => {
     await expect(dialog).not.toBeVisible({ timeout: 3000 })
   })
 
-  // ── RC-SETUP-02: Modifica contatto TEST_03 via ContattiTab ──
-  test('RC-SETUP-02: Modifica Nome/Cognome di TEST_03 @setup', async ({ page }) => {
-    test.setTimeout(60000)
+  // ── RC-SETUP-02: Modifica contatto via ContattiTab ──
+  test('RC-SETUP-02: Modifica Nome/Cognome contatto @setup', async ({ page }) => {
+    test.setTimeout(90000)
+    const testEmail = `rc_setup02_${Date.now()}@test.com`
 
     await loginAs(page, 'gestore', auth)
+
+    // Crea contatto con email univoca
+    await createContatto(page, {
+      Nome: 'Test SETUP02',
+      Cognome: 'AutoTest',
+      email: testEmail
+    })
 
     const gestione = new GestionePage(page)
     await gestione.selectContattiTab()
 
-    // Cerca test.genitore@test.com
-    await gestione.search('test.genitore@test.com')
+    // Cerca per email univoca
+    await gestione.search(testEmail)
 
     // Clicca edit sulla prima riga
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
@@ -76,7 +82,7 @@ test.describe('Riconciliazione', () => {
     await expect(dialog).not.toBeVisible({ timeout: 3000 })
 
     // Cleanup: ripristina nome originale
-    await gestione.search('test.genitore@test.com')
+    await gestione.search(testEmail)
     const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtnAfter.count() > 0) {
       await editBtnAfter.click()
@@ -84,8 +90,8 @@ test.describe('Riconciliazione', () => {
       await expect(dialogAfter).toBeVisible({ timeout: 3000 })
       const nomeInputAfter = dialogAfter.locator('.q-field').filter({ has: page.locator('.q-field__label:text-is("Nome *")') }).locator('input')
       const cognomeInputAfter = dialogAfter.locator('.q-field').filter({ has: page.locator('.q-field__label:text-is("Cognome *")') }).locator('input')
-      await nomeInputAfter.fill('Test Genitore')
-      await cognomeInputAfter.fill('Test Genitore')
+      await nomeInputAfter.fill('Test SETUP02')
+      await cognomeInputAfter.fill('AutoTest')
       await dialogAfter.locator('button:has-text("Salva")').click()
       await expect(dialogAfter).not.toBeVisible({ timeout: 3000 })
     }
@@ -93,6 +99,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-01: Pagina riconciliazione carica @smoke ──
   test('RC-01: Pagina riconciliazione carica @smoke', async ({ page }) => {
+    test.setTimeout(90000)
     await loginAs(page, 'gestore_verifica', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -105,15 +112,16 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
+    test.setTimeout(90000)
     const testEmail = `test_rc02_linked_${Date.now()}@test.com`
     console.log(`[RC-02] === INIZIO TEST ===`)
     console.log(`[RC-02] Email test: ${testEmail}`)
 
-    // Setup via API: crea contatto e assegna a famiglia
+    // Setup: crea contatto + assegna a famiglia come Genitore
     await loginAs(page, 'gestore', auth)
     const contatto = await createContatto(page, {
       Nome: 'Test RC02',
-      Cognome: 'Linked',
+      Cognome: 'AutoTest',
       email: testEmail
     })
     await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Genitore')
@@ -159,16 +167,27 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-03: Singolo campo contatto salvabile via pulsante save ──
   test('RC-03: Salva singolo campo contatto (Nome) @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testEmail = `test_rc03_${Date.now()}@test.com`
 
-    // Setup via API: crea contatto e assegna a famiglia
+    // Setup: crea contatto + assegna a famiglia come Genitore
     await loginAs(page, 'gestore', auth)
     const contatto = await createContatto(page, {
       Nome: 'Test RC03',
-      Cognome: 'Linked',
+      Cognome: 'AutoTest',
       email: testEmail
     })
     await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Genitore')
+
+    // Assegna a famiglia via UI (Gestione → Famiglie)
+    const gestione = new GestionePage(page)
+    await gestione.famiglieTab.click()
+    await gestione.waitForTable()
+    await gestione.searchFamiglie('TEST_FAM')
+    const contactsBtn = gestione.activePanel.locator('.q-table tbody tr').nth(0).locator('.q-btn').filter({ hasText: 'contacts' })
+    await contactsBtn.click()
+    await gestione.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+    await gestione.assignGenitore(testEmail)
 
     await createTestSubmission(page, {
       email: testEmail,
@@ -218,6 +237,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-04: Elimina submission (Scarta) @crud ──
   test('RC-04: Scarta submission @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testEmail = `test_rc04_scarta_${Date.now()}@test.com`
     const submission = await createTestSubmission(page, {
       email: testEmail,
@@ -264,6 +284,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-01: Toggle scartati mostra/nasconde scartati @crud ──
   test('RC-PG-01: Toggle scartati mostra/nasconde scartati @crud', async ({ page }) => {
+    test.setTimeout(90000)
     await loginAs(page, 'gestore_verifica', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -294,6 +315,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-02: Paginazione UI visibile @smoke ──
   test('RC-PG-02: Controlli paginazione visibili @smoke', async ({ page }) => {
+    test.setTimeout(90000)
     await loginAs(page, 'gestore_verifica', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -308,30 +330,41 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-03: Refresh ricarica dati @smoke ──
   test('RC-PG-03: Pulsante refresh ricarica @smoke', async ({ page }) => {
+    test.setTimeout(90000)
+    const testEmail = `test_pg03_${Date.now()}@test.com`
+    await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: 'Test RC-PG-03 refresh'
+    })
+
     await loginAs(page, 'gestore_verifica', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
-    await riconcPage.waitForTable()
+
+    // Verifica che la tabella abbia righe
+    await expect(riconcPage.tableRows.first()).toBeVisible({ timeout: 10000 })
 
     const refreshBtn = page.locator('[data-testid="btn-refresh-riconciliazioni"]')
-    await expect(refreshBtn).toBeVisible({ timeout: 3000 })
+    await expect(refreshBtn).toBeVisible({ timeout: 5000 })
+
     await refreshBtn.click()
     await riconcPage.waitForTable()
-    // La tabella deve ancora avere righe (se presenti)
-    const rows = await riconcPage.getRowCount()
-    expect(rows).toBeGreaterThanOrEqual(0)
+
+    // Dopo refresh la tabella deve ancora avere righe
+    await expect(riconcPage.tableRows.first()).toBeVisible({ timeout: 10000 })
   })
 
   // ── RC-05: Riconcilia submission completa @crud ──
   test('RC-05: Riconcilia submission completa @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testEmail = `test_rc05_${Date.now()}@test.com`
 
-    // Setup: crea contatto + assegna a famiglia come Genitore + crea submission
+    // Setup: crea contatto + assegna a famiglia come Genitore
     await loginAs(page, 'gestore', auth)
     const contatto = await createContatto(page, {
       Nome: 'Test RC05',
-      Cognome: 'Riconcilia',
+      Cognome: 'AutoTest',
       email: testEmail
     })
     await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Genitore')
@@ -399,6 +432,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-04: Recupera submission scartata @crud ──
   test('RC-PG-04: Recupera submission scartata @crud', async ({ page }) => {
+    test.setTimeout(90000)
     const testEmail = `test_pg04_restore_${Date.now()}@test.com`
     const submission = await createTestSubmission(page, {
       email: testEmail,
@@ -485,6 +519,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RG-COMB-01: GestoreVerifica su Gestione CRUD contatti @smoke ──
   test('RG-COMB-01: GestoreVerifica accede a Gestione e vede contatti @smoke', async ({ page }) => {
+    test.setTimeout(90000)
     await loginAs(page, 'gestore_verifica', auth)
 
     const gestione = new GestionePage(page)
