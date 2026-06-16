@@ -31,7 +31,7 @@ test.describe('Riconciliazione', () => {
     await expect(dialog).toBeVisible({ timeout: 3000 })
 
     const ibanInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:has-text("IBAN")') }).locator('input')
-    const intestInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:has-text("Intestatario CC")') }).locator('input')
+    const intestInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:has-text("Intestatario")') }).locator('input')
 
     await ibanInput.fill('IT12X1234567890123456789012')
     await intestInput.fill('Famiglia Test Intestatario')

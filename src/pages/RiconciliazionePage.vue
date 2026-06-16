@@ -67,6 +67,12 @@
                   </div>
                   <q-separator class="q-mb-sm" />
                   <div class="row q-col-gutter-sm">
+                    <div class="col-12">
+                      <div class="text-caption text-grey-7">
+                        Descrizione
+                      </div>
+                      <div class="text-caption" style="white-space: pre-wrap; word-break: break-word;">{{ props.row.descrizione || '—' }}</div>
+                    </div>
                     <div class="col-6">
                       <div class="text-caption text-grey-7">
                         Data invio
@@ -322,6 +328,17 @@
           </q-td>
         </template>
 
+        <template #body-cell-descrizione="props">
+          <q-td :props="props">
+            <div class="row items-center no-wrap" style="max-width: 220px;">
+              <span class="text-caption ellipsis">{{ props.value || '—' }}</span>
+              <q-btn v-if="props.value?.length > 40" flat round dense icon="open_in_full" size="xs" @click="showDescrizioneDialog(props.value)">
+                <q-tooltip>Leggi descrizione completa</q-tooltip>
+              </q-btn>
+            </div>
+          </q-td>
+        </template>
+
         <template #body-cell-telefono="props">
           <q-td :props="props">
             <a v-if="props.value" :href="'tel:'+props.value" class="text-primary">{{ props.value }}</a><span v-else class="text-grey-5">—</span>
@@ -440,6 +457,23 @@
         :contatto="assegnaContatto"
         ruolo="Genitore"
       />
+
+      <!-- Dialog descrizione completa -->
+      <q-dialog v-model="descrizioneDialog.visible">
+        <q-card style="width: 100%; max-width: 500px; min-width: unset">
+          <q-card-section class="row items-center">
+            <div class="text-h6">Descrizione</div>
+            <q-space />
+            <q-btn v-close-popup icon="close" flat round dense />
+          </q-card-section>
+          <q-card-section class="q-pt-none text-body2" style="white-space: pre-wrap;">
+            {{ descrizioneDialog.text }}
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn v-close-popup flat label="Chiudi" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
   </q-page>
 </template>
@@ -463,6 +497,11 @@ const gestioneStore = useGestioneStore()
 
 const riconciliaDialog = ref(false)
 const reconcilingSubmission = ref(null)
+
+const descrizioneDialog = ref({ visible: false, text: '' })
+function showDescrizioneDialog(text) {
+  descrizioneDialog.value = { visible: true, text }
+}
 
 const contattoDialogVisible = ref(false)
 const submissionForContatto = ref(null)
@@ -490,6 +529,7 @@ const submissionColumns = [
   { name: 'data_invio', label: 'Data invio', field: 'data_invio', align: 'left', sortable: true },
   { name: 'richiedente', label: 'Richiedente', field: row => `${row.nome_richiedente || ''} ${row.cognome_richiedente || ''}`, align: 'left' },
   { name: 'email', label: 'Email', field: 'email', align: 'left' },
+  { name: 'descrizione', label: 'Descrizione', field: 'descrizione', align: 'left' },
   { name: 'telefono', label: 'Telefono', field: 'telefono', align: 'left' },
   { name: 'stato', label: 'Stato email', field: '_detectState', align: 'left' },
   { name: 'beneficiario', label: 'Beneficiario', field: row => `${row.nome_beneficiario || ''} ${row.cognome_beneficiario || ''}`, align: 'left' },
