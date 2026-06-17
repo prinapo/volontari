@@ -13,7 +13,7 @@ export const contattiService = {
   getByEmail(email) {
     return api.get('/items/contatti', {
       params: {
-        'filter[email][email_address][_eq]': email,
+        'filter[email][email_address][_eq]': email.toLowerCase(),
         fields: 'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id'
       }
     })

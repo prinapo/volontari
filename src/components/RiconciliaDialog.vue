@@ -423,7 +423,7 @@ const leftFields = [
 ]
 
 const PROJECT_FIELD_MAP = {
-  Beneficiario: 'cognome_beneficiario'
+  Beneficiario: (submission) => [submission.nome_beneficiario, submission.cognome_beneficiario].filter(Boolean).join(' ')
 }
 
 const projectFields = [
@@ -445,7 +445,10 @@ const progettoOptions = computed(() =>
 function getSubmissionProjectValue(key) {
   const submission = props.submission
   if (!submission) return ''
-  if (key === 'Beneficiario') return submission.cognome_beneficiario || ''
+  if (key === 'Beneficiario') {
+    const parts = [submission.nome_beneficiario, submission.cognome_beneficiario].filter(Boolean)
+    return parts.join(' ')
+  }
   return ''
 }
 
@@ -468,9 +471,9 @@ function confirmProjectField(key) {
 }
 
 function copyProjectField(key) {
-  const srcKey = PROJECT_FIELD_MAP[key]
-  if (!srcKey || !props.submission) return
-  const val = props.submission[srcKey] || ''
+  const srcMapping = PROJECT_FIELD_MAP[key]
+  if (!srcMapping || !props.submission) return
+  const val = typeof srcMapping === 'function' ? srcMapping(props.submission) : (props.submission[srcMapping] || '')
   if (!val) return
 
   $q.dialog({
