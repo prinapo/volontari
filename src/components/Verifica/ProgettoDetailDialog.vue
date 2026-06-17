@@ -121,7 +121,19 @@
             Progetto
           </div>
           <div v-for="f in progetto.allegatiProgetto" :key="f.directus_files_id?.id" class="q-ml-sm">
-            <a :href="assetUrl(f.directus_files_id?.id)" target="_blank" class="text-body2">{{ f.directus_files_id?.filename_download || 'Apri' }}</a>
+            <q-btn
+              :href="assetUrl(f.directus_files_id?.id)"
+              target="_blank"
+              type="a"
+              flat
+              dense
+              round
+              icon="open_in_new"
+              size="sm"
+              aria-label="Apri allegato progetto"
+            >
+              <q-tooltip>{{ f.directus_files_id?.filename_download || 'Apri allegato progetto' }}</q-tooltip>
+            </q-btn>
           </div>
         </div>
         <div v-if="progetto.allegatiISEE?.length" class="q-mb-sm">
@@ -129,7 +141,19 @@
             ISEE
           </div>
           <div v-for="f in progetto.allegatiISEE" :key="f.directus_files_id?.id" class="q-ml-sm">
-            <a :href="assetUrl(f.directus_files_id?.id)" target="_blank" class="text-body2">{{ f.directus_files_id?.filename_download || 'Apri' }}</a>
+            <q-btn
+              :href="assetUrl(f.directus_files_id?.id)"
+              target="_blank"
+              type="a"
+              flat
+              dense
+              round
+              icon="open_in_new"
+              size="sm"
+              aria-label="Apri allegato ISEE"
+            >
+              <q-tooltip>{{ f.directus_files_id?.filename_download || 'Apri allegato ISEE' }}</q-tooltip>
+            </q-btn>
           </div>
         </div>
         <div v-if="progetto.allegatiGiustificativi?.length" class="q-mb-sm">
@@ -137,7 +161,19 @@
             Giustificativi
           </div>
           <div v-for="f in progetto.allegatiGiustificativi" :key="f.directus_files_id?.id" class="q-ml-sm">
-            <a :href="assetUrl(f.directus_files_id?.id)" target="_blank" class="text-body2">{{ f.directus_files_id?.filename_download || 'Apri' }}</a>
+            <q-btn
+              :href="assetUrl(f.directus_files_id?.id)"
+              target="_blank"
+              type="a"
+              flat
+              dense
+              round
+              icon="open_in_new"
+              size="sm"
+              aria-label="Apri giustificativo"
+            >
+              <q-tooltip>{{ f.directus_files_id?.filename_download || 'Apri giustificativo' }}</q-tooltip>
+            </q-btn>
           </div>
         </div>
       </q-card-section>
@@ -197,7 +233,7 @@
           Dati bancari
         </div>
         <div class="row q-col-gutter-md">
-          <div class="col-6">
+          <div class="col-12 col-sm-6">
             <div class="text-caption text-grey-7">
               IBAN
             </div>
@@ -205,7 +241,7 @@
               {{ progetto.iban || '—' }}
             </div>
           </div>
-          <div class="col-6">
+          <div class="col-12 col-sm-6">
             <div class="text-caption text-grey-7">
               Intestatario CC
             </div>
@@ -247,12 +283,20 @@
                       {{ statoLabel(slotProps.row.Stato) }}
                     </q-badge>
                     <q-space />
-                    <a
+                    <q-btn
                       v-if="slotProps.row.Allegato"
                       :href="assetUrl(slotProps.row.Allegato)"
                       target="_blank"
-                      class="text-body2"
-                    >Apri</a>
+                      type="a"
+                      flat
+                      dense
+                      round
+                      icon="open_in_new"
+                      size="sm"
+                      aria-label="Apri allegato"
+                    >
+                      <q-tooltip>Apri allegato</q-tooltip>
+                    </q-btn>
                     <span v-else class="text-grey-5 text-caption">—</span>
                   </div>
                 </q-card-section>
@@ -268,12 +312,20 @@
           </template>
           <template #body-cell-allegato="cellProps">
             <q-td :props="cellProps">
-              <a
+              <q-btn
                 v-if="cellProps.value"
                 :href="assetUrl(cellProps.value)"
                 target="_blank"
-                class="text-body2"
-              >Apri</a>
+                type="a"
+                flat
+                dense
+                round
+                icon="open_in_new"
+                size="sm"
+                aria-label="Apri allegato"
+              >
+                <q-tooltip>Apri allegato</q-tooltip>
+              </q-btn>
               <span v-else class="text-grey-5">—</span>
             </q-td>
           </template>

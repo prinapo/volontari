@@ -37,3 +37,11 @@ export function statoColor(stato) {
   }
   return colors[stato] || 'grey'
 }
+
+export function displayFullName(row, order = 'cognome_nome') {
+  const nome = row?.Nome || row?.nome || ''
+  const cognome = row?.Cognome || row?.cognome || ''
+  if (!nome && !cognome) return ''
+  if (order === 'cognome_nome') return `${cognome} ${nome}`.trim()
+  return `${nome} ${cognome}`.trim()
+}

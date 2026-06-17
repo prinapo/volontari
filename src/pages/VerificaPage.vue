@@ -131,7 +131,7 @@
                   expand-separator
                   :label="props.row.famiglia || 'Famiglia senza nome'"
                   :caption="`${props.row.beneficiario || ''} — Bando ${props.row.annoBando}`"
-                  :header-style="{ borderRadius: '8px' }"
+                  :header-style="{ borderRadius: '12px' }"
                   @show="loadFamigliaContatti(props.row.idFamiglia)"
                 >
                   <q-card flat bordered>
@@ -252,9 +252,31 @@
                                     Allegato
                                   </div>
                                   <div v-if="g.Allegato" class="row q-gutter-x-xs">
-                                    <a :href="assetUrl(g.Allegato)" target="_blank" class="text-body2">Apri</a>
-                                    <span class="text-grey-5">|</span>
-                                    <a :href="assetUrl(g.Allegato, true)" class="text-body2">Scarica</a>
+                                    <q-btn
+                                      :href="assetUrl(g.Allegato)"
+                                      target="_blank"
+                                      type="a"
+                                      flat
+                                      dense
+                                      round
+                                      icon="open_in_new"
+                                      size="sm"
+                                      aria-label="Apri allegato"
+                                    >
+                                      <q-tooltip>Apri allegato</q-tooltip>
+                                    </q-btn>
+                                    <q-btn
+                                      :href="assetUrl(g.Allegato, true)"
+                                      type="a"
+                                      flat
+                                      dense
+                                      round
+                                      icon="file_download"
+                                      size="sm"
+                                      aria-label="Scarica allegato"
+                                    >
+                                      <q-tooltip>Scarica allegato</q-tooltip>
+                                    </q-btn>
                                   </div>
                                   <div v-else class="text-grey-5">
                                     —
@@ -585,16 +607,31 @@
 
                         <q-item-section class="col-2">
                           <div v-if="g.Allegato" class="row q-gutter-x-xs">
-                            <a
+                            <q-btn
                               :href="assetUrl(g.Allegato)"
                               target="_blank"
-                              class="text-body2"
-                            >Apri</a>
-                            <span class="text-grey-5">|</span>
-                            <a
+                              type="a"
+                              flat
+                              dense
+                              round
+                              icon="open_in_new"
+                              size="sm"
+                              aria-label="Apri allegato"
+                            >
+                              <q-tooltip>Apri allegato</q-tooltip>
+                            </q-btn>
+                            <q-btn
                               :href="assetUrl(g.Allegato, true)"
-                              class="text-body2"
-                            >Scarica</a>
+                              type="a"
+                              flat
+                              dense
+                              round
+                              icon="file_download"
+                              size="sm"
+                              aria-label="Scarica allegato"
+                            >
+                              <q-tooltip>Scarica allegato</q-tooltip>
+                            </q-btn>
                           </div>
                           <div v-else class="text-grey-5 text-body2">
                             —
@@ -1044,7 +1081,7 @@ function openRowDetail(row) {
   min-height: 76px;
   padding: 12px 14px;
   border: 1px solid #dedede;
-  border-radius: 6px;
+  border-radius: 12px;
   background: #ffffff;
 }
 

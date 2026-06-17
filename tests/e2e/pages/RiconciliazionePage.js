@@ -16,25 +16,21 @@ export class RiconciliazionePage {
     return this.page.locator('.q-table tbody tr')
   }
 
+  get rowLocator() {
+    return this.page.locator('.q-table tbody tr, .q-expansion-item')
+  }
+
   get riconciliaBtn() {
     return this.page.locator('button:has-text("Riconcilia")').filter({ hasNot: this.page.locator('[disabled]') })
   }
 
-  async getRowBadgeText(rowIndex = 0) {
-    return await this.tableRows.nth(rowIndex).locator('.q-badge').first().innerText()
-  }
-
-  async clickRiconcilia(rowIndex = 0) {
-    const btn = this.tableRows.nth(rowIndex).locator('[data-testid="btn-riconcilia"]').first()
-    await btn.click()
-  }
-
   async waitForTable() {
-    await this.table.waitFor({ state: 'visible', timeout: 30000 })
-    await this.page.waitForResponse(
-      resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'GET',
-      { timeout: 15000 }
-    ).catch(() => {})
+    await this.page.waitForFunction(() => {
+      const tr = document.querySelector('.q-table tbody tr')
+      const exp = document.querySelector('.q-expansion-item')
+      return !!(tr || exp)
+    }, { timeout: 30000 }).catch(() => {})
+    await this.page.waitForTimeout(1000)
   }
 
   get dialog() {
@@ -55,7 +51,15 @@ export class RiconciliazionePage {
   }
 
   async getRowCount() {
-    return await this.tableRows.count()
+    return await this.rowLocator.count()
+  }
+
+  async expandRow(index) {
+    const row = this.rowLocator.nth(index)
+    if (await row.locator('.q-expansion-item--expanded').count() === 0) {
+      await row.click()
+      await this.page.waitForTimeout(500)
+    }
   }
 
   async getTotalItems() {

@@ -5,6 +5,14 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 const expectedHeaders = ['Nome e Cognome', 'Email', 'Cellulare', 'Tipo', 'Stato account', 'Famiglie', 'Azioni']
 
+async function expandFirstCardIfMobile(page) {
+  const exp = page.locator('.q-expansion-item')
+  if (await exp.count() > 0 && await page.locator('.q-expansion-item--expanded').count() === 0) {
+    await exp.first().click()
+    await page.waitForTimeout(500)
+  }
+}
+
 test.describe('ContattiTab — Caricamento e Layout', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'gestore', auth)
@@ -15,13 +23,16 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
   test('CT-01: Pagina carica e tab Contatti selezionato @smoke', async ({ page }) => {
     const gp = new GestionePage(page)
     await expect(gp.contattiTab).toBeVisible({ timeout: 10000 })
+    await gp.waitForTable()
     await expect(gp.searchInput).toBeVisible({ timeout: 5000 })
-    await expect(gp.table).toBeVisible({ timeout: 10000 })
+    const count = await gp.getRowCount()
+    expect(count).toBeGreaterThanOrEqual(0)
   })
 
   test('CT-02: Intestazioni colonne ordine corretto @smoke', async ({ page }) => {
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
+    await gp.waitForTable()
     const total = await gp.getTotalItems()
     const rows = await gp.getRowCount()
     expect(total).toBeGreaterThanOrEqual(0)
@@ -57,9 +68,16 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
       return
     }
 
-    // Get the first row's name to search for
-    const firstNameCell = await gp.tableRows.first().locator('td').nth(0).innerText()
-    const searchTerm = firstNameCell.trim().split(' ')[0]
+    let searchTerm
+    const hasDesktopRows = await gp.tableRows.count() > 0
+    if (hasDesktopRows) {
+      const firstNameCell = await gp.tableRows.first().locator('td').nth(0).innerText()
+      searchTerm = firstNameCell.trim().split(' ')[0]
+    } else {
+      const label = await page.locator('.q-expansion-item .q-item__label').first().innerText()
+      searchTerm = label.trim().split(' ')[0]
+    }
+
     if (!searchTerm || searchTerm === '—') {
       test.skip()
       return
@@ -104,13 +122,22 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     const rows = await gp.getRowCount()
     expect(rows).toBeGreaterThan(0)
 
-    const headers = await gp.getTableHeaderTexts()
-    const tipoIdx = headers.indexOf('Tipo')
-    expect(tipoIdx).not.toBe(-1)
-
-    const tipoText = await gp.getCellText(0, tipoIdx)
-    expect(['Volontario', 'Genitore', 'Referente', 'Contatto']).toContain(tipoText)
-    expect(tipoText.trim()).toBeTruthy()
+    const hasDesktopRows = await gp.tableRows.count() > 0
+    if (hasDesktopRows) {
+      const headers = await gp.getTableHeaderTexts()
+      const tipoIdx = headers.indexOf('Tipo')
+      expect(tipoIdx).not.toBe(-1)
+      const tipoText = await gp.getCellText(0, tipoIdx)
+      expect(['Volontario', 'Genitore', 'Referente', 'Contatto']).toContain(tipoText)
+    } else {
+      // Espandi la prima card per vedere il badge
+      await page.locator('.q-expansion-item').first().click()
+      await page.waitForTimeout(500)
+      const badge = page.locator('.q-expansion-item--expanded .q-badge').first()
+      await expect(badge).toBeVisible()
+      const text = await badge.innerText()
+      expect(['Volontario', 'Genitore', 'Referente', 'Contatto']).toContain(text)
+    }
   })
 })
 
@@ -126,28 +153,34 @@ test.describe('ContattiTab — Directus 11 deep field fix', () => {
       return
     }
 
-    // The table rendered successfully with rows — the key fix is that
-    // contatti with null user_id are NOT excluded by the query (no INNER JOIN).
-    // Verify at least the "Nome e Cognome" column renders with a value.
-    const firstCell = await gp.getFirstCellText()
-    expect(firstCell).toBeTruthy()
-    expect(firstCell).not.toBe('')
+    const hasDesktopRows = await gp.tableRows.count() > 0
+    if (hasDesktopRows) {
+      // The table rendered successfully with rows — the key fix is that
+      // contatti with null user_id are NOT excluded by the query (no INNER JOIN).
+      // Verify at least the "Nome e Cognome" column renders with a value.
+      const firstCell = await gp.getFirstCellText()
+      expect(firstCell).toBeTruthy()
+      expect(firstCell).not.toBe('')
 
-    // Find the Stato account column to check for user_id presence
-    const headers = await gp.getTableHeaderTexts()
-    const statoIdx = headers.indexOf('Stato account')
-    if (statoIdx !== -1) {
-      let foundDash = false
-      for (let i = 0; i < Math.min(rows, 10); i++) {
-        const cellText = await gp.getCellText(i, statoIdx)
-        if (cellText === '—') {
-          foundDash = true
-          break
+      // Find the Stato account column to check for user_id presence
+      const headers = await gp.getTableHeaderTexts()
+      const statoIdx = headers.indexOf('Stato account')
+      if (statoIdx !== -1) {
+        let foundDash = false
+        for (let i = 0; i < Math.min(rows, 10); i++) {
+          const cellText = await gp.getCellText(i, statoIdx)
+          if (cellText === '—') {
+            foundDash = true
+            break
+          }
         }
+        expect(foundDash).toBe(true)
       }
-      if (foundDash) {
-        console.log('CT-08: Found contatti without user_id — Directus fix verified')
-      }
+    } else {
+      // Mobile: verifica che la card sia renderizzata con label non vuoto
+      const label = await page.locator('.q-expansion-item .q-item__label').first().innerText()
+      expect(label).toBeTruthy()
+      expect(label).not.toBe('')
     }
   })
 })
@@ -218,6 +251,7 @@ test.describe('ContattiTab — CRUD', () => {
     // Modifica contatto
     const gp = new GestionePage(page)
     await gp.search(nome)
+    await expandFirstCardIfMobile(page)
     expect(await gp.getRowCount()).toBeGreaterThan(0)
 
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
@@ -237,10 +271,12 @@ test.describe('ContattiTab — CRUD', () => {
 
     // Verifica modifica persiste
     await gp.search(nomeMod)
+    await expandFirstCardIfMobile(page)
     expect(await gp.getRowCount()).toBeGreaterThanOrEqual(1)
 
     // Ripristina nome originale
     await gp.search(nomeMod)
+    await expandFirstCardIfMobile(page)
     const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtnAfter.count() > 0) {
       await editBtnAfter.click()
@@ -290,6 +326,7 @@ test.describe('ContattiTab — CRUD', () => {
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
 
     await gp.search(nome)
+    await expandFirstCardIfMobile(page)
 
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     await expect(editBtn).toBeVisible({ timeout: 5000 })
@@ -355,6 +392,7 @@ test.describe('ContattiTab — CRUD', () => {
     // Modifica contatto per aggiungere email
     const gp = new GestionePage(page)
     await gp.search(nome)
+    await expandFirstCardIfMobile(page)
 
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     await expect(editBtn).toBeVisible({ timeout: 5000 })

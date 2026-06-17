@@ -1,6 +1,7 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 import { GestionePage } from '../pages/GestionePage.js'
+import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
@@ -78,10 +79,11 @@ test.describe('Gestione Fixes', () => {
 
     await loginAs(page, 'verificatore', auth)
 
+    const riconcPage = new RiconciliazionePage(page)
     await page.goto('/riconciliazione')
-    await page.waitForTimeout(3000)
+    await riconcPage.waitForTable()
 
-    const rows = page.locator('.q-table tbody tr')
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const badges = rows.nth(i).locator('.q-badge')
@@ -89,9 +91,15 @@ test.describe('Gestione Fixes', () => {
       for (let j = 0; j < badgeCount; j++) {
         const text = await badges.nth(j).innerText()
         if (text.includes('Contatto da creare')) {
+          await riconcPage.expandRow(i)
           const emailCell = rows.nth(i).locator('td').nth(2)
           const input = emailCell.locator('input')
-          expect(await input.isVisible({ timeout: 3000 }).catch(() => false)).toBe(true)
+          if (await input.count() === 0) {
+            const cardInput = rows.nth(i).locator('input').first()
+            expect(await cardInput.isVisible({ timeout: 3000 }).catch(() => false)).toBe(true)
+          } else {
+            expect(await input.isVisible({ timeout: 3000 }).catch(() => false)).toBe(true)
+          }
           return
         }
       }
@@ -102,12 +110,18 @@ test.describe('Gestione Fixes', () => {
   test('GF-03: Telefono visibile nella lista submission @smoke', async ({ page }) => {
     await loginAs(page, 'verificatore', auth)
 
-    await page.goto('/gestione')
-    await page.waitForTimeout(2000)
+    const riconcPage = new RiconciliazionePage(page)
     await page.goto('/riconciliazione')
-    await page.waitForTimeout(3000)
+    await riconcPage.waitForTable()
 
     const phoneHeader = page.locator('th:has-text("Telefono")')
-    expect(await phoneHeader.isVisible({ timeout: 5000 }).catch(() => false)).toBe(true)
+    const phoneVisibleDesktop = await phoneHeader.isVisible({ timeout: 3000 }).catch(() => false)
+    if (phoneVisibleDesktop) {
+      expect(phoneVisibleDesktop).toBe(true)
+      return
+    }
+    // Su mobile: il testo Telefono è nella card header/caption
+    const hasTelefono = await page.locator('.q-expansion-item:has-text("Telefono")').count() > 0
+    expect(hasTelefono).toBe(true)
   })
 })

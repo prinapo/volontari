@@ -1,6 +1,22 @@
 # Regola — Solo capacità native Quasar
 Ogni modifica UI deve usare esclusivamente componenti, props, classi e API native di Quasar. Niente librerie CSS terze (Tailwind, Bootstrap), niente componenti custom esterni, niente manipolazione DOM diretta. Lo stile va in `src/css/app.scss` con variabili CSS custom e override di classi Quasar. Google Fonts è l'unica eccezione. Vale per TUTTO il codice, esistente e nuovo.
 
+# v2.8.0
+
+- **SMTP Directus locale**: configurato in docker-compose per test RP-10.
+- **Nuova tab Progetti in AdminPage**: split Intestatario_CC in Cognome/Nome input separati con salvataggio.
+- **Nuovi campi Cognome_Beneficiario/Nome_Beneficiario**: migrazione da Cognome_e__Nome_Beneficiario in tutto il codice (9 file, ~21 occorrenze).
+- **RiconciliaDialog**: Beneficiario → Cognome_Beneficiario + Nome_Beneficiario separati; Intestatario spostato in projectFields.
+- **RiconciliaDialog campi uguali**: icona check_circle + freccia/save nascosti se uguali.
+- **RiconciliaDialog margini ridotti**: padding diminuito tra campi confronto.
+- **Allegati con icone/tooltip**: sostituiti link "Apri"/"Scarica" in 5 file (VerificaPage, RiconciliazionePage, ProgettoDetailDialog, GiustificativoCard, RiconciliaDialog).
+- **LoginPage**: card larghezza uniforme (`login-card` class).
+- **Border-radius 12px uniforme**: su tutte le expansion-item card mobile.
+- **Fix test desktop**: 4 selettori `a:has-text("Apri/Scarica")` aggiornati, RP-10 sbloccato (SMTP).
+- **Test SR-02 reso atomico**: ora crea giustificativo via UI invece di skip passivo.
+- **Pagine oggetto mobile-friendly**: GestionePage.waitForTable/getRowCount/search/clickContactsOnFamiglia, RiconciliazionePage.waitForTable/rowLocator/expandRow.
+- **Fix test mobile**: contatti (11/11), email-case (4/4), layout (5/5), reset-password (6/6), gestione-fixes (2/3).
+
 # v2.7.2
 
 - **Fix card riconciliazione mobile**: richiedente ora usa `nome_richiedente` + `cognome_richiedente` invece del campo computato `richiedente` (non disponibile in grid mode).
@@ -686,6 +702,46 @@ const PRODUCTION_DOMAINS = ['sostienilsostegno.com', 'app.sostienilsostegno']
 ```
 
 Nessun test può essere eseguito su produzione — se tenta, si blocca prima ancora di iniziare.
+```
+
+---
+
+# TODO — Test mobile ancora da fixare
+
+## Bloccanti (failure visibili)
+
+### riconciliazione.spec.js — 8 fail
+- RC-02: rowLocator non trova email su mobile (innerText su expansion item)
+- RC-03/04/05, RC-PG-03/04: usano rowLocator ma badge/bottoni in card collassata → serve expandRow()
+- Necessità: aggiungere `expandRow()` prima di leggere badge/bottoni nei loop di ricerca
+
+### verifica.spec.js — 8 fail
+- TB-01, FL-06: VerificaPage usa `tbody tr`/`td` — non supporta grid mode mobile
+- DB-V1/2/3/4: dati bancari edit — usa `rows.nth(i).locator('td')` 
+- SR-02: timeout (crea giustificativo via UI che fallisce su mobile)
+- VP-DETT-02: pulsante dettaglio in riga tabella, non in card mobile
+- Necessità: VerificaPage page object da rendere mobile-friendly
+
+### verifica-flow.spec.js — 5 fail
+- VF-01..05: usano `createGiustificativoViaDialog()` → `aggiungiBtn.click()` fallisce su mobile
+- Necessità: FamigliePage mobile layout diverso, button "Aggiungi" non trovato
+
+### giustificativi.spec.js — timeout
+- AL-01/03/04/RO-02 già fixati su desktop, su mobile i selettori icona non funzionano
+- Necessità: verifica selettori icona su grid mode mobile
+
+## Non bloccanti (skip o marginali)
+- referente.spec.js RF-02: clickContactsOnFamiglia mobile fallisce (skip)
+- gestione-fixes.spec.js GF-01: clickContactsOnFamiglia mobile fallisce (skip)
+- riconciliazione.spec.js RC-SETUP-01/02 pass
+
+## Passi futuri
+1. Rendere VerificaPage page object mobile-friendly (rowLocator, waitForTable, expandRow)
+2. Fixare riconciliazione tests con expandRow()
+3. Fixare verifica-flow tests
+4. Fixare giustificativi mobile
+5. Eseguire full suite desktop + mobile
+6. Report finale
 ```
 
 **(copy exactly including closing backticks)**

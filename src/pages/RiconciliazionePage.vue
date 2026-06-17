@@ -46,7 +46,7 @@
               :label="`${props.row.nome_richiedente || ''} ${props.row.cognome_richiedente || ''}` || 'Richiedente sconosciuto'"
               :caption="props.row.email || ''"
               :header-style="{
-                borderRadius: '8px',
+                borderRadius: '12px',
                 borderLeft: `4px solid ${cardStateColor(props.row._detectState, props.row.stato)}`
               }"
             >
@@ -97,7 +97,20 @@
                       <div class="text-caption text-grey-7">
                         Allegato
                       </div>
-                      <a v-if="props.row.allegato" :href="assetUrl(props.row.allegato)" target="_blank" class="text-body2">Apri</a>
+                      <q-btn
+                        v-if="props.row.allegato"
+                        :href="assetUrl(props.row.allegato)"
+                        target="_blank"
+                        type="a"
+                        flat
+                        dense
+                        round
+                        icon="open_in_new"
+                        size="sm"
+                        aria-label="Apri allegato"
+                      >
+                        <q-tooltip>Apri allegato</q-tooltip>
+                      </q-btn>
                       <span v-else class="text-grey-5">—</span>
                     </div>
                   </div>
@@ -237,12 +250,20 @@
 
         <template #body-cell-allegato="props">
           <q-td :props="props">
-            <a
+            <q-btn
               v-if="props.value"
               :href="assetUrl(props.value)"
               target="_blank"
-              class="text-body2"
-            >Apri</a>
+              type="a"
+              flat
+              dense
+              round
+              icon="open_in_new"
+              size="sm"
+              aria-label="Apri allegato"
+            >
+              <q-tooltip>Apri allegato</q-tooltip>
+            </q-btn>
             <span v-else class="text-grey-5">—</span>
           </q-td>
         </template>

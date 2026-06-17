@@ -5,10 +5,10 @@ export const verificaService = {
     const params = {
       limit,
       page,
-      sort: sort || 'Famiglia,AnnoBando,Cognome_e__Nome_Beneficiario',
+      sort: sort || 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario',
       fields: [
         'id_progetto', 'AnnoBando', 'Allocato', 'Ambito',
-        'Cognome_e__Nome_Beneficiario', 'Titolo_Progetto', 'Famiglia',
+        'Cognome_Beneficiario', 'Nome_Beneficiario', 'Titolo_Progetto', 'Famiglia',
         'StatoRendicontazione', 'TotaleGiustificativi', 'TotaleImporto',
         'Data_Inizio_Progetto', 'Data_Fine_Progetto', 'Eta',
         'Descrizione_Progetto', 'Descrizione_Condizione', 'Dettaglio_Costi',

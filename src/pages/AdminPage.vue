@@ -7,76 +7,161 @@
       </div>
     </div>
     <template v-else>
-      <div v-if="!store.loading && store.users.length === 0 && !store.error" class="text-center text-grey-5 q-py-xl">
-        <q-icon name="admin_panel_settings" size="64px" />
-        <div class="text-h6 q-mt-md">
-          Nessun utente trovato
-        </div>
-        <div class="text-body2">
-          Verifica i permessi API di Directus.
-        </div>
-      </div>
-
-      <div class="row items-center q-gutter-sm q-mb-md">
-        <div>
-          <div class="text-h5 text-weight-medium">
-            User Admin
-          </div>
-          <div class="text-body2 text-grey-7">
-            Gestisci utenti, ruoli e invii comunicazioni.
-          </div>
-        </div>
-        <q-space />
-        <q-btn
-          flat
-          round
-          icon="refresh"
-          :loading="store.loading"
-          aria-label="Aggiorna"
-          @click="store.fetchAll"
+      <div class="q-mb-md">
+        <q-tabs
+          v-model="activeTab"
+          dense
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+          align="left"
         >
-          <q-tooltip>Aggiorna</q-tooltip>
-        </q-btn>
-        <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
+          <q-tab name="utenti" icon="people" label="Utenti" />
+          <q-tab name="progetti" icon="account_balance" label="Progetti" />
+        </q-tabs>
       </div>
 
-      <q-banner v-if="store.error" class="bg-red-1 text-negative q-mb-md" rounded>
-        {{ store.error }}
-      </q-banner>
+      <q-tab-panels v-model="activeTab" animated>
+        <q-tab-panel name="utenti">
+          <div v-if="!store.loading && store.users.length === 0 && !store.error" class="text-center text-grey-5 q-py-xl">
+            <q-icon name="admin_panel_settings" size="64px" />
+            <div class="text-h6 q-mt-md">
+              Nessun utente trovato
+            </div>
+            <div class="text-body2">
+              Verifica i permessi API di Directus.
+            </div>
+          </div>
 
-      <q-table
-        :rows="store.users"
-        :columns="columns"
-        row-key="id"
-        flat
-        bordered
-        :loading="store.loading"
-        :pagination="{ rowsPerPage: 0 }"
-        hide-pagination
-        :grid="$q.screen.lt.sm"
-      >
-        <template #item="props">
-          <div class="q-pa-xs col-12">
-            <q-card flat bordered>
-              <q-card-section class="q-py-sm">
+          <div class="row items-center q-gutter-sm q-mb-md">
+            <div>
+              <div class="text-h5 text-weight-medium">
+                User Admin
+              </div>
+              <div class="text-body2 text-grey-7">
+                Gestisci utenti, ruoli e invii comunicazioni.
+              </div>
+            </div>
+            <q-space />
+            <q-btn
+              flat
+              round
+              icon="refresh"
+              :loading="store.loading"
+              aria-label="Aggiorna"
+              @click="store.fetchAll"
+            >
+              <q-tooltip>Aggiorna</q-tooltip>
+            </q-btn>
+            <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
+          </div>
+
+          <q-banner v-if="store.error" class="bg-red-1 text-negative q-mb-md" rounded>
+            {{ store.error }}
+          </q-banner>
+
+          <q-table
+            :rows="store.users"
+            :columns="userColumns"
+            row-key="id"
+            flat
+            bordered
+            :loading="store.loading"
+            :pagination="{ rowsPerPage: 0 }"
+            hide-pagination
+            :grid="$q.screen.lt.sm"
+          >
+            <template #item="props">
+              <div class="q-pa-xs col-12">
+                <q-card flat bordered>
+                  <q-card-section class="q-py-sm">
+                    <div class="text-weight-medium">
+                      {{ props.row.first_name }} {{ props.row.last_name }}
+                    </div>
+                    <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
+                      —
+                    </div>
+                    <div class="text-caption">
+                      {{ props.row.email }}
+                    </div>
+                    <div class="row items-center q-gutter-xs q-mt-xs">
+                      <q-badge
+                        :color="roleColor(props.row.role?.name)"
+                        outline
+                        class="q-px-sm q-py-xs"
+                      >
+                        {{ props.row.role?.name || 'Nessun ruolo' }}
+                      </q-badge>
+                      <q-space />
+                      <q-select
+                        :model-value="props.row.role?.id"
+                        :options="roleOptions"
+                        option-value="id"
+                        option-label="name"
+                        dense
+                        options-dense
+                        outlined
+                        emit-value
+                        map-options
+                        class="admin-role-select admin-role-min-width"
+                        :loading="store.saving"
+                        @update:model-value="(val) => handleRoleChange(props.row.id, val)"
+                      >
+                        <template #selected-item="opt">
+                          <div class="text-caption">
+                            {{ opt.opt.name }}
+                          </div>
+                        </template>
+                      </q-select>
+                      <q-btn
+                        flat
+                        dense
+                        icon="lock_reset"
+                        color="warning"
+                        size="sm"
+                        aria-label="Reset password"
+                        @click="openResetPasswordDialog(props.row)"
+                      >
+                        <q-tooltip>Reset password</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </template>
+
+            <template #body-cell-name="props">
+              <q-td :props="props">
                 <div class="text-weight-medium">
                   {{ props.row.first_name }} {{ props.row.last_name }}
                 </div>
                 <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
                   —
                 </div>
-                <div class="text-caption">
-                  {{ props.row.email }}
-                </div>
-                <div class="row items-center q-gutter-xs q-mt-xs">
-                  <q-badge
-                    :color="roleColor(props.row.role?.name)"
-                    outline
-                    class="q-px-sm q-py-xs"
-                  >
-                    {{ props.row.role?.name || 'Nessun ruolo' }}
-                  </q-badge>
-                  <q-space />
+              </q-td>
+            </template>
+
+            <template #body-cell-email="props">
+              <q-td :props="props">
+                {{ props.row.email }}
+              </q-td>
+            </template>
+
+            <template #body-cell-role="props">
+              <q-td :props="props">
+                <q-badge
+                  :color="roleColor(props.row.role?.name)"
+                  outline
+                  class="q-px-sm q-py-xs"
+                >
+                  {{ props.row.role?.name || 'Nessun ruolo' }}
+                </q-badge>
+              </q-td>
+            </template>
+
+            <template #body-cell-actions="props">
+              <q-td :props="props">
+                <div class="row items-center q-gutter-xs no-wrap">
                   <q-select
                     :model-value="props.row.role?.id"
                     :options="roleOptions"
@@ -87,7 +172,7 @@
                     outlined
                     emit-value
                     map-options
-                    class="admin-role-select admin-role-min-width"
+                    class="admin-role-select"
                     :loading="store.saving"
                     @update:model-value="(val) => handleRoleChange(props.row.id, val)"
                   >
@@ -103,83 +188,150 @@
                     icon="lock_reset"
                     color="warning"
                     size="sm"
-                    aria-label="Reset password"
                     @click="openResetPasswordDialog(props.row)"
                   >
                     <q-tooltip>Reset password</q-tooltip>
                   </q-btn>
                 </div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </template>
+              </q-td>
+            </template>
+          </q-table>
+        </q-tab-panel>
 
-        <template #body-cell-name="props">
-          <q-td :props="props">
-            <div class="text-weight-medium">
-              {{ props.row.first_name }} {{ props.row.last_name }}
+        <q-tab-panel name="progetti">
+          <div class="row items-center q-gutter-sm q-mb-md">
+            <div>
+              <div class="text-h5 text-weight-medium">
+                Progetti
+              </div>
+              <div class="text-body2 text-grey-7">
+                Gestisci i nominativi (cognome e nome) dei beneficiari.
+              </div>
             </div>
-            <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
-              —
-            </div>
-          </q-td>
-        </template>
-
-        <template #body-cell-email="props">
-          <q-td :props="props">
-            {{ props.row.email }}
-          </q-td>
-        </template>
-
-        <template #body-cell-role="props">
-          <q-td :props="props">
-            <q-badge
-              :color="roleColor(props.row.role?.name)"
-              outline
-              class="q-px-sm q-py-xs"
+            <q-space />
+            <q-btn
+              flat
+              round
+              icon="refresh"
+              :loading="store.progettiLoading"
+              aria-label="Aggiorna"
+              @click="refreshProgetti"
             >
-              {{ props.row.role?.name || 'Nessun ruolo' }}
-            </q-badge>
-          </q-td>
-        </template>
+              <q-tooltip>Aggiorna</q-tooltip>
+            </q-btn>
+            <q-btn
+              color="positive"
+              icon="save"
+              label="Salva tutto"
+              :disable="!hasModified"
+              :loading="store.saving"
+              @click="saveAll"
+            />
+          </div>
 
-        <template #body-cell-actions="props">
-          <q-td :props="props">
-            <div class="row items-center q-gutter-xs no-wrap">
-              <q-select
-                :model-value="props.row.role?.id"
-                :options="roleOptions"
-                option-value="id"
-                option-label="name"
-                dense
-                options-dense
-                outlined
-                emit-value
-                map-options
-                class="admin-role-select"
-                :loading="store.saving"
-                @update:model-value="(val) => handleRoleChange(props.row.id, val)"
-              >
-                <template #selected-item="opt">
-                  <div class="text-caption">
-                    {{ opt.opt.name }}
-                  </div>
-                </template>
-              </q-select>
-              <q-btn
-                flat
-                dense
-                icon="lock_reset"
-                color="warning"
-                size="sm"
-                @click="openResetPasswordDialog(props.row)"
-              >
-                <q-tooltip>Reset password</q-tooltip>
-              </q-btn>
-            </div>
-          </q-td>
-        </template>
-      </q-table>
+          <q-banner v-if="store.error" class="bg-red-1 text-negative q-mb-md" rounded>
+            {{ store.error }}
+          </q-banner>
+
+          <q-table
+            :rows="store.progetti"
+            :columns="progettiColumns"
+            row-key="id_progetto"
+            flat
+            bordered
+            :loading="store.progettiLoading"
+            :pagination="{ rowsPerPage: 0 }"
+            hide-pagination
+            :grid="$q.screen.lt.sm"
+          >
+            <template #body-cell-cognome="props">
+              <q-td :props="props">
+                <q-input
+                  :model-value="getBuffer(props.row).cognome"
+                  outlined
+                  dense
+                  class="inline-edit-input"
+                  @update:model-value="val => setCognome(props.row, val)"
+                />
+              </q-td>
+            </template>
+            <template #body-cell-nome="props">
+              <q-td :props="props">
+                <q-input
+                  :model-value="getBuffer(props.row).nome"
+                  outlined
+                  dense
+                  class="inline-edit-input"
+                  @update:model-value="val => setNome(props.row, val)"
+                />
+              </q-td>
+            </template>
+            <template #body-cell-actions="props">
+              <q-td :props="props">
+                <q-btn
+                  v-if="isModified(props.row)"
+                  icon="save"
+                  color="positive"
+                  round
+                  flat
+                  size="sm"
+                  :loading="store.saving"
+                  aria-label="Salva beneficiario"
+                  @click="saveBeneficiario(props.row)"
+                >
+                  <q-tooltip>Salva</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
+            <template #item="props">
+              <div class="q-pa-xs col-12">
+                <q-card flat bordered>
+                  <q-card-section>
+                    <div class="text-weight-medium q-mb-xs">
+                      {{ [props.row.Cognome_Beneficiario, props.row.Nome_Beneficiario].filter(Boolean).join(' ') }}
+                    </div>
+                    <div class="row q-col-gutter-sm">
+                      <div class="col-6">
+                        <q-input
+                          :model-value="getBuffer(props.row).cognome"
+                          label="Cognome"
+                          outlined
+                          dense
+                          @update:model-value="val => setCognome(props.row, val)"
+                        />
+                      </div>
+                      <div class="col-6">
+                        <q-input
+                          :model-value="getBuffer(props.row).nome"
+                          label="Nome"
+                          outlined
+                          dense
+                          @update:model-value="val => setNome(props.row, val)"
+                        />
+                      </div>
+                    </div>
+                    <div class="text-center q-mt-sm">
+                      <q-btn
+                        v-if="isModified(props.row)"
+                        icon="save"
+                        color="positive"
+                        round
+                        flat
+                        size="sm"
+                        :loading="store.saving"
+                        aria-label="Salva beneficiario"
+                        @click="saveBeneficiario(props.row)"
+                      >
+                        <q-tooltip>Salva</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </template>
+          </q-table>
+        </q-tab-panel>
+      </q-tab-panels>
 
       <!-- Create User Dialog -->
       <q-dialog v-model="showCreateDialog" persistent maximized>
@@ -374,7 +526,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
@@ -384,12 +536,84 @@ const $q = useQuasar()
 const store = useAdminStore()
 const authStore = useAuthStore()
 
-const columns = [
+const activeTab = ref('utenti')
+
+const userColumns = [
   { name: 'name', label: 'Nome', align: 'left', style: 'width: 200px' },
   { name: 'email', label: 'Email', align: 'left' },
   { name: 'role', label: 'Ruolo', align: 'center', style: 'width: 130px' },
   { name: 'actions', label: 'Azioni', align: 'center', style: 'width: 220px' }
 ]
+
+const progettiColumns = [
+  { name: 'beneficiario', label: 'Beneficiario', align: 'left', field: row => [row.Cognome_Beneficiario, row.Nome_Beneficiario].filter(Boolean).join(' ') },
+  { name: 'cognome', label: 'Cognome', align: 'left' },
+  { name: 'nome', label: 'Nome', align: 'left' },
+  { name: 'actions', label: '', align: 'center' }
+]
+
+const editCache = reactive({})
+
+function getBuffer(progetto) {
+  const id = progetto.id_progetto
+  if (!editCache[id]) {
+    editCache[id] = {
+      cognome: progetto.Cognome_Beneficiario || '',
+      nome: progetto.Nome_Beneficiario || '',
+      origCognome: progetto.Cognome_Beneficiario || '',
+      origNome: progetto.Nome_Beneficiario || ''
+    }
+  }
+  return editCache[id]
+}
+
+function setCognome(progetto, val) {
+  const buf = getBuffer(progetto)
+  buf.cognome = val
+}
+
+function setNome(progetto, val) {
+  const buf = getBuffer(progetto)
+  buf.nome = val
+}
+
+const hasModified = computed(() =>
+  store.progetti.some(p => isModified(p))
+)
+
+async function saveAll() {
+  const modified = store.progetti.filter(p => isModified(p))
+  for (const p of modified) {
+    const ok = await store.updateProgettoBeneficiario(p.id_progetto, editCache[p.id_progetto].cognome, editCache[p.id_progetto].nome)
+      const name = [p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')
+      if (!ok) {
+        notifyError($q, store.error, `Errore aggiornamento ${name}`)
+      return
+    }
+  }
+  notifySuccess($q, 'Tutti i beneficiari aggiornati')
+  refreshProgetti()
+}
+
+async function saveBeneficiario(progetto) {
+  const buf = editCache[progetto.id_progetto]
+  if (!buf) return
+  const ok = await store.updateProgettoBeneficiario(progetto.id_progetto, buf.cognome, buf.nome)
+  if (ok) {
+    notifySuccess($q, 'Beneficiario aggiornato')
+    buf.origCognome = buf.cognome
+    buf.origNome = buf.nome
+    await store.fetchProgetti()
+  } else if (store.error) {
+    notifyError($q, store.error, 'Errore aggiornamento beneficiario')
+  }
+}
+
+function refreshProgetti() {
+  // Clear editCache so it re-initialises from fresh data
+  Object.keys(editCache).forEach(k => delete editCache[k])
+  store.fetchProgetti()
+}
 
 const roleOptions = computed(() => store.roles)
 const roleColor = (name) => {
@@ -496,6 +720,7 @@ async function handleRoleChange(userId, roleId) {
 
 onMounted(() => {
   store.fetchAll()
+  store.fetchProgetti()
 })
 </script>
 
@@ -508,5 +733,8 @@ onMounted(() => {
 }
 .admin-scroll-area {
   max-height: 70vh;
+}
+.inline-edit-input {
+  min-width: 120px;
 }
 </style>

@@ -129,5 +129,19 @@ export const gestioneService = {
 
   removeFromFamiglia(fcId) {
     return api.patch(`/items/Famiglie_Contatti/${fcId}`, { Disattivo: true })
+  },
+
+  checkFamiglieVolontari(famigliaIds) {
+    if (!famigliaIds || famigliaIds.length === 0) return Promise.resolve({ data: { data: [] } })
+    return api.get('/items/Famiglie_Contatti', {
+      params: {
+        'aggregate[count]': 'id',
+        'groupBy[]': 'Famiglia',
+        'filter[Famiglia][_in]': famigliaIds.join(','),
+        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+        'filter[_or][0][Disattivo][_null]': true,
+        'filter[_or][1][Disattivo][_eq]': false
+      }
+    })
   }
 }

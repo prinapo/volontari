@@ -75,7 +75,7 @@
           </q-card-section>
         </q-card>
 
-        <q-card flat bordered class="q-mt-md" style="max-width: 420px">
+        <q-card flat bordered class="login-card q-mt-md">
           <q-card-section class="text-center">
             <div class="text-body2 text-grey-8 q-mb-sm">
               Non hai un account?

@@ -46,5 +46,19 @@ export const adminService = {
 
   sendEmail(data) {
     return api.post('/mail', data)
+  },
+
+  getProgetti() {
+    return api.get('/items/Progetti', {
+      params: {
+        fields: ['id_progetto', 'Cognome_Beneficiario', 'Nome_Beneficiario', 'AnnoBando'].join(','),
+        limit: -1,
+        sort: 'Cognome_Beneficiario,Nome_Beneficiario'
+      }
+    })
+  },
+
+  updateProgetto(id, data) {
+    return api.patch(`/items/Progetti/${id}`, data)
   }
 }

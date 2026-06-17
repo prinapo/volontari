@@ -37,7 +37,7 @@ function normalizeProject(project, famiglia = {}) {
     idProgetto: project.id_progetto,
     idFamiglia: famiglia.id_famiglia || project.Famiglia || '',
     famiglia: famiglia.Nome_Famiglia || '',
-    beneficiario: project.Cognome_e__Nome_Beneficiario || '',
+    beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
     annoBando: project.AnnoBando || '',
     ambito: project.Ambito || '',
     titolo: project.Titolo_Progetto || '',
@@ -103,7 +103,7 @@ export const useVerificaStore = defineStore('verifica', {
       this.loading = true
       this.error = null
       try {
-        const sort = 'Famiglia,AnnoBando,Cognome_e__Nome_Beneficiario'
+        const sort = 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
 
         const progettiRes = await verificaService.getProgetti({
           page: this.page,
@@ -191,7 +191,7 @@ export const useVerificaStore = defineStore('verifica', {
       this.rows = []
       try {
         const PAGE_SIZE = 100
-        const sort = 'Famiglia,AnnoBando,Cognome_e__Nome_Beneficiario'
+        const sort = 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
         let page = 1
         let hasMore = true
         const allProjects = []

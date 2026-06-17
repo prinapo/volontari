@@ -247,7 +247,7 @@ export const useAuthStore = defineStore('auth', {
           if (statoDB !== statoCalcolato || countDB !== count || Math.abs(importoDB - totaleImporto) > 0.01) {
             discrepancies.push({
               progettoId: projId,
-              beneficiario: project.Cognome_e__Nome_Beneficiario || '',
+              beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
               annoBando: project.AnnoBando || '',
               statoDB,
               statoCalcolato,

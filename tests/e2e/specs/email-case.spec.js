@@ -22,12 +22,13 @@ test.describe('Email Case-Insensitive Matching', () => {
     await riconcPage.goto()
     await riconcPage.waitForTable()
 
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let found = false
     for (let i = 0; i < count; i++) {
       const rowText = await rows.nth(i).innerText()
       if (rowText.toLowerCase().includes(testEmail.toLowerCase())) {
+        await riconcPage.expandRow(i)
         const badges = rows.nth(i).locator('.q-badge')
         const badgeCount = await badges.count()
         for (let j = 0; j < badgeCount; j++) {
@@ -60,12 +61,13 @@ test.describe('Email Case-Insensitive Matching', () => {
     await riconcPage.goto()
     await riconcPage.waitForTable()
 
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let found = false
     for (let i = 0; i < count; i++) {
       const rowText = await rows.nth(i).innerText()
       if (rowText.toLowerCase().includes(testEmail.toLowerCase())) {
+        await riconcPage.expandRow(i)
         const badges = rows.nth(i).locator('.q-badge')
         const badgeCount = await badges.count()
         for (let j = 0; j < badgeCount; j++) {
@@ -98,12 +100,13 @@ test.describe('Email Case-Insensitive Matching', () => {
     await riconcPage.goto()
     await riconcPage.waitForTable()
 
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let found = false
     for (let i = 0; i < count; i++) {
       const rowText = await rows.nth(i).innerText()
       if (rowText.toLowerCase().includes(testEmail.toLowerCase())) {
+        await riconcPage.expandRow(i)
         const badges = rows.nth(i).locator('.q-badge')
         const badgeCount = await badges.count()
         for (let j = 0; j < badgeCount; j++) {
@@ -138,15 +141,36 @@ test.describe('Email Case-Insensitive Matching', () => {
 
     // Per stato not_found, l'email è in un input — innerText non lo include
     // Cerchiamo per input value nella colonna email
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let found = false
     for (let i = 0; i < count; i++) {
-      const emailInput = rows.nth(i).locator('td').nth(2).locator('input')
-      if (await emailInput.count() > 0) {
+      const row = rows.nth(i)
+      await riconcPage.expandRow(i)
+      const emailInput = row.locator('td').nth(2).locator('input')
+      if (await emailInput.count() === 0) {
+        // Su mobile: cerca input dentro la card espansa
+        const inputs = row.locator('input')
+        const inputCount = await inputs.count()
+        for (let k = 0; k < inputCount; k++) {
+          const value = await inputs.nth(k).inputValue()
+          if (value === unknownEmail) {
+            const badges = row.locator('.q-badge')
+            const badgeCount = await badges.count()
+            for (let j = 0; j < badgeCount; j++) {
+              const text = await badges.nth(j).innerText()
+              if (text.includes('Contatto da creare')) {
+                found = true
+                break
+              }
+            }
+            if (found) break
+          }
+        }
+      } else {
         const value = await emailInput.inputValue()
         if (value === unknownEmail) {
-          const badges = rows.nth(i).locator('.q-badge')
+          const badges = row.locator('.q-badge')
           const badgeCount = await badges.count()
           for (let j = 0; j < badgeCount; j++) {
             const text = await badges.nth(j).innerText()

@@ -1,10 +1,18 @@
 import { test, expect } from '../helpers/console.js'
-import { GestionePage } from '../pages/GestionePage.js'
-import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { loginAs } from '../helpers/login.js'
-import { createTestSubmission } from '../helpers/submission.js'
 import { createContatto, assignToFamiglia } from '../helpers/setup.js'
+import { createTestSubmission } from '../helpers/submission.js'
+import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
+import { GestionePage } from '../pages/GestionePage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+
+async function expandFirstCardIfMobile(page) {
+  const exp = page.locator('.q-expansion-item')
+  if (await exp.count() > 0 && await page.locator('.q-expansion-item--expanded').count() === 0) {
+    await exp.first().click()
+    await page.waitForTimeout(500)
+  }
+}
 
 test.describe('Riconciliazione', () => {
 
@@ -22,9 +30,18 @@ test.describe('Riconciliazione', () => {
     await gestione.searchFamiglie('TEST_FAM')
 
     // Clicca edit sulla prima riga trovata
-    const editBtn = page.locator('.q-table tbody tr').first().locator('[data-testid="btn-edit-famiglia"]')
-    await expect(editBtn).toBeVisible({ timeout: 5000 })
-    await editBtn.click()
+    const editBtn = page.locator('.q-table tbody tr').first().locator('[data-testid="btn-edit-famiglia"], button[aria-label="Modifica"]')
+    const editBtnMobile = page.locator('[data-testid="btn-edit-famiglia"]').first()
+    if (await editBtn.count() > 0) {
+      await expect(editBtn).toBeVisible({ timeout: 5000 })
+      await editBtn.click()
+    } else {
+      // Su mobile: espandi card e clicca modifica
+      await page.locator('.q-expansion-item').first().click()
+      await page.waitForTimeout(500)
+      await expect(editBtnMobile).toBeVisible({ timeout: 5000 })
+      await editBtnMobile.click()
+    }
 
     // Compila IBAN e Intestatario
     const dialog = page.locator('.q-dialog:has(.text-h6:has-text("Modifica Famiglia"))')
@@ -61,6 +78,7 @@ test.describe('Riconciliazione', () => {
     await gestione.search(testEmail)
 
     // Clicca edit sulla prima riga
+    await expandFirstCardIfMobile(page)
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtn.count() === 0) {
       test.skip('Nessun contatto trovato con quella email')
@@ -83,6 +101,7 @@ test.describe('Riconciliazione', () => {
 
     // Cleanup: ripristina nome originale
     await gestione.search(testEmail)
+    await expandFirstCardIfMobile(page)
     const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtnAfter.count() > 0) {
       await editBtnAfter.click()
@@ -141,7 +160,7 @@ test.describe('Riconciliazione', () => {
     expect(rowCount).toBeGreaterThan(0)
 
     let foundBtn = null
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const rowText = await rows.nth(i).innerText()
@@ -204,7 +223,7 @@ test.describe('Riconciliazione', () => {
     expect(rowCount).toBeGreaterThan(0)
 
     let foundBtn = null
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const rowText = await rows.nth(i).innerText()
@@ -251,7 +270,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.waitForTable()
 
     // Trova la riga della submission per email (usa input value per not_found state)
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let targetBtn = null
     for (let i = 0; i < count; i++) {
@@ -343,7 +362,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.goto()
 
     // Verifica che la tabella abbia righe
-    await expect(riconcPage.tableRows.first()).toBeVisible({ timeout: 10000 })
+    await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 10000 })
 
     const refreshBtn = page.locator('[data-testid="btn-refresh-riconciliazioni"]')
     await expect(refreshBtn).toBeVisible({ timeout: 5000 })
@@ -352,7 +371,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.waitForTable()
 
     // Dopo refresh la tabella deve ancora avere righe
-    await expect(riconcPage.tableRows.first()).toBeVisible({ timeout: 10000 })
+    await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 10000 })
   })
 
   // ── RC-05: Riconcilia submission completa @crud ──
@@ -381,7 +400,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.waitForTable()
 
     // Trova la riga della submission per email
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let foundBtn = null
     for (let i = 0; i < count; i++) {
@@ -446,7 +465,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.waitForTable()
 
     // Trova la riga per email (usa input value per not_found)
-    const rows = riconcPage.tableRows
+    const rows = riconcPage.rowLocator
     const count = await rows.count()
     let targetScarta = null
     for (let i = 0; i < count; i++) {
@@ -492,7 +511,7 @@ test.describe('Riconciliazione', () => {
     }
 
     // Trova la riga scartata per email e clicca restore
-    const rowsAfter = riconcPage.tableRows
+    const rowsAfter = riconcPage.rowLocator
     const countAfter = await rowsAfter.count()
     let targetRestore = null
     for (let i = 0; i < countAfter; i++) {
@@ -557,7 +576,7 @@ test.describe('Riconciliazione', () => {
       await expect(tableLabel).toBeVisible({ timeout: 5000 })
     } else {
       // Fallback: verifica che almeno la tabella sia visibile con dati
-      await expect(riconcPage.tableRows.first()).toBeVisible({ timeout: 5000 })
+      await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 5000 })
     }
   })
 })

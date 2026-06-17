@@ -34,6 +34,10 @@ export class GestionePage {
     await this.contattiTab.click()
     await this._waitForContattiApi()
     await this.waitForTable()
+    const isMobile = await this.page.locator('.q-table__grid').count() > 0
+    if (isMobile) {
+      await this.waitForTableMobile()
+    }
   }
 
   get searchInput() {
@@ -61,18 +65,26 @@ export class GestionePage {
   }
 
   async waitForTable() {
-    await this.page.waitForFunction(() => {
-      const tr = document.querySelector('.q-tab-panel:not([hidden]) .q-table tbody tr')
-      const exp = document.querySelector('.q-tab-panel:not([hidden]) .q-expansion-item')
+    await this.page.waitForFunction((sel) => {
+      const panel = document.querySelector('.q-tab-panel:not([hidden])')
+      if (!panel) return false
+      const tr = panel.querySelector('.q-table tbody tr')
+      const exp = panel.querySelector('.q-expansion-item')
       return !!(tr || exp)
     }, { timeout: 20000 }).catch(() => {})
-    await this.page.waitForTimeout(300).catch(() => {})
+    await this.page.waitForTimeout(500)
+  }
+
+  async waitForTableMobile() {
+    await this.page.locator('.q-expansion-item').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {})
   }
 
   async getRowCount() {
     const trCount = await this.activePanel.locator('.q-table tbody tr').count()
     if (trCount > 0) return trCount
-    return await this.activePanel.locator('.q-expansion-item').count()
+    const expCount = await this.activePanel.locator('.q-expansion-item').count()
+    if (expCount > 0) return expCount
+    return 0
   }
 
   async getTotalItems() {
@@ -90,6 +102,10 @@ export class GestionePage {
     await this.page.waitForTimeout(350)
     await this._waitForContattiApi()
     await this.waitForTable()
+    const isMobile = await this.page.locator('.q-table__grid').count() > 0
+    if (isMobile) {
+      await this.waitForTableMobile()
+    }
   }
 
   async setTipoFilter(tipo) {
@@ -97,17 +113,6 @@ export class GestionePage {
     await this.page.locator(`.q-item:has-text("${tipo}")`).click()
     await this._waitForContattiApi()
     await this.waitForTable()
-  }
-
-  async getRowCount() {
-    // Desktop mode: tbody tr
-    const trCount = await this.activePanel.locator('.q-table tbody tr').count()
-    if (trCount > 0) return trCount
-    // Mobile grid mode: count expansion items
-    const expCount = await this.page.locator('.q-table .q-expansion-item').count()
-    if (expCount > 0) return expCount
-    // Fallback: cards
-    return await this.page.locator('.q-table .q-card').count()
   }
 
   async getTableHeaderTexts() {
@@ -144,19 +149,43 @@ export class GestionePage {
 
   /**
    * Clicca icona contacts sulla riga famiglia nella q-table delle Famiglie.
+   * Supporta desktop (tbody tr) e mobile (espansione card).
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    const rows = this.page.locator('.q-table tbody tr')
-    const count = await rows.count()
-    const mainRowCount = Math.floor(count / 2)
-    for (let i = 0; i < mainRowCount; i++) {
-      const mainRow = rows.nth(i * 2)
-      const cellText = await mainRow.locator('td').nth(1).innerText()
-      if (cellText.trim().includes(nomeFamiglia)) {
-        const actionCell = mainRow.locator('td').last()
-        await actionCell.locator('.q-btn').filter({ hasText: 'contacts' }).click()
-        await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
-        return true
+    // Prima prova desktop
+    const desktopRows = this.page.locator('.q-table tbody tr')
+    const desktopCount = await desktopRows.count()
+    if (desktopCount > 0) {
+      const mainRowCount = Math.floor(desktopCount / 2)
+      for (let i = 0; i < mainRowCount; i++) {
+        const mainRow = desktopRows.nth(i * 2)
+        const cellText = await mainRow.locator('td').nth(1).innerText()
+        if (cellText.trim().includes(nomeFamiglia)) {
+          const actionCell = mainRow.locator('td').last()
+          await actionCell.locator('.q-btn').filter({ hasText: 'contacts' }).click()
+          await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+          return true
+        }
+      }
+    }
+
+    // Fallback mobile: cerca expansion item
+    const expItems = this.page.locator('.q-expansion-item')
+    const expCount = await expItems.count()
+    for (let i = 0; i < expCount; i++) {
+      const label = await expItems.nth(i).locator('.q-item__label').first().innerText().catch(() => '')
+      if (label.includes(nomeFamiglia)) {
+        // Espandi se non già espanso
+        if (await expItems.nth(i).locator('.q-expansion-item--expanded').count() === 0) {
+          await expItems.nth(i).click()
+          await this.page.waitForTimeout(500)
+        }
+        const contactsBtn = expItems.nth(i).locator('.q-btn[icon="contacts"]')
+        if (await contactsBtn.count() > 0) {
+          await contactsBtn.click()
+          await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+          return true
+        }
       }
     }
     return false

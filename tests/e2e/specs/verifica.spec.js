@@ -1,6 +1,21 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
+import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
+import { VerificaPage } from '../pages/VerificaPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+
+async function selectFirstProgetto(page) {
+  const select = page.locator('.q-select').first()
+  await select.click()
+  await page.waitForTimeout(2000)
+  const firstOption = page.locator('.q-menu .q-item').first()
+  if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await firstOption.click()
+    await page.waitForTimeout(1000)
+    return true
+  }
+  return false
+}
 
 test.describe('VerificaPage', () => {
   test.describe('Auth & Layout', () => {
@@ -242,12 +257,26 @@ test.describe('VerificaPage', () => {
     })
 
     test('SR-02: Stato Da verificare visibile quando presente @smoke', async ({ page }) => {
+      test.setTimeout(90000)
+      await loginAs(page, 'volontario', auth)
+      await selectFirstProgetto(page)
+
+      const result = await createGiustificativoViaDialog(page, {
+        descrizione: `SR-02 test ${Date.now()}`,
+        importo: '75.00',
+        submitAfter: true
+      })
+
+      if (!result) { test.skip(); return }
+
+      await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() })
+      await loginAs(page, 'verificatore', auth)
+      const vp = new VerificaPage(page)
+      await page.goto('/verifica', { timeout: 20000 })
+      await vp.waitForTable()
+      await vp.searchFamiglia('TEST_FAM')
       const badge = page.locator('.q-badge:has-text("Da verificare")').first()
-      if (await badge.count() > 0) {
-        await expect(badge).toBeVisible()
-      } else {
-        test.skip()
-      }
+      await expect(badge).toBeVisible({ timeout: 10000 })
     })
   })
 

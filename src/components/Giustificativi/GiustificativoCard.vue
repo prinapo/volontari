@@ -74,19 +74,25 @@
               type="a"
               flat
               dense
-              color="primary"
+              round
               icon="open_in_new"
-              label="Apri"
-            />
+              size="sm"
+              aria-label="Apri allegato"
+            >
+              <q-tooltip>Apri allegato</q-tooltip>
+            </q-btn>
             <q-btn
               :href="downloadUrl(item.Allegato)"
               type="a"
               flat
               dense
-              color="primary"
+              round
               icon="file_download"
-              label="Scarica"
-            />
+              size="sm"
+              aria-label="Scarica allegato"
+            >
+              <q-tooltip>Scarica allegato</q-tooltip>
+            </q-btn>
           </template>
           <span v-else class="text-grey-5 text-italic">Nessun allegato</span>
 

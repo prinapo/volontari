@@ -3,6 +3,14 @@ import { GestionePage } from '../pages/GestionePage.js'
 import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
+async function expandFirstCardIfMobile(page) {
+  const exp = page.locator('.q-expansion-item')
+  if (await exp.count() > 0 && await page.locator('.q-expansion-item--expanded').count() === 0) {
+    await exp.first().click()
+    await page.waitForTimeout(500)
+  }
+}
+
 test.describe('Referente Role', () => {
   test('RF-01: Bottone Assegna Referente visibile solo per Volontari @smoke', async ({ page }) => {
     await loginAs(page, 'gestore', auth)
@@ -62,6 +70,7 @@ test.describe('Referente Role', () => {
 
     // Aggiungi email al contatto (necessaria per poterlo associare come Volontario)
     await gestionePage.search(nome)
+    await expandFirstCardIfMobile(page)
     await page.waitForTimeout(1000)
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     if (await editBtn.count() > 0) {
@@ -115,23 +124,36 @@ test.describe('Referente Role', () => {
     await page.waitForTimeout(2000)
 
     let targetRow = null
-    const rows = gestionePage.tableRows
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
-      const btnCount = await btn.count()
-      if (btnCount > 0) { 
-        console.log(`[RF-02] found referente button at row ${i}`)
-        targetRow = rows.nth(i)
-        break 
+    const isMobile = await page.locator('.q-expansion-item').count() > 0 && await gestionePage.tableRows.count() === 0
+    if (isMobile) {
+      await expandFirstCardIfMobile(page)
+      const btn = page.locator('[data-testid="btn-assigna-referente"]').first()
+      if (await btn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        targetRow = page.locator('.q-expansion-item--expanded')
+      }
+    } else {
+      const rows = gestionePage.tableRows
+      const count = await rows.count()
+      for (let i = 0; i < count; i++) {
+        const actionCell = rows.nth(i).locator('td').last()
+        const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
+        const btnCount = await btn.count()
+        if (btnCount > 0) { 
+          console.log(`[RF-02] found referente button at row ${i}`)
+          targetRow = rows.nth(i)
+          break 
+        }
       }
     }
 
     if (!targetRow) { test.skip('Bottone referente non visibile dopo creazione volontario'); return }
 
-    const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
+    if (isMobile) {
+      await page.locator('[data-testid="btn-assigna-referente"]').first().click()
+    } else {
+      const actionCell = targetRow.locator('td').last()
+      await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
+    }
     await page.waitForTimeout(1500)
 
     dialog = page.locator('.q-dialog:visible')
@@ -151,8 +173,7 @@ test.describe('Referente Role', () => {
     await page.waitForTimeout(3000)
 
     const noData = page.locator('text=Nessun dato disponibile')
-    const rows = gestionePage.tableRows
-    const hasRows = (await rows.count()) > 0
+    const hasRows = (await gestionePage.getRowCount()) > 0
     const hasNoData = await noData.isVisible().catch(() => false)
     expect(hasRows || hasNoData).toBe(true)
   })

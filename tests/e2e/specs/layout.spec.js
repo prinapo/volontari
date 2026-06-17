@@ -2,9 +2,19 @@ import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
+async function openDrawerIfMobile(page) {
+  const drawer = page.locator('.q-drawer')
+  const visible = await drawer.isVisible({ timeout: 1000 }).catch(() => false)
+  if (!visible) {
+    await page.locator('button[aria-label="Menu"]').click()
+    await expect(drawer).toBeVisible({ timeout: 5000 })
+  }
+}
+
 test.describe('AppLayout — Sidebar Navigation', () => {
   test('LB-01: Volontario vede solo Famiglie @smoke', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
+    await openDrawerIfMobile(page)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -23,6 +33,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
 
   test('LB-02: Gestore vede Gestione ma non Verifica @smoke', async ({ page }) => {
     await loginAs(page, 'gestore', auth)
+    await openDrawerIfMobile(page)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -39,6 +50,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
 
   test('LB-03: Verificatore vede Verifica e Riconciliazione @smoke', async ({ page }) => {
     await loginAs(page, 'verificatore', auth)
+    await openDrawerIfMobile(page)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -58,6 +70,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
 
   test('LB-04: Click menu item naviga alla pagina corretta @smoke', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
+    await openDrawerIfMobile(page)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })

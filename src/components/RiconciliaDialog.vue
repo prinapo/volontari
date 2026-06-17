@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="model" persistent @show="initData">
-    <q-card style="width: 100%; max-width: 600px; min-width: unset">
+    <q-card class="riconcilia-dialog-card" style="width: 100%; max-width: 600px; min-width: unset">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">
           Riconcilia giustificativo
@@ -34,112 +34,118 @@
       <q-scroll-area class="riconcilia-scroll-area">
         <div class="q-pa-md">
           <!-- Genitori / Volontari -->
-          <div v-if="genitoriList.length > 0" class="q-mb-sm">
-            <div class="text-caption text-grey-7">
-              Genitori
-            </div>
-            <div v-for="g in genitoriList" :key="'g-'+g.id" class="text-body2 q-ml-sm">
-              <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
-              {{ g.Contatto?.Nome || '' }} {{ g.Contatto?.Cognome || '' }}
-              <span v-if="g._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+g._emails[0].email_address" class="text-primary">{{ g._emails[0].email_address }}</a></span>
-              <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+g.Contatto.Numero_di_cellulare" class="text-primary">{{ g.Contatto.Numero_di_cellulare }}</a></span>
-              <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+g.Contatto.Numero_di_telefono" class="text-primary">{{ g.Contatto.Numero_di_telefono }}</a></span>
-            </div>
-          </div>
-          <div v-if="volontariList.length > 0" class="q-mb-md">
-            <div class="text-caption text-grey-7">
-              Volontari
-            </div>
-            <div v-for="v in volontariList" :key="'v-'+v.id" class="text-body2 q-ml-sm">
-              <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
-              {{ v.Contatto?.Nome || '' }} {{ v.Contatto?.Cognome || '' }}
-              <span v-if="v._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+v._emails[0].email_address" class="text-primary">{{ v._emails[0].email_address }}</a></span>
-              <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+v.Contatto.Numero_di_cellulare" class="text-primary">{{ v.Contatto.Numero_di_cellulare }}</a></span>
-              <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+v.Contatto.Numero_di_telefono" class="text-primary">{{ v.Contatto.Numero_di_telefono }}</a></span>
-            </div>
-          </div>
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section class="q-pa-sm">
+              <div v-if="genitoriList.length > 0" class="q-mb-sm">
+                <div class="text-caption text-grey-7">
+                  Genitori
+                </div>
+                <div v-for="g in genitoriList" :key="'g-'+g.id" class="text-body2 q-ml-sm">
+                  <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
+                  {{ displayFullName(g.Contatto) }}
+                  <span v-if="g._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+g._emails[0].email_address" class="text-primary">{{ g._emails[0].email_address }}</a></span>
+                  <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+g.Contatto.Numero_di_cellulare" class="text-primary">{{ g.Contatto.Numero_di_cellulare }}</a></span>
+                  <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+g.Contatto.Numero_di_telefono" class="text-primary">{{ g.Contatto.Numero_di_telefono }}</a></span>
+                </div>
+              </div>
+              <div v-if="volontariList.length > 0" class="q-mb-sm">
+                <div class="text-caption text-grey-7">
+                  Volontari
+                </div>
+                <div v-for="v in volontariList" :key="'v-'+v.id" class="text-body2 q-ml-sm">
+                  <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
+                  {{ displayFullName(v.Contatto) }}
+                  <span v-if="v._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+v._emails[0].email_address" class="text-primary">{{ v._emails[0].email_address }}</a></span>
+                  <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+v.Contatto.Numero_di_cellulare" class="text-primary">{{ v.Contatto.Numero_di_cellulare }}</a></span>
+                  <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+v.Contatto.Numero_di_telefono" class="text-primary">{{ v.Contatto.Numero_di_telefono }}</a></span>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
 
           <!-- Vertical comparison with individual save -->
           <div class="text-subtitle1 text-weight-medium q-mb-sm">
             Confronto dati
           </div>
-          <q-card flat bordered>
-            <div class="q-pa-sm">
-              <div v-for="field in leftFields" :key="field.key" class="q-mb-md">
-                <div class="text-subtitle2 text-weight-medium q-mb-xs">
-                  {{ field.label }}
-                </div>
+          <div class="q-pb-md">
+            <div v-for="field in leftFields" :key="field.key" class="q-mb-sm">
+              <q-card flat bordered>
+                <q-card-section class="q-pa-sm">
+                  <div class="row items-center q-gutter-x-xs q-mb-xs">
+                    <div class="text-subtitle2 text-weight-medium">
+                      {{ field.label }}
+                    </div>
+                    <span class="text-caption text-grey-6">— valore inserito</span>
+                  </div>
+                  <div class="text-body1">
+                    {{ getLeftValue(field.key) || '—' }}
+                  </div>
 
-                <div class="text-caption text-grey-6">
-                  Valore inserito nel Form
-                </div>
-                <div class="text-body1 q-mb-sm">
-                  {{ getLeftValue(field.key) || '—' }}
-                </div>
+                  <div class="text-center q-my-xs">
+                    <template v-if="isFieldDifferent(field.key)">
+                      <q-btn
+                        round
+                        flat
+                        icon="arrow_downward"
+                        color="primary"
+                        size="xs"
+                        aria-label="Copia dal richiedente"
+                        @click="copyField(field.key)"
+                      >
+                        <q-tooltip>Copia dal richiedente</q-tooltip>
+                      </q-btn>
+                    </template>
+                    <q-icon v-else name="check_circle" color="positive" size="xs" class="q-mx-xs">
+                      <q-tooltip>Dati corrispondenti</q-tooltip>
+                    </q-icon>
+                  </div>
 
-                <div class="text-center q-my-sm">
-                  <q-btn
-                    round
-                    flat
-                    icon="arrow_downward"
-                    color="primary"
-                    size="md"
-                    aria-label="Copia dal richiedente"
-                    @click="copyField(field.key)"
-                  >
-                    <q-tooltip>Copia dal richiedente</q-tooltip>
+                  <div class="text-caption text-grey-6">
+                    valore nel database
+                  </div>
+                  <q-input
+                    v-if="field.editable"
+                    :model-value="rightValues[field.key]"
+                    outlined
+                    :color="isFieldDifferent(field.key) ? 'negative' : 'primary'"
+                    :error="isFieldDifferent(field.key)"
+                    :type="field.inputType || 'text'"
+                    dense
+                    @update:model-value="(val) => setRightValue(field.key, val)"
+                  />
+                  <div v-else class="text-body1">
+                    {{ rightValues[field.key] || '—' }}
+                  </div>
+
+                  <div v-if="field.saveable && isFieldDifferent(field.key)" class="text-center row q-gutter-xs justify-center">
+                    <q-btn
+                      icon="check"
+                      color="positive"
+                      round
+                      flat
+                      size="sm"
+                      aria-label="Dato già corretto"
+                      @click="confirmField(field.key)"
+                    >
+                      <q-tooltip>Dato già corretto</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      icon="save"
+                      color="positive"
+                      round
+                      flat
+                      size="sm"
+                      data-testid="btn-save-field"
+                      aria-label="Salva"
+                      @click="saveField(field.key)"
+                    >
+                      <q-tooltip>Salva</q-tooltip>
                   </q-btn>
                 </div>
-
-                <div class="text-caption text-grey-6">
-                  Valore nel database
-                </div>
-                <q-input
-                  v-if="field.editable"
-                  :model-value="rightValues[field.key]"
-                  outlined
-                  :color="isFieldDifferent(field.key) ? 'negative' : 'primary'"
-                  :error="isFieldDifferent(field.key)"
-                  :type="field.inputType || 'text'"
-                  dense
-                  class="q-mb-sm"
-                  @update:model-value="(val) => setRightValue(field.key, val)"
-                />
-                <div v-else class="text-body1 q-mb-sm">
-                  {{ rightValues[field.key] || '—' }}
-                </div>
-
-                <div v-if="field.saveable" class="text-center row q-gutter-sm justify-center">
-                  <q-btn
-                    v-if="isFieldDifferent(field.key)"
-                    icon="check"
-                    color="positive"
-                    round
-                    flat
-                    size="md"
-                    aria-label="Dato già corretto"
-                    @click="confirmField(field.key)"
-                  >
-                    <q-tooltip>Dato già corretto</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    :icon="savingField === field.key ? 'more_horiz' : 'save'"
-                    :color="isFieldDifferent(field.key) ? 'positive' : 'grey-5'"
-                    :disable="!isFieldDifferent(field.key) || savingField !== null"
-                    :loading="savingField === field.key"
-                    round
-                    flat
-                    size="md"
-                    data-testid="btn-save-field"
-                    :aria-label="isFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato'"
-                    @click="saveField(field.key)"
-                  >
-                    <q-tooltip>{{ isFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato' }}</q-tooltip>
-                  </q-btn>
-                </div>
-              </div>
+              </q-card-section>
+            </q-card>
             </div>
-          </q-card>
+          </div>
 
           <!-- Progetto -->
           <div class="q-mt-lg">
@@ -164,100 +170,81 @@
                 class="q-mb-sm"
                 data-testid="select-progetto-riconcilia"
               />
-              <q-card v-if="selectedProgetto" flat bordered>
-                <div class="q-pa-sm">
-                  <div v-for="field in projectFields" :key="field.key" class="q-mb-md">
-                    <div class="text-subtitle2 text-weight-medium q-mb-xs">
-                      {{ field.label }}
-                    </div>
+              <div v-if="selectedProgetto" class="q-pb-md">
+                <div v-for="field in projectFields" :key="field.key" class="q-mb-sm">
+                  <q-card flat bordered>
+                    <q-card-section class="q-pa-sm">
+                      <div class="row items-center q-gutter-x-xs q-mb-xs">
+                        <div class="text-subtitle2 text-weight-medium">
+                          {{ field.label }}
+                        </div>
+                        <span class="text-caption text-grey-6">— valore inserito</span>
+                      </div>
+                      <div class="text-body1">
+                        {{ getSubmissionProjectValue(field.key) || '—' }}
+                      </div>
 
-                    <div class="text-caption text-grey-6">
-                      Valore inserito nel Form
-                    </div>
-                    <div class="text-body1 q-mb-sm">
-                      {{ getSubmissionProjectValue(field.key) || '—' }}
-                    </div>
+                      <div class="text-center q-my-xs">
+                        <template v-if="isProjectFieldDifferent(field.key)">
+                          <q-btn
+                            round
+                            flat
+                            icon="arrow_downward"
+                            color="primary"
+                            size="xs"
+                            aria-label="Copia dal submission"
+                            @click="copyProjectField(field.key)"
+                          >
+                            <q-tooltip>Copia dal submission</q-tooltip>
+                          </q-btn>
+                        </template>
+                        <q-icon v-else name="check_circle" color="positive" size="xs" class="q-mx-xs">
+                          <q-tooltip>Dati corrispondenti</q-tooltip>
+                        </q-icon>
+                      </div>
 
-                    <div class="text-center q-my-sm">
-                      <q-btn
-                        round
-                        flat
-                        icon="arrow_downward"
-                        color="primary"
-                        size="md"
-                        aria-label="Copia dal submission"
-                        @click="copyProjectField(field.key)"
-                      >
-                        <q-tooltip>Copia dal submission</q-tooltip>
-                      </q-btn>
-                    </div>
+                      <div class="text-caption text-grey-6">
+                        valore nel database
+                      </div>
+                      <q-input
+                          :model-value="projectValues[field.key]"
+                          outlined
+                          :color="isProjectFieldDifferent(field.key) ? 'negative' : 'primary'"
+                          :error="isProjectFieldDifferent(field.key)"
+                          :disable="!field.editable"
+                          dense
+                          @update:model-value="(val) => setProjectValue(field.key, val)"
+                        />
 
-                    <div class="text-caption text-grey-6">
-                      Valore nel database
-                    </div>
-                    <q-input
-                      :model-value="projectValues[field.key]"
-                      outlined
-                      :color="isProjectFieldDifferent(field.key) ? 'negative' : 'primary'"
-                      :error="isProjectFieldDifferent(field.key)"
-                      :disable="!field.editable"
-                      dense
-                      class="q-mb-sm"
-                      @update:model-value="(val) => setProjectValue(field.key, val)"
-                    />
-
-                    <div class="text-center row q-gutter-sm justify-center">
-                      <q-btn
-                        v-if="isProjectFieldDifferent(field.key)"
-                        icon="check"
-                        color="positive"
-                        round
-                        flat
-                        size="md"
-                        aria-label="Dato già corretto"
-                        @click="confirmProjectField(field.key)"
-                      >
-                        <q-tooltip>Dato già corretto</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        :icon="savingProjectField === field.key ? 'more_horiz' : 'save'"
-                        :color="isProjectFieldDifferent(field.key) ? 'positive' : 'grey-5'"
-                        :disable="!isProjectFieldDifferent(field.key) || savingProjectField !== null"
-                        :loading="savingProjectField === field.key"
-                        round
-                        flat
-                        size="md"
-                        :aria-label="isProjectFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato'"
-                        @click="saveProjectField(field.key)"
-                      >
-                        <q-tooltip>{{ isProjectFieldDifferent(field.key) ? 'Salva' : 'Già aggiornato' }}</q-tooltip>
-                      </q-btn>
-                    </div>
-                  </div>
+                        <div v-if="field.saveable && isProjectFieldDifferent(field.key)" class="text-center row q-gutter-xs justify-center">
+                          <q-btn
+                            icon="check"
+                            color="positive"
+                            round
+                            flat
+                            size="sm"
+                            aria-label="Dato già corretto"
+                            @click="confirmProjectField(field.key)"
+                          >
+                            <q-tooltip>Dato già corretto</q-tooltip>
+                          </q-btn>
+                          <q-btn
+                            icon="save"
+                            color="positive"
+                            round
+                            flat
+                            size="sm"
+                            :aria-label="'Salva'"
+                            @click="saveProjectField(field.key)"
+                          >
+                            <q-tooltip>Salva</q-tooltip>
+                          </q-btn>
+                        </div>
+                  </q-card-section>
+                </q-card>
                 </div>
-              </q-card>
+              </div>
             </template>
-          </div>
-
-          <!-- Allegato -->
-          <div v-if="submission?.allegato" class="q-mt-lg">
-            <div class="text-subtitle1 text-weight-medium q-mb-sm">
-              Allegato
-            </div>
-            <q-card flat bordered>
-              <q-card-section class="q-pa-sm">
-                <div class="row items-center q-gutter-sm">
-                  <q-icon name="attachment" size="sm" class="text-grey-6" />
-                  <a :href="assetUrl(submission.allegato)" target="_blank" class="text-primary text-body2">
-                    Apri allegato
-                  </a>
-                  <span class="text-grey-5">|</span>
-                  <a :href="assetUrl(submission.allegato, true)" class="text-primary text-body2">
-                    Scarica
-                  </a>
-                </div>
-              </q-card-section>
-            </q-card>
           </div>
 
           <!-- Giustificativo section -->
@@ -299,6 +286,20 @@
                       :rules="[val => !!val || 'Inserisci una data']"
                     />
                   </div>
+                </div>
+                <q-separator v-if="submission?.allegato" class="q-my-sm" />
+                <div v-if="submission?.allegato" class="row items-center q-gutter-sm q-pt-xs">
+                  <span class="text-caption text-grey-7 q-mr-xs">Allegato:</span>
+                  <a :href="assetUrl(submission.allegato)" target="_blank" class="text-primary">
+                    <q-btn flat round dense icon="open_in_new" size="sm">
+                      <q-tooltip>Apri allegato</q-tooltip>
+                    </q-btn>
+                  </a>
+                  <a :href="assetUrl(submission.allegato, true)" class="text-primary">
+                    <q-btn flat round dense icon="file_download" size="sm">
+                      <q-tooltip>Scarica allegato</q-tooltip>
+                    </q-btn>
+                  </a>
                 </div>
               </q-card-section>
             </q-card>
@@ -343,6 +344,7 @@ import { verificaService } from 'src/services/verifica.service'
 import { useVerificaStore } from 'stores/verifica.store'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { assetUrl } from 'src/utils/assets'
+import { displayFullName } from 'src/utils/formatters'
 
 const $q = useQuasar()
 const verificaStore = useVerificaStore()
@@ -387,7 +389,9 @@ const confirmedFields = ref(new Set())
 
 // Project editable values
 const projectValues = ref({
-  Beneficiario: '',
+  Cognome_Beneficiario: '',
+  Nome_Beneficiario: '',
+  Intestatario: '',
   AnnoBando: '',
   Allocato: '',
   Titolo: ''
@@ -418,16 +422,19 @@ const leftFields = [
   { key: 'Nome', label: 'Nome', editable: true, saveable: true },
   { key: 'Cognome', label: 'Cognome', editable: true, saveable: true },
   { key: 'Telefono', label: 'Telefono', editable: true, saveable: true },
-  { key: 'IBAN', label: 'IBAN', editable: true, saveable: true },
-  { key: 'Intestatario', label: 'Intestatario', editable: true, saveable: true }
+  { key: 'IBAN', label: 'IBAN', editable: true, saveable: true }
 ]
 
 const PROJECT_FIELD_MAP = {
-  Beneficiario: (submission) => [submission.nome_beneficiario, submission.cognome_beneficiario].filter(Boolean).join(' ')
+  Cognome_Beneficiario: (submission) => submission.cognome_beneficiario || '',
+  Nome_Beneficiario: (submission) => submission.nome_beneficiario || '',
+  Intestatario: (submission) => submission.intestatario || ''
 }
 
 const projectFields = [
-  { key: 'Beneficiario', label: 'Beneficiario', editable: true }
+  { key: 'Cognome_Beneficiario', label: 'Cognome', editable: true, saveable: true },
+  { key: 'Nome_Beneficiario', label: 'Nome', editable: true, saveable: true },
+  { key: 'Intestatario', label: 'Intestatario', editable: true, saveable: true }
 ]
 
 // Computed
@@ -437,7 +444,7 @@ const selectedProgetto = computed(() =>
 
 const progettoOptions = computed(() =>
   progettiList.value.map(p => ({
-    label: `${p.Cognome_e__Nome_Beneficiario} (${p.AnnoBando || 'N/A'})`,
+    label: `${[p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')} (${p.AnnoBando || 'N/A'})`,
     value: p.id_progetto
   }))
 )
@@ -445,10 +452,8 @@ const progettoOptions = computed(() =>
 function getSubmissionProjectValue(key) {
   const submission = props.submission
   if (!submission) return ''
-  if (key === 'Beneficiario') {
-    const parts = [submission.nome_beneficiario, submission.cognome_beneficiario].filter(Boolean)
-    return parts.join(' ')
-  }
+  if (key === 'Cognome_Beneficiario') return submission.cognome_beneficiario || ''
+  if (key === 'Nome_Beneficiario') return submission.nome_beneficiario || ''
   return ''
 }
 
@@ -494,7 +499,7 @@ async function saveProjectField(key) {
   savingProjectField.value = key
   try {
     const val = projectValues.value[key]
-    const fieldMap = { Beneficiario: 'Cognome_e__Nome_Beneficiario' }
+    const fieldMap = { Cognome_Beneficiario: 'Cognome_Beneficiario', Nome_Beneficiario: 'Nome_Beneficiario', Intestatario: 'Interstatario_CC' }
     const directusField = fieldMap[key]
     if (directusField && val) {
       await verificaService.updateProgetto(selectedProgetto.value.id_progetto, { [directusField]: val })
@@ -509,11 +514,13 @@ async function saveProjectField(key) {
 
 function initProjectValues() {
   if (!selectedProgetto.value) {
-    projectValues.value = { Beneficiario: '' }
+    projectValues.value = { Cognome_Beneficiario: '', Nome_Beneficiario: '', Intestatario: '' }
     return
   }
   projectValues.value = {
-    Beneficiario: selectedProgetto.value.Cognome_e__Nome_Beneficiario || ''
+    Cognome_Beneficiario: selectedProgetto.value.Cognome_Beneficiario || '',
+    Nome_Beneficiario: selectedProgetto.value.Nome_Beneficiario || '',
+    Intestatario: selectedProgetto.value.Interstatario_CC || ''
   }
 }
 
@@ -617,7 +624,7 @@ async function initData() {
   progettiList.value = []
   rightValues.value = { Nome: '', Cognome: '', Email: '', Telefono: '', IBAN: '', Intestatario: '' }
   confirmedFields.value = new Set()
-  projectValues.value = { Beneficiario: '', AnnoBando: '', Allocato: '', Titolo: '' }
+  projectValues.value = { Cognome_Beneficiario: '', Nome_Beneficiario: '', Intestatario: '', AnnoBando: '', Allocato: '', Titolo: '' }
   projectConfirmedFields.value = new Set()
   giustDescrizione.value = props.submission.descrizione || ''
   giustImporto.value = props.submission.importo || null
@@ -698,5 +705,8 @@ function toLocalDate(isoStr) {
 <style scoped>
 .riconcilia-scroll-area {
   height: 65vh;
+}
+.riconcilia-dialog-card {
+  background: #FAFAF7;
 }
 </style>

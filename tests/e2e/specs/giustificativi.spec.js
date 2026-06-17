@@ -394,8 +394,8 @@ test.describe('Giustificativi', () => {
       }
 
       const card = cardWithAttach.first()
-      const apriBtn = card.locator('a:has-text("Apri")')
-      const scaricaBtn = card.locator('a:has-text("Scarica")')
+      const apriBtn = card.locator('a[aria-label="Apri allegato"]')
+      const scaricaBtn = card.locator('a[aria-label="Scarica allegato"]')
       await expect(apriBtn).toBeVisible()
       await expect(scaricaBtn).toBeVisible()
 
@@ -417,7 +417,7 @@ test.describe('Giustificativi', () => {
         return
       }
 
-      const scaricaBtn = cardWithAttach.first().locator('a:has-text("Scarica")')
+      const scaricaBtn = cardWithAttach.first().locator('a[aria-label="Scarica allegato"]')
       const href = await scaricaBtn.getAttribute('href')
 
       const response = await page.request.get(href)
@@ -441,7 +441,7 @@ test.describe('Giustificativi', () => {
         return
       }
 
-      const apriBtn = cardWithAttach.first().locator('a:has-text("Apri")')
+      const apriBtn = cardWithAttach.first().locator('a[aria-label="Apri allegato"]')
       const href = await apriBtn.getAttribute('href')
 
       const [popup] = await Promise.all([
@@ -701,8 +701,8 @@ test.describe('Giustificativi', () => {
       if (await inviatoCard.count() === 0) test.skip()
 
       if (await inviatoCard.locator('a[href*="/assets/"]').count() > 0) {
-        await expect(inviatoCard.locator('a:has-text("Apri")')).toBeVisible()
-        await expect(inviatoCard.locator('a:has-text("Scarica")')).toBeVisible()
+        await expect(inviatoCard.locator('a[aria-label="Apri allegato"]')).toBeVisible()
+        await expect(inviatoCard.locator('a[aria-label="Scarica allegato"]')).toBeVisible()
       }
     })
   })

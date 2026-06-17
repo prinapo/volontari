@@ -15,7 +15,9 @@ export const useAdminStore = defineStore('admin', {
     loading: false,
     saving: false,
     sending: false,
-    error: null
+    error: null,
+    progetti: [],
+    progettiLoading: false
   }),
 
   actions: {
@@ -148,6 +150,36 @@ export const useAdminStore = defineStore('admin', {
         return false
       } finally {
         this.sending = false
+      }
+    },
+
+    async fetchProgetti() {
+      this.progettiLoading = true
+      this.error = null
+      try {
+        const res = await adminService.getProgetti()
+        this.progetti = res.data.data || []
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento dei progetti"
+      } finally {
+        this.progettiLoading = false
+      }
+    },
+
+    async updateProgettoBeneficiario(id, cognome, nome) {
+      this.saving = true
+      this.error = null
+      try {
+        await adminService.updateProgetto(id, {
+          Cognome_Beneficiario: cognome,
+          Nome_Beneficiario: nome
+        })
+        return true
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del progetto"
+        return false
+      } finally {
+        this.saving = false
       }
     }
   }

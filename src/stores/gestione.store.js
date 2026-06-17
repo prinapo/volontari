@@ -14,7 +14,8 @@ export const useGestioneStore = defineStore('gestione', {
     totalFamiglie: 0,
     loading: false,
     saving: false,
-    error: null
+    error: null,
+    volontarioFilter: 'tutti'
   }),
 
   actions: {
@@ -23,10 +24,38 @@ export const useGestioneStore = defineStore('gestione', {
       this.error = null
       try {
         const famRes = await gestioneService.getFamiglie({ ...params, meta: 'filter_count' })
-        this.famiglie = famRes.data.data || []
+        const famiglie = famRes.data.data || []
         this.totalFamiglie = famRes.data.meta?.filter_count || 0
+
+        // Arricchisci con HasVolontario
+        const ids = famiglie.map(f => f.id_famiglia).filter(Boolean)
+        if (ids.length > 0) {
+          const volRes = await gestioneService.checkFamiglieVolontari(ids)
+          const volCounts = volRes.data.data || []
+          const volMap = {}
+          for (const vc of volCounts) {
+            volMap[vc.Famiglia] = vc.count?.id || 0
+          }
+          for (const f of famiglie) {
+            f.HasVolontario = (volMap[f.id_famiglia] || 0) > 0
+          }
+        } else {
+          for (const f of famiglie) {
+            f.HasVolontario = false
+          }
+        }
+
+        // Applica filtro volontario client-side
+        if (this.volontarioFilter === 'con') {
+          this.famiglie = famiglie.filter(f => f.HasVolontario)
+        } else if (this.volontarioFilter === 'senza') {
+          this.famiglie = famiglie.filter(f => !f.HasVolontario)
+        } else {
+          this.famiglie = famiglie
+        }
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
+        this.famiglie = []
       } finally {
         this.loading = false
       }

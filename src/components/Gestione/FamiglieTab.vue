@@ -18,6 +18,19 @@
 
       <q-space />
 
+      <q-select
+        v-model="volontarioFilter"
+        :options="filterOptions"
+        option-value="value"
+        option-label="label"
+        emit-value
+        map-options
+        dense
+        outlined
+        class="col-auto"
+        style="min-width: 160px"
+      />
+
       <q-btn color="primary" icon="home_work" label="Aggiungi Famiglia" @click="openCreate" />
     </div>
 
@@ -49,7 +62,8 @@
             dense-toggle
             expand-separator
             :label="props.row.Nome_Famiglia || 'Famiglia senza nome'"
-            :header-style="{ borderRadius: '8px' }"
+            :caption="(props.row.HasVolontario ? '✅' : '❌') + ' Volontario'"
+            :header-style="{ borderRadius: '12px' }"
             @show="loadExpanded(props.row)"
           >
             <q-card flat bordered>
@@ -319,6 +333,12 @@ import ContattiDialog from './ContattiDialog.vue'
 const store = useGestioneStore()
 
 const search = ref('')
+const volontarioFilter = ref('tutti')
+const filterOptions = [
+  { label: 'Tutti', value: 'tutti' },
+  { label: 'Con volontario', value: 'con' },
+  { label: 'Senza volontario', value: 'senza' }
+]
 
 const showDialog = ref(false)
 const editingItem = ref(null)
@@ -345,8 +365,15 @@ watch(showContatti, (val) => {
   }
 })
 
+watch(volontarioFilter, (val) => {
+  store.volontarioFilter = val
+  pagination.value.page = 1
+  loadData()
+})
+
 const columns = [
   { name: 'nome', label: 'Nome Famiglia', field: 'Nome_Famiglia', align: 'left', sortable: true },
+  { name: 'volontario', label: 'Volontario', field: 'HasVolontario', align: 'center', format: (val) => val ? '✅' : '❌' },
   { name: 'IBAN', label: 'IBAN', align: 'left' },
   { name: 'intestatario', label: 'Intestatario CC', field: 'Intestatario_CC', align: 'left' },
   { name: 'azioni', label: 'Azioni', align: 'center' }

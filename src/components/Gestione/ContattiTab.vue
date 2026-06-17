@@ -60,7 +60,7 @@
             expand-separator
             :label="displayNome(props.row)"
             :caption="props.row.Email?.[0]?.email_address || props.row._emails?.[0]?.email_address || ''"
-            :header-style="{ borderRadius: '8px' }"
+            :header-style="{ borderRadius: '12px' }"
           >
             <q-card flat bordered>
               <q-card-section class="q-pa-sm">
