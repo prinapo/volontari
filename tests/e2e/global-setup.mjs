@@ -11,19 +11,7 @@ const PRODUCTION_PATTERNS = [
 ]
 
 function getApiUrl() {
-  const envFiles = ['.env.local', '.env']
-  for (const file of envFiles) {
-    const fullPath = resolve(__dirname, '..', '..', file)
-    if (!existsSync(fullPath)) continue
-    const content = readFileSync(fullPath, 'utf-8')
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim()
-      if (trimmed.startsWith('VITE_API_URL=')) {
-        return trimmed.replace('VITE_API_URL=', '').trim()
-      }
-    }
-  }
-  return null
+  return 'http://localhost:8055'
 }
 
 async function directusLogin(baseUrl, email, password) {

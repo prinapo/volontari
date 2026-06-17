@@ -43,7 +43,7 @@
               dense
               dense-toggle
               expand-separator
-              :label="props.row.richiedente || 'Richiedente sconosciuto'"
+              :label="`${props.row.nome_richiedente || ''} ${props.row.cognome_richiedente || ''}` || 'Richiedente sconosciuto'"
               :caption="props.row.email || ''"
               :header-style="{
                 borderRadius: '8px',

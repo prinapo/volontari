@@ -1,6 +1,12 @@
 # Regola — Solo capacità native Quasar
 Ogni modifica UI deve usare esclusivamente componenti, props, classi e API native di Quasar. Niente librerie CSS terze (Tailwind, Bootstrap), niente componenti custom esterni, niente manipolazione DOM diretta. Lo stile va in `src/css/app.scss` con variabili CSS custom e override di classi Quasar. Google Fonts è l'unica eccezione. Vale per TUTTO il codice, esistente e nuovo.
 
+# v2.7.2
+
+- **Fix card riconciliazione mobile**: richiedente ora usa `nome_richiedente` + `cognome_richiedente` invece del campo computato `richiedente` (non disponibile in grid mode).
+- **Test RC-CARD-01**: verifica che il nome richiedente nella card non sia "Richiedente sconosciuto".
+- **Version bump**: 2.7.1 → 2.7.2
+
 # v2.7.1
 
 - **Fix env vars**: tutte rinominte con prefisso `VITE_` per matchare il build di Quasar.

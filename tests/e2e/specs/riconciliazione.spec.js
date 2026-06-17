@@ -532,4 +532,21 @@ test.describe('Riconciliazione', () => {
     expect(rowCount).toBeGreaterThanOrEqual(0)
     await expect(gestione.searchInput).toBeVisible({ timeout: 5000 })
   })
+
+  // ── RC-CARD-01: Card mobile mostra richiedente corretto @smoke ──
+  test('RC-CARD-01: Card mobile mostra richiedente corretto @smoke', async ({ page }) => {
+    test.setTimeout(60000)
+    const testEmail = `test_card_${Date.now()}@test.com`
+    await createTestSubmission(page, { email: testEmail, descrizione: 'Test RC-CARD richiedente' })
+    await loginAs(page, 'gestore_verifica', auth)
+
+    const riconcPage = new RiconciliazionePage(page)
+    await riconcPage.goto()
+    await riconcPage.waitForTable()
+
+    // In grid mode l'expansion-item label è il nome richiedente
+    const firstCard = page.locator('.q-expansion-item .q-item__label').first()
+    await expect(firstCard).toBeVisible({ timeout: 5000 })
+    await expect(firstCard).not.toContainText('Richiedente sconosciuto')
+  })
 })

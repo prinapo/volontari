@@ -107,24 +107,12 @@ test.describe('Referente Role', () => {
     await page.waitForTimeout(2000)
     await gestionePage.search(nome)
     await page.waitForTimeout(2000)
-
-    let targetRow = null
-    const rows = gestionePage.tableRows
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
-      if (await btn.count() > 0) { targetRow = rows.nth(i); break }
-    }
+    console.log('[RF-02] search done, looking for referente button')
 
     // Torna a Contatti, cerca il contatto, clicca bottone referente
     await gestionePage.contattiTab.click()
     await gestionePage.waitForTable()
     await page.waitForTimeout(2000)
-    console.log('[RF-02] back to contatti, searching...')
-    await gestionePage.search(nome)
-    await page.waitForTimeout(2000)
-    console.log('[RF-02] search done, looking for referente button')
 
     let targetRow = null
     const rows = gestionePage.tableRows
