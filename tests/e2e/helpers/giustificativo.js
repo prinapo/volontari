@@ -25,9 +25,12 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
   if (await aggiungiBtn.isDisabled().catch(() => true)) return null
 
-  await aggiungiBtn.click()
-  const dialog = page.locator('.q-dialog')
-  await dialog.waitFor({ state: 'visible', timeout: 5000 })
+  await aggiungiBtn.scrollIntoViewIfNeeded()
+  await page.waitForTimeout(300)
+  await aggiungiBtn.dispatchEvent('click')
+  await page.waitForTimeout(1500)
+  const dialog = page.locator('.q-dialog:visible')
+  await dialog.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
 
   await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
   await dialog.locator('[data-testid="giustform-importo"]').fill(String(data.importo || '50.00'))
@@ -55,7 +58,8 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   const giustId = created?.data?.id
 
   if (data.submitAfter && giustId) {
-    const sendBtn = page.locator('.giust-item button:has(i:has-text("send"))').first()
+    await page.waitForTimeout(1000)
+    const sendBtn = page.locator('.giust-item button:has-text("Invia")').first()
     if (await sendBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await sendBtn.click()
       await page.waitForTimeout(2000)

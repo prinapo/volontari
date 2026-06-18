@@ -48,14 +48,17 @@ export const adminService = {
     return api.post('/mail', data)
   },
 
-  getProgetti() {
-    return api.get('/items/Progetti', {
-      params: {
-        fields: ['id_progetto', 'Cognome_Beneficiario', 'Nome_Beneficiario', 'AnnoBando'].join(','),
-        limit: -1,
-        sort: 'Cognome_Beneficiario,Nome_Beneficiario'
-      }
-    })
+  getProgetti({ search } = {}) {
+    const params = {
+      fields: ['id_progetto', 'Cognome_Beneficiario', 'Nome_Beneficiario', 'AnnoBando'].join(','),
+      limit: -1,
+      sort: 'Cognome_Beneficiario,Nome_Beneficiario'
+    }
+    if (search) {
+      params['filter[_or][0][Cognome_Beneficiario][_icontains]'] = search
+      params['filter[_or][1][Nome_Beneficiario][_icontains]'] = search
+    }
+    return api.get('/items/Progetti', { params })
   },
 
   updateProgetto(id, data) {

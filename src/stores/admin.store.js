@@ -17,7 +17,8 @@ export const useAdminStore = defineStore('admin', {
     sending: false,
     error: null,
     progetti: [],
-    progettiLoading: false
+    progettiLoading: false,
+    searchProgetti: ''
   }),
 
   actions: {
@@ -157,7 +158,7 @@ export const useAdminStore = defineStore('admin', {
       this.progettiLoading = true
       this.error = null
       try {
-        const res = await adminService.getProgetti()
+        const res = await adminService.getProgetti({ search: this.searchProgetti || undefined })
         this.progetti = res.data.data || []
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento dei progetti"

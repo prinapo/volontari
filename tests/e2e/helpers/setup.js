@@ -65,3 +65,17 @@ export async function assignToFamiglia(page, contattoId, famigliaId, ruolo) {
     await api(page, 'PATCH', `/items/contatti/${contattoId}`, { IsGenitore: true })
   }
 }
+
+/**
+ * Crea una famiglia via API.
+ */
+export async function createFamiglia(page, { Nome_Famiglia, IBAN, Intestatario_CC } = {}) {
+  const id_famiglia = `TEST_FAM_AUTO_${Date.now()}`
+  await api(page, 'POST', '/items/Famiglie', {
+    id_famiglia,
+    Nome_Famiglia: Nome_Famiglia || `Test Famiglia ${Date.now()}`,
+    IBAN: IBAN || null,
+    Intestatario_CC: Intestatario_CC || null
+  })
+  return id_famiglia
+}

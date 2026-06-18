@@ -42,10 +42,15 @@ async function createGiustificativoViaVerificatore(page) {
   await vp.waitForTable()
   await page.waitForTimeout(2000)
 
-  const addBtn = page.locator('[data-testid="btn-add-giust"]').first()
-  const addBtnCount = await addBtn.count()
-  if (addBtnCount === 0) return null
-
+  const addBtn = page.locator('[data-testid="btn-add-giust"], button[aria-label="Aggiungi giustificativo"]').first()
+  if (await addBtn.count() === 0) return null
+  // Su mobile espandi la riga prima di cliccare
+  const isMobile = await page.locator('.q-expansion-item').count() > 0
+  if (isMobile) {
+    const expItem = page.locator('.q-expansion-item').first()
+    await expItem.click()
+    await page.waitForTimeout(500)
+  }
   await addBtn.click()
   await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
 

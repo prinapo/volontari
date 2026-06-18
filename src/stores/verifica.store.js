@@ -405,14 +405,14 @@ export const useVerificaStore = defineStore('verifica', {
             if (fc.Contatto) {
               const cid = typeof fc.Contatto === 'object' ? fc.Contatto.id_contatto : fc.Contatto
               const ru = String(fc.Ruolo_nella_Famiglia || '').toLowerCase()
-              if (!linkedMap.has(cid)) {
+              const isPrioritario = ru === 'genitore' || ru === 'tutore'
+              if (!linkedMap.has(cid) || (isPrioritario && !linkedMap.get(cid).isPrioritario)) {
                 linkedMap.set(cid, {
                   famigliaId: fc.Famiglia?.id_famiglia,
                   famigliaNome: fc.Famiglia?.Nome_Famiglia,
-                  isGenitore: ru === 'genitore'
+                  isGenitore: isPrioritario,
+                  isPrioritario
                 })
-              } else if (ru === 'genitore') {
-                linkedMap.get(cid).isGenitore = true
               }
             }
           }
@@ -701,7 +701,11 @@ export const useVerificaStore = defineStore('verifica', {
         }
 
         const fcRes = await famiglieService.getFamiglieByContatto(contatto.id_contatto)
-        const fc = fcRes.data.data?.[0]
+        const records = fcRes.data.data || []
+        // Preferisci Genitore/Tutore (ruoli del form pubblico) su Volontario
+        const fc = records.find(r => r.Ruolo_nella_Famiglia === 'Genitore')
+          || records.find(r => r.Ruolo_nella_Famiglia === 'Tutore')
+          || records[0]
 
         let famigliaData = fc?.Famiglia && typeof fc.Famiglia === 'object' ? fc.Famiglia : null
 

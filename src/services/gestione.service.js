@@ -1,7 +1,7 @@
 import api from './api'
 
 export const gestioneService = {
-  getFamiglie({ page = 1, limit = 25, sort, search, meta } = {}) {
+  getFamiglie({ page = 1, limit = 25, sort, search, meta, famigliaIds, excludeIds } = {}) {
     const params = {
       fields: [
         'id_famiglia',
@@ -15,6 +15,12 @@ export const gestioneService = {
     if (sort) params.sort = sort
     if (search) params['filter[Nome_Famiglia][_icontains]'] = search
     if (meta) params.meta = meta
+    if (famigliaIds && famigliaIds.length > 0) {
+      params['filter[id_famiglia][_in]'] = famigliaIds.join(',')
+    }
+    if (excludeIds && excludeIds.length > 0) {
+      params['filter[id_famiglia][_nin]'] = excludeIds.join(',')
+    }
     return api.get('/items/Famiglie', { params })
   },
 
@@ -141,6 +147,19 @@ export const gestioneService = {
         'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
         'filter[_or][0][Disattivo][_null]': true,
         'filter[_or][1][Disattivo][_eq]': false
+      }
+    })
+  },
+
+  checkAllFamiglieVolontari() {
+    return api.get('/items/Famiglie_Contatti', {
+      params: {
+        'aggregate[count]': 'id',
+        'groupBy[]': 'Famiglia',
+        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+        'filter[_or][0][Disattivo][_null]': true,
+        'filter[_or][1][Disattivo][_eq]': false,
+        limit: -1
       }
     })
   }

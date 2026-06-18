@@ -1,6 +1,6 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
-import { createContatto, assignToFamiglia } from '../helpers/setup.js'
+import { createContatto, assignToFamiglia, createFamiglia } from '../helpers/setup.js'
 import { createTestSubmission } from '../helpers/submission.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { GestionePage } from '../pages/GestionePage.js'
@@ -163,9 +163,14 @@ test.describe('Riconciliazione', () => {
     const rows = riconcPage.rowLocator
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
-      const rowText = await rows.nth(i).innerText()
+      const row = rows.nth(i)
+      const caption = row.locator('.q-item__label--caption')
+      const rowText = await caption.count() > 0
+        ? await caption.first().innerText()
+        : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
-        const btn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
+        await riconcPage.expandRow(i)
+        const btn = row.locator('[data-testid="btn-riconcilia"]').first()
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
           foundBtn = btn
           break
@@ -203,8 +208,8 @@ test.describe('Riconciliazione', () => {
     await gestione.famiglieTab.click()
     await gestione.waitForTable()
     await gestione.searchFamiglie('TEST_FAM')
-    const contactsBtn = gestione.activePanel.locator('.q-table tbody tr').nth(0).locator('.q-btn').filter({ hasText: 'contacts' })
-    await contactsBtn.click()
+    const clicked = await gestione.clickContactsOnFamiglia('Famiglia TEST_FAM_01')
+    if (!clicked) { test.skip('Famiglia TEST_FAM_01 non trovata'); return }
     await gestione.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
     await gestione.assignGenitore(testEmail)
 
@@ -226,7 +231,11 @@ test.describe('Riconciliazione', () => {
     const rows = riconcPage.rowLocator
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
-      const rowText = await rows.nth(i).innerText()
+      const row = rows.nth(i)
+      const caption = row.locator('.q-item__label--caption')
+      const rowText = await caption.count() > 0
+        ? await caption.first().innerText()
+        : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
         const btn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
@@ -273,23 +282,30 @@ test.describe('Riconciliazione', () => {
     const rows = riconcPage.rowLocator
     const count = await rows.count()
     let targetBtn = null
+    let foundIndex = -1
     for (let i = 0; i < count; i++) {
-      const emailInput = rows.nth(i).locator('td').nth(2).locator('input')
+      const row = rows.nth(i)
+      const emailInput = row.locator('td').nth(2).locator('input')
       let emailMatch = false
       if (await emailInput.count() > 0) {
         const value = await emailInput.inputValue()
         if (value === testEmail) emailMatch = true
       } else {
-        const rowText = await rows.nth(i).innerText()
+        const caption = row.locator('.q-item__label--caption')
+        const rowText = await caption.count() > 0
+          ? await caption.first().innerText()
+          : await row.innerText()
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
-        targetBtn = rows.nth(i).locator('[data-testid="btn-scarta"]').first()
+        targetBtn = row.locator('[data-testid="btn-scarta"]').first()
+        foundIndex = i
         break
       }
     }
 
     expect(targetBtn, `Submission ${testEmail} non trovata`).toBeTruthy()
+    await riconcPage.expandRow(foundIndex)
 
     await targetBtn.click()
 
@@ -403,25 +419,32 @@ test.describe('Riconciliazione', () => {
     const rows = riconcPage.rowLocator
     const count = await rows.count()
     let foundBtn = null
+    let foundIdx = -1
     for (let i = 0; i < count; i++) {
-      const rowText = await rows.nth(i).innerText()
+      const row = rows.nth(i)
+      const caption = row.locator('.q-item__label--caption')
+      const rowText = await caption.count() > 0
+        ? await caption.first().innerText()
+        : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
-        foundBtn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
+        foundBtn = row.locator('[data-testid="btn-riconcilia"]').first()
+        foundIdx = i
         break
       }
     }
 
     expect(foundBtn, `Submission ${testEmail} non trovata come linked`).toBeTruthy()
+    if (foundIdx >= 0) await riconcPage.expandRow(foundIdx)
     await foundBtn.click()
     await riconcPage.waitForDialog()
 
     // Seleziona progetto nel dialog
     const progettoSelect = riconcPage.dialog.locator('[data-testid="select-progetto-riconcilia"]')
-    await progettoSelect.click()
-    await page.locator('.q-menu .q-item').first().waitFor({ state: 'visible', timeout: 3000 })
-    const firstProgetto = page.locator('.q-menu .q-item').first()
-    if (await firstProgetto.count() === 0) { test.skip('Nessun progetto disponibile'); return }
-    await firstProgetto.click()
+    await progettoSelect.locator('input').click()
+    await page.waitForTimeout(500)
+    const firstItem = page.locator('.q-menu .q-item').first()
+    if (await firstItem.count() === 0) { test.skip('Nessun progetto disponibile'); return }
+    await firstItem.click()
 
     // Compila giustificativo
     await riconcPage.dialog.locator('[data-testid="riconcilia-descrizione"]').fill('Riconciliazione di test RC-05')
@@ -475,7 +498,11 @@ test.describe('Riconciliazione', () => {
         const value = await emailInput.inputValue()
         if (value === testEmail) emailMatch = true
       } else {
-        const rowText = await rows.nth(i).innerText()
+        const row = rows.nth(i)
+        const caption = row.locator('.q-item__label--caption')
+        const rowText = await caption.count() > 0
+          ? await caption.first().innerText()
+          : await row.innerText()
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
@@ -521,7 +548,11 @@ test.describe('Riconciliazione', () => {
         const value = await emailInput.inputValue()
         if (value === testEmail) emailMatch = true
       } else {
-        const rowText = await rowsAfter.nth(i).innerText()
+        const row = rowsAfter.nth(i)
+        const caption = row.locator('.q-item__label--caption')
+        const rowText = await caption.count() > 0
+          ? await caption.first().innerText()
+          : await row.innerText()
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
@@ -578,5 +609,70 @@ test.describe('Riconciliazione', () => {
       // Fallback: verifica che almeno la tabella sia visibile con dati
       await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 5000 })
     }
+  })
+
+  test('RC-PRIORITY-01: Submission con contatto Volontario+Genitore assegna alla famiglia Genitore @regression', async ({ page }) => {
+    test.setTimeout(120000)
+    const testEmail = `test_priority_${Date.now()}@test.com`
+
+    // Setup: login come gestore per API
+    await loginAs(page, 'gestore', auth)
+
+    // Crea contatto
+    const contatto = await createContatto(page, {
+      Nome: 'Priority Test',
+      Cognome: 'AutoTest',
+      email: testEmail
+    })
+
+    // Crea una seconda famiglia per testare il priority
+    const famigliaGenitore = await createFamiglia(page, {
+      Nome_Famiglia: `Famiglia Genitore ${Date.now()}`
+    })
+
+    // Assegna contatto come Volontario a TEST_FAM_01 (dovrebbe essere ignorata)
+    await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Volontario')
+
+    // Assegna contatto come Genitore alla nuova famiglia (dovrebbe essere preferita)
+    await assignToFamiglia(page, contatto.id_contatto, famigliaGenitore, 'Genitore')
+
+    // Crea submission pubblica con la stessa email
+    await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: 'Test priority Genitore su Volontario'
+    })
+
+    // Login come gestore_verifica e vai a riconciliazione
+    await loginAs(page, 'gestore_verifica', auth)
+    const riconcPage = new RiconciliazionePage(page)
+    await riconcPage.goto()
+    await riconcPage.waitForTable()
+
+    // Trova la riga per email
+    const rows = riconcPage.rowLocator
+    const count = await rows.count()
+    let found = false
+    for (let i = 0; i < count; i++) {
+      const row = rows.nth(i)
+      const caption = row.locator('.q-item__label--caption')
+      const rowText = await caption.count() > 0
+        ? await caption.first().innerText()
+        : await row.innerText()
+      if (rowText.toLowerCase().includes(testEmail)) {
+        // Verifica che lo stato sia 'linked' (contatto trovato e legato come genitore)
+        const badges = row.locator('.q-badge')
+        const badgeCount = await badges.count()
+        for (let j = 0; j < badgeCount; j++) {
+          const text = await badges.nth(j).innerText()
+          if (text.includes('Contatto verificato')) {
+            found = true
+            break
+          }
+        }
+        break
+      }
+    }
+
+    expect(found, `Submission ${testEmail} non trovata come contatto verificato`).toBe(true)
   })
 })

@@ -43,7 +43,15 @@ export class VerificaPage {
 
   async expandRow(index = 0) {
     const expandBtn = this.page.locator('[data-testid="expand-row"]').nth(index)
-    await expandBtn.click()
+    if (await expandBtn.count() > 0) {
+      await expandBtn.click()
+    } else {
+      // Su mobile: click sull'expansion item
+      const expItem = this.page.locator('.q-expansion-item').nth(index)
+      if (await expItem.count() > 0) {
+        await expItem.click()
+      }
+    }
 
     await this.page.locator('.expandable-content').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {
       console.log('[VerificaPage] expandable-content not found within timeout')

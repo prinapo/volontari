@@ -155,8 +155,7 @@
                     </div>
                   </div>
 
-                  <q-separator class="q-my-sm" />
-                  <div class="row q-gutter-xs">
+                  <q-card-actions align="right" class="q-pt-none">
                     <template v-if="props.row.stato === 'scartato'">
                       <q-btn
                         flat
@@ -235,7 +234,7 @@
                         Scarta
                       </q-btn>
                     </template>
-                  </div>
+                  </q-card-actions>
                 </q-card-section>
               </q-card>
             </q-expansion-item>

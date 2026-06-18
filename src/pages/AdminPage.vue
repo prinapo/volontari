@@ -43,6 +43,19 @@
               </div>
             </div>
             <q-space />
+            <q-input
+              v-model="usersSearch"
+              dense
+              outlined
+              placeholder="Cerca utente per nome o email..."
+              clearable
+              class="col"
+              style="max-width: 320px"
+            >
+              <template #prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
             <q-btn
               flat
               round
@@ -61,7 +74,7 @@
           </q-banner>
 
           <q-table
-            :rows="store.users"
+            :rows="filteredUsers"
             :columns="userColumns"
             row-key="id"
             flat
@@ -209,6 +222,21 @@
               </div>
             </div>
             <q-space />
+            <q-input
+              v-model="store.searchProgetti"
+              dense
+              outlined
+              placeholder="Cerca per cognome o nome..."
+              clearable
+              class="col"
+              style="max-width: 320px"
+              debounce="300"
+              @update:model-value="store.fetchProgetti"
+            >
+              <template #prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
             <q-btn
               flat
               round
@@ -537,6 +565,18 @@ const store = useAdminStore()
 const authStore = useAuthStore()
 
 const activeTab = ref('utenti')
+
+const usersSearch = ref('')
+
+const filteredUsers = computed(() => {
+  const q = usersSearch.value.toLowerCase().trim()
+  if (!q) return store.users
+  return store.users.filter(u =>
+    (u.first_name || '').toLowerCase().includes(q) ||
+    (u.last_name || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q)
+  )
+})
 
 const userColumns = [
   { name: 'name', label: 'Nome', align: 'left', style: 'width: 200px' },
