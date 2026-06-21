@@ -58,6 +58,19 @@ export const RUOLI_FAMIGLIA = {
   REFERENTE: 'Referente'
 }
 
+export const STATO_PAGAMENTO = {
+  PROPOSTO: 'proposto',
+  IN_PAGAMENTO: 'in_pagamento',
+  PAGATO: 'pagato',
+  FALLITO: 'fallito',
+  ANNULLATO: 'annullato'
+}
+
+export const STATO_PROGETTO = {
+  APERTO: 'aperto',
+  CHIUSO: 'chiuso'
+}
+
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.gif,.heic,.pdf'
 export const FILE_MAX_SIZE = 5 * 1024 * 1024
 

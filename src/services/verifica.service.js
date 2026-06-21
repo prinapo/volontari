@@ -48,6 +48,10 @@ export const verificaService = {
     })
   },
 
+  getGiustificativiByProgetto(progettoId) {
+    return this.getGiustificativiByProgetti([progettoId])
+  },
+
   getGiustificativiByProgettiLight(progettoIds) {
     return api.get('/items/Giustificativi', {
       params: {

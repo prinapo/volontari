@@ -18,6 +18,7 @@
         >
           <q-tab name="utenti" icon="people" label="Utenti" />
           <q-tab name="progetti" icon="account_balance" label="Progetti" />
+          <q-tab name="associazioni" icon="business" label="Associazioni" />
         </q-tabs>
       </div>
 
@@ -359,6 +360,57 @@
             </template>
           </q-table>
         </q-tab-panel>
+
+        <q-tab-panel name="associazioni">
+          <div class="row items-center q-gutter-sm q-mb-md">
+            <div>
+              <div class="text-h5 text-weight-medium">
+                Associazioni
+              </div>
+              <div class="text-body2 text-grey-7">
+                Gestisci i budget annuali delle associazioni.
+              </div>
+            </div>
+            <q-space />
+            <q-btn flat round icon="refresh" aria-label="Aggiorna" @click="fetchAssociazioni">
+              <q-tooltip>Aggiorna</q-tooltip>
+            </q-btn>
+          </div>
+
+          <q-table
+            :rows="associazioni"
+            :columns="assocColumns"
+            row-key="id"
+            flat bordered
+            hide-pagination
+            :pagination="{ rowsPerPage: 0 }"
+          >
+            <template #body-cell-budget="props">
+              <q-td :props="props">
+                <q-input
+                  :model-value="assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget"
+                  outlined dense
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  @update:model-value="val => editAssocBudget(props.row, val)"
+                />
+              </q-td>
+            </template>
+            <template #body-cell-actions="props">
+              <q-td :props="props">
+                <q-btn
+                  v-if="assocBudgetCache[props.row.id] !== undefined"
+                  icon="save" color="positive" round flat size="sm"
+                  :loading="savingAssoc"
+                  @click="saveAssocBudget(props.row)"
+                >
+                  <q-tooltip>Salva</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
+          </q-table>
+        </q-tab-panel>
       </q-tab-panels>
 
       <!-- Create User Dialog -->
@@ -650,9 +702,45 @@ async function saveBeneficiario(progetto) {
 }
 
 function refreshProgetti() {
-  // Clear editCache so it re-initialises from fresh data
   Object.keys(editCache).forEach(k => delete editCache[k])
   store.fetchProgetti()
+}
+
+// Associazioni
+const associazioni = ref([])
+const assocBudgetCache = reactive({})
+const savingAssoc = ref(false)
+const assocColumns = [
+  { name: 'nome', label: 'Associazione', field: 'Nome', align: 'left' },
+  { name: 'budget', label: 'Budget (€)', align: 'left' },
+  { name: 'actions', label: '', align: 'center' }
+]
+
+async function fetchAssociazioni() {
+  try {
+    const { associazioniService } = await import('src/services/associazioni.service')
+    const res = await associazioniService.getAll()
+    associazioni.value = res.data.data || []
+  } catch { associazioni.value = [] }
+}
+
+function editAssocBudget(row, val) {
+  assocBudgetCache[row.id] = parseFloat(val) || 0
+}
+
+async function saveAssocBudget(row) {
+  const val = assocBudgetCache[row.id]
+  if (val === undefined) return
+  savingAssoc.value = true
+  try {
+    const { associazioniService } = await import('src/services/associazioni.service')
+    await associazioniService.update(row.id, { Budget: val })
+    notifySuccess($q, 'Budget aggiornato')
+    delete assocBudgetCache[row.id]
+    await fetchAssociazioni()
+  } catch (err) {
+    notifyError($q, err, 'Errore aggiornamento budget')
+  } finally { savingAssoc.value = false }
 }
 
 const roleOptions = computed(() => store.roles)
@@ -761,6 +849,7 @@ async function handleRoleChange(userId, roleId) {
 onMounted(() => {
   store.fetchAll()
   store.fetchProgetti()
+  fetchAssociazioni()
 })
 </script>
 

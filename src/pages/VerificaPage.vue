@@ -3,6 +3,7 @@
     <div class="page-inner">
       <q-tabs v-model="verificaTab" class="q-mb-md">
         <q-tab name="rendicontazione" label="Rendicontazione" />
+        <q-tab v-if="canVerifica" name="pagamenti" label="Pagamenti" />
       </q-tabs>
 
       <q-tab-panels v-model="verificaTab">
@@ -713,6 +714,9 @@
             </template>
           </q-table>
         </q-tab-panel>
+        <q-tab-panel v-if="canVerifica" name="pagamenti">
+          <PagamentiTab />
+        </q-tab-panel>
       </q-tab-panels>
 
       <BancariDialog
@@ -791,6 +795,7 @@ import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
 import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
 import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
+import PagamentiTab from 'components/Verifica/PagamentiTab.vue'
 
 const $q = useQuasar()
 const store = useVerificaStore()

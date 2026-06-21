@@ -8,6 +8,7 @@ import { gestioneService } from 'src/services/gestione.service'
 import { emailService } from 'src/services/email.service'
 import { FOLDERS } from 'src/utils/constants'
 import { markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
+import { usePagamentiStore } from './pagamenti.store'
 import { enrichWithEmails } from 'src/utils/enrichment'
 
 function toNumber(value) {
@@ -300,6 +301,8 @@ export const useVerificaStore = defineStore('verifica', {
         item.Stato = 'verificato'
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
+        const pagStore = usePagamentiStore()
+        await pagStore.ricalcolaProposta(progettoId)
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella verifica del giustificativo'
         throw err
@@ -316,6 +319,8 @@ export const useVerificaStore = defineStore('verifica', {
         item[field] = value
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
+        const pagStore = usePagamentiStore()
+        await pagStore.ricalcolaProposta(progettoId)
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || `Errore nell'aggiornamento del campo ${field}`
         throw err
@@ -577,6 +582,8 @@ export const useVerificaStore = defineStore('verifica', {
         item.NotaRifiuto = nota
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
+        const pagStore = usePagamentiStore()
+        await pagStore.ricalcolaProposta(progettoId)
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel rifiuto del giustificativo'
         throw err
