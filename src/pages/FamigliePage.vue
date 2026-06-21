@@ -11,6 +11,20 @@
 
     <template v-if="famiglieStore.famiglia && authStore.initialized">
       <div class="q-gutter-y-md famiglia-page-container">
+
+        <!-- Selettore famiglia se il volontario ha più famiglie -->
+        <q-select
+          v-if="famiglieStore.hasMultipleFamiglie"
+          :model-value="famiglieStore.selectedFamigliaId"
+          :options="famiglieStore.famigliaOptions"
+          label="Seleziona famiglia"
+          outlined
+          dense
+          emit-value
+          map-options
+          @update:model-value="handleFamigliaChange"
+        />
+
         <FamigliaInfoCard
           :famiglia-name="famiglieStore.famigliaName"
           :iban="famiglieStore.iban"
@@ -123,6 +137,10 @@ watch(() => authStore.contattoId, (id) => {
     famiglieStore.init(id)
   }
 }, { immediate: true })
+
+function handleFamigliaChange(famigliaId) {
+  famiglieStore.selectFamiglia(famigliaId)
+}
 
 function handleProjectChange(progettoId) {
   famiglieStore.selectProgetto(progettoId)

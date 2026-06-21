@@ -34,5 +34,15 @@ export const usersService = {
     const data = { email }
     if (resetUrl) data.reset_url = resetUrl
     return api.post('/auth/password/request', data)
+  },
+
+  getRoleByName(name) {
+    return api.get('/roles', {
+      params: {
+        'filter[name][_eq]': name,
+        fields: 'id,name',
+        limit: 1
+      }
+    })
   }
 }

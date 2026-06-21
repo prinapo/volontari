@@ -5,7 +5,8 @@ export const famiglieService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-        'filter[Contatto][_eq]': contattoId
+        'filter[Contatto][_eq]': contattoId,
+        'fields': ['id', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(',')
       }
     })
   },

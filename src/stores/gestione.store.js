@@ -15,7 +15,9 @@ export const useGestioneStore = defineStore('gestione', {
     loading: false,
     saving: false,
     error: null,
-    volontarioFilter: 'tutti'
+    volontarioFilter: 'tutti',
+    volontariSenzaUtente: [],
+    loadingVolontariSenzaUtente: false
   }),
 
   actions: {
@@ -226,12 +228,18 @@ export const useGestioneStore = defineStore('gestione', {
             if (existing) {
               await contattiService.update(contattoId, { user_id: existing.id })
             } else {
+              const rolesRes = await usersService.getRoleByName('Volontario')
+              const ruoloId = rolesRes.data.data?.[0]?.id
+              if (!ruoloId) {
+                this.error = 'Ruolo Volontario non trovato in Directus. Contatta l\'amministratore.'
+                return false
+              }
               const newUserRes = await usersService.create({
                 email,
                 password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
                 first_name: contatto.Nome || '',
                 last_name: contatto.Cognome || '',
-                role: import.meta.env.VITE_VOLONTARIO_ROLE_ID
+                role: ruoloId
               })
               const newUserId = newUserRes.data.data?.id
               if (newUserId) {
@@ -343,6 +351,61 @@ export const useGestioneStore = defineStore('gestione', {
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'impostazione referente'
         return false
+      }
+    },
+
+    async fetchVolontariSenzaUtente() {
+      this.loadingVolontariSenzaUtente = true
+      this.error = null
+      try {
+        const res = await contattiService.getVolontariSenzaUtente()
+        this.volontariSenzaUtente = res.data.data || []
+      } catch (err) {
+        this.volontariSenzaUtente = []
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento'
+      } finally {
+        this.loadingVolontariSenzaUtente = false
+      }
+    },
+
+    async creaUtentePerVolontario(contattoId) {
+      this.saving = true
+      this.error = null
+      try {
+        const contattoRes = await contattiService.getById(contattoId)
+        const contatto = contattoRes.data.data
+        if (!contatto) { this.error = 'Contatto non trovato'; return false }
+
+        const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
+        if (!email) { this.error = 'Email mancante'; return false }
+
+        const userRes = await usersService.searchByEmail(email)
+        const existing = (userRes.data.data || [])[0]
+        if (existing) {
+          await contattiService.update(contattoId, { user_id: existing.id })
+        } else {
+          const rolesRes = await usersService.getRoleByName('Volontario')
+          const ruoloId = rolesRes.data.data?.[0]?.id
+          const newUserRes = await usersService.create({
+            email,
+            password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
+            first_name: contatto.Nome || '',
+            last_name: contatto.Cognome || '',
+            role: ruoloId
+          })
+          const newUserId = newUserRes.data.data?.id
+          if (newUserId) {
+            await contattiService.update(contattoId, { user_id: newUserId })
+            await usersService.sendInvite(email, RESET_URL)
+          }
+        }
+        await this.fetchVolontariSenzaUtente()
+        return true
+      } catch (err) {
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore creazione utente'
+        return false
+      } finally {
+        this.saving = false
       }
     }
   }
