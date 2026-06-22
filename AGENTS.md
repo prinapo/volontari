@@ -431,6 +431,23 @@ I dati arrivano da `famiglie.store.js:loadVolontari(famigliaId)`:
 - Batch fetch email, merge risultati
 - Visibile solo se `altriVolontari.length > 0`
 
+# Architettura Dati — Pagamenti (branch: `feature/pagamenti`)
+
+Le collection `Associazioni`, `BatchPagamenti` e i campi su `Progetti` sono creati
+via API Directus nell'ambiente di test. Per la produzione, usare lo script in
+`docs/collections-directus.md`.
+
+Collection coinvolte:
+- **Associazioni**: `Nome`, `Budget` — dati iniziali Sostieni il Sostegno (€26.500) e La Mongolfiera (€191.500)
+- **BatchPagamenti**: raggruppa più pagamenti in un invio al tesoriere
+- **Pagamenti**: singola riga di pagamento, legata a Progetto e Batch
+- **Progetti**: 8 nuovi campi (StatoProgetto, Totale*, ResiduoAllocato)
+
+Il business logic è in `src/stores/pagamenti.store.js`.
+
+Tabelle Directus (`Associazioni`, `BatchPagamenti`, `Pagamenti`) e campi su `Progetti`
+devono esistere in produzione prima di deployare il branch. Vedi `docs/collections-directus.md`.
+
 # DeduplicaPage — Gestione duplicati email
 
 Pagina `/deduplica` accessibile solo a ruoli `administrator`/`admin` (getter `canAdmin`).
