@@ -45,3 +45,4 @@ export function displayFullName(row, order = 'cognome_nome') {
   if (order === 'cognome_nome') return `${cognome} ${nome}`.trim()
   return `${nome} ${cognome}`.trim()
 }
+// test
