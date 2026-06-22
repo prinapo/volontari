@@ -98,7 +98,7 @@
                 <q-item-section side>
                   <q-btn
                     flat dense icon="person_add" color="primary" size="sm"
-                    :loading="gestioneStore.saving"
+                    :loading="savingVolontario"
                     aria-label="Crea account"
                     @click="creaUtenteVolontario(v)"
                   >
@@ -877,6 +877,7 @@ async function saveAssocBudget(row) {
 
 // Volontari senza account Directus
 const volontariSenzaUtente = ref([])
+const savingVolontario = ref(false)
 
 async function fetchVolontariSenzaUtente() {
   try {
@@ -888,6 +889,7 @@ async function fetchVolontariSenzaUtente() {
 }
 
 async function creaUtenteVolontario(v) {
+  savingVolontario.value = true
   try {
     const rolesRes = await usersService.getRoleByName('Volontario')
     const ruoloId = rolesRes.data.data?.[0]?.id
@@ -915,6 +917,8 @@ async function creaUtenteVolontario(v) {
     await fetchVolontariSenzaUtente()
   } catch (err) {
     notifyError($q, err, 'Errore creazione account')
+  } finally {
+    savingVolontario.value = false
   }
 }
 
