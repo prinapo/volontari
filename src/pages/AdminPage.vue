@@ -19,6 +19,11 @@
           <q-tab name="utenti" icon="people" label="Utenti" />
           <q-tab name="progetti" icon="account_balance" label="Progetti" />
           <q-tab name="associazioni" icon="business" label="Associazioni" />
+          <q-tab name="errori" icon="bug_report" label="Errori">
+            <q-badge v-if="errorLogStore.unreadCount > 0" color="negative" floating>
+              {{ errorLogStore.unreadCount }}
+            </q-badge>
+          </q-tab>
         </q-tabs>
       </div>
 
@@ -441,6 +446,89 @@
             </template>
           </q-table>
         </q-tab-panel>
+
+        <q-tab-panel name="errori">
+          <div class="row items-center q-gutter-sm q-mb-md">
+            <div>
+              <div class="text-h5 text-weight-medium">
+                Errori
+              </div>
+              <div class="text-body2 text-grey-7">
+                Errori API registrati dalle richieste del frontend.
+              </div>
+            </div>
+            <q-space />
+            <q-btn flat round icon="refresh" aria-label="Aggiorna" :loading="errorLogStore.loading" @click="errorLogStore.fetchAll">
+              <q-tooltip>Aggiorna</q-tooltip>
+            </q-btn>
+          </div>
+
+          <q-table
+            :rows="errorLogStore.items"
+            :columns="erroriColumns"
+            row-key="id"
+            flat bordered
+            hide-pagination
+            :pagination="{ rowsPerPage: 0 }"
+            :loading="errorLogStore.loading"
+            :grid="$q.screen.lt.sm"
+          >
+            <template #body-cell-level="props">
+              <q-td :props="props">
+                <q-badge :color="props.value === 'error' ? 'negative' : props.value === 'warning' ? 'warning' : 'grey'">
+                  {{ props.value }}
+                </q-badge>
+              </q-td>
+            </template>
+            <template #body-cell-read="props">
+              <q-td :props="props">
+                <q-btn
+                  v-if="!props.value"
+                  flat dense icon="mark_email_read" size="sm"
+                  color="grey"
+                  aria-label="Segna come letto"
+                  @click="errorLogStore.markAsRead(props.row.id)"
+                >
+                  <q-tooltip>Segna come letto</q-tooltip>
+                </q-btn>
+                <q-icon v-else name="check" color="positive" size="sm" />
+              </q-td>
+            </template>
+            <template #body-cell-message="props">
+              <q-td :props="props">
+                <div class="ellipsis" style="max-width: 300px">
+                  {{ props.value }}
+                </div>
+              </q-td>
+            </template>
+            <template #body-cell-actions="props">
+              <q-td :props="props">
+                <q-btn flat dense icon="delete" color="negative" size="sm" aria-label="Elimina" @click="errorLogStore.delete(props.row.id)">
+                  <q-tooltip>Elimina</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
+            <template #item="props">
+              <div class="q-pa-xs col-12">
+                <q-card flat bordered>
+                  <q-card-section>
+                    <div class="row items-center q-gutter-x-sm">
+                      <q-badge :color="props.row.level === 'error' ? 'negative' : 'warning'">{{ props.row.level }}</q-badge>
+                      <span class="text-caption text-grey-7">{{ props.row.timestamp }}</span>
+                      <q-space />
+                      <q-btn v-if="!props.row.read" flat dense icon="mark_email_read" size="sm" @click="errorLogStore.markAsRead(props.row.id)"><q-tooltip>Segna letto</q-tooltip></q-btn>
+                    </div>
+                    <div class="text-caption q-mt-xs">{{ props.row.method }} {{ props.row.status }}</div>
+                    <div class="text-body2 q-mt-xs">{{ props.row.message }}</div>
+                    <div v-if="props.row.responseBody" class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders" style="max-height: 100px; overflow: auto; white-space: pre-wrap; font-family: monospace; font-size: 11px;">
+                      {{ props.row.responseBody }}
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </template>
+          </q-table>
+        </q-tab-panel>
       </q-tab-panels>
 
       <!-- Create User Dialog -->
@@ -640,6 +728,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
+import { useErrorLogStore } from 'stores/error-log.store'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
@@ -647,6 +736,7 @@ import { usersService } from 'src/services/users.service'
 const $q = useQuasar()
 const store = useAdminStore()
 const authStore = useAuthStore()
+const errorLogStore = useErrorLogStore()
 
 const activeTab = ref('utenti')
 
@@ -677,6 +767,16 @@ const progettiColumns = [
 ]
 
 const editCache = reactive({})
+
+const erroriColumns = [
+  { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left', style: 'width: 160px' },
+  { name: 'level', label: 'Livello', field: 'level', align: 'center', style: 'width: 80px' },
+  { name: 'method', label: 'Metodo', field: 'method', align: 'center', style: 'width: 80px' },
+  { name: 'status', label: 'Status', field: 'status', align: 'center', style: 'width: 70px' },
+  { name: 'message', label: 'Messaggio', field: 'message', align: 'left' },
+  { name: 'read', label: 'Letto', field: 'read', align: 'center', style: 'width: 70px' },
+  { name: 'actions', label: '', align: 'center', style: 'width: 50px' }
+]
 
 function getBuffer(progetto) {
   const id = progetto.id_progetto
@@ -926,6 +1026,7 @@ onMounted(() => {
   store.fetchProgetti()
   fetchAssociazioni()
   fetchVolontariSenzaUtente()
+  errorLogStore.fetchAll()
 })
 </script>
 

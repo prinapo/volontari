@@ -12,6 +12,14 @@ const api = axios.create({
   timeout: 30000
 })
 
+function getErrorMessage(error) {
+  const errors = error?.response?.data?.errors
+  if (errors && errors.length > 0) {
+    return errors.map(e => e.message).join('; ')
+  }
+  return error.message || 'Errore sconosciuto'
+}
+
 function clearSessionAndRedirectToLogin() {
   const authStore = useAuthStore()
   authStore.$patch({
@@ -89,6 +97,27 @@ api.interceptors.response.use(
 
     if (isInvalidTokenError(error) && !isAuthRequest) {
       clearSessionAndRedirectToLogin()
+    }
+
+    // Log error to ErrorLog collection (fire & forget)
+    if (error?.response && error?.config && !isAuthRequest) {
+      const status = error.response.status
+      if (status >= 400 && status < 500) {
+        try {
+          const { errorLogService } = await import('./error-log.service')
+          errorLogService.log({
+            level: status >= 500 ? 'error' : 'warning',
+            message: getErrorMessage(error).slice(0, 1000),
+            method: error.config.method?.toUpperCase() || '',
+            url: (error.config.baseURL || '') + (error.config.url || ''),
+            status,
+            responseBody: JSON.stringify(error.response.data).slice(0, 5000),
+            userAgent: navigator.userAgent?.slice(0, 255) || ''
+          })
+        } catch {
+          // silent — non deve mai bloccare il flusso
+        }
+      }
     }
 
     return Promise.reject(error)
