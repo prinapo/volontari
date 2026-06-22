@@ -1,6 +1,18 @@
 # Regola — Solo capacità native Quasar
 Ogni modifica UI deve usare esclusivamente componenti, props, classi e API native di Quasar. Niente librerie CSS terze (Tailwind, Bootstrap), niente componenti custom esterni, niente manipolazione DOM diretta. Lo stile va in `src/css/app.scss` con variabili CSS custom e override di classi Quasar. Google Fonts è l'unica eccezione. Vale per TUTTO il codice, esistente e nuovo.
 
+# Regola — Solo UI nei test E2E
+Ogni azione nei test deve avvenire ESCLUSIVAMENTE tramite interazione UI del browser.
+Vietato usare `fetch`, Axios, `POST/GET/DELETE/PATCH` su Directus o qualsiasi altra
+chiamata di rete, a meno che l'operazione non sia impossibile da UI (es. DELETE di record
+per cleanup in global-setup).
+
+Un test che usa API non è un test utente. I dati vanno creati tramite UI nel test stesso.
+
+L'unica eccezione: `global-setup.mjs` usa l'API Directus per pulire record di test
+prima di ogni esecuzione. Per farlo serve un utente con permessi di DELETE.
+Usare **`test.admin@test.com`** / `TestAdmin_2026!` — NON `test.gestore@test.com`.
+
 # v2.8.0
 
 - **SMTP Directus locale**: configurato in docker-compose per test RP-10.
@@ -17,7 +29,14 @@ Ogni modifica UI deve usare esclusivamente componenti, props, classi e API nativ
 - **Pagine oggetto mobile-friendly**: GestionePage.waitForTable/getRowCount/search/clickContactsOnFamiglia, RiconciliazionePage.waitForTable/rowLocator/expandRow.
 - **Fix test mobile**: contatti (11/11), email-case (4/4), layout (5/5), reset-password (6/6), gestione-fixes (2/3).
 
-# v2.7.2
+# v2.8.1
+
+- **Issue 1 — Multi-famiglia volontari**: selettore famiglia in FamigliePage quando volontario ha più famiglie
+- **Issue 2 — Ruolo dinamico**: `assignToFamiglia()` ora interroga `GET /roles?filter[name]=Volontario` invece di UUID hardcoded
+- **Issue 3 — Volontari senza user_id**: banner in AdminPage (tab Utenti) con lista e pulsante "Crea account" per singolo contatto
+- **Issue 4 — Cleanup test**: global-setup.mjs esteso con tutti i pattern di test
+- **fix**: `createFamiglia()` helper in setup.js
+- **fix**: `assignToFamiglia()` pulisce `IsVolontario = false` su rimozione
 
 - **Fix card riconciliazione mobile**: richiedente ora usa `nome_richiedente` + `cognome_richiedente` invece del campo computato `richiedente` (non disponibile in grid mode).
 - **Test RC-CARD-01**: verifica che il nome richiedente nella card non sia "Richiedente sconosciuto".

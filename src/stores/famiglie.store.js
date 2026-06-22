@@ -9,6 +9,7 @@ export const useFamiglieStore = defineStore('famiglie', {
   state: () => ({
     famiglieContatti: [],
     famiglia: null,
+    selectedFamigliaId: null,
     selectedProgettoId: null,
     loading: false,
     saving: false,
@@ -19,6 +20,11 @@ export const useFamiglieStore = defineStore('famiglie', {
   }),
 
   getters: {
+    hasMultipleFamiglie: (state) => state.famiglieContatti.length > 1,
+    famigliaOptions: (state) => state.famiglieContatti.map(fc => ({
+      label: fc.Famiglia?.Nome_Famiglia || 'Famiglia senza nome',
+      value: fc.Famiglia?.id_famiglia
+    })).filter(o => o.value),
     progetti: (state) => state.famiglia?.Progetti || [],
     selectedProgetto: (state) => {
       if (!state.progetti || !state.selectedProgettoId) return null
@@ -36,20 +42,28 @@ export const useFamiglieStore = defineStore('famiglie', {
       this.loading = true
       this.error = null
       this.famiglia = null
+      this.selectedFamigliaId = null
       this.selectedProgettoId = null
       try {
         const fcRes = await famiglieService.getFamiglieByVolontario(contattoId)
         this.famiglieContatti = fcRes.data.data || []
 
-        if (this.famiglieContatti.length > 0) {
-          const famigliaId = this.famiglieContatti[0].Famiglia
-          await this.loadFamiglia(famigliaId)
+        if (this.famiglieContatti.length === 1) {
+          const famigliaId = this.famiglieContatti[0].Famiglia?.id_famiglia
+          if (famigliaId) await this.loadFamiglia(famigliaId)
         }
+        // Se 0 o >1 famiglie, nessun auto-caricamento — l'utente sceglie
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
       } finally {
         this.loading = false
       }
+    },
+
+    async selectFamiglia(famigliaId) {
+      if (!famigliaId) return
+      this.selectedFamigliaId = famigliaId
+      await this.loadFamiglia(famigliaId)
     },
 
     async checkAccess(contattoId) {

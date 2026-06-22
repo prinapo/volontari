@@ -74,6 +74,36 @@
             {{ store.error }}
           </q-banner>
 
+          <q-banner v-if="volontariSenzaUtente.length > 0" class="bg-warning text-dark q-mb-md" rounded>
+            <template #avatar>
+              <q-icon name="warning" />
+            </template>
+            <div class="text-weight-medium q-mb-xs">Volontari senza account Directus</div>
+            <div class="text-body2 q-mb-sm">
+              I seguenti contatti hanno IsVolontario=true ma non hanno un utente Directus collegato.
+            </div>
+            <q-list dense>
+              <q-item v-for="v in volontariSenzaUtente" :key="v.id_contatto" dense class="q-px-none">
+                <q-item-section>
+                  <q-item-label>{{ v.Nome }} {{ v.Cognome }}</q-item-label>
+                  <q-item-label caption>
+                    {{ v.email?.find(e => e.Primary)?.email_address || v.email?.[0]?.email_address || 'Nessuna email' }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    flat dense icon="person_add" color="primary" size="sm"
+                    :loading="gestioneStore.saving"
+                    aria-label="Crea account"
+                    @click="creaUtenteVolontario(v)"
+                  >
+                    <q-tooltip>Crea account Directus</q-tooltip>
+                  </q-btn>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-banner>
+
           <q-table
             :rows="filteredUsers"
             :columns="userColumns"
@@ -611,6 +641,8 @@ import { useQuasar } from 'quasar'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { contattiService } from 'src/services/contatti.service'
+import { usersService } from 'src/services/users.service'
 
 const $q = useQuasar()
 const store = useAdminStore()
@@ -743,6 +775,49 @@ async function saveAssocBudget(row) {
   } finally { savingAssoc.value = false }
 }
 
+// Volontari senza account Directus
+const volontariSenzaUtente = ref([])
+
+async function fetchVolontariSenzaUtente() {
+  try {
+    const res = await contattiService.getVolontariSenzaUtente()
+    volontariSenzaUtente.value = res.data.data || []
+  } catch {
+    volontariSenzaUtente.value = []
+  }
+}
+
+async function creaUtenteVolontario(v) {
+  try {
+    const rolesRes = await usersService.getRoleByName('Volontario')
+    const ruoloId = rolesRes.data.data?.[0]?.id
+    const email = v.email?.find(e => e.Primary)?.email_address || v.email?.[0]?.email_address
+    if (!email) { notifyError($q, null, 'Email mancante'); return }
+
+    const userRes = await usersService.searchByEmail(email)
+    const existing = (userRes.data.data || [])[0]
+    if (existing) {
+      await contattiService.update(v.id_contatto, { user_id: existing.id })
+    } else {
+      const newUserRes = await usersService.create({
+        email,
+        password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
+        first_name: v.Nome || '',
+        last_name: v.Cognome || '',
+        role: ruoloId
+      })
+      if (newUserRes.data.data?.id) {
+        await contattiService.update(v.id_contatto, { user_id: newUserRes.data.data.id })
+        await usersService.sendInvite(email, import.meta.env.VITE_RESET_URL)
+      }
+    }
+    notifySuccess($q, 'Account creato per ' + (v.Nome || '') + ' ' + (v.Cognome || ''))
+    await fetchVolontariSenzaUtente()
+  } catch (err) {
+    notifyError($q, err, 'Errore creazione account')
+  }
+}
+
 const roleOptions = computed(() => store.roles)
 const roleColor = (name) => {
   const n = (name || '').toLowerCase()
@@ -850,6 +925,7 @@ onMounted(() => {
   store.fetchAll()
   store.fetchProgetti()
   fetchAssociazioni()
+  fetchVolontariSenzaUtente()
 })
 </script>
 

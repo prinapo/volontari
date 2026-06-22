@@ -59,16 +59,20 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[CLEANUP] Deleted ${submissions.data.length} test submissions`)
   }
 
-  // 2. Delete giustificativi with test descriptions (created by E2E tests)
+  // 2. Delete giustificativi with test descriptions (all test patterns)
+  const giustDescPatterns = [
+    { Descrizione: { _startswith: 'Test VF_' } },
+    { Descrizione: { _startswith: 'Test SR_' } },
+    { Descrizione: { _startswith: 'Test VE_' } },
+    { Descrizione: { _startswith: 'VF_' } },
+    { Descrizione: { _startswith: 'VE_ADD_' } },
+    { Descrizione: { _startswith: 'EC-' } },
+    { Descrizione: { _startswith: 'SR-02' } },
+    { Descrizione: { _startswith: 'Test priority' } },
+    { Descrizione: { _contains: 'Riconciliazione di test' } }
+  ]
   const giustificativi = await apiGet(baseUrl, token, '/items/Giustificativi', {
-    filter: JSON.stringify({ _or: [
-      { Descrizione: { _startswith: 'Test VF_' } },
-      { Descrizione: { _startswith: 'Test SR_' } },
-      { Descrizione: { _startswith: 'Test VE_' } },
-      { Descrizione: { _startswith: 'VF_01_' } },
-      { Descrizione: { _startswith: 'VF_02_' } },
-      { Descrizione: { _startswith: 'VF_03_' } }
-    ] }),
+    filter: JSON.stringify({ _or: giustDescPatterns }),
     fields: 'id',
     limit: -1
   })
@@ -79,22 +83,54 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[CLEANUP] Deleted ${giustificativi.data.length} test giustificativi`)
   }
 
-  // 3. Delete contatti created by CT tests (non-fixture, IDs are timestamps)
+  // 3. Delete test famiglie
+  const famiglie = await apiGet(baseUrl, token, '/items/Famiglie', {
+    filter: JSON.stringify({ id_famiglia: { _startswith: 'TEST_FAM_AUTO_' } }),
+    fields: 'id_famiglia',
+    limit: -1
+  })
+  for (const f of (famiglie.data || [])) {
+    // Delete Famiglie_Contatti first
+    const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
+      filter: JSON.stringify({ Famiglia: { _eq: f.id_famiglia } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const r of (fc.data || [])) {
+      await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${r.id}`)
+    }
+    await apiDelete(baseUrl, token, `/items/Famiglie/${f.id_famiglia}`)
+  }
+  if ((famiglie.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${famiglie.data.length} test famiglie`)
+  }
+
+  // 4. Delete contatti created by tests (all known patterns)
+  const contattoPatterns = [
+    { Cognome: { _eq: 'AutoTest' } },
+    { Cognome: { _eq: 'TestEmail' } },
+    { Cognome: { _eq: 'AutoTest' } },
+    { Nome: { _startswith: 'Test CT ' } },
+    { Nome: { _startswith: 'CT12 ' } },
+    { Nome: { _startswith: 'Del Email ' } },
+    { Nome: { _startswith: 'Test RC02' } },
+    { Nome: { _startswith: 'Test RC03' } },
+    { Nome: { _startswith: 'Test RC04' } },
+    { Nome: { _startswith: 'Test RC05' } },
+    { Nome: { _startswith: 'Test RF02' } },
+    { Nome: { _startswith: 'Test RF' } },
+    { Nome: { _startswith: 'Test SETUP02' } },
+    { Nome: { _startswith: 'Test No Esiste' } },
+    { Nome: { _startswith: 'Priority Test' } },
+    { Nome: { _startswith: 'PAG' } },
+    { Nome: { _startswith: 'GF-' } }
+  ]
   const contatti = await apiGet(baseUrl, token, '/items/contatti', {
-    filter: JSON.stringify({ _or: [
-      { Cognome: { _eq: 'AutoTest' } },
-      { Cognome: { _eq: 'TestEmail' } },
-      { Nome: { _startswith: 'Test CT ' } },
-      { Nome: { _startswith: 'CT12 ' } },
-      { Nome: { _startswith: 'Del Email ' } },
-      { Nome: { _startswith: 'Test RC02' } },
-      { Nome: { _startswith: 'Test RC03' } }
-    ] }),
+    filter: JSON.stringify({ _or: contattoPatterns }),
     fields: 'id_contatto',
     limit: -1
   })
   for (const c of (contatti.data || [])) {
-    // Delete emails first
     const emails = await apiGet(baseUrl, token, '/items/email', {
       filter: JSON.stringify({ Contatto_Relation: { _eq: c.id_contatto } }),
       fields: 'id',
@@ -103,7 +139,6 @@ async function cleanupTestData(baseUrl, token) {
     for (const e of (emails.data || [])) {
       await apiDelete(baseUrl, token, `/items/email/${e.id}`)
     }
-    // Delete Famiglie_Contatti
     const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
       filter: JSON.stringify({ Contatto: { _eq: c.id_contatto } }),
       fields: 'id',
@@ -148,10 +183,10 @@ export default async function () {
   console.log(`\n✅ GUARD: API URL = ${url} — OK (locale)\n`)
 
   // Cleanup test data from previous runs
-  const token = await directusLogin(url, 'test.gestore@test.com', 'TestGest_2026!')
+  const token = await directusLogin(url, 'test.admin@test.com', 'TestAdmin_2026!')
   if (token) {
     await cleanupTestData(url, token)
   } else {
-    console.log('[CLEANUP] Skipped — could not login as gestore (database might be fresh)')
+    console.log('[CLEANUP] Skipped — could not login as admin (database might be fresh)')
   }
 }

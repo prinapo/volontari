@@ -9,80 +9,101 @@
 
     <q-inner-loading :showing="loading && authStore.initialized" />
 
-    <template v-if="famiglieStore.famiglia && authStore.initialized">
+    <template v-if="authStore.initialized">
       <div class="q-gutter-y-md famiglia-page-container">
-        <FamigliaInfoCard
-          :famiglia-name="famiglieStore.famigliaName"
-          :iban="famiglieStore.iban"
-          :intestatario-cc="famiglieStore.intestatarioCC"
-          :saving="famiglieStore.saving"
+
+        <!-- Selettore famiglia (sempre visibile se multi-famiglia, anche senza famiglia caricata) -->
+        <q-select
+          v-if="famiglieStore.famiglieContatti.length > 1"
+          :model-value="famiglieStore.selectedFamigliaId"
+          :options="famiglieStore.famigliaOptions"
+          label="Seleziona famiglia"
+          outlined
+          dense
+          emit-value
+          map-options
+          @update:model-value="handleFamigliaChange"
         />
 
-        <ProgettoSelector
-          :model-value="famiglieStore.selectedProgettoId"
-          :options="famiglieStore.progetti"
-          @update:model-value="handleProjectChange"
-        />
+        <!-- Famiglia caricata: mostra contenuto -->
+        <template v-if="famiglieStore.famiglia">
+          <FamigliaInfoCard
+            :famiglia-name="famiglieStore.famigliaName"
+            :iban="famiglieStore.iban"
+            :intestatario-cc="famiglieStore.intestatarioCC"
+            :saving="famiglieStore.saving"
+          />
 
-        <template v-if="famiglieStore.selectedProgettoId">
-          <q-card flat bordered class="q-mb-md">
-            <q-card-section class="row items-center q-gutter-x-lg q-gutter-y-sm">
-              <div>
-                <div class="text-caption text-grey">
-                  Totale Giustificativi
+          <ProgettoSelector
+            :model-value="famiglieStore.selectedProgettoId"
+            :options="famiglieStore.progetti"
+            @update:model-value="handleProjectChange"
+          />
+
+          <template v-if="famiglieStore.selectedProgettoId">
+            <q-card flat bordered class="q-mb-md">
+              <q-card-section class="row items-center q-gutter-x-lg q-gutter-y-sm">
+                <div>
+                  <div class="text-caption text-grey">
+                    Totale Giustificativi
+                  </div>
+                  <div class="text-h6 text-primary">
+                    {{ formatCurrency(totaleGiustificativi) }}
+                  </div>
                 </div>
-                <div class="text-h6 text-primary">
-                  {{ formatCurrency(totaleGiustificativi) }}
+                <div>
+                  <div class="text-caption text-grey">
+                    Totale Rimborsabile
+                  </div>
+                  <div class="text-h6 text-positive">
+                    {{ formatCurrency(totaleRimborsabile) }}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <div class="text-caption text-grey">
-                  Totale Rimborsabile
+                <q-space />
+                <div class="text-caption text-grey famiglia-caption">
+                  Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{ formatCurrency(allocato) }})
                 </div>
-                <div class="text-h6 text-positive">
-                  {{ formatCurrency(totaleRimborsabile) }}
-                </div>
-              </div>
-              <q-space />
-              <div class="text-caption text-grey famiglia-caption">
-                Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{ formatCurrency(allocato) }})
-              </div>
-            </q-card-section>
-          </q-card>
+              </q-card-section>
+            </q-card>
+          </template>
+
+          <GiustificativoList
+            :progetto-id="famiglieStore.selectedProgettoId"
+            :famiglia-id="famiglieStore.famiglia?.id_famiglia"
+            :anno-bando="famiglieStore.selectedProgetto?.AnnoBando"
+          />
         </template>
 
-        <GiustificativoList
-          :progetto-id="famiglieStore.selectedProgettoId"
-          :famiglia-id="famiglieStore.famiglia?.id_famiglia"
-          :anno-bando="famiglieStore.selectedProgetto?.AnnoBando"
-        />
-      </div>
-    </template>
-
-    <template v-else-if="!loading && authStore.initialized && authStore.canVerifica">
-      <div class="text-center q-mt-xl">
-        <q-icon name="fact_check" size="lg" color="primary" />
-        <div class="q-mt-sm text-h6">
-          Area verifica disponibile
+        <!-- Multi-famiglia ma nessuna selezionata: invito a scegliere -->
+        <div v-else-if="famiglieStore.famiglieContatti.length > 1" class="text-center text-grey q-mt-lg">
+          <q-icon name="arrow_upward" size="lg" />
+          <div class="q-mt-sm">Seleziona una famiglia per iniziare</div>
         </div>
-        <div class="q-mt-xs text-grey-7">
-          Questo utente non e' collegato a famiglie come volontario.
-        </div>
-        <q-btn
-          class="q-mt-md"
-          color="primary"
-          icon="fact_check"
-          label="Vai a Verifica"
-          to="/verifica"
-        />
-      </div>
-    </template>
 
-    <template v-else-if="!loading && authStore.initialized">
-      <div class="text-center text-grey q-mt-xl">
-        <q-icon name="info" size="lg" />
-        <div class="q-mt-sm">
-          Nessun dato disponibile
+        <!-- Nessuna famiglia e utente ha accesso a verifica -->
+        <div v-else-if="!loading && authStore.canVerifica" class="text-center q-mt-xl">
+          <q-icon name="fact_check" size="lg" color="primary" />
+          <div class="q-mt-sm text-h6">
+            Area verifica disponibile
+          </div>
+          <div class="q-mt-xs text-grey-7">
+            Questo utente non e' collegato a famiglie come volontario.
+          </div>
+          <q-btn
+            class="q-mt-md"
+            color="primary"
+            icon="fact_check"
+            label="Vai a Verifica"
+            to="/verifica"
+          />
+        </div>
+
+        <!-- Nessuna famiglia e nessun accesso -->
+        <div v-else-if="!loading" class="text-center text-grey q-mt-xl">
+          <q-icon name="info" size="lg" />
+          <div class="q-mt-sm">
+            Nessun dato disponibile
+          </div>
         </div>
       </div>
     </template>
@@ -123,6 +144,10 @@ watch(() => authStore.contattoId, (id) => {
     famiglieStore.init(id)
   }
 }, { immediate: true })
+
+function handleFamigliaChange(famigliaId) {
+  famiglieStore.selectFamiglia(famigliaId)
+}
 
 function handleProjectChange(progettoId) {
   famiglieStore.selectProgetto(progettoId)

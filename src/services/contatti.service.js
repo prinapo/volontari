@@ -124,5 +124,16 @@ export const contattiService = {
 
   update(id, data) {
     return api.patch(`/items/contatti/${id}`, data)
+  },
+
+  getVolontariSenzaUtente() {
+    return api.get('/items/contatti', {
+      params: {
+        'filter[IsVolontario][_eq]': true,
+        'filter[user_id][_null]': true,
+        'fields': 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
+        'limit': -1
+      }
+    })
   }
 }
