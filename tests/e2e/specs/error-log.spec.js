@@ -11,7 +11,6 @@ test.describe('Error Log', () => {
     await page.goto('/gestione')
     await page.waitForTimeout(2000)
 
-    // Verifica accesso API alla collection ErrorLog
     const token = await page.evaluate(() => localStorage.getItem('access_token'))
     const res = await page.evaluate(async ({ token }) => {
       try {
@@ -27,10 +26,8 @@ test.describe('Error Log', () => {
     }, { token })
 
     console.log('[EL-01] Risultato:', JSON.stringify(res))
-    // Anche se la collection è vuota, la risposta deve essere ok
-    // Se c'è errore 403, significa che il ruolo gestore non ha permessi
     if (res.error === 403) {
-      console.log('[EL-01] Il ruolo gestore non ha permessi di lettura su ErrorLog — atteso, skip')
+      console.log('[EL-01] Il ruolo gestore non ha permessi di lettura su ErrorLog — skip')
       test.skip()
       return
     }
