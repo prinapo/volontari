@@ -33,7 +33,7 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminService.getUsers()
         this.users = res.data.data || []
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento degli utenti"
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento degli utenti'
       } finally {
         this.loading = false
       }
@@ -125,7 +125,7 @@ export const useAdminStore = defineStore('admin', {
         await adminService.updateUser(userId, { password })
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel reset della password"
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
         return false
       } finally {
         this.saving = false
@@ -161,7 +161,7 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminService.getProgetti({ search: this.searchProgetti || undefined })
         this.progetti = res.data.data || []
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento dei progetti"
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei progetti'
       } finally {
         this.progettiLoading = false
       }

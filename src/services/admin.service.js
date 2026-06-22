@@ -31,7 +31,13 @@ export const adminService = {
     return api.get('/items/email', {
       params: {
         'filter[email_address][_eq]': email,
-        fields: ['id', 'email_address', 'Contatto_Relation.id_contatto', 'Contatto_Relation.Nome', 'Contatto_Relation.Cognome'].join(',')
+        fields: [
+          'id',
+          'email_address',
+          'Contatto_Relation.id_contatto',
+          'Contatto_Relation.Nome',
+          'Contatto_Relation.Cognome'
+        ].join(',')
       }
     })
   },

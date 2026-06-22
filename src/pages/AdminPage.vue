@@ -97,7 +97,11 @@
                 </q-item-section>
                 <q-item-section side>
                   <q-btn
-                    flat dense icon="person_add" color="primary" size="sm"
+                    flat
+dense
+icon="person_add"
+color="primary"
+size="sm"
                     :loading="savingVolontario"
                     aria-label="Crea account"
                     @click="creaUtenteVolontario(v)"
@@ -416,7 +420,8 @@
             :rows="associazioni"
             :columns="assocColumns"
             row-key="id"
-            flat bordered
+            flat
+bordered
             hide-pagination
             :pagination="{ rowsPerPage: 0 }"
           >
@@ -424,7 +429,8 @@
               <q-td :props="props">
                 <q-input
                   :model-value="assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget"
-                  outlined dense
+                  outlined
+dense
                   type="number"
                   min="0"
                   step="0.01"
@@ -436,7 +442,11 @@
               <q-td :props="props">
                 <q-btn
                   v-if="assocBudgetCache[props.row.id] !== undefined"
-                  icon="save" color="positive" round flat size="sm"
+                  icon="save"
+color="positive"
+round
+flat
+size="sm"
                   :loading="savingAssoc"
                   @click="saveAssocBudget(props.row)"
                 >
@@ -458,7 +468,13 @@
               </div>
             </div>
             <q-space />
-            <q-btn flat round icon="refresh" aria-label="Aggiorna" :loading="errorLogStore.loading" @click="errorLogStore.fetchAll">
+            <q-btn
+flat
+round
+icon="refresh"
+aria-label="Aggiorna"
+:loading="errorLogStore.loading"
+@click="errorLogStore.fetchAll">
               <q-tooltip>Aggiorna</q-tooltip>
             </q-btn>
           </div>
@@ -467,7 +483,8 @@
             :rows="errorLogStore.items"
             :columns="erroriColumns"
             row-key="id"
-            flat bordered
+            flat
+bordered
             hide-pagination
             :pagination="{ rowsPerPage: 0 }"
             :loading="errorLogStore.loading"
@@ -484,7 +501,10 @@
               <q-td :props="props">
                 <q-btn
                   v-if="!props.value"
-                  flat dense icon="mark_email_read" size="sm"
+                  flat
+dense
+icon="mark_email_read"
+size="sm"
                   color="grey"
                   aria-label="Segna come letto"
                   @click="errorLogStore.markAsRead(props.row.id)"
@@ -503,7 +523,14 @@
             </template>
             <template #body-cell-actions="props">
               <q-td :props="props">
-                <q-btn flat dense icon="delete" color="negative" size="sm" aria-label="Elimina" @click="errorLogStore.delete(props.row.id)">
+                <q-btn
+flat
+dense
+icon="delete"
+color="negative"
+size="sm"
+aria-label="Elimina"
+@click="errorLogStore.delete(props.row.id)">
                   <q-tooltip>Elimina</q-tooltip>
                 </q-btn>
               </q-td>
@@ -516,7 +543,13 @@
                       <q-badge :color="props.row.level === 'error' ? 'negative' : 'warning'">{{ props.row.level }}</q-badge>
                       <span class="text-caption text-grey-7">{{ props.row.timestamp }}</span>
                       <q-space />
-                      <q-btn v-if="!props.row.read" flat dense icon="mark_email_read" size="sm" @click="errorLogStore.markAsRead(props.row.id)"><q-tooltip>Segna letto</q-tooltip></q-btn>
+                      <q-btn
+v-if="!props.row.read"
+flat
+dense
+icon="mark_email_read"
+size="sm"
+@click="errorLogStore.markAsRead(props.row.id)"><q-tooltip>Segna letto</q-tooltip></q-btn>
                     </div>
                     <div class="text-caption q-mt-xs">{{ props.row.method }} {{ props.row.status }}</div>
                     <div class="text-body2 q-mt-xs">{{ props.row.message }}</div>
@@ -801,6 +834,12 @@ function setNome(progetto, val) {
   buf.nome = val
 }
 
+function isModified(progetto) {
+  const buf = editCache[progetto.id_progetto]
+  if (!buf) return false
+  return buf.cognome !== buf.origCognome || buf.nome !== buf.origNome
+}
+
 const hasModified = computed(() =>
   store.progetti.some(p => isModified(p))
 )
@@ -809,9 +848,9 @@ async function saveAll() {
   const modified = store.progetti.filter(p => isModified(p))
   for (const p of modified) {
     const ok = await store.updateProgettoBeneficiario(p.id_progetto, editCache[p.id_progetto].cognome, editCache[p.id_progetto].nome)
-      const name = [p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')
-      if (!ok) {
-        notifyError($q, store.error, `Errore aggiornamento ${name}`)
+    const name = [p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')
+    if (!ok) {
+      notifyError($q, store.error, `Errore aggiornamento ${name}`)
       return
     }
   }

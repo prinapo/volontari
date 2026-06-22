@@ -14,11 +14,10 @@ export const useGiustificativiStore = defineStore('giustificativi', {
   }),
 
   getters: {
-    draftItems: (state) => state.items.filter((i) => i.Stato === 'draft'),
-    inviatoItems: (state) =>
-      state.items.filter((i) => i.Stato === 'inviato' || i.Stato === 'approvato'),
-    canEdit: (state) => (itemId) => {
-      const item = state.items.find((i) => i.id === itemId)
+    draftItems: state => state.items.filter(i => i.Stato === 'draft'),
+    inviatoItems: state => state.items.filter(i => i.Stato === 'inviato' || i.Stato === 'approvato'),
+    canEdit: state => itemId => {
+      const item = state.items.find(i => i.id === itemId)
       return item && item.Stato === 'draft'
     }
   },
@@ -104,7 +103,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const patchRes = await giustificativiService.update(id, data)
         const updated = patchRes.data.data
         if (updated) {
-          const idx = this.items.findIndex((i) => i.id === id)
+          const idx = this.items.findIndex(i => i.id === id)
           if (idx !== -1) this.items[idx] = { ...this.items[idx], ...updated }
         }
         return true
@@ -123,7 +122,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const updated = patchRes.data.data
         if (updated) {
           const copy = [...this.items]
-          const idx = copy.findIndex((i) => i.id === id)
+          const idx = copy.findIndex(i => i.id === id)
           if (idx !== -1) copy[idx] = { ...copy[idx], ...updated }
           this.items = copy
         }
@@ -149,7 +148,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const patchRes = await giustificativiService.update(id, { [field]: value })
         const updated = patchRes.data.data
         if (updated) {
-          const idx = this.items.findIndex((i) => i.id === id)
+          const idx = this.items.findIndex(i => i.id === id)
           if (idx !== -1) this.items[idx] = { ...this.items[idx], ...updated }
         }
         return true
