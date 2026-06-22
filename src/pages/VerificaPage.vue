@@ -151,11 +151,7 @@
                             </q-badge>
                             <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
                             <q-btn
-                              flat
-                              round
-                              dense
-                              size="sm"
-                              icon="edit"
+                              flat round dense size="sm" icon="edit"
                               data-testid="btn-edit-bancari"
                               aria-label="Modifica dati bancari"
                               @click="openBancariDialog(props.row)"
@@ -172,6 +168,16 @@
                             {{ formatCurrency(props.row.totaleRimborsabile) }}
                           </div>
                         </div>
+                      </div>
+
+                      <!-- Pagato / Allocato + StatoProgetto mobile -->
+                      <div class="row items-center q-gutter-x-sm q-mb-sm">
+                        <div class="text-caption text-grey-7">Pagato:</div>
+                        <div class="text-body2 text-weight-medium">{{ formatCurrency(props.row.totalePagato) }}</div>
+                        <div class="text-caption text-grey-7">/ {{ formatCurrency(props.row.allocato) }}</div>
+                        <q-space />
+                        <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline>Chiuso</q-badge>
+                        <q-badge v-else color="positive" outline>Aperto</q-badge>
                       </div>
                       <q-separator class="q-mb-md" />
                       <div class="text-subtitle2 text-grey-8 q-mb-xs">
@@ -388,6 +394,16 @@
                       >
                         <q-tooltip>Copia riga esportazione</q-tooltip>
                       </q-btn>
+                      <q-btn
+                        v-if="canVerifica && props.row.statoProgetto === 'aperto'"
+                        flat round dense size="sm"
+                        icon="lock"
+                        color="warning"
+                        aria-label="Chiudi progetto"
+                        @click="openChiudiProgetto(props.row)"
+                      >
+                        <q-tooltip>Chiudi progetto</q-tooltip>
+                      </q-btn>
                     </q-card-actions>
                   </q-card>
                 </q-expansion-item>
@@ -438,6 +454,16 @@
                     <q-badge :color="statoRiga(props.row).color">
                       {{ statoRiga(props.row).label }}
                     </q-badge>
+                    <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline class="q-ml-xs">
+                      Chiuso
+                    </q-badge>
+                  </template>
+
+                  <template v-else-if="col.name === 'pagato'">
+                    <div class="text-right">
+                      <div class="text-body2">{{ formatCurrency(props.row.totalePagato) }}</div>
+                      <div class="text-caption text-grey-6">/ {{ formatCurrency(props.row.allocato) }}</div>
+                    </div>
                   </template>
 
                   <template v-else-if="col.name === 'actions'">
@@ -475,6 +501,18 @@
                       @click="copyAspiLine(props.row)"
                     >
                       <q-tooltip>Copia riga esportazione</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      v-if="canVerifica && props.row.statoProgetto === 'aperto'"
+                      flat
+                      round
+                      dense
+                      icon="lock"
+                      color="warning"
+                      aria-label="Chiudi progetto"
+                      @click="openChiudiProgetto(props.row)"
+                    >
+                      <q-tooltip>Chiudi progetto</q-tooltip>
                     </q-btn>
                   </template>
 
@@ -729,6 +767,41 @@
         @save="saveBancari"
       />
 
+      <q-dialog v-model="chiudiProgettoDialog" persistent>
+        <q-card style="width: 100%; max-width: 400px; min-width: unset">
+          <q-card-section class="row items-center">
+            <div class="text-h6">Chiudi progetto</div>
+            <q-space />
+            <q-btn v-close-popup flat round dense icon="close" aria-label="Chiudi" />
+          </q-card-section>
+          <q-card-section>
+            <div class="text-body2 q-mb-sm">
+              Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong>?
+            </div>
+            <div class="text-caption text-grey-7 q-mb-md">
+              Una volta chiuso, non verranno più generate nuove proposte di pagamento.
+            </div>
+            <q-input
+              v-model="chiudiProgettoNota"
+              label="Motivo della chiusura (opzionale)"
+              outlined
+              dense
+              type="textarea"
+              autogrow
+            />
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn v-close-popup flat label="Annulla" />
+            <q-btn
+              color="warning"
+              label="Chiudi progetto"
+              :loading="savingChiudiProgetto"
+              @click="handleChiudiProgetto"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
       <q-dialog v-model="rejectDialog" persistent>
         <q-card class="reject-dialog-card">
           <q-card-section>
@@ -825,6 +898,11 @@ const rejectNota = ref('')
 const rejectItem = ref(null)
 const rejectProgettoId = ref(null)
 
+const chiudiProgettoDialog = ref(false)
+const chiudiProgettoRow = ref(null)
+const chiudiProgettoNota = ref('')
+const savingChiudiProgetto = ref(false)
+
 const selectedProgetto = ref(null)
 const detailDialog = ref(false)
 
@@ -851,6 +929,7 @@ const columns = [
   { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left', sortable: true },
   { name: 'allocato', label: 'Allocato', field: 'allocato', align: 'right', sortable: true },
   { name: 'rendicontato', label: 'Rendicontato', field: 'totaleRendicontato', align: 'right', sortable: true },
+  { name: 'pagato', label: 'Pagato', field: 'totalePagato', align: 'right' },
   { name: 'stato', label: 'Stato', field: 'id', align: 'left' },
   { name: 'actions', label: '', field: 'id', align: 'right' }
 ]
@@ -956,6 +1035,31 @@ async function saveBancari({ iban, intestatario }) {
     notifyError($q, err, "Errore nell'aggiornamento")
   } finally {
     savingBancari.value = false
+  }
+}
+
+function openChiudiProgetto(row) {
+  chiudiProgettoRow.value = row
+  chiudiProgettoNota.value = ''
+  chiudiProgettoDialog.value = true
+}
+
+async function handleChiudiProgetto() {
+  savingChiudiProgetto.value = true
+  try {
+    const { usePagamentiStore } = await import('stores/pagamenti.store')
+    const pagStore = usePagamentiStore()
+    await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
+      automatica: false,
+      motivo: chiudiProgettoNota.value || null
+    })
+    notifySuccess($q, 'Progetto chiuso')
+    chiudiProgettoDialog.value = false
+    await store.fetchAll()
+  } catch (err) {
+    notifyError($q, err, 'Errore chiusura progetto')
+  } finally {
+    savingChiudiProgetto.value = false
   }
 }
 
