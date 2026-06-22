@@ -511,17 +511,17 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useVerificaStore } from 'stores/verifica.store'
-import { useGestioneStore } from 'stores/gestione.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
-import RiconciliaDialog from 'components/RiconciliaDialog.vue'
-import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
-import { formatCurrency, formatDate } from 'src/utils/formatters'
-import { assetUrl } from 'src/utils/assets'
+import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
+import RiconciliaDialog from 'components/RiconciliaDialog.vue'
 import { verificaService } from 'src/services/verifica.service'
+import { assetUrl } from 'src/utils/assets'
+import { formatCurrency, formatDate } from 'src/utils/formatters'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useGestioneStore } from 'stores/gestione.store'
+import { useVerificaStore } from 'stores/verifica.store'
 
 const $q = useQuasar()
 const store = useVerificaStore()
@@ -619,8 +619,8 @@ async function handleAssociaGenitore(submission) {
     )
     notifySuccess($q, 'Contatto associato come genitore')
     loadData()
-  } catch (err) {
-    notifyError($q, err, "Errore nell'associazione")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'associazione")
   }
 }
 
@@ -628,8 +628,8 @@ async function handleEmailEdit(submission) {
   if (!submission.email) return
   try {
     await verificaService.updateSubmission(submission.id, { email: submission.email })
-  } catch (err) {
-    notifyError($q, err, 'Errore nel salvataggio email')
+  } catch (error) {
+    notifyError($q, error, 'Errore nel salvataggio email')
   }
   loadData()
 }
@@ -640,8 +640,8 @@ async function handleRiconcilia(payload) {
     notifySuccess($q, 'Giustificativo creato e riconciliato')
     riconciliaDialog.value = false
     reconcilingSubmission.value = null
-  } catch (err) {
-    notifyError($q, err, 'Errore nella riconciliazione')
+  } catch (error) {
+    notifyError($q, error, 'Errore nella riconciliazione')
   }
 }
 
@@ -673,8 +673,8 @@ function handleScarta(submission) {
     try {
       await store.scartaSubmission(submission.id, note)
       $q.notify({ type: 'warning', message: 'Submission scartata' })
-    } catch (err) {
-      notifyError($q, err, 'Errore nello scarto')
+    } catch (error) {
+      notifyError($q, error, 'Errore nello scarto')
     }
   })
 }
@@ -683,8 +683,8 @@ async function handleRipristina(submission) {
   try {
     await store.ripristinaSubmission(submission.id)
     notifySuccess($q, 'Submission ripristinata in attesa')
-  } catch (err) {
-    notifyError($q, err, 'Errore nel ripristino')
+  } catch (error) {
+    notifyError($q, error, 'Errore nel ripristino')
   }
 }
 

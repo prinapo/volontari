@@ -262,14 +262,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useGestioneStore } from 'stores/gestione.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
-import { gestioneService } from 'src/services/gestione.service'
+import { ref, watch } from 'vue'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
+import { gestioneService } from 'src/services/gestione.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useGestioneStore } from 'stores/gestione.store'
 import ContattoDialog from './ContattoDialog.vue'
 
 const $q = useQuasar()
@@ -346,12 +346,12 @@ async function preloadOptions() {
   try {
     const res = await contattiService.search('', false)
     allContatti.value = res.data.data || []
-    const assignedIds = [
+    const assignedIds = new Set([
       ...volontari.value.map(v => v.Contatto?.id_contatto),
       ...genitori.value.map(g => g.Contatto?.id_contatto)
-    ]
+    ])
     contattoOptions.value = allContatti.value
-      .filter(c => !assignedIds.includes(c.id_contatto))
+      .filter(c => !assignedIds.has(c.id_contatto))
       .map(c => ({ id: c.id_contatto, label: `${c.Nome} ${c.Cognome}${getEmailLabel(c)}` }))
   } catch {
     allContatti.value = []
@@ -360,24 +360,24 @@ async function preloadOptions() {
 }
 
 async function filterContatti(search, update) {
-  const assignedIds = [
+  const assignedIds = new Set([
     ...volontari.value.map(v => v.Contatto?.id_contatto),
     ...genitori.value.map(g => g.Contatto?.id_contatto)
-  ]
+  ])
   let data
-  if (!search) {
-    data = allContatti.value
-  } else {
+  if (search) {
     try {
       const res = await contattiService.search(search, false)
       data = res.data.data || []
     } catch {
       data = []
     }
+  } else {
+    data = allContatti.value
   }
   update(() => {
     contattoOptions.value = data
-      .filter(c => !assignedIds.includes(c.id_contatto))
+      .filter(c => !assignedIds.has(c.id_contatto))
       .map(c => ({ id: c.id_contatto, label: `${c.Nome} ${c.Cognome}${getEmailLabel(c)}` }))
   })
 }

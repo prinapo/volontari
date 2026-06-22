@@ -131,12 +131,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { useQuasar } from 'quasar'
+import { ref } from 'vue'
+import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import { assetUrl } from 'src/utils/assets'
 import { FILE_ACCEPT } from 'src/utils/constants'
 import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
-import { assetUrl } from 'src/utils/assets'
-import InlineEditableField from 'components/Common/InlineEditableField.vue'
 
 const $q = useQuasar()
 

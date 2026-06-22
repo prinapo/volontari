@@ -98,8 +98,8 @@ export const useDeduplicaStore = defineStore('deduplica', {
         }
 
         this.duplicateGroups = result
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei duplicati'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei duplicati'
       } finally {
         this.loading = false
       }
@@ -164,9 +164,9 @@ export const useDeduplicaStore = defineStore('deduplica', {
         await deduplicaService.deleteContatto(contattoBId)
 
         await this.fetchDuplicates()
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'unione"
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'unione"
+        throw error
       }
     },
 
@@ -175,9 +175,9 @@ export const useDeduplicaStore = defineStore('deduplica', {
       try {
         await deduplicaService.deleteEmail(emailId)
         await this.fetchDuplicates()
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'eliminazione"
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'eliminazione"
+        throw error
       }
     },
 
@@ -190,9 +190,9 @@ export const useDeduplicaStore = defineStore('deduplica', {
         }
         await deduplicaService.deleteContatto(contattoId)
         await this.fetchDuplicates()
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'eliminazione"
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'eliminazione"
+        throw error
       }
     }
   }

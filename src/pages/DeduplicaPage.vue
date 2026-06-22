@@ -607,11 +607,11 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useDeduplicaStore } from 'stores/deduplica.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { deduplicaService } from 'src/services/deduplica.service'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useDeduplicaStore } from 'stores/deduplica.store'
 
 const $q = useQuasar()
 const store = useDeduplicaStore()
@@ -719,8 +719,8 @@ async function moveBEmailsToA(pair) {
     }
     pair.bData.emailEntries = []
     notifySuccess($q, 'Email spostate nel contatto principale')
-  } catch (err) {
-    notifyError($q, err, 'Errore nello spostamento email')
+  } catch (error) {
+    notifyError($q, error, 'Errore nello spostamento email')
   }
 }
 
@@ -731,8 +731,8 @@ async function moveBFamiliesToA(pair) {
     }
     pair.bData.famiglieContatti = []
     notifySuccess($q, 'Famiglie spostate nel contatto principale')
-  } catch (err) {
-    notifyError($q, err, 'Errore nello spostamento famiglie')
+  } catch (error) {
+    notifyError($q, error, 'Errore nello spostamento famiglie')
   }
 }
 
@@ -741,8 +741,8 @@ async function handleDeleteEmail(emailId) {
     await store.deleteEmailRow(emailId)
     notifySuccess($q, 'Email eliminata')
     comparisonDialog.value = false
-  } catch (err) {
-    notifyError($q, err, "Errore nell'eliminazione")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'eliminazione")
   }
 }
 
@@ -772,8 +772,8 @@ async function handleMerge() {
     }
     notifySuccess($q, 'Unione completata')
     comparisonDialog.value = false
-  } catch (err) {
-    notifyError($q, err, "Errore nell'unione")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'unione")
   }
 }
 
@@ -795,8 +795,8 @@ function confirmDeleteB() {
       }
       notifySuccess($q, 'Contatti eliminati')
       comparisonDialog.value = false
-    } catch (err) {
-      notifyError($q, err, 'Errore')
+    } catch (error) {
+      notifyError($q, error, 'Errore')
     }
   })
 }

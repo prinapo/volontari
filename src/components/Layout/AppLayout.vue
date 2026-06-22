@@ -199,12 +199,13 @@
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from 'stores/auth.store'
 import { authService } from 'src/services/auth.service'
-import { useQuasar } from 'quasar'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
+
 const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 
 const $q = useQuasar()
@@ -228,8 +229,8 @@ async function handleChangePassword() {
     showChangePassword.value = false
     newPassword.value = ''
     confirmPassword.value = ''
-  } catch (err) {
-    notifyError($q, err, 'Errore nel cambio password')
+  } catch (error) {
+    notifyError($q, error, 'Errore nel cambio password')
   }
 }
 

@@ -19,8 +19,8 @@ export const useErrorLogStore = defineStore('errorLog', {
       try {
         const res = await errorLogService.getAll()
         this.items = res.data.data || []
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore caricamento log'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore caricamento log'
       } finally {
         this.loading = false
       }

@@ -151,7 +151,11 @@
                             </q-badge>
                             <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
                             <q-btn
-                              flat round dense size="sm" icon="edit"
+                              flat
+round
+dense
+size="sm"
+icon="edit"
                               data-testid="btn-edit-bancari"
                               aria-label="Modifica dati bancari"
                               @click="openBancariDialog(props.row)"
@@ -396,7 +400,10 @@
                       </q-btn>
                       <q-btn
                         v-if="canVerifica && props.row.statoProgetto === 'aperto'"
-                        flat round dense size="sm"
+                        flat
+round
+dense
+size="sm"
                         icon="lock"
                         color="warning"
                         aria-label="Chiudi progetto"
@@ -772,7 +779,13 @@
           <q-card-section class="row items-center">
             <div class="text-h6">Chiudi progetto</div>
             <q-space />
-            <q-btn v-close-popup flat round dense icon="close" aria-label="Chiudi" />
+            <q-btn
+v-close-popup
+flat
+round
+dense
+icon="close"
+aria-label="Chiudi" />
           </q-card-section>
           <q-card-section>
             <div class="text-body2 q-mb-sm">
@@ -856,19 +869,19 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
 import { copyToClipboard, useQuasar } from 'quasar'
-import { useVerificaStore } from 'stores/verifica.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
+import { computed, onMounted, ref, watch } from 'vue'
+import BancariDialog from 'components/Common/BancariDialog.vue'
+import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
+import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
+import PagamentiTab from 'components/Verifica/PagamentiTab.vue'
+import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
-import InlineEditableField from 'components/Common/InlineEditableField.vue'
-import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
-import BancariDialog from 'components/Common/BancariDialog.vue'
-import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
-import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
-import PagamentiTab from 'components/Verifica/PagamentiTab.vue'
+import { useVerificaStore } from 'stores/verifica.store'
 
 const $q = useQuasar()
 const store = useVerificaStore()
@@ -945,11 +958,9 @@ const selectedTotals = computed(() => {
 })
 
 const aspiRows = computed(() => {
-  return filteredRows.value.filter(row => {
-    if (row.totaleRimborsabile <= 0 || !row.iban || !row.intestatario) return false
-    if (hasPendingGiustificativi(row)) return false
-    return true
-  })
+  return filteredRows.value.filter(row =>
+    row.totaleRimborsabile > 0 && row.iban && row.intestatario && !hasPendingGiustificativi(row)
+  )
 })
 
 onMounted(() => {
@@ -1031,8 +1042,8 @@ async function saveBancari({ iban, intestatario }) {
     await store.updateBancari(editingRow.value.idFamiglia, { iban, intestatario })
     notifySuccess($q, 'Dati bancari aggiornati')
     bancariDialog.value = false
-  } catch (err) {
-    notifyError($q, err, "Errore nell'aggiornamento")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'aggiornamento")
   } finally {
     savingBancari.value = false
   }
@@ -1056,8 +1067,8 @@ async function handleChiudiProgetto() {
     notifySuccess($q, 'Progetto chiuso')
     chiudiProgettoDialog.value = false
     await store.fetchAll()
-  } catch (err) {
-    notifyError($q, err, 'Errore chiusura progetto')
+  } catch (error) {
+    notifyError($q, error, 'Errore chiusura progetto')
   } finally {
     savingChiudiProgetto.value = false
   }
@@ -1068,8 +1079,8 @@ async function handleVerify(progettoId, item) {
   try {
     await store.verifyGiustificativo(progettoId, item.id)
     notifySuccess($q, 'Giustificativo verificato')
-  } catch (err) {
-    notifyError($q, err, 'Errore nella verifica')
+  } catch (error) {
+    notifyError($q, error, 'Errore nella verifica')
   } finally {
     verifyingId.value = null
   }
@@ -1080,8 +1091,8 @@ async function handleSendDraft(progettoId, item) {
   try {
     await store.updateGiustificativoField(progettoId, item.id, 'Stato', 'inviato')
     notifySuccess($q, 'Giustificativo inviato')
-  } catch (err) {
-    notifyError($q, err, "Errore nell'invio")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'invio")
   } finally {
     verifyingId.value = null
   }
@@ -1099,8 +1110,8 @@ async function handleFieldSave(progettoId, item, field, value) {
   try {
     await store.updateGiustificativoField(progettoId, item.id, field, value)
     notifySuccess($q, 'Campo aggiornato')
-  } catch (err) {
-    notifyError($q, err, "Errore nell'aggiornamento")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'aggiornamento")
   } finally {
     savingField.value = null
   }
@@ -1113,8 +1124,8 @@ async function handleAddSave(formData) {
     await store.addGiustificativo(formData, formData.File)
     notifySuccess($q, 'Giustificativo creato')
     addingForRow.value = null
-  } catch (err) {
-    notifyError($q, err, 'Errore nella creazione')
+  } catch (error) {
+    notifyError($q, error, 'Errore nella creazione')
   }
 }
 
@@ -1125,8 +1136,8 @@ async function confirmReject() {
     await store.rejectGiustificativo(rejectProgettoId.value, rejectItem.value.id, rejectNota.value)
     $q.notify({ type: 'warning', message: 'Giustificativo rifiutato' })
     rejectDialog.value = false
-  } catch (err) {
-    notifyError($q, err, 'Errore nel rifiuto')
+  } catch (error) {
+    notifyError($q, error, 'Errore nel rifiuto')
   } finally {
     rejectingId.value = null
   }
@@ -1134,7 +1145,7 @@ async function confirmReject() {
 
 function escapeCsv(value) {
   const normalized = value == null ? '' : String(value)
-  return `"${normalized.replace(/"/g, '""')}"`
+  return `"${normalized.replaceAll('"', '""')}"`
 }
 
 function aspiLine(row) {

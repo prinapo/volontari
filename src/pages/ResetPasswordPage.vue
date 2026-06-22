@@ -103,9 +103,9 @@
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
 import { authService } from 'src/services/auth.service'
 
 const $q = useQuasar()
@@ -136,8 +136,8 @@ async function handleReset() {
       message: 'Password aggiornata con successo'
     })
     setTimeout(() => router.push('/login'), 2000)
-  } catch (err) {
-    const msg = err.response?.data?.errors?.[0]?.message || 'Errore durante il reset della password'
+  } catch (error_) {
+    const msg = error_.response?.data?.errors?.[0]?.message || 'Errore durante il reset della password'
     error.value = msg
   } finally {
     loading.value = false

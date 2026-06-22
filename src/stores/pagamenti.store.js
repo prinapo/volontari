@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
-import { pagamentiService } from 'src/services/pagamenti.service'
+import { adminService } from 'src/services/admin.service'
 import { associazioniService } from 'src/services/associazioni.service'
+import { contattiService } from 'src/services/contatti.service'
+import { famiglieService } from 'src/services/famiglie.service'
+import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { adminService } from 'src/services/admin.service'
-import { famiglieService } from 'src/services/famiglie.service'
-import { contattiService } from 'src/services/contatti.service'
 import { STATO_PAGAMENTO, STATO_PROGETTO } from 'src/utils/constants'
 
 export const usePagamentiStore = defineStore('pagamenti', {
@@ -28,13 +28,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
           const batch = state.batches.find(b => b.id === p.Batch)
           return batch?.Associazione === nome
         })
-        .reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+        .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
       const pagato = state.proposti
         .filter(p => {
           const batch = state.batches.find(b => b.id === p.Batch)
           return batch?.Associazione === nome
         })
-        .reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+        .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
       return budget - impegnato - pagato
     }
   },
@@ -56,7 +56,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         this.associazioni = res.data.data || []
         this.budgetMap = {}
         for (const a of this.associazioni) {
-          this.budgetMap[a.Nome] = parseFloat(a.Budget) || 0
+          this.budgetMap[a.Nome] = Number.parseFloat(a.Budget) || 0
         }
       } catch {
         this.associazioni = []
@@ -129,7 +129,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const giustificativi = giustRes.data.data || []
         const totaleVerificato = giustificativi
           .filter(g => g.Stato === 'verificato')
-          .reduce((s, g) => s + (parseFloat(g.Importo) || 0), 0)
+          .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
 
         const pagamentiRes = await pagamentiService.getPagamenti({
           'filter[Progetto][_eq]': progettoId,
@@ -137,9 +137,9 @@ export const usePagamentiStore = defineStore('pagamenti', {
           'filter[_or][1][Stato][_eq]': STATO_PAGAMENTO.PAGATO,
           limit: -1
         })
-        const totaleStorico = (pagamentiRes.data.data || []).reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+        const totaleStorico = (pagamentiRes.data.data || []).reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
 
-        const allocato = parseFloat(progetto.Allocato) || 0
+        const allocato = Number.parseFloat(progetto.Allocato) || 0
         const erogabile = Math.min(totaleVerificato, allocato)
         const nuovoProposto = erogabile - totaleStorico
 
@@ -151,10 +151,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const esistente = (esistenteRes.data.data || [])[0]
 
         if (nuovoProposto > 0) {
-          if (esistente) {
-            await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
-          } else {
-            await pagamentiService.createPagamento({
+          await (esistente ? pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }) : pagamentiService.createPagamento({
               Progetto: progettoId,
               Famiglia: progetto.Famiglia,
               Importo: nuovoProposto,
@@ -162,16 +159,15 @@ export const usePagamentiStore = defineStore('pagamenti', {
               IBAN: progetto.IBAN || '',
               Intestatario: progetto.Intestatario_CC || '',
               DataProposta: new Date().toISOString()
-            })
-          }
+            }));
         } else if (esistente) {
           await pagamentiService.deletePagamento(esistente.id)
         }
 
         await this.ricalcolaTotaliProgetto(progettoId)
         await this.fetchProposti()
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       }
     },
 
@@ -185,7 +181,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const giustificativi = giustRes.data.data || []
         const totaleVerificato = giustificativi
           .filter(g => g.Stato === 'verificato')
-          .reduce((s, g) => s + (parseFloat(g.Importo) || 0), 0)
+          .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
 
         const pagamentiRes = await pagamentiService.getPagamenti({
           'filter[Progetto][_eq]': progettoId,
@@ -195,13 +191,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const proposto = tutti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
         const inPagamento = tutti
           .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO)
-          .reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+          .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
         const pagato = tutti
           .filter(p => p.Stato === STATO_PAGAMENTO.PAGATO)
-          .reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+          .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
 
-        const allocato = parseFloat(progetto.Allocato) || 0
-        const totaleProposto = proposto ? parseFloat(proposto.Importo) || 0 : 0
+        const allocato = Number.parseFloat(progetto.Allocato) || 0
+        const totaleProposto = proposto ? Number.parseFloat(proposto.Importo) || 0 : 0
         const residuo = allocato - (totaleProposto + inPagamento + pagato)
 
         await progettiService.updateStats(progettoId, {
@@ -215,8 +211,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         if (pagato >= allocato && progetto.StatoProgetto === STATO_PROGETTO.APERTO) {
           await this.chiudiProgetto(progettoId, { automatica: true })
         }
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       }
     },
 
@@ -234,7 +230,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           throw new Error('Solo pagamenti in stato proposto possono essere inclusi in un batch')
         }
 
-        const totale = pagamenti.reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+        const totale = pagamenti.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
         const residuo = this.residuoAssociazione(associazione)
         if (totale > residuo) {
           throw new Error(
@@ -262,9 +258,9 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
         await this.init()
         return batchId
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || err.message || 'Errore creazione batch'
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore creazione batch'
+        throw error
       } finally {
         this.loading = false
       }
@@ -285,8 +281,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
         await this.inviaNotificaPagamento(pagamento)
         await this.init()
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       } finally {
         this.loading = false
       }
@@ -306,8 +302,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
         await this.init()
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       } finally {
         this.loading = false
       }
@@ -328,8 +324,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
         await this.ricalcolaProposta(pagamento.Progetto)
         await this.init()
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       } finally {
         this.loading = false
       }
@@ -348,8 +344,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const { default: famiglieService } = await import('src/services/famiglie.service')
         await famiglieService.update(pagamento.Famiglia, { IBAN: iban, Intestatario_CC: intestatario })
         await this.fetchFalliti()
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       } finally {
         this.loading = false
       }
@@ -362,8 +358,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
           DataChiusura: new Date().toISOString(),
           MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
         })
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        this.error = error.message
       }
     },
 
@@ -400,12 +396,12 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await adminService.sendEmail({
           to: destinatario,
           subject: 'Pagamento effettuato',
-          body: `Gentile volontario, il pagamento di €${parseFloat(pagamento.Importo || 0).toFixed(2)} per la famiglia "${nomeFamiglia}" è stato effettuato con successo.`
+          body: `Gentile volontario, il pagamento di €${Number.parseFloat(pagamento.Importo || 0).toFixed(2)} per la famiglia "${nomeFamiglia}" è stato effettuato con successo.`
         })
 
         await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
-      } catch (err) {
-        console.error('[Pagamento] Errore invio notifica:', err.message)
+      } catch (error) {
+        console.error('[Pagamento] Errore invio notifica:', error.message)
       }
     }
   }

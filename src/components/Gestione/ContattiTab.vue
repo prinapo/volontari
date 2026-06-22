@@ -300,14 +300,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { gestioneService } from 'src/services/gestione.service'
 import { contattiService } from 'src/services/contatti.service'
-import { usersService } from 'src/services/users.service'
 import { emailService } from 'src/services/email.service'
+import { gestioneService } from 'src/services/gestione.service'
+import { usersService } from 'src/services/users.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
-import ContattoDialog from './ContattoDialog.vue'
 import AssegnaFamigliaDialog from './AssegnaFamigliaDialog.vue'
 import AssegnaReferenteDialog from './AssegnaReferenteDialog.vue'
+import ContattoDialog from './ContattoDialog.vue'
 
 const rows = ref([])
 const loading = ref(false)
@@ -372,20 +372,34 @@ function computedTipi(row) {
 }
 
 function getQueryFilters() {
-  let isVolontario = undefined
-  let isGenitore = undefined
-  let isReferente = undefined
+  let isVolontario
+  let isGenitore
+  let isReferente
 
-  if (tipoFilter.value === 'Volontario') {
+  switch (tipoFilter.value) {
+  case 'Volontario': {
     isVolontario = true
-  } else if (tipoFilter.value === 'Genitore') {
+  
+  break;
+  }
+  case 'Genitore': {
     isGenitore = true
-  } else if (tipoFilter.value === 'Referente') {
+  
+  break;
+  }
+  case 'Referente': {
     isReferente = true
-  } else if (tipoFilter.value === 'Contatto') {
+  
+  break;
+  }
+  case 'Contatto': {
     isVolontario = false
     isGenitore = false
     isReferente = false
+  
+  break;
+  }
+  // No default
   }
 
   return { isVolontario, isGenitore, isReferente }
@@ -439,7 +453,7 @@ async function onRequest(props) {
       descending,
       rowsNumber: totalItems.value
     }
-  } catch (err) {
+  } catch {
     rows.value = []
   } finally {
     loading.value = false

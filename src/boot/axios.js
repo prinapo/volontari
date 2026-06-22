@@ -5,4 +5,5 @@ export default boot(({ app }) => {
   app.config.globalProperties.$api = api
 })
 
-export { api }
+
+export {default as api} from 'src/services/api'

@@ -9,7 +9,15 @@
     "build": "quasar build",
     "preview": "quasar build && npx serve dist/spa",
     "lint": "eslint src --ext .js,.vue",
+    "lint:css": "stylelint \"src/**/*.scss\"",
+    "lint:all": "npm run lint && npm run lint:css",
     "format": "prettier --write \"src/**/*.{js,vue,css,json}\"",
+    "audit": "npm audit --audit-level=high",
+    "audit:fix": "npm audit fix --audit-level=high",
+    "knip": "knip",
+    "test:unit": "vitest run --config tests/unit/vitest.config.mjs",
+    "test:unit:ui": "vitest --config tests/unit/vitest.config.mjs --ui",
+    "test:unit:coverage": "vitest run --config tests/unit/vitest.config.mjs --coverage",
     "test:e2e": "npx playwright test --config tests/e2e/playwright.config.js",
     "test:e2e:ui": "npx playwright test --config tests/e2e/playwright.config.js --ui",
     "deploy": "node scripts/deploy-ftp.mjs",
@@ -24,32 +32,87 @@
     "*.vue": [
       "eslint --fix"
     ],
-    "*.{json,css,md}": [
+    "*.{json,md}": [
       "prettier --write"
+    ],
+    "*.scss": [
+      "stylelint --fix",
+      "prettier --write"
+    ]
+  },
+  "knip": {
+    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "entry": [
+      "src/index.template.html",
+      "src/App.vue",
+      "src/router/index.js",
+      "src/stores/index.js",
+      "src/boot/*.js",
+      "src-pwa/*.js",
+      "scripts/*.mjs",
+      "quasar.config.cjs"
+    ],
+    "project": [
+      "src/**/*.{js,vue,scss}",
+      "src-pwa/**/*.js"
+    ],
+    "ignoreDependencies": [
+      "@quasar/app-vite",
+      "workbox-build",
+      "workbox-cacheable-response",
+      "workbox-core",
+      "workbox-expiration",
+      "workbox-precaching",
+      "workbox-routing",
+      "workbox-strategies"
+    ],
+    "ignore": [
+      "tests/",
+      "docs/"
+    ],
+    "vue": true,
+    "ignoreBinaries": [
+      "quasar",
+      "serve"
     ]
   },
   "dependencies": {
     "@quasar/extras": "^1.16.0",
     "axios": "^1.6.0",
-    "pinia": "^2.1.0",
     "quasar": "^2.14.0",
     "register-service-worker": "^1.7.2",
     "vue": "^3.4.0",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@playwright/test": "^1.40.0",
     "@quasar/app-vite": "^2.0.0",
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "@vue/test-utils": "^2.4.11",
     "basic-ftp": "^6.0.1",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-promise": "^6.6.0",
+    "eslint-plugin-security": "^2.1.1",
+    "eslint-plugin-sonarjs": "^0.25.1",
+    "eslint-plugin-unicorn": "^49.0.0",
     "eslint-plugin-vue": "^9.0.0",
     "husky": "^9.1.7",
     "imapflow": "^1.3.3",
+    "jsdom": "^24.1.3",
+    "knip": "^5.88.1",
     "lint-staged": "^17.0.8",
     "mailparser": "^3.9.8",
+    "pinia": "^2.3.1",
     "prettier": "^3.8.4",
+    "stylelint": "^16.26.1",
+    "stylelint-config-standard-scss": "^13.1.0",
+    "vitest": "^1.6.1",
     "workbox-build": "^7.4.1",
     "workbox-cacheable-response": "^7.4.1",
     "workbox-core": "^7.4.1",

@@ -47,10 +47,10 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
-import { useGiustificativiStore } from 'stores/giustificativi.store'
+import { ref, watch, computed } from 'vue'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useGiustificativiStore } from 'stores/giustificativi.store'
 import GiustificativoCard from './GiustificativoCard.vue'
 import GiustificativoForm from './GiustificativoForm.vue'
 

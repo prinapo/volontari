@@ -170,7 +170,7 @@ async function handleSave() {
     Progetto: props.progettoId,
     Famiglia: props.famigliaId,
     AnnoBando: props.annoBando,
-    Importo: parseFloat(form.Importo)
+    Importo: Number.parseFloat(form.Importo)
   })
   resetForm()
 }

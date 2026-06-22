@@ -25,12 +25,13 @@
     <!-- Sotto-vista: Proposti -->
     <template v-if="subTab === 'proposti'">
       <q-table
+        v-model:selected="selected"
         :rows="store.proposti"
         :columns="propostiColumns"
         row-key="id"
-        flat bordered
+flat
+        bordered
         selection="multiple"
-        v-model:selected="selected"
         :loading="store.loading"
         :grid="$q.screen.lt.sm"
         :pagination="{ rowsPerPage: 0 }"
@@ -59,10 +60,12 @@
           v-model="batchAssociazione"
           :options="assocOptions"
           label="Associazione"
-          dense outlined
+          dense
+outlined
           class="col-auto"
           style="min-width: 200px"
-          emit-value map-options
+          emit-value
+map-options
         />
         <q-btn
           color="primary"
@@ -81,11 +84,13 @@
           v-model="batchFilter"
           :options="batchOptions"
           label="Filtra per gruppo"
-          dense outlined
+          dense
+outlined
           clearable
           class="col-auto"
           style="min-width: 250px"
-          emit-value map-options
+          emit-value
+map-options
         />
         <q-btn flat icon="download" label="Esporta CSV" :disable="!batchFilter" @click="exportCsv" />
       </div>
@@ -94,7 +99,8 @@
         :rows="filteredInCorso"
         :columns="incorsoColumns"
         row-key="id"
-        flat bordered
+        flat
+bordered
         :loading="store.loading"
         :pagination="{ rowsPerPage: 0 }"
         hide-pagination
@@ -106,13 +112,37 @@
         <template #body-cell-azioni="props">
           <q-td :props="props">
             <div class="row q-gutter-xs no-wrap">
-              <q-btn v-if="props.row.Stato === 'in_pagamento'" flat dense icon="check_circle" color="positive" size="sm" aria-label="Segna pagato" @click="handlePagato(props.row)">
+              <q-btn
+v-if="props.row.Stato === 'in_pagamento'"
+flat
+dense
+icon="check_circle"
+color="positive"
+size="sm"
+aria-label="Segna pagato"
+@click="handlePagato(props.row)">
                 <q-tooltip>Pagato</q-tooltip>
               </q-btn>
-              <q-btn v-if="props.row.Stato === 'in_pagamento'" flat dense icon="cancel" color="negative" size="sm" aria-label="Segna fallito" @click="handleFallito(props.row)">
+              <q-btn
+v-if="props.row.Stato === 'in_pagamento'"
+flat
+dense
+icon="cancel"
+color="negative"
+size="sm"
+aria-label="Segna fallito"
+@click="handleFallito(props.row)">
                 <q-tooltip>Fallito</q-tooltip>
               </q-btn>
-              <q-btn v-if="props.row.Stato === 'in_pagamento'" flat dense icon="block" color="grey" size="sm" aria-label="Annulla" @click="handleAnnullato(props.row)">
+              <q-btn
+v-if="props.row.Stato === 'in_pagamento'"
+flat
+dense
+icon="block"
+color="grey"
+size="sm"
+aria-label="Annulla"
+@click="handleAnnullato(props.row)">
                 <q-tooltip>Annullato</q-tooltip>
               </q-btn>
               <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
@@ -127,9 +157,27 @@
                 <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
                 <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
                 <div v-else class="row q-gutter-xs q-mt-sm">
-                  <q-btn flat dense icon="check_circle" color="positive" size="sm" @click="handlePagato(props.row)"><q-tooltip>Pagato</q-tooltip></q-btn>
-                  <q-btn flat dense icon="cancel" color="negative" size="sm" @click="handleFallito(props.row)"><q-tooltip>Fallito</q-tooltip></q-btn>
-                  <q-btn flat dense icon="block" color="grey" size="sm" @click="handleAnnullato(props.row)"><q-tooltip>Annullato</q-tooltip></q-btn>
+                  <q-btn
+flat
+dense
+icon="check_circle"
+color="positive"
+size="sm"
+@click="handlePagato(props.row)"><q-tooltip>Pagato</q-tooltip></q-btn>
+                  <q-btn
+flat
+dense
+icon="cancel"
+color="negative"
+size="sm"
+@click="handleFallito(props.row)"><q-tooltip>Fallito</q-tooltip></q-btn>
+                  <q-btn
+flat
+dense
+icon="block"
+color="grey"
+size="sm"
+@click="handleAnnullato(props.row)"><q-tooltip>Annullato</q-tooltip></q-btn>
                 </div>
               </q-card-section>
             </q-card>
@@ -141,12 +189,13 @@
     <!-- Sotto-vista: Falliti -->
     <template v-if="subTab === 'falliti'">
       <q-table
+        v-model:selected="selectedFalliti"
         :rows="store.falliti"
         :columns="fallitiColumns"
         row-key="id"
-        flat bordered
+flat
+        bordered
         selection="multiple"
-        v-model:selected="selectedFalliti"
         :loading="store.loading"
         :pagination="{ rowsPerPage: 0 }"
         hide-pagination
@@ -169,7 +218,13 @@
           <div class="q-pa-xs col-12">
             <q-card flat bordered>
               <q-card-section>
-                <q-input :model-value="props.row.IBAN" label="IBAN" dense outlined @update:model-value="val => editFallito(props.row, 'IBAN', val)" class="q-mb-sm" />
+                <q-input
+:model-value="props.row.IBAN"
+label="IBAN"
+dense
+outlined
+class="q-mb-sm"
+@update:model-value="val => editFallito(props.row, 'IBAN', val)" />
                 <q-input :model-value="props.row.Intestatario" label="Intestatario" dense outlined @update:model-value="val => editFallito(props.row, 'Intestatario', val)" />
               </q-card-section>
             </q-card>
@@ -179,7 +234,16 @@
 
       <div v-if="selectedFalliti.length > 0" class="row items-center q-gutter-sm q-mt-md">
         <span class="text-caption">{{ selectedFalliti.length }} selezionati</span>
-        <q-select v-model="batchAssociazioneFalliti" :options="assocOptions" label="Associazione" dense outlined class="col-auto" style="min-width: 200px" emit-value map-options />
+        <q-select
+v-model="batchAssociazioneFalliti"
+:options="assocOptions"
+label="Associazione"
+dense
+outlined
+class="col-auto"
+style="min-width: 200px"
+emit-value
+map-options />
         <q-btn color="primary" icon="playlist_add" label="Includi in nuovo batch" :disable="!batchAssociazioneFalliti" @click="creaBatchDaFalliti" />
       </div>
     </template>
@@ -210,10 +274,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { usePagamentiStore } from 'stores/pagamenti.store'
+import { ref, computed, onMounted } from 'vue'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { usePagamentiStore } from 'stores/pagamenti.store'
 
 const $q = useQuasar()
 const store = usePagamentiStore()
@@ -242,7 +306,7 @@ const batchAssociazioneLabel = computed(() => {
 })
 
 const selectedTotal = computed(() =>
-  selected.value.reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+  selected.value.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
 )
 
 const filteredInCorso = computed(() => {
@@ -273,7 +337,7 @@ const fallitiColumns = [
   { name: 'note', label: 'Note', field: 'NoteEsito', align: 'left' }
 ]
 
-function formatNumber(v) { return (parseFloat(v) || 0).toFixed(2) }
+function formatNumber(v) { return (Number.parseFloat(v) || 0).toFixed(2) }
 
 function residuo(nome) { return store.residuoAssociazione(nome) }
 
@@ -284,7 +348,7 @@ function openCreaBatch() {
 }
 
 function editFallito(row, field, val) {
-  editingFalliti.value[row.id] = { ...(editingFalliti.value[row.id] || {}), [field]: val }
+  editingFalliti.value[row.id] = { ...editingFalliti.value[row.id], [field]: val }
 }
 
 async function creaBatch() {
@@ -297,8 +361,8 @@ async function creaBatch() {
     notifySuccess($q, 'Gruppo di pagamento creato')
     showBatchDialog.value = false
     selected.value = []
-  } catch (err) {
-    notifyError($q, err, 'Errore creazione gruppo')
+  } catch (error) {
+    notifyError($q, error, 'Errore creazione gruppo')
   }
 }
 
@@ -322,8 +386,8 @@ async function creaBatchDaFalliti() {
     })
     notifySuccess($q, 'Batch creato con pagamenti falliti')
     selectedFalliti.value = []
-  } catch (err) {
-    notifyError($q, err, 'Errore creazione batch da falliti')
+  } catch (error) {
+    notifyError($q, error, 'Errore creazione batch da falliti')
   }
 }
 
@@ -331,8 +395,8 @@ async function handlePagato(pagamento) {
   try {
     await store.segnaPagato(pagamento.id)
     notifySuccess($q, 'Pagamento segnato come pagato')
-  } catch (err) {
-    notifyError($q, err, 'Errore')
+  } catch (error) {
+    notifyError($q, error, 'Errore')
   }
 }
 
@@ -342,8 +406,8 @@ async function handleFallito(pagamento) {
     if (note === null) return
     await store.segnaFallito(pagamento.id, note)
     notifySuccess($q, 'Pagamento segnato come fallito')
-  } catch (err) {
-    notifyError($q, err, 'Errore')
+  } catch (error) {
+    notifyError($q, error, 'Errore')
   }
 }
 
@@ -353,8 +417,8 @@ async function handleAnnullato(pagamento) {
     if (motivo === null) return
     await store.segnaAnnullato(pagamento.id, motivo)
     notifySuccess($q, 'Pagamento annullato')
-  } catch (err) {
-    notifyError($q, err, 'Errore')
+  } catch (error) {
+    notifyError($q, error, 'Errore')
   }
 }
 

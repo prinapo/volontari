@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import { gestioneService } from 'src/services/gestione.service'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
-import { usersService } from 'src/services/users.service'
+import { gestioneService } from 'src/services/gestione.service'
 import { referentiService } from 'src/services/referenti.service'
+import { usersService } from 'src/services/users.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 
 const RESET_URL = import.meta.env.VITE_RESET_URL
@@ -70,8 +70,8 @@ export const useGestioneStore = defineStore('gestione', {
         }
 
         this.famiglie = famiglie
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
         this.famiglie = []
       } finally {
         this.loading = false
@@ -109,8 +109,8 @@ export const useGestioneStore = defineStore('gestione', {
           await contattiService.update(contattoId, { IsReferente: true })
         }
         return contattoId
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella creazione del contatto'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione del contatto'
         return false
       } finally {
         this.saving = false
@@ -137,20 +137,16 @@ export const useGestioneStore = defineStore('gestione', {
           }
           const emailRes = await emailService.getRecordByContatto(id)
           const existing = emailRes.data.data?.[0]
-          if (existing) {
-            await emailService.update(existing.id, { email_address: newEmail })
-          } else {
-            await emailService.create({
+          await (existing ? emailService.update(existing.id, { email_address: newEmail }) : emailService.create({
               email_address: newEmail,
               Contatto_Relation: id,
               Primary: true
-            })
-          }
+            }));
         }
 
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella modifica del contatto'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella modifica del contatto'
         return false
       } finally {
         this.saving = false
@@ -161,8 +157,8 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await usersService.update(userId, { status: 'suspended' })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella disattivazione'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella disattivazione'
         return false
       }
     },
@@ -171,8 +167,8 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await usersService.update(userId, { status: 'active' })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella riattivazione'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella riattivazione'
         return false
       }
     },
@@ -189,8 +185,8 @@ export const useGestioneStore = defineStore('gestione', {
         })
         await this.fetchAll()
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella creazione della famiglia'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione della famiglia'
         return false
       } finally {
         this.saving = false
@@ -204,8 +200,8 @@ export const useGestioneStore = defineStore('gestione', {
         await gestioneService.updateFamiglia(id, data)
         await this.fetchAll()
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella modifica della famiglia'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella modifica della famiglia'
         return false
       } finally {
         this.saving = false
@@ -263,8 +259,8 @@ export const useGestioneStore = defineStore('gestione', {
           await contattiService.update(contattoId, flagPatch)
         }
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione"
         return false
       }
     },
@@ -281,8 +277,8 @@ export const useGestioneStore = defineStore('gestione', {
           }
         }
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella rimozione'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella rimozione'
         return false
       }
     },
@@ -291,8 +287,8 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await usersService.sendInvite(email, RESET_URL)
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'invito"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'invito"
         return false
       }
     },
@@ -302,8 +298,8 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await referentiService.create(volontarioId, referenteId)
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione referente"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione referente"
         return false
       }
     },
@@ -313,8 +309,8 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await referentiService.remove(relationId)
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella rimozione referente'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella rimozione referente'
         return false
       }
     },
@@ -354,8 +350,8 @@ export const useGestioneStore = defineStore('gestione', {
         }
         await contattiService.update(contattoId, { IsReferente: true })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'impostazione referente"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'impostazione referente"
         return false
       }
     },
@@ -366,9 +362,9 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         const res = await contattiService.getVolontariSenzaUtente()
         this.volontariSenzaUtente = res.data.data || []
-      } catch (err) {
+      } catch (error) {
         this.volontariSenzaUtente = []
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento'
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento'
       } finally {
         this.loadingVolontariSenzaUtente = false
       }
@@ -413,8 +409,8 @@ export const useGestioneStore = defineStore('gestione', {
         }
         await this.fetchVolontariSenzaUtente()
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore creazione utente'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore creazione utente'
         return false
       } finally {
         this.saving = false

@@ -91,11 +91,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useQuasar } from 'quasar'
-import { useFamiglieStore } from 'stores/famiglie.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
+import { computed } from 'vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useFamiglieStore } from 'stores/famiglie.store'
 
 const $q = useQuasar()
 const famiglieStore = useFamiglieStore()

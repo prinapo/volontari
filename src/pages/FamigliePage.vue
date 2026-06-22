@@ -112,13 +112,13 @@
 
 <script setup>
 import { computed, watch } from 'vue'
-import { useAuthStore } from 'stores/auth.store'
-import { useFamiglieStore } from 'stores/famiglie.store'
-import { useGiustificativiStore } from 'stores/giustificativi.store'
-import { formatCurrency } from 'src/utils/formatters'
 import FamigliaInfoCard from 'components/Famiglia/FamigliaInfoCard.vue'
 import ProgettoSelector from 'components/Famiglia/ProgettoSelector.vue'
 import GiustificativoList from 'components/Giustificativi/GiustificativoList.vue'
+import { formatCurrency } from 'src/utils/formatters'
+import { useAuthStore } from 'stores/auth.store'
+import { useFamiglieStore } from 'stores/famiglie.store'
+import { useGiustificativiStore } from 'stores/giustificativi.store'
 
 const authStore = useAuthStore()
 const famiglieStore = useFamiglieStore()
@@ -127,11 +127,11 @@ const giustificativiStore = useGiustificativiStore()
 const loading = computed(() => famiglieStore.loading)
 
 const allocato = computed(() => {
-  return parseFloat(famiglieStore.selectedProgetto?.Allocato) || 0
+  return Number.parseFloat(famiglieStore.selectedProgetto?.Allocato) || 0
 })
 
 const totaleGiustificativi = computed(() => {
-  return giustificativiStore.items.reduce((sum, item) => sum + (parseFloat(item.Importo) || 0), 0)
+  return giustificativiStore.items.reduce((sum, item) => sum + (Number.parseFloat(item.Importo) || 0), 0)
 })
 
 const totaleRimborsabile = computed(() => {

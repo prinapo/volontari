@@ -32,8 +32,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         const res = await adminService.getUsers()
         this.users = res.data.data || []
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento degli utenti'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento degli utenti'
       } finally {
         this.loading = false
       }
@@ -95,8 +95,8 @@ export const useAdminStore = defineStore('admin', {
         this.nuovaPassword = pwd
         await this.fetchUsers()
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nella creazione dell'utente"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nella creazione dell'utente"
         return false
       } finally {
         this.saving = false
@@ -110,8 +110,8 @@ export const useAdminStore = defineStore('admin', {
         await adminService.updateUser(userId, { role: roleId })
         await this.fetchUsers()
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del ruolo"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del ruolo"
         return false
       } finally {
         this.saving = false
@@ -124,8 +124,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         await adminService.updateUser(userId, { password })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
         return false
       } finally {
         this.saving = false
@@ -137,8 +137,8 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       try {
         const resolvedBody = body
-          .replace(/\{email\}/g, to)
-          .replace(/\{link_login\}/g, window.location.origin + '/login')
+          .replaceAll('{email}', to)
+          .replaceAll('{link_login}', window.location.origin + '/login')
         await adminService.sendEmail({
           to,
           subject,
@@ -146,8 +146,8 @@ export const useAdminStore = defineStore('admin', {
           type: 'html'
         })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'email"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'email"
         return false
       } finally {
         this.sending = false
@@ -160,8 +160,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         const res = await adminService.getProgetti({ search: this.searchProgetti || undefined })
         this.progetti = res.data.data || []
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei progetti'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei progetti'
       } finally {
         this.progettiLoading = false
       }
@@ -176,8 +176,8 @@ export const useAdminStore = defineStore('admin', {
           Nome_Beneficiario: nome
         })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del progetto"
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del progetto"
         return false
       } finally {
         this.saving = false

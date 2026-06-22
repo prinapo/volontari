@@ -43,17 +43,28 @@ export const contattiService = {
       ]
     }
 
-    if (isVolontario === true) {
+    switch (true) {
+    case isVolontario: {
       filter.IsVolontario = { _eq: true }
-    } else if (isGenitore === true) {
+    
+    break;
+    }
+    case isGenitore: {
       filter.IsGenitore = { _eq: true }
       filter.IsVolontario = { _eq: false }
-    } else if (isReferente === true) {
+    
+    break;
+    }
+    case isReferente: {
       filter.IsReferente = { _eq: true }
-    } else if (isVolontario === false && isGenitore === false && isReferente === false) {
+    
+    break;
+    }
+    default: if (isVolontario === false && isGenitore === false && isReferente === false) {
       filter.IsVolontario = { _eq: false }
       filter.IsGenitore = { _eq: false }
       filter.IsReferente = { _eq: false }
+    }
     }
 
     if (stato === 'Attivi') {

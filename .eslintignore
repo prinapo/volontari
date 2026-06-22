@@ -1,1 +1,7 @@
 tests/
+scripts/
+*.config.cjs
+*.config.js
+dist/
+.quasar/
+

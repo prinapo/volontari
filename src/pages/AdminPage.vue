@@ -757,14 +757,14 @@ size="sm"
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
 import { useQuasar } from 'quasar'
+import { ref, computed, onMounted, reactive } from 'vue'
+import { contattiService } from 'src/services/contatti.service'
+import { usersService } from 'src/services/users.service'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
 import { useErrorLogStore } from 'stores/error-log.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
-import { contattiService } from 'src/services/contatti.service'
-import { usersService } from 'src/services/users.service'
 
 const $q = useQuasar()
 const store = useAdminStore()
@@ -896,7 +896,7 @@ async function fetchAssociazioni() {
 }
 
 function editAssocBudget(row, val) {
-  assocBudgetCache[row.id] = parseFloat(val) || 0
+  assocBudgetCache[row.id] = Number.parseFloat(val) || 0
 }
 
 async function saveAssocBudget(row) {
@@ -909,8 +909,8 @@ async function saveAssocBudget(row) {
     notifySuccess($q, 'Budget aggiornato')
     delete assocBudgetCache[row.id]
     await fetchAssociazioni()
-  } catch (err) {
-    notifyError($q, err, 'Errore aggiornamento budget')
+  } catch (error) {
+    notifyError($q, error, 'Errore aggiornamento budget')
   } finally { savingAssoc.value = false }
 }
 
@@ -954,8 +954,8 @@ async function creaUtenteVolontario(v) {
     }
     notifySuccess($q, 'Account creato per ' + (v.Nome || '') + ' ' + (v.Cognome || ''))
     await fetchVolontariSenzaUtente()
-  } catch (err) {
-    notifyError($q, err, 'Errore creazione account')
+  } catch (error) {
+    notifyError($q, error, 'Errore creazione account')
   } finally {
     savingVolontario.value = false
   }
@@ -1020,7 +1020,7 @@ async function handleSendEmail() {
     ? `${store.contattoTrovato.Nome} ${store.contattoTrovato.Cognome}`
     : `${newFirstName.value} ${newLastName.value}`.trim()
   const body = emailBody.value
-    .replace(/\{nome\}/g, nome)
+    .replaceAll('{nome}', nome)
   const ok = await store.sendCustomEmail(searchEmail.value, emailSubject.value, body)
   if (ok) {
     notifySuccess($q, 'Email inviata con successo')

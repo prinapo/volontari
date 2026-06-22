@@ -64,10 +64,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useGestioneStore } from 'stores/gestione.store'
+import { ref, computed, watch } from 'vue'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useGestioneStore } from 'stores/gestione.store'
 
 const props = defineProps({
   modelValue: Boolean,

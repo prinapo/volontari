@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import { famiglieService } from 'src/services/famiglie.service'
 import { emailService } from 'src/services/email.service'
+import { famiglieService } from 'src/services/famiglie.service'
 import { referentiService } from 'src/services/referenti.service'
-import { useAuthStore } from 'stores/auth.store'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { useAuthStore } from 'stores/auth.store'
 
 export const useFamiglieStore = defineStore('famiglie', {
   state: () => ({
@@ -54,8 +54,8 @@ export const useFamiglieStore = defineStore('famiglie', {
           if (famigliaId) await this.loadFamiglia(famigliaId)
         }
         // Se 0 o >1 famiglie, nessun auto-caricamento — l'utente sceglie
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
       } finally {
         this.loading = false
       }
@@ -73,7 +73,7 @@ export const useFamiglieStore = defineStore('famiglie', {
         const fcRes = await famiglieService.getFamiglieByVolontario(contattoId)
         this.famiglieContatti = fcRes.data.data || []
         return this.famiglieContatti.length > 0
-      } catch (err) {
+      } catch {
         this.famiglieContatti = []
         return false
       }
@@ -87,8 +87,8 @@ export const useFamiglieStore = defineStore('famiglie', {
           this.selectedProgettoId = this.progetti[0].id_progetto
         }
         await Promise.all([this.loadGenitori(famigliaId), this.loadVolontari(famigliaId)])
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
       }
     },
 
@@ -119,7 +119,7 @@ export const useFamiglieStore = defineStore('famiglie', {
             // silent
           }
         }
-      } catch (err) {
+      } catch {
         this.genitori = []
       } finally {
         this.contattiLoading = false
@@ -179,7 +179,7 @@ export const useFamiglieStore = defineStore('famiglie', {
           }
         }
         this.altriVolontari = filtered
-      } catch (err) {
+      } catch {
         this.altriVolontari = []
       } finally {
         this.contattiLoading = false
@@ -205,8 +205,8 @@ export const useFamiglieStore = defineStore('famiglie', {
         this.famiglia.IBAN = updated.IBAN
         this.famiglia.Intestatario_CC = updated.Intestatario_CC
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel salvataggio'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel salvataggio'
         return false
       } finally {
         this.saving = false

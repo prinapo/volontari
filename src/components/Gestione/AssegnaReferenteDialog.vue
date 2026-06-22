@@ -89,12 +89,12 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useGestioneStore } from 'stores/gestione.store'
-import { referentiService } from 'src/services/referenti.service'
+import { ref, watch } from 'vue'
 import { contattiService } from 'src/services/contatti.service'
+import { referentiService } from 'src/services/referenti.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useGestioneStore } from 'stores/gestione.store'
 
 const props = defineProps({
   modelValue: Boolean,

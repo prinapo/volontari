@@ -1,18 +1,18 @@
 import { defineStore } from 'pinia'
-import { verificaService } from 'src/services/verifica.service'
-import { giustificativiService } from 'src/services/giustificativi.service'
-import { filesService } from 'src/services/files.service'
-import { famiglieService } from 'src/services/famiglie.service'
 import { contattiService } from 'src/services/contatti.service'
-import { gestioneService } from 'src/services/gestione.service'
 import { emailService } from 'src/services/email.service'
+import { famiglieService } from 'src/services/famiglie.service'
+import { filesService } from 'src/services/files.service'
+import { gestioneService } from 'src/services/gestione.service'
+import { giustificativiService } from 'src/services/giustificativi.service'
+import { verificaService } from 'src/services/verifica.service'
 import { FOLDERS } from 'src/utils/constants'
+import { enrichWithEmails } from 'src/utils/enrichment'
 import { markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
 import { usePagamentiStore } from './pagamenti.store'
-import { enrichWithEmails } from 'src/utils/enrichment'
 
 function toNumber(value) {
-  const parsed = parseFloat(value)
+  const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
 
@@ -26,7 +26,7 @@ function calcolaStatoRendicontazione(giustificativi) {
   if (stati.length === 0) return 'nessuno'
   if (stati.every(s => s === 'bozza' || s === '')) return 'bozza'
   if (stati.every(s => s === 'verificato' || s === 'approvato')) return 'verificato'
-  if (stati.some(s => s === 'inviato')) return 'in_attesa'
+  if (stati.includes('inviato')) return 'in_attesa'
   return 'parziale'
 }
 
@@ -114,9 +114,9 @@ export const useVerificaStore = defineStore('verifica', {
           page: this.page,
           limit: this.limit,
           sort,
-          search: search !== undefined ? search : undefined,
-          anno: anno !== undefined ? anno : undefined,
-          rendicontazioneFilter: rendicontazioneFilter !== undefined ? rendicontazioneFilter : undefined,
+          search: search === undefined ? undefined : search,
+          anno: anno === undefined ? undefined : anno,
+          rendicontazioneFilter: rendicontazioneFilter === undefined ? undefined : rendicontazioneFilter,
           meta: 'filter_count'
         })
 
@@ -140,8 +140,8 @@ export const useVerificaStore = defineStore('verifica', {
         try {
           const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
           allGiustificativi = giustRes.data.data || []
-        } catch (deepErr) {
-          if (deepErr.response?.status === 403) {
+        } catch (error) {
+          if (error.response?.status === 403) {
             const giustRes = await verificaService.getGiustificativiByProgettiLight(progettoIds)
             allGiustificativi = giustRes.data.data || []
             const rendIds = [...new Set(allGiustificativi.map(g => g.Rendicontazione).filter(Boolean))]
@@ -159,7 +159,7 @@ export const useVerificaStore = defineStore('verifica', {
               }
             }
           } else {
-            throw deepErr
+            throw error
           }
         }
 
@@ -181,8 +181,8 @@ export const useVerificaStore = defineStore('verifica', {
 
         this.rows = [...rowsByProject.values()]
         this.rows.forEach(rec => recalculateRowTotals(rec))
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
       } finally {
         this.loading = false
       }
@@ -204,9 +204,9 @@ export const useVerificaStore = defineStore('verifica', {
             page,
             limit: PAGE_SIZE,
             sort,
-            search: search !== undefined ? search : undefined,
-            anno: anno !== undefined ? anno : undefined,
-            rendicontazioneFilter: rendicontazioneFilter !== undefined ? rendicontazioneFilter : undefined,
+            search: search === undefined ? undefined : search,
+            anno: anno === undefined ? undefined : anno,
+            rendicontazioneFilter: rendicontazioneFilter === undefined ? undefined : rendicontazioneFilter,
             meta: 'filter_count'
           })
           const projects = progettiRes.data.data || []
@@ -233,8 +233,8 @@ export const useVerificaStore = defineStore('verifica', {
         try {
           const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
           allGiustificativi = giustRes.data.data || []
-        } catch (deepErr) {
-          if (deepErr.response?.status === 403) {
+        } catch (error) {
+          if (error.response?.status === 403) {
             const giustRes = await verificaService.getGiustificativiByProgettiLight(progettoIds)
             allGiustificativi = giustRes.data.data || []
             const rendIds = [...new Set(allGiustificativi.map(g => g.Rendicontazione).filter(Boolean))]
@@ -252,7 +252,7 @@ export const useVerificaStore = defineStore('verifica', {
               }
             }
           } else {
-            throw deepErr
+            throw error
           }
         }
 
@@ -274,8 +274,8 @@ export const useVerificaStore = defineStore('verifica', {
 
         this.rows = [...rowsByProject.values()]
         this.rows.forEach(rec => recalculateRowTotals(rec))
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
       } finally {
         this.loading = false
       }
@@ -303,9 +303,9 @@ export const useVerificaStore = defineStore('verifica', {
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
         await pagStore.ricalcolaProposta(progettoId)
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella verifica del giustificativo'
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella verifica del giustificativo'
+        throw error
       }
     },
 
@@ -321,9 +321,9 @@ export const useVerificaStore = defineStore('verifica', {
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
         await pagStore.ricalcolaProposta(progettoId)
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || `Errore nell'aggiornamento del campo ${field}`
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || `Errore nell'aggiornamento del campo ${field}`
+        throw error
       }
     },
 
@@ -360,20 +360,20 @@ export const useVerificaStore = defineStore('verifica', {
             includeScartati: includeScartatiVal,
             meta: 'filter_count'
           })
-        } catch (metaErr) {
-          if (metaErr.response?.status === 403) {
+        } catch (error) {
+          if (error.response?.status === 403) {
             res = await verificaService.getSubmissions({
               page: pageVal,
               limit: limitVal,
               includeScartati: includeScartatiVal
             })
-          } else throw metaErr
+          } else throw error
         }
         const submissions = res.data.data || []
         await this._detectSubmissionStates(submissions)
         this.submissions = submissions
         this.submissionsTotalCount = res.data.meta?.filter_count || submissions.length
-      } catch (err) {
+      } catch {
         this.submissions = []
         this.submissionsTotalCount = 0
       } finally {
@@ -433,19 +433,15 @@ export const useVerificaStore = defineStore('verifica', {
         if (!contatto) {
           submission._detectState = 'not_found'
           submission._foundContatto = null
-        } else if (!linkedMap.has(contatto.id_contatto)) {
-          submission._detectState = 'not_linked'
-          submission._foundContatto = contatto
-        } else {
+        } else if (linkedMap.has(contatto.id_contatto)) {
           const famInfo = linkedMap.get(contatto.id_contatto)
           submission._foundContatto = contatto
           submission._famigliaId = famInfo.famigliaId
           submission._famigliaNome = famInfo.famigliaNome
-          if (famInfo.isGenitore) {
-            submission._detectState = 'linked'
-          } else {
-            submission._detectState = 'not_parent'
-          }
+          submission._detectState = famInfo.isGenitore ? 'linked' : 'not_parent';
+        } else {
+          submission._detectState = 'not_linked'
+          submission._foundContatto = contatto
         }
       }
     },
@@ -538,9 +534,9 @@ export const useVerificaStore = defineStore('verifica', {
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
         await this.fetchPage({})
         await this.patchProgettoAggregates(progettoId)
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nella riconciliazione'
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella riconciliazione'
+        throw error
       }
     },
 
@@ -552,9 +548,9 @@ export const useVerificaStore = defineStore('verifica', {
           note_riconciliazione: note
         })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nello scarto'
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nello scarto'
+        throw error
       }
     },
 
@@ -566,9 +562,9 @@ export const useVerificaStore = defineStore('verifica', {
           note_riconciliazione: null
         })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel ripristino'
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel ripristino'
+        throw error
       }
     },
 
@@ -588,9 +584,9 @@ export const useVerificaStore = defineStore('verifica', {
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
         await pagStore.ricalcolaProposta(progettoId)
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel rifiuto del giustificativo'
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel rifiuto del giustificativo'
+        throw error
       }
     },
 
@@ -608,9 +604,9 @@ export const useVerificaStore = defineStore('verifica', {
           }
         })
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento dati bancari"
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento dati bancari"
+        throw error
       }
     },
 
@@ -634,9 +630,9 @@ export const useVerificaStore = defineStore('verifica', {
         await this.fetchPage({})
         await this.patchProgettoAggregates(formData.Progetto)
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
-        throw err
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
+        throw error
       }
     },
 

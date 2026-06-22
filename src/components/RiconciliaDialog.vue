@@ -164,7 +164,14 @@
                   </div>
                   <div class="text-center q-my-xs">
                     <template v-if="isFieldDifferent('IBAN')">
-                      <q-btn round flat icon="arrow_downward" color="primary" size="xs" aria-label="Copia IBAN" @click="copyField('IBAN')">
+                      <q-btn
+round
+flat
+icon="arrow_downward"
+color="primary"
+size="xs"
+aria-label="Copia IBAN"
+@click="copyField('IBAN')">
                         <q-tooltip>Copia dal richiedente</q-tooltip>
                       </q-btn>
                     </template>
@@ -173,10 +180,31 @@
                     </q-icon>
                   </div>
                   <div class="text-caption text-grey-6">valore nel database</div>
-                  <q-input :model-value="rightValues.IBAN" outlined dense :color="isFieldDifferent('IBAN') ? 'negative' : 'primary'" :error="isFieldDifferent('IBAN')" @update:model-value="val => setRightValue('IBAN', val)" />
+                  <q-input
+:model-value="rightValues.IBAN"
+outlined
+dense
+:color="isFieldDifferent('IBAN') ? 'negative' : 'primary'"
+:error="isFieldDifferent('IBAN')"
+@update:model-value="val => setRightValue('IBAN', val)" />
                   <div v-if="isFieldDifferent('IBAN')" class="text-center row q-gutter-xs justify-center q-mt-xs">
-                    <q-btn icon="check" color="positive" round flat size="sm" aria-label="Dato già corretto" @click="confirmField('IBAN')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
-                    <q-btn icon="save" color="positive" round flat size="sm" data-testid="btn-save-field" aria-label="Salva" @click="saveField('IBAN')"><q-tooltip>Salva</q-tooltip></q-btn>
+                    <q-btn
+icon="check"
+color="positive"
+round
+flat
+size="sm"
+aria-label="Dato già corretto"
+@click="confirmField('IBAN')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
+                    <q-btn
+icon="save"
+color="positive"
+round
+flat
+size="sm"
+data-testid="btn-save-field"
+aria-label="Salva"
+@click="saveField('IBAN')"><q-tooltip>Salva</q-tooltip></q-btn>
                   </div>
                 </div>
 
@@ -193,7 +221,14 @@
                   </div>
                   <div class="text-center q-my-xs">
                     <template v-if="isFieldDifferent('Intestatario')">
-                      <q-btn round flat icon="arrow_downward" color="primary" size="xs" aria-label="Copia Intestatario" @click="copyField('Intestatario')">
+                      <q-btn
+round
+flat
+icon="arrow_downward"
+color="primary"
+size="xs"
+aria-label="Copia Intestatario"
+@click="copyField('Intestatario')">
                         <q-tooltip>Copia dal richiedente</q-tooltip>
                       </q-btn>
                     </template>
@@ -202,10 +237,31 @@
                     </q-icon>
                   </div>
                   <div class="text-caption text-grey-6">valore nel database</div>
-                  <q-input :model-value="rightValues.Intestatario" outlined dense :color="isFieldDifferent('Intestatario') ? 'negative' : 'primary'" :error="isFieldDifferent('Intestatario')" @update:model-value="val => setRightValue('Intestatario', val)" />
+                  <q-input
+:model-value="rightValues.Intestatario"
+outlined
+dense
+:color="isFieldDifferent('Intestatario') ? 'negative' : 'primary'"
+:error="isFieldDifferent('Intestatario')"
+@update:model-value="val => setRightValue('Intestatario', val)" />
                   <div v-if="isFieldDifferent('Intestatario')" class="text-center row q-gutter-xs justify-center q-mt-xs">
-                    <q-btn icon="check" color="positive" round flat size="sm" aria-label="Dato già corretto" @click="confirmField('Intestatario')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
-                    <q-btn icon="save" color="positive" round flat size="sm" data-testid="btn-save-field" aria-label="Salva" @click="saveField('Intestatario')"><q-tooltip>Salva</q-tooltip></q-btn>
+                    <q-btn
+icon="check"
+color="positive"
+round
+flat
+size="sm"
+aria-label="Dato già corretto"
+@click="confirmField('Intestatario')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
+                    <q-btn
+icon="save"
+color="positive"
+round
+flat
+size="sm"
+data-testid="btn-save-field"
+aria-label="Salva"
+@click="saveField('Intestatario')"><q-tooltip>Salva</q-tooltip></q-btn>
                   </div>
                 </div>
               </q-card-section>
@@ -403,13 +459,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { ref, computed, watch } from 'vue'
 import { verificaService } from 'src/services/verifica.service'
-import { useVerificaStore } from 'stores/verifica.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
 import { assetUrl } from 'src/utils/assets'
 import { displayFullName } from 'src/utils/formatters'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useVerificaStore } from 'stores/verifica.store'
 
 const $q = useQuasar()
 const verificaStore = useVerificaStore()
@@ -569,8 +625,8 @@ async function saveProjectField(key) {
       await verificaService.updateProgetto(selectedProgetto.value.id_progetto, { [directusField]: val })
       notifySuccess($q, `${key} aggiornato`)
     }
-  } catch (err) {
-    notifyError($q, err, `${key}: Errore aggiornamento`)
+  } catch (error) {
+    notifyError($q, error, `${key}: Errore aggiornamento`)
   } finally {
     savingProjectField.value = null
   }
@@ -638,8 +694,8 @@ async function saveField(key) {
     const val = rightValues.value[key]
     await verificaStore.reconcileUpdateField(contattoIdRef.value, famigliaIdRef.value, key, val)
     notifySuccess($q, `${leftFields.find(f => f.key === key)?.label || key} aggiornato`)
-  } catch (err) {
-    notifyError($q, err, `${key}: Errore sconosciuto`)
+  } catch (error) {
+    notifyError($q, error, `${key}: Errore sconosciuto`)
   } finally {
     savingField.value = null
   }
@@ -670,7 +726,7 @@ async function loadProgetti(famigliaId) {
   try {
     const res = await verificaService.findProgettoByFamiglia(famigliaId)
     progettiList.value = res.data.data || []
-  } catch (err) {
+  } catch {
     progettiList.value = []
   }
 }
@@ -719,7 +775,7 @@ async function initData() {
     } else {
       // no famigliaId
     }
-  } catch (err) {
+  } catch {
     // silent
   }
 }
@@ -729,7 +785,7 @@ async function confirmReconcile() {
   saving.value = true
   try {
     const allCopiedFields = [
-      ...[...confirmedFields.value],
+      ...confirmedFields.value,
       ...[...projectConfirmedFields.value].map(f => `Progetto_${f}`)
     ]
     emit('reconcile', {
@@ -740,7 +796,7 @@ async function confirmReconcile() {
       progettoId: selectedProgettoId.value,
       note: note.value,
       descrizione: giustDescrizione.value,
-      importo: parseFloat(giustImporto.value) || 0,
+      importo: Number.parseFloat(giustImporto.value) || 0,
       data: giustData.value,
       allegato: props.submission?.allegato,
       rightValues: { ...rightValues.value },
@@ -756,7 +812,7 @@ async function confirmReconcile() {
 function toLocalDate(isoStr) {
   if (!isoStr) return ''
   const d = new Date(isoStr)
-  if (isNaN(d.getTime())) return isoStr.substring(0, 10)
+  if (Number.isNaN(d.getTime())) return isoStr.slice(0, 10)
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')

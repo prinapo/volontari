@@ -140,11 +140,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useGestioneStore } from 'stores/gestione.store'
+import { ref, computed, watch } from 'vue'
 import { emailService } from 'src/services/email.service'
 import { notifyError } from 'src/utils/notify'
+import { useGestioneStore } from 'stores/gestione.store'
 
 function generateContattoId() {
   const ts = Date.now()
@@ -240,8 +240,8 @@ async function onEmailBlur(em, _idx) {
   if (em.id) {
     try {
       await emailService.update(em.id, { email_address: em.email_address })
-    } catch (err) {
-      notifyError($q, err, "Errore nell'aggiornamento dell'email")
+    } catch (error) {
+      notifyError($q, error, "Errore nell'aggiornamento dell'email")
     }
   } else {
     try {
@@ -251,8 +251,8 @@ async function onEmailBlur(em, _idx) {
         Primary: em.Primary
       })
       em.id = res.data.data?.id
-    } catch (err) {
-      notifyError($q, err, 'Errore creazione email')
+    } catch (error) {
+      notifyError($q, error, 'Errore creazione email')
     }
   }
 }
@@ -290,8 +290,8 @@ async function handleSave() {
             await emailService.remove(origId)
           }
         }
-      } catch (err) {
-        notifyError($q, err, "Errore nell'aggiornamento delle email")
+      } catch (error) {
+        notifyError($q, error, "Errore nell'aggiornamento delle email")
       }
       emit('saved')
       visible.value = false

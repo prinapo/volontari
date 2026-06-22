@@ -142,13 +142,13 @@
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { version } from '../../package.json'
-import { useQuasar } from 'quasar'
-import { useAuthStore } from 'stores/auth.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
 import { authService } from 'src/services/auth.service'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
+import { version } from '../../package.json'
 
 const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 const $q = useQuasar()
@@ -181,8 +181,8 @@ async function handleForgotPassword() {
     )
     notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")
     showForgotPassword.value = false
-  } catch (err) {
-    notifyError($q, err, "Errore nell'invio della richiesta")
+  } catch (error) {
+    notifyError($q, error, "Errore nell'invio della richiesta")
   } finally {
     sendingReset.value = false
   }

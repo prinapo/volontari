@@ -214,11 +214,11 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
 import { useQuasar } from 'quasar'
+import { reactive, ref } from 'vue'
 import { submitService } from 'src/services/submit.service'
-import { notifyError, notifySuccess } from 'src/utils/notify'
 import { FILE_ACCEPT, FILE_MAX_SIZE, FOLDERS } from 'src/utils/constants'
+import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
 const formRef = ref(null)
@@ -260,7 +260,7 @@ async function handleSubmit() {
       await submitService.createSubmission({
         ...form,
         descrizione: g.descrizione,
-        importo: parseFloat(g.importo),
+        importo: Number.parseFloat(g.importo),
         data: g.data,
         allegato: allegatoId,
         stato: 'in_attesa',
@@ -271,18 +271,18 @@ async function handleSubmit() {
     notifySuccess($q, 'Grazie! I tuoi giustificativi sono stati ricevuti. Verranno verificati al più presto.')
 
     resetForm()
-  } catch (err) {
-    const status = err?.response?.status
+  } catch (error) {
+    const status = error?.response?.status
     if (status === 413) {
       notifyError($q, null, 'Il file è troppo grande. Il limite è 5MB per file.')
-    } else if (err?.message?.includes('Network Error') || !status) {
+    } else if (error?.message?.includes('Network Error') || !status) {
       notifyError($q, null, 'Errore di connessione. Controlla la rete e riprova.')
     } else if (status === 403) {
       notifyError($q, null, 'Permessi insufficienti. Contatta l\'amministratore.')
     } else if (status >= 500) {
       notifyError($q, null, 'Errore del server. Riprova più tardi.')
     } else {
-      notifyError($q, err, "Errore nell'invio. Riprova più tardi.")
+      notifyError($q, error, "Errore nell'invio. Riprova più tardi.")
     }
   } finally {
     saving.value = false

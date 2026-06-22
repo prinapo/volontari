@@ -1,5 +1,5 @@
 export function formatCurrency(value) {
-  if (value == null || isNaN(value)) return '€ 0,00'
+  if (value == null || Number.isNaN(Number(value))) return '€ 0,00'
   return new Intl.NumberFormat('it-IT', {
     style: 'currency',
     currency: 'EUR'

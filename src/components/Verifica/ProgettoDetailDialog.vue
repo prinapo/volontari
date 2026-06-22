@@ -344,9 +344,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatCurrency } from 'src/utils/formatters'
-import { statoLabel, statoColor } from 'src/utils/formatters'
 import { assetUrl } from 'src/utils/assets'
+import { formatCurrency , statoLabel, statoColor } from 'src/utils/formatters'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

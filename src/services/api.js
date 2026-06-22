@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
 import { useAuthStore } from 'src/stores/auth.store'
+import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
 
 const API_URL =
   typeof window !== 'undefined' &&
@@ -10,7 +10,7 @@ const API_URL =
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000
+  timeout: 30_000
 })
 
 function getErrorMessage(error) {
@@ -77,7 +77,7 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
       if (!refreshToken) {
         clearSessionAndRedirectToLogin()
-        return Promise.reject(error)
+        throw error;
       }
 
       try {
@@ -92,7 +92,7 @@ api.interceptors.response.use(
         return api(originalRequest)
       } catch {
         clearSessionAndRedirectToLogin()
-        return Promise.reject(error)
+        throw error
       }
     }
 
@@ -121,7 +121,7 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error)
+    throw error;
   }
 )
 

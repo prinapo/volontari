@@ -32,7 +32,7 @@ function decodeJwtPayload(token) {
   try {
     const base64Url = token.split('.')[1]
     if (!base64Url) return null
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const base64 = base64Url.replaceAll('-', '+').replaceAll('_', '/')
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
     return JSON.parse(window.atob(padded))
   } catch {
@@ -123,8 +123,8 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token)
         await this.fetchUserData()
         return true
-      } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore di login'
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore di login'
         return false
       } finally {
         this.loading = false
@@ -138,7 +138,7 @@ export const useAuthStore = defineStore('auth', {
         await this.resolveUserRole()
 
         if (!this.user?.id) return
-      } catch (err) {
+      } catch {
         this.token = null
         this.refreshToken = null
         this.user = null
@@ -154,7 +154,7 @@ export const useAuthStore = defineStore('auth', {
           this.contatto = contattoRes.data.data[0]
           await this.resolveFamiglieAccess()
         }
-      } catch (err) {
+      } catch {
         this.contatto = null
         this.hasFamiglieAccess = false
       }
@@ -173,7 +173,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const fcRes = await famiglieService.getFamiglieByVolontario(this.contatto.id_contatto)
         this.hasFamiglieAccess = (fcRes.data.data || []).length > 0
-      } catch (err) {
+      } catch {
         this.hasFamiglieAccess = false
       }
     },
@@ -240,14 +240,14 @@ export const useAuthStore = defineStore('auth', {
           const giustificativi = giustByProject[projId] || []
 
           const count = giustificativi.length
-          const totaleImporto = giustificativi.reduce((sum, g) => sum + (parseFloat(g.Importo) || 0), 0)
+          const totaleImporto = giustificativi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
 
           let statoCalcolato = 'nessuno'
           if (count > 0) {
             const stati = giustificativi.map(g => (g.Stato || '').toLowerCase())
             if (stati.every(s => s === 'verificato' || s === 'approvato')) {
               statoCalcolato = 'verificato'
-            } else if (stati.some(s => s === 'inviato')) {
+            } else if (stati.includes('inviato')) {
               statoCalcolato = 'in_attesa'
             } else if (stati.every(s => s === 'bozza' || s === '')) {
               statoCalcolato = 'bozza'
@@ -258,7 +258,7 @@ export const useAuthStore = defineStore('auth', {
 
           const statoDB = project.StatoRendicontazione || 'nessuno'
           const countDB = project.TotaleGiustificativi || 0
-          const importoDB = parseFloat(project.TotaleImporto) || 0
+          const importoDB = Number.parseFloat(project.TotaleImporto) || 0
 
           if (statoDB !== statoCalcolato || countDB !== count || Math.abs(importoDB - totaleImporto) > 0.01) {
             discrepancies.push({
@@ -275,7 +275,7 @@ export const useAuthStore = defineStore('auth', {
                 id: g.id,
                 descrizione: g.Descrizione || '',
                 stato: g.Stato || '',
-                importo: parseFloat(g.Importo) || 0
+                importo: Number.parseFloat(g.Importo) || 0
               }))
             })
           }
@@ -287,11 +287,11 @@ export const useAuthStore = defineStore('auth', {
           discrepancies,
           lastChecked: new Date().toISOString()
         }
-      } catch (err) {
+      } catch (error) {
         this.rendicontazioneCheck = {
           checked: true,
           ok: false,
-          discrepancies: [{ errore: true, messaggio: err.message }],
+          discrepancies: [{ errore: true, messaggio: error.message }],
           lastChecked: new Date().toISOString()
         }
       }

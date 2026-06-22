@@ -323,12 +323,12 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useGestioneStore } from 'stores/gestione.store'
-import { gestioneService } from 'src/services/gestione.service'
 import { emailService } from 'src/services/email.service'
+import { gestioneService } from 'src/services/gestione.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
-import FamigliaDialog from './FamigliaDialog.vue'
+import { useGestioneStore } from 'stores/gestione.store'
 import ContattiDialog from './ContattiDialog.vue'
+import FamigliaDialog from './FamigliaDialog.vue'
 
 const store = useGestioneStore()
 
