@@ -9,7 +9,7 @@ export const useErrorLogStore = defineStore('errorLog', {
   }),
 
   getters: {
-    unreadCount: (state) => state.items.filter(i => !i.read).length
+    unreadCount: state => state.items.filter(i => !i.read).length
   },
 
   actions: {

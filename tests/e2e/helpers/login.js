@@ -6,7 +6,8 @@ const ROLE_URLS = {
   genitore: /\/famiglie/,
   gestore: /\/gestione/,
   verificatore: /\/verifica/,
-  gestore_verifica: /\/gestione/
+  gestore_verifica: /\/gestione/,
+  admin: /\/gestione|\/admin/
 }
 
 /**

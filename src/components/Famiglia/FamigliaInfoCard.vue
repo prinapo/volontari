@@ -6,22 +6,20 @@
       </div>
 
       <div v-if="genitori.length > 0" class="q-mt-md q-gutter-y-sm">
-        <div class="text-caption text-grey text-uppercase">
-          Genitori
-        </div>
+        <div class="text-caption text-grey text-uppercase">Genitori</div>
         <div v-for="g in genitori" :key="g.id_contatto" class="q-py-xs">
-          <div class="text-body1">
-            {{ g.Nome }} {{ g.Cognome }}
-          </div>
+          <div class="text-body1">{{ g.Nome }} {{ g.Cognome }}</div>
           <div class="text-body2 text-grey">
             <div v-for="em in g._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
+              <a :href="'mailto:' + em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="g.Numero_di_cellulare">
               <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'tel:' + g.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ g.Numero_di_cellulare }}</a>
+              <a :href="'tel:' + g.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{
+                g.Numero_di_cellulare
+              }}</a>
             </template>
             <template v-if="g.Numero_di_telefono">
               <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
@@ -32,22 +30,20 @@
       </div>
 
       <div v-if="altriVolontari.length > 0" class="q-mt-md q-gutter-y-sm">
-        <div class="text-caption text-grey text-uppercase">
-          Altri volontari
-        </div>
+        <div class="text-caption text-grey text-uppercase">Altri volontari</div>
         <div v-for="v in altriVolontari" :key="v.id_contatto" class="q-py-xs">
-          <div class="text-body1">
-            {{ v.Nome }} {{ v.Cognome }}
-          </div>
+          <div class="text-body1">{{ v.Nome }} {{ v.Cognome }}</div>
           <div class="text-body2 text-grey">
             <div v-for="em in v._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
+              <a :href="'mailto:' + em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="v.Numero_di_cellulare">
               <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'tel:' + v.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ v.Numero_di_cellulare }}</a>
+              <a :href="'tel:' + v.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{
+                v.Numero_di_cellulare
+              }}</a>
             </template>
             <template v-if="v.Numero_di_telefono">
               <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
@@ -91,40 +87,40 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useQuasar } from 'quasar'
-import { useFamiglieStore } from 'stores/famiglie.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
-import InlineEditableField from 'components/Common/InlineEditableField.vue'
+  import { computed } from 'vue'
+  import { useQuasar } from 'quasar'
+  import { useFamiglieStore } from 'stores/famiglie.store'
+  import { notifyError, notifySuccess } from 'src/utils/notify'
+  import InlineEditableField from 'components/Common/InlineEditableField.vue'
 
-const $q = useQuasar()
-const famiglieStore = useFamiglieStore()
+  const $q = useQuasar()
+  const famiglieStore = useFamiglieStore()
 
-const genitori = computed(() => famiglieStore.genitori)
-const altriVolontari = computed(() => famiglieStore.altriVolontari)
+  const genitori = computed(() => famiglieStore.genitori)
+  const altriVolontari = computed(() => famiglieStore.altriVolontari)
 
-const props = defineProps({
-  famigliaName: { type: String, default: '' },
-  iban: { type: String, default: '' },
-  intestatarioCC: { type: String, default: '' },
-  saving: { type: Boolean, default: false }
-})
+  const props = defineProps({
+    famigliaName: { type: String, default: '' },
+    iban: { type: String, default: '' },
+    intestatarioCC: { type: String, default: '' },
+    saving: { type: Boolean, default: false }
+  })
 
-async function handleIBANSave(newIBAN) {
-  const ok = await famiglieStore.updateIBAN(newIBAN, famiglieStore.intestatarioCC)
-  if (ok) {
-    notifySuccess($q, 'IBAN aggiornato')
-  } else {
-    notifyError($q, famiglieStore.error || 'Errore aggiornamento IBAN')
+  async function handleIBANSave(newIBAN) {
+    const ok = await famiglieStore.updateIBAN(newIBAN, famiglieStore.intestatarioCC)
+    if (ok) {
+      notifySuccess($q, 'IBAN aggiornato')
+    } else {
+      notifyError($q, famiglieStore.error || 'Errore aggiornamento IBAN')
+    }
   }
-}
 
-async function handleIntestatarioSave(newIntestatario) {
-  const ok = await famiglieStore.updateIBAN(famiglieStore.iban, newIntestatario)
-  if (ok) {
-    notifySuccess($q, 'Intestatario aggiornato')
-  } else {
-    notifyError($q, famiglieStore.error || 'Errore aggiornamento intestatario')
+  async function handleIntestatarioSave(newIntestatario) {
+    const ok = await famiglieStore.updateIBAN(famiglieStore.iban, newIntestatario)
+    if (ok) {
+      notifySuccess($q, 'Intestatario aggiornato')
+    } else {
+      notifyError($q, famiglieStore.error || 'Errore aggiornamento intestatario')
+    }
   }
-}
 </script>

@@ -219,7 +219,8 @@ export const useGestioneStore = defineStore('gestione', {
           const contattoRes = await contattiService.getById(contattoId)
           const contatto = contattoRes.data.data
           if (contatto && !contatto.user_id) {
-            const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
+            const email =
+              contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
             if (!email) {
               this.error = 'Email mancante: sistema il contatto prima di associarlo come volontario'
               return false
@@ -232,7 +233,7 @@ export const useGestioneStore = defineStore('gestione', {
               const rolesRes = await usersService.getRoleByName('Volontario')
               const ruoloId = rolesRes.data.data?.[0]?.id
               if (!ruoloId) {
-                this.error = 'Ruolo Volontario non trovato in Directus. Contatta l\'amministratore.'
+                this.error = "Ruolo Volontario non trovato in Directus. Contatta l'amministratore."
                 return false
               }
               const newUserRes = await usersService.create({
@@ -263,7 +264,7 @@ export const useGestioneStore = defineStore('gestione', {
         }
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'assegnazione'
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione"
         return false
       }
     },
@@ -291,7 +292,7 @@ export const useGestioneStore = defineStore('gestione', {
         await usersService.sendInvite(email, RESET_URL)
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'invio dell\'invito'
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'invito"
         return false
       }
     },
@@ -302,7 +303,7 @@ export const useGestioneStore = defineStore('gestione', {
         await referentiService.create(volontarioId, referenteId)
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'assegnazione referente'
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione referente"
         return false
       }
     },
@@ -324,9 +325,10 @@ export const useGestioneStore = defineStore('gestione', {
         const contattoRes = await contattiService.getById(contattoId)
         const contatto = contattoRes.data.data
         if (contatto && !contatto.user_id) {
-          const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
+          const email =
+            contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
           if (!email) {
-            this.error = 'Email mancante: prima aggiungi un\'email al contatto'
+            this.error = "Email mancante: prima aggiungi un'email al contatto"
             return false
           }
           const userRes = await usersService.searchByEmail(email)
@@ -353,7 +355,7 @@ export const useGestioneStore = defineStore('gestione', {
         await contattiService.update(contattoId, { IsReferente: true })
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'impostazione referente'
+        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'impostazione referente"
         return false
       }
     },
@@ -378,10 +380,16 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         const contattoRes = await contattiService.getById(contattoId)
         const contatto = contattoRes.data.data
-        if (!contatto) { this.error = 'Contatto non trovato'; return false }
+        if (!contatto) {
+          this.error = 'Contatto non trovato'
+          return false
+        }
 
         const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
-        if (!email) { this.error = 'Email mancante'; return false }
+        if (!email) {
+          this.error = 'Email mancante'
+          return false
+        }
 
         const userRes = await usersService.searchByEmail(email)
         const existing = (userRes.data.data || [])[0]

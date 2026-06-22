@@ -3,12 +3,22 @@ import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STORAGE_KEYS, VERIFICA_ROLE_IDS, VERIFICA_ROLE_NAMES, GESTIONE_ROLE_IDS, GESTIONE_ROLE_NAMES, ADMIN_ROLE_IDS, ADMIN_ROLE_NAMES } from 'src/utils/constants'
+import {
+  STORAGE_KEYS,
+  VERIFICA_ROLE_IDS,
+  VERIFICA_ROLE_NAMES,
+  GESTIONE_ROLE_IDS,
+  GESTIONE_ROLE_NAMES,
+  ADMIN_ROLE_IDS,
+  ADMIN_ROLE_NAMES
+} from 'src/utils/constants'
 
 function normalizeRoleName(role) {
   if (!role) return ''
   const roleName = typeof role === 'string' ? role : role.name
-  return String(roleName || '').trim().toLowerCase()
+  return String(roleName || '')
+    .trim()
+    .toLowerCase()
 }
 
 function getRoleId(role) {
@@ -23,7 +33,7 @@ function decodeJwtPayload(token) {
     const base64Url = token.split('.')[1]
     if (!base64Url) return null
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = base64.padEnd(base64.length + ((4 - base64.length % 4) % 4), '=')
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
     return JSON.parse(window.atob(padded))
   } catch {
     return null
@@ -49,29 +59,34 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.token,
-    roleName: (state) => {
+    isAuthenticated: state => !!state.token,
+    roleName: state => {
       return normalizeRoleName(state.user?.role)
     },
-    hasRole: (state) => (roleName) => {
-      return normalizeRoleName(state.user?.role) === String(roleName || '').trim().toLowerCase()
+    hasRole: state => roleName => {
+      return (
+        normalizeRoleName(state.user?.role) ===
+        String(roleName || '')
+          .trim()
+          .toLowerCase()
+      )
     },
-    canVerifica: (state) => {
+    canVerifica: state => {
       const roleName = normalizeRoleName(state.user?.role)
       const roleId = getRoleId(state.user?.role)
       return VERIFICA_ROLE_NAMES.includes(roleName) || VERIFICA_ROLE_IDS.includes(roleId)
     },
-    canGestione: (state) => {
+    canGestione: state => {
       const roleName = normalizeRoleName(state.user?.role)
       const roleId = getRoleId(state.user?.role)
       return GESTIONE_ROLE_NAMES.includes(roleName) || GESTIONE_ROLE_IDS.includes(roleId)
     },
-    canAdmin: (state) => {
+    canAdmin: state => {
       const roleName = normalizeRoleName(state.user?.role)
       const roleId = getRoleId(state.user?.role)
       return ADMIN_ROLE_NAMES.includes(roleName) || ADMIN_ROLE_IDS.includes(roleId)
     },
-    userName: (state) => {
+    userName: state => {
       if (state.contatto) {
         return `${state.contatto.Nome} ${state.contatto.Cognome}`
       }
@@ -80,8 +95,8 @@ export const useAuthStore = defineStore('auth', {
       }
       return ''
     },
-    userId: (state) => state.user?.id,
-    contattoId: (state) => state.contatto?.id_contatto
+    userId: state => state.user?.id,
+    contattoId: state => state.contatto?.id_contatto
   },
 
   actions: {
@@ -198,7 +213,10 @@ export const useAuthStore = defineStore('auth', {
         const progettoIds = projects.map(p => p.id_progetto).filter(Boolean)
         if (progettoIds.length === 0) {
           this.rendicontazioneCheck = {
-            checked: true, ok: true, discrepancies: [], lastChecked: new Date().toISOString()
+            checked: true,
+            ok: true,
+            discrepancies: [],
+            lastChecked: new Date().toISOString()
           }
           return
         }
@@ -222,9 +240,7 @@ export const useAuthStore = defineStore('auth', {
           const giustificativi = giustByProject[projId] || []
 
           const count = giustificativi.length
-          const totaleImporto = giustificativi.reduce(
-            (sum, g) => sum + (parseFloat(g.Importo) || 0), 0
-          )
+          const totaleImporto = giustificativi.reduce((sum, g) => sum + (parseFloat(g.Importo) || 0), 0)
 
           let statoCalcolato = 'nessuno'
           if (count > 0) {

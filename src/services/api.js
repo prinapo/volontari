@@ -2,10 +2,11 @@ import axios from 'axios'
 import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
 import { useAuthStore } from 'src/stores/auth.store'
 
-const API_URL = (
+const API_URL =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-) ? 'http://localhost:8055' : ENV_API_URL
+    ? 'http://localhost:8055'
+    : ENV_API_URL
 
 const api = axios.create({
   baseURL: API_URL,
@@ -52,7 +53,7 @@ function isInvalidTokenError(error) {
   )
 }
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(config => {
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -65,8 +66,8 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config
     const isAuthRequest = originalRequest?.url?.includes('/auth/')
 
@@ -111,7 +112,7 @@ api.interceptors.response.use(
             method: error.config.method?.toUpperCase() || '',
             url: (error.config.baseURL || '') + (error.config.url || ''),
             status,
-            responseBody: JSON.stringify(error.response.data).slice(0, 5000),
+            responseBody: JSON.stringify(error.response.data).slice(0, 100000),
             userAgent: navigator.userAgent?.slice(0, 255) || ''
           })
         } catch {

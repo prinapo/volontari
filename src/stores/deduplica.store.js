@@ -11,11 +11,9 @@ export const useDeduplicaStore = defineStore('deduplica', {
   }),
 
   getters: {
-    totalDuplicates: (state) => state.duplicateGroups.length,
-    totalContattiCoinvolti: (state) =>
-      state.duplicateGroups.reduce((sum, g) => sum + g.contattiIds.length, 0),
-    totalIdDuplicates: (state) =>
-      state.idDuplicateGroups.reduce((sum, g) => sum + g.count - 1, 0)
+    totalDuplicates: state => state.duplicateGroups.length,
+    totalContattiCoinvolti: state => state.duplicateGroups.reduce((sum, g) => sum + g.contattiIds.length, 0),
+    totalIdDuplicates: state => state.idDuplicateGroups.reduce((sum, g) => sum + g.count - 1, 0)
   },
 
   actions: {
@@ -101,7 +99,7 @@ export const useDeduplicaStore = defineStore('deduplica', {
 
         this.duplicateGroups = result
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nel caricamento dei duplicati"
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei duplicati'
       } finally {
         this.loading = false
       }
@@ -158,9 +156,7 @@ export const useDeduplicaStore = defineStore('deduplica', {
         }
 
         const emailRes = await deduplicaService.getAllEmails()
-        const bEmails = (emailRes.data.data || []).filter(
-          e => e.Contatto_Relation === contattoBId
-        )
+        const bEmails = (emailRes.data.data || []).filter(e => e.Contatto_Relation === contattoBId)
         for (const email of bEmails) {
           await deduplicaService.updateEmail(email.id, { Contatto_Relation: contattoAId })
         }
@@ -190,7 +186,7 @@ export const useDeduplicaStore = defineStore('deduplica', {
       try {
         const fcRes = await deduplicaService.getFamiglieByContatto(contattoId)
         if ((fcRes.data.data || []).length > 0) {
-          throw new Error("Contatto ha ancora famiglie assegnate")
+          throw new Error('Contatto ha ancora famiglie assegnate')
         }
         await deduplicaService.deleteContatto(contattoId)
         await this.fetchDuplicates()

@@ -6,14 +6,7 @@
           {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
         </div>
         <q-space />
-        <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+        <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -61,14 +54,16 @@
             />
           </div>
 
-          <q-toggle v-model="form.IsReferente" label="Referente" data-testid="contatto-referente" class="q-mb-md" dense />
+          <q-toggle
+            v-model="form.IsReferente"
+            label="Referente"
+            data-testid="contatto-referente"
+            class="q-mb-md"
+            dense
+          />
 
-          <div class="text-subtitle2 q-mb-sm">
-            Email
-          </div>
-          <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">
-            Nessuna email associata
-          </div>
+          <div class="text-subtitle2 q-mb-sm">Email</div>
+          <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">Nessuna email associata</div>
           <div v-for="(em, idx) in emails" :key="idx" class="row items-center q-gutter-xs q-mb-xs">
             <q-input
               v-model="em.email_address"
@@ -140,180 +135,187 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useQuasar } from 'quasar'
-import { useGestioneStore } from 'stores/gestione.store'
-import { emailService } from 'src/services/email.service'
-import { notifyError } from 'src/utils/notify'
+  import { ref, computed, watch } from 'vue'
+  import { useQuasar } from 'quasar'
+  import { useGestioneStore } from 'stores/gestione.store'
+  import { emailService } from 'src/services/email.service'
+  import { notifyError } from 'src/utils/notify'
 
-function generateContattoId() {
-  const ts = Date.now()
-  const rand = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
-  return Number(ts + rand)
-}
-
-const props = defineProps({
-  modelValue: Boolean,
-  editItem: { type: Object, default: null },
-  initialData: { type: Object, default: null }
-})
-
-const emit = defineEmits(['update:modelValue', 'saved'])
-
-const $q = useQuasar()
-const store = useGestioneStore()
-
-const visible = ref(false)
-const emails = ref([])
-const originalEmailIds = ref([])
-
-const form = ref({
-  Nome: '',
-  Cognome: '',
-  Numero_di_cellulare: '',
-  Numero_di_telefono: '',
-  IsReferente: false
-})
-
-const isEdit = computed(() => !!props.editItem)
-const hasAccount = computed(() => !!props.editItem?.user_id)
-
-watch(() => props.modelValue, async (val) => {
-  visible.value = val
-  if (val && props.editItem) {
-    form.value.Nome = props.editItem.Nome || ''
-    form.value.Cognome = props.editItem.Cognome || ''
-    form.value.Numero_di_cellulare = props.editItem.Numero_di_cellulare || ''
-    form.value.Numero_di_telefono = props.editItem.Numero_di_telefono || ''
-    form.value.IsReferente = props.editItem.IsReferente || false
-    await loadEmails(props.editItem.id_contatto)
-  } else if (val && props.initialData) {
-    form.value.Nome = props.initialData.Nome || ''
-    form.value.Cognome = props.initialData.Cognome || ''
-    form.value.Numero_di_cellulare = props.initialData.Numero_di_cellulare || ''
-    form.value.Numero_di_telefono = props.initialData.Numero_di_telefono || ''
-    emails.value = props.initialData.Email
-      ? [{ email_address: props.initialData.Email, Primary: true }]
-      : []
-  } else if (val) {
-    form.value.Nome = ''
-    form.value.Cognome = ''
-    form.value.Numero_di_cellulare = ''
-    form.value.Numero_di_telefono = ''
-    emails.value = []
+  function generateContattoId() {
+    const ts = Date.now()
+    const rand = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+    return Number(ts + rand)
   }
-})
 
-async function loadEmails(contattoId) {
-  if (!contattoId) { emails.value = []; originalEmailIds.value = []; return }
-  try {
-    const res = await emailService.getAllByContatto(contattoId)
-    emails.value = (res.data.data || []).map(e => ({
-      id: e.id,
-      email_address: e.email_address || '',
-      Primary: e.Primary || false
-    }))
-    originalEmailIds.value = emails.value.map(e => e.id).filter(Boolean)
-  } catch {
-    emails.value = []
-    originalEmailIds.value = []
-  }
-}
+  const props = defineProps({
+    modelValue: Boolean,
+    editItem: { type: Object, default: null },
+    initialData: { type: Object, default: null }
+  })
 
-function addEmail() {
-  emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0 })
-}
+  const emit = defineEmits(['update:modelValue', 'saved'])
 
-function removeEmail(idx) {
-  emails.value.splice(idx, 1)
-  if (emails.value.length > 0 && !emails.value.some(e => e.Primary)) {
-    emails.value[0].Primary = true
-  }
-}
+  const $q = useQuasar()
+  const store = useGestioneStore()
 
-function setPrimary(idx) {
-  emails.value.forEach((e, i) => { e.Primary = i === idx })
-}
+  const visible = ref(false)
+  const emails = ref([])
+  const originalEmailIds = ref([])
 
-async function onEmailBlur(em, _idx) {
-  if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
-  if (em.id) {
-    try {
-      await emailService.update(em.id, { email_address: em.email_address })
-    } catch (err) {
-      notifyError($q, err, "Errore nell'aggiornamento dell'email")
-    }
-  } else {
-    try {
-      const res = await emailService.create({
-        email_address: em.email_address,
-        Contatto_Relation: props.editItem.id_contatto,
-        Primary: em.Primary
-      })
-      em.id = res.data.data?.id
-    } catch (err) {
-      notifyError($q, err, 'Errore creazione email')
-    }
-  }
-}
+  const form = ref({
+    Nome: '',
+    Cognome: '',
+    Numero_di_cellulare: '',
+    Numero_di_telefono: '',
+    IsReferente: false
+  })
 
-watch(visible, (val) => {
-  if (!val) emit('update:modelValue', false)
-})
+  const isEdit = computed(() => !!props.editItem)
+  const hasAccount = computed(() => !!props.editItem?.user_id)
 
-async function handleSave() {
-  if (!form.value.Nome || !form.value.Cognome) return
-
-  if (isEdit.value) {
-    const ok = await store.updateContatto(props.editItem.id_contatto, {
-      Nome: form.value.Nome,
-      Cognome: form.value.Cognome,
-      Numero_di_cellulare: form.value.Numero_di_cellulare || null,
-      Numero_di_telefono: form.value.Numero_di_telefono || null,
-      IsReferente: form.value.IsReferente
-    })
-    if (ok) {
-      try {
-        for (const em of emails.value) {
-          if (em.id && em.email_address) {
-            await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
-          } else if (!em.id && em.email_address) {
-            await emailService.create({
-              email_address: em.email_address,
-              Contatto_Relation: props.editItem.id_contatto,
-              Primary: em.Primary
-            })
-          }
-        }
-        for (const origId of originalEmailIds.value) {
-          if (!emails.value.some(e => e.id === origId)) {
-            await emailService.remove(origId)
-          }
-        }
-      } catch (err) {
-        notifyError($q, err, "Errore nell'aggiornamento delle email")
+  watch(
+    () => props.modelValue,
+    async val => {
+      visible.value = val
+      if (val && props.editItem) {
+        form.value.Nome = props.editItem.Nome || ''
+        form.value.Cognome = props.editItem.Cognome || ''
+        form.value.Numero_di_cellulare = props.editItem.Numero_di_cellulare || ''
+        form.value.Numero_di_telefono = props.editItem.Numero_di_telefono || ''
+        form.value.IsReferente = props.editItem.IsReferente || false
+        await loadEmails(props.editItem.id_contatto)
+      } else if (val && props.initialData) {
+        form.value.Nome = props.initialData.Nome || ''
+        form.value.Cognome = props.initialData.Cognome || ''
+        form.value.Numero_di_cellulare = props.initialData.Numero_di_cellulare || ''
+        form.value.Numero_di_telefono = props.initialData.Numero_di_telefono || ''
+        emails.value = props.initialData.Email ? [{ email_address: props.initialData.Email, Primary: true }] : []
+      } else if (val) {
+        form.value.Nome = ''
+        form.value.Cognome = ''
+        form.value.Numero_di_cellulare = ''
+        form.value.Numero_di_telefono = ''
+        emails.value = []
       }
-      emit('saved')
-      visible.value = false
-    } else {
-      notifyError($q, store.error || 'Errore nella modifica')
     }
-  } else {
-    const contattoId = await store.createGenitore({
-      id_contatto: generateContattoId(),
-      Nome: form.value.Nome,
-      Cognome: form.value.Cognome,
-      Email: emails.value[0]?.email_address || '',
-      Numero_di_cellulare: form.value.Numero_di_cellulare,
-      Numero_di_telefono: form.value.Numero_di_telefono,
-      IsReferente: form.value.IsReferente
-    })
-    if (contattoId) {
-      emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
-      visible.value = false
-    } else {
-      notifyError($q, store.error || 'Errore nella creazione')
+  )
+
+  async function loadEmails(contattoId) {
+    if (!contattoId) {
+      emails.value = []
+      originalEmailIds.value = []
+      return
+    }
+    try {
+      const res = await emailService.getAllByContatto(contattoId)
+      emails.value = (res.data.data || []).map(e => ({
+        id: e.id,
+        email_address: e.email_address || '',
+        Primary: e.Primary || false
+      }))
+      originalEmailIds.value = emails.value.map(e => e.id).filter(Boolean)
+    } catch {
+      emails.value = []
+      originalEmailIds.value = []
     }
   }
-}
+
+  function addEmail() {
+    emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0 })
+  }
+
+  function removeEmail(idx) {
+    emails.value.splice(idx, 1)
+    if (emails.value.length > 0 && !emails.value.some(e => e.Primary)) {
+      emails.value[0].Primary = true
+    }
+  }
+
+  function setPrimary(idx) {
+    emails.value.forEach((e, i) => {
+      e.Primary = i === idx
+    })
+  }
+
+  async function onEmailBlur(em, _idx) {
+    if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
+    if (em.id) {
+      try {
+        await emailService.update(em.id, { email_address: em.email_address })
+      } catch (err) {
+        notifyError($q, err, "Errore nell'aggiornamento dell'email")
+      }
+    } else {
+      try {
+        const res = await emailService.create({
+          email_address: em.email_address,
+          Contatto_Relation: props.editItem.id_contatto,
+          Primary: em.Primary
+        })
+        em.id = res.data.data?.id
+      } catch (err) {
+        notifyError($q, err, 'Errore creazione email')
+      }
+    }
+  }
+
+  watch(visible, val => {
+    if (!val) emit('update:modelValue', false)
+  })
+
+  async function handleSave() {
+    if (!form.value.Nome || !form.value.Cognome) return
+
+    if (isEdit.value) {
+      const ok = await store.updateContatto(props.editItem.id_contatto, {
+        Nome: form.value.Nome,
+        Cognome: form.value.Cognome,
+        Numero_di_cellulare: form.value.Numero_di_cellulare || null,
+        Numero_di_telefono: form.value.Numero_di_telefono || null,
+        IsReferente: form.value.IsReferente
+      })
+      if (ok) {
+        try {
+          for (const em of emails.value) {
+            if (em.id && em.email_address) {
+              await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
+            } else if (!em.id && em.email_address) {
+              await emailService.create({
+                email_address: em.email_address,
+                Contatto_Relation: props.editItem.id_contatto,
+                Primary: em.Primary
+              })
+            }
+          }
+          for (const origId of originalEmailIds.value) {
+            if (!emails.value.some(e => e.id === origId)) {
+              await emailService.remove(origId)
+            }
+          }
+        } catch (err) {
+          notifyError($q, err, "Errore nell'aggiornamento delle email")
+        }
+        emit('saved')
+        visible.value = false
+      } else {
+        notifyError($q, store.error || 'Errore nella modifica')
+      }
+    } else {
+      const contattoId = await store.createGenitore({
+        id_contatto: generateContattoId(),
+        Nome: form.value.Nome,
+        Cognome: form.value.Cognome,
+        Email: emails.value[0]?.email_address || '',
+        Numero_di_cellulare: form.value.Numero_di_cellulare,
+        Numero_di_telefono: form.value.Numero_di_telefono,
+        IsReferente: form.value.IsReferente
+      })
+      if (contattoId) {
+        emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
+        visible.value = false
+      } else {
+        notifyError($q, store.error || 'Errore nella creazione')
+      }
+    }
+  }
 </script>

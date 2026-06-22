@@ -2,9 +2,7 @@
   <q-page class="q-pa-md riconciliazione-page">
     <div class="page-inner">
       <div class="row items-center q-gutter-sm q-mb-md">
-        <div class="text-h5 text-weight-medium">
-          Da riconciliare
-        </div>
+        <div class="text-h5 text-weight-medium">Da riconciliare</div>
         <q-space />
         <q-toggle
           v-model="store.includeScartati"
@@ -43,7 +41,10 @@
               dense
               dense-toggle
               expand-separator
-              :label="`${props.row.nome_richiedente || ''} ${props.row.cognome_richiedente || ''}` || 'Richiedente sconosciuto'"
+              :label="
+                `${props.row.nome_richiedente || ''} ${props.row.cognome_richiedente || ''}` ||
+                'Richiedente sconosciuto'
+              "
               :caption="props.row.email || ''"
               :header-style="{
                 borderRadius: '12px',
@@ -61,42 +62,35 @@
                     <q-badge v-if="props.row.stato_submission === 'scartato'" color="grey-6" class="q-px-sm q-py-xs">
                       Scartato
                     </q-badge>
-                    <q-badge v-else color="positive" class="q-px-sm q-py-xs">
-                      In attesa
-                    </q-badge>
+                    <q-badge v-else color="positive" class="q-px-sm q-py-xs"> In attesa </q-badge>
                   </div>
                   <q-separator class="q-mb-sm" />
                   <div class="row q-col-gutter-sm">
                     <div class="col-12">
-                      <div class="text-caption text-grey-7">
-                        Descrizione
-                      </div>
-                      <div class="text-caption" style="white-space: pre-wrap; word-break: break-word;">
+                      <div class="text-caption text-grey-7">Descrizione</div>
+                      <div class="text-caption" style="white-space: pre-wrap; word-break: break-word">
                         {{ props.row.descrizione || '—' }}
                       </div>
                     </div>
                     <div class="col-6">
-                      <div class="text-caption text-grey-7">
-                        Data invio
-                      </div>
+                      <div class="text-caption text-grey-7">Data invio</div>
                       <div>{{ formatDate(props.row.data_invio) || '—' }}</div>
                     </div>
                     <div class="col-6">
-                      <div class="text-caption text-grey-7">
-                        Importo
-                      </div>
+                      <div class="text-caption text-grey-7">Importo</div>
                       <div>{{ formatCurrency(props.row.importo) }}</div>
                     </div>
                     <div class="col-6">
-                      <div class="text-caption text-grey-7">
-                        Telefono
+                      <div class="text-caption text-grey-7">Telefono</div>
+                      <div>
+                        <a v-if="props.row.telefono" :href="'tel:' + props.row.telefono" class="text-primary">{{
+                          props.row.telefono
+                        }}</a
+                        ><span v-else class="text-grey-5">—</span>
                       </div>
-                      <div><a v-if="props.row.telefono" :href="'tel:'+props.row.telefono" class="text-primary">{{ props.row.telefono }}</a><span v-else class="text-grey-5">—</span></div>
                     </div>
                     <div class="col-6">
-                      <div class="text-caption text-grey-7">
-                        Allegato
-                      </div>
+                      <div class="text-caption text-grey-7">Allegato</div>
                       <q-btn
                         v-if="props.row.allegato"
                         :href="assetUrl(props.row.allegato)"
@@ -115,9 +109,7 @@
                     </div>
                   </div>
                   <q-separator class="q-my-md" />
-                  <div class="text-caption text-grey-7 q-mb-xs">
-                    Stato contatto
-                  </div>
+                  <div class="text-caption text-grey-7 q-mb-xs">Stato contatto</div>
                   <div class="q-mb-sm">
                     <q-badge v-if="props.row._detectState === 'linked'" color="positive" class="q-px-sm q-py-xs">
                       <q-icon name="check_circle" size="sm" class="q-mr-xs" />Contatto verificato
@@ -125,10 +117,18 @@
                     <q-badge v-else-if="props.row._detectState === 'not_parent'" color="accent" class="q-px-sm q-py-xs">
                       <q-icon name="group_add" size="sm" class="q-mr-xs" />Non è genitore
                     </q-badge>
-                    <q-badge v-else-if="props.row._detectState === 'not_linked'" color="warning" class="q-px-sm q-py-xs text-dark">
+                    <q-badge
+                      v-else-if="props.row._detectState === 'not_linked'"
+                      color="warning"
+                      class="q-px-sm q-py-xs text-dark"
+                    >
                       <q-icon name="link_off" size="sm" class="q-mr-xs" />Contatto senza famiglia
                     </q-badge>
-                    <q-badge v-else-if="props.row._detectState === 'not_found'" color="negative" class="q-px-sm q-py-xs">
+                    <q-badge
+                      v-else-if="props.row._detectState === 'not_found'"
+                      color="negative"
+                      class="q-px-sm q-py-xs"
+                    >
                       <q-icon name="person_off" size="sm" class="q-mr-xs" />Contatto da creare
                     </q-badge>
                     <q-badge v-else color="grey" class="q-px-sm q-py-xs">
@@ -138,7 +138,13 @@
 
                   <div v-if="props.row._detectState === 'not_found'" class="q-mb-sm">
                     <div class="row items-center q-gutter-xs">
-                      <q-input :model-value="props.row.email" outlined dense class="col" @update:model-value="(val) => props.row.email = val" />
+                      <q-input
+                        :model-value="props.row.email"
+                        outlined
+                        dense
+                        class="col"
+                        @update:model-value="val => (props.row.email = val)"
+                      />
                       <q-btn
                         flat
                         round
@@ -213,16 +219,7 @@
                       >
                         Crea contatto
                       </q-btn>
-                      <q-btn
-                        v-else
-                        flat
-                        icon="fact_check"
-                        color="grey"
-                        size="md"
-                        disabled
-                      >
-                        Verifica
-                      </q-btn>
+                      <q-btn v-else flat icon="fact_check" color="grey" size="md" disabled> Verifica </q-btn>
                       <q-btn
                         flat
                         icon="delete"
@@ -269,46 +266,26 @@
 
         <template #body-cell-stato_submission="props">
           <q-td :props="props">
-            <q-badge v-if="props.value === 'scartato'" color="grey-6" class="q-px-sm q-py-xs">
-              Scartato
-            </q-badge>
-            <q-badge v-else color="positive" class="q-px-sm q-py-xs">
-              In attesa
-            </q-badge>
+            <q-badge v-if="props.value === 'scartato'" color="grey-6" class="q-px-sm q-py-xs"> Scartato </q-badge>
+            <q-badge v-else color="positive" class="q-px-sm q-py-xs"> In attesa </q-badge>
           </q-td>
         </template>
 
         <template #body-cell-stato="props">
           <q-td :props="props">
-            <q-badge
-              v-if="props.value === 'linked'"
-              color="positive"
-              class="q-px-sm q-py-xs"
-            >
+            <q-badge v-if="props.value === 'linked'" color="positive" class="q-px-sm q-py-xs">
               <q-icon name="check_circle" size="sm" class="q-mr-xs" />
               Contatto verificato
             </q-badge>
-            <q-badge
-              v-else-if="props.value === 'not_parent'"
-              color="accent"
-              class="q-px-sm q-py-xs"
-            >
+            <q-badge v-else-if="props.value === 'not_parent'" color="accent" class="q-px-sm q-py-xs">
               <q-icon name="group_add" size="sm" class="q-mr-xs" />
               Non è genitore
             </q-badge>
-            <q-badge
-              v-else-if="props.value === 'not_linked'"
-              color="warning"
-              class="q-px-sm q-py-xs text-dark"
-            >
+            <q-badge v-else-if="props.value === 'not_linked'" color="warning" class="q-px-sm q-py-xs text-dark">
               <q-icon name="link_off" size="sm" class="q-mr-xs" />
               Contatto senza famiglia
             </q-badge>
-            <q-badge
-              v-else-if="props.value === 'not_found'"
-              color="negative"
-              class="q-px-sm q-py-xs"
-            >
+            <q-badge v-else-if="props.value === 'not_found'" color="negative" class="q-px-sm q-py-xs">
               <q-icon name="person_off" size="sm" class="q-mr-xs" />
               Contatto da creare
             </q-badge>
@@ -345,14 +322,14 @@
               </div>
             </template>
             <template v-else>
-              <a :href="'mailto:'+props.value" class="text-primary">{{ props.value }}</a>
+              <a :href="'mailto:' + props.value" class="text-primary">{{ props.value }}</a>
             </template>
           </q-td>
         </template>
 
         <template #body-cell-descrizione="props">
           <q-td :props="props">
-            <div class="row items-center no-wrap" style="max-width: 220px;">
+            <div class="row items-center no-wrap" style="max-width: 220px">
               <span class="text-caption ellipsis">{{ props.value || '—' }}</span>
               <q-btn
                 v-if="props.value?.length > 40"
@@ -371,7 +348,8 @@
 
         <template #body-cell-telefono="props">
           <q-td :props="props">
-            <a v-if="props.value" :href="'tel:'+props.value" class="text-primary">{{ props.value }}</a><span v-else class="text-grey-5">—</span>
+            <a v-if="props.value" :href="'tel:' + props.value" class="text-primary">{{ props.value }}</a
+            ><span v-else class="text-grey-5">—</span>
           </q-td>
         </template>
 
@@ -441,14 +419,7 @@
                 >
                   <q-tooltip>Crea contatto</q-tooltip>
                 </q-btn>
-                <q-btn
-                  v-else
-                  flat
-                  icon="fact_check"
-                  color="grey"
-                  size="md"
-                  disabled
-                >
+                <q-btn v-else flat icon="fact_check" color="grey" size="md" disabled>
                   <q-tooltip>Verifica in corso</q-tooltip>
                 </q-btn>
                 <q-btn
@@ -468,11 +439,7 @@
       </q-table>
 
       <!-- RiconciliaDialog: il componente ha già il proprio <q-dialog> -->
-      <RiconciliaDialog
-        v-model="riconciliaDialog"
-        :submission="reconcilingSubmission"
-        @reconcile="handleRiconcilia"
-      />
+      <RiconciliaDialog v-model="riconciliaDialog" :submission="reconcilingSubmission" @reconcile="handleRiconcilia" />
 
       <!-- ContattoDialog: 🔴 not_found -->
       <ContattoDialog
@@ -482,23 +449,17 @@
       />
 
       <!-- AssegnaFamigliaDialog: 🟠 not_linked -->
-      <AssegnaFamigliaDialog
-        v-model="assegnaDialogVisible"
-        :contatto="assegnaContatto"
-        ruolo="Genitore"
-      />
+      <AssegnaFamigliaDialog v-model="assegnaDialogVisible" :contatto="assegnaContatto" ruolo="Genitore" />
 
       <!-- Dialog descrizione completa -->
       <q-dialog v-model="descrizioneDialog.visible">
         <q-card style="width: 100%; max-width: 500px; min-width: unset">
           <q-card-section class="row items-center">
-            <div class="text-h6">
-              Descrizione
-            </div>
+            <div class="text-h6">Descrizione</div>
             <q-space />
             <q-btn v-close-popup icon="close" flat round dense />
           </q-card-section>
-          <q-card-section class="q-pt-none text-body2" style="white-space: pre-wrap;">
+          <q-card-section class="q-pt-none text-body2" style="white-space: pre-wrap">
             {{ descrizioneDialog.text }}
           </q-card-section>
           <q-card-actions align="right">
@@ -511,199 +472,203 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
-import { useQuasar } from 'quasar'
-import { useVerificaStore } from 'stores/verifica.store'
-import { useGestioneStore } from 'stores/gestione.store'
-import { notifyError, notifySuccess } from 'src/utils/notify'
-import RiconciliaDialog from 'components/RiconciliaDialog.vue'
-import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
-import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
-import { formatCurrency, formatDate } from 'src/utils/formatters'
-import { assetUrl } from 'src/utils/assets'
-import { verificaService } from 'src/services/verifica.service'
+  import { onMounted, ref, computed, watch } from 'vue'
+  import { useQuasar } from 'quasar'
+  import { useVerificaStore } from 'stores/verifica.store'
+  import { useGestioneStore } from 'stores/gestione.store'
+  import { notifyError, notifySuccess } from 'src/utils/notify'
+  import RiconciliaDialog from 'components/RiconciliaDialog.vue'
+  import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
+  import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
+  import { formatCurrency, formatDate } from 'src/utils/formatters'
+  import { assetUrl } from 'src/utils/assets'
+  import { verificaService } from 'src/services/verifica.service'
 
-const $q = useQuasar()
-const store = useVerificaStore()
-const gestioneStore = useGestioneStore()
+  const $q = useQuasar()
+  const store = useVerificaStore()
+  const gestioneStore = useGestioneStore()
 
-const riconciliaDialog = ref(false)
-const reconcilingSubmission = ref(null)
+  const riconciliaDialog = ref(false)
+  const reconcilingSubmission = ref(null)
 
-const descrizioneDialog = ref({ visible: false, text: '' })
-function showDescrizioneDialog(text) {
-  descrizioneDialog.value = { visible: true, text }
-}
-
-const contattoDialogVisible = ref(false)
-const submissionForContatto = ref(null)
-const contattoInitialData = computed(() => {
-  const s = submissionForContatto.value
-  if (!s) return null
-  return {
-    Nome: s.nome_richiedente || '',
-    Cognome: s.cognome_richiedente || '',
-    Email: s.email || '',
-    Numero_di_cellulare: s.telefono || ''
+  const descrizioneDialog = ref({ visible: false, text: '' })
+  function showDescrizioneDialog(text) {
+    descrizioneDialog.value = { visible: true, text }
   }
-})
 
-const assegnaDialogVisible = ref(false)
-const assegnaContatto = ref(null)
-
-const pagination = ref({
-  page: 1,
-  rowsPerPage: 25,
-  rowsNumber: 0
-})
-
-const submissionColumns = [
-  { name: 'data_invio', label: 'Data invio', field: 'data_invio', align: 'left', sortable: true },
-  { name: 'richiedente', label: 'Richiedente', field: row => `${row.nome_richiedente || ''} ${row.cognome_richiedente || ''}`, align: 'left' },
-  { name: 'email', label: 'Email', field: 'email', align: 'left' },
-  { name: 'descrizione', label: 'Descrizione', field: 'descrizione', align: 'left' },
-  { name: 'telefono', label: 'Telefono', field: 'telefono', align: 'left' },
-  { name: 'stato', label: 'Stato email', field: '_detectState', align: 'left' },
-  { name: 'beneficiario', label: 'Beneficiario', field: row => `${row.nome_beneficiario || ''} ${row.cognome_beneficiario || ''}`, align: 'left' },
-  { name: 'importo', label: 'Importo', field: 'importo', align: 'right' },
-  { name: 'stato_submission', label: 'Stato', field: 'stato', align: 'left' },
-  { name: 'allegato', label: 'Allegato', field: 'allegato', align: 'left' },
-  { name: 'actions', label: '', field: 'id', align: 'right' }
-]
-
-onMounted(() => {
-  loadData()
-})
-
-async function loadData() {
-  await store.fetchSubmissions({
-    page: pagination.value.page,
-    limit: pagination.value.rowsPerPage
-  })
-  pagination.value.rowsNumber = store.submissionsTotalCount
-}
-
-async function onRequest(props) {
-  const { page, rowsPerPage } = props.pagination
-  pagination.value.page = page
-  if (rowsPerPage) pagination.value.rowsPerPage = rowsPerPage
-  await loadData()
-}
-
-function onToggleScartati(_val) {
-  pagination.value.page = 1
-  loadData()
-}
-
-function openRiconcilia(submission) {
-  reconcilingSubmission.value = submission
-  riconciliaDialog.value = true
-}
-
-function openCreaContatto(submission) {
-  submissionForContatto.value = submission
-  contattoDialogVisible.value = true
-}
-
-function openAssociaFamiglia(submission) {
-  assegnaContatto.value = submission._foundContatto
-  assegnaDialogVisible.value = true
-}
-
-async function handleAssociaGenitore(submission) {
-  try {
-    await gestioneStore.assignToFamiglia(
-      submission._foundContatto.id_contatto,
-      submission._famigliaId,
-      'Genitore'
-    )
-    notifySuccess($q, 'Contatto associato come genitore')
-    loadData()
-  } catch (err) {
-    notifyError($q, err, "Errore nell'associazione")
-  }
-}
-
-async function handleEmailEdit(submission) {
-  if (!submission.email) return
-  try {
-    await verificaService.updateSubmission(submission.id, { email: submission.email })
-  } catch (err) {
-    notifyError($q, err, 'Errore nel salvataggio email')
-  }
-  loadData()
-}
-
-async function handleRiconcilia(payload) {
-  try {
-    await store.reconcileSubmission(payload)
-    notifySuccess($q, 'Giustificativo creato e riconciliato')
-    riconciliaDialog.value = false
-    reconcilingSubmission.value = null
-  } catch (err) {
-    notifyError($q, err, 'Errore nella riconciliazione')
-  }
-}
-
-function handleContattoCreated() {
-  contattoDialogVisible.value = false
-  submissionForContatto.value = null
-  loadData()
-}
-
-watch(assegnaDialogVisible, (val) => {
-  if (!val) {
-    assegnaContatto.value = null
-    loadData()
-  }
-})
-
-function handleScarta(submission) {
-  $q.dialog({
-    title: 'Scarta submission',
-    message: 'Motivo dello scarto:',
-    prompt: { model: '', type: 'text' },
-    cancel: true,
-    persistent: true
-  }).onOk(async (note) => {
-    if (!note) {
-      $q.notify({ type: 'warning', message: 'Inserisci una motivazione' })
-      return
+  const contattoDialogVisible = ref(false)
+  const submissionForContatto = ref(null)
+  const contattoInitialData = computed(() => {
+    const s = submissionForContatto.value
+    if (!s) return null
+    return {
+      Nome: s.nome_richiedente || '',
+      Cognome: s.cognome_richiedente || '',
+      Email: s.email || '',
+      Numero_di_cellulare: s.telefono || ''
     }
+  })
+
+  const assegnaDialogVisible = ref(false)
+  const assegnaContatto = ref(null)
+
+  const pagination = ref({
+    page: 1,
+    rowsPerPage: 25,
+    rowsNumber: 0
+  })
+
+  const submissionColumns = [
+    { name: 'data_invio', label: 'Data invio', field: 'data_invio', align: 'left', sortable: true },
+    {
+      name: 'richiedente',
+      label: 'Richiedente',
+      field: row => `${row.nome_richiedente || ''} ${row.cognome_richiedente || ''}`,
+      align: 'left'
+    },
+    { name: 'email', label: 'Email', field: 'email', align: 'left' },
+    { name: 'descrizione', label: 'Descrizione', field: 'descrizione', align: 'left' },
+    { name: 'telefono', label: 'Telefono', field: 'telefono', align: 'left' },
+    { name: 'stato', label: 'Stato email', field: '_detectState', align: 'left' },
+    {
+      name: 'beneficiario',
+      label: 'Beneficiario',
+      field: row => `${row.nome_beneficiario || ''} ${row.cognome_beneficiario || ''}`,
+      align: 'left'
+    },
+    { name: 'importo', label: 'Importo', field: 'importo', align: 'right' },
+    { name: 'stato_submission', label: 'Stato', field: 'stato', align: 'left' },
+    { name: 'allegato', label: 'Allegato', field: 'allegato', align: 'left' },
+    { name: 'actions', label: '', field: 'id', align: 'right' }
+  ]
+
+  onMounted(() => {
+    loadData()
+  })
+
+  async function loadData() {
+    await store.fetchSubmissions({
+      page: pagination.value.page,
+      limit: pagination.value.rowsPerPage
+    })
+    pagination.value.rowsNumber = store.submissionsTotalCount
+  }
+
+  async function onRequest(props) {
+    const { page, rowsPerPage } = props.pagination
+    pagination.value.page = page
+    if (rowsPerPage) pagination.value.rowsPerPage = rowsPerPage
+    await loadData()
+  }
+
+  function onToggleScartati(_val) {
+    pagination.value.page = 1
+    loadData()
+  }
+
+  function openRiconcilia(submission) {
+    reconcilingSubmission.value = submission
+    riconciliaDialog.value = true
+  }
+
+  function openCreaContatto(submission) {
+    submissionForContatto.value = submission
+    contattoDialogVisible.value = true
+  }
+
+  function openAssociaFamiglia(submission) {
+    assegnaContatto.value = submission._foundContatto
+    assegnaDialogVisible.value = true
+  }
+
+  async function handleAssociaGenitore(submission) {
     try {
-      await store.scartaSubmission(submission.id, note)
-      $q.notify({ type: 'warning', message: 'Submission scartata' })
+      await gestioneStore.assignToFamiglia(submission._foundContatto.id_contatto, submission._famigliaId, 'Genitore')
+      notifySuccess($q, 'Contatto associato come genitore')
+      loadData()
     } catch (err) {
-      notifyError($q, err, 'Errore nello scarto')
+      notifyError($q, err, "Errore nell'associazione")
+    }
+  }
+
+  async function handleEmailEdit(submission) {
+    if (!submission.email) return
+    try {
+      await verificaService.updateSubmission(submission.id, { email: submission.email })
+    } catch (err) {
+      notifyError($q, err, 'Errore nel salvataggio email')
+    }
+    loadData()
+  }
+
+  async function handleRiconcilia(payload) {
+    try {
+      await store.reconcileSubmission(payload)
+      notifySuccess($q, 'Giustificativo creato e riconciliato')
+      riconciliaDialog.value = false
+      reconcilingSubmission.value = null
+    } catch (err) {
+      notifyError($q, err, 'Errore nella riconciliazione')
+    }
+  }
+
+  function handleContattoCreated() {
+    contattoDialogVisible.value = false
+    submissionForContatto.value = null
+    loadData()
+  }
+
+  watch(assegnaDialogVisible, val => {
+    if (!val) {
+      assegnaContatto.value = null
+      loadData()
     }
   })
-}
 
-async function handleRipristina(submission) {
-  try {
-    await store.ripristinaSubmission(submission.id)
-    notifySuccess($q, 'Submission ripristinata in attesa')
-  } catch (err) {
-    notifyError($q, err, 'Errore nel ripristino')
+  function handleScarta(submission) {
+    $q.dialog({
+      title: 'Scarta submission',
+      message: 'Motivo dello scarto:',
+      prompt: { model: '', type: 'text' },
+      cancel: true,
+      persistent: true
+    }).onOk(async note => {
+      if (!note) {
+        $q.notify({ type: 'warning', message: 'Inserisci una motivazione' })
+        return
+      }
+      try {
+        await store.scartaSubmission(submission.id, note)
+        $q.notify({ type: 'warning', message: 'Submission scartata' })
+      } catch (err) {
+        notifyError($q, err, 'Errore nello scarto')
+      }
+    })
   }
-}
 
-function cardStateColor(detectState, stato) {
-  if (stato === 'scartato') return '#9E9E9E'
-  const colors = {
-    linked: '#4A7C59',
-    not_parent: '#D4956A',
-    not_linked: '#E8B86D',
-    not_found: '#C0503A'
+  async function handleRipristina(submission) {
+    try {
+      await store.ripristinaSubmission(submission.id)
+      notifySuccess($q, 'Submission ripristinata in attesa')
+    } catch (err) {
+      notifyError($q, err, 'Errore nel ripristino')
+    }
   }
-  return colors[detectState] || '#9E9E9E'
-}
 
-
+  function cardStateColor(detectState, stato) {
+    if (stato === 'scartato') return '#9E9E9E'
+    const colors = {
+      linked: '#4A7C59',
+      not_parent: '#D4956A',
+      not_linked: '#E8B86D',
+      not_found: '#C0503A'
+    }
+    return colors[detectState] || '#9E9E9E'
+  }
 </script>
 
 <style scoped>
-.page-inner {
-  margin: 0 auto;
-}
+  .page-inner {
+    margin: 0 auto;
+  }
 </style>
