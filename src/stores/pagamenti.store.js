@@ -3,6 +3,9 @@ import { pagamentiService } from 'src/services/pagamenti.service'
 import { associazioniService } from 'src/services/associazioni.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
+import { adminService } from 'src/services/admin.service'
+import { famiglieService } from 'src/services/famiglie.service'
+import { contattiService } from 'src/services/contatti.service'
 import { STATO_PAGAMENTO, STATO_PROGETTO } from 'src/utils/constants'
 
 export const usePagamentiStore = defineStore('pagamenti', {
@@ -280,6 +283,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           DataPagamento: new Date().toISOString()
         })
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
+        await this.inviaNotificaPagamento(pagamento)
         await this.init()
       } catch (err) {
         this.error = err.message
@@ -360,6 +364,48 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
       } catch (err) {
         this.error = err.message
+      }
+    },
+
+    async inviaNotificaPagamento(pagamento) {
+      if (!pagamento || pagamento.NotificaInviata) return
+      try {
+        const progRes = await progettiService.getById(pagamento.Progetto)
+        const progetto = progRes.data.data
+        if (!progetto) return
+
+        // Trova destinatario: prima volontario della famiglia, poi genitore
+        const volontariRes = await famiglieService.getVolontariByFamiglia(pagamento.Famiglia)
+        const volontari = volontariRes.data.data || []
+        const mainVolontario = volontari.find(v => v.Contatto?.user_id)
+        let destinatario = mainVolontario?.Contatto?.email?.[0]?.email_address
+
+        if (!destinatario) {
+          const genitoriRes = await famiglieService.getGenitoriByFamiglia(pagamento.Famiglia)
+          const genitori = genitoriRes.data.data || []
+          const mainGenitore = genitori.find(g => g.Contatto?.email?.length > 0)
+          destinatario =
+            mainGenitore?.Contatto?.email?.find(e => e.Primary)?.email_address ||
+            mainGenitore?.Contatto?.email?.[0]?.email_address
+        }
+
+        if (!destinatario) {
+          console.warn(`[Pagamento] Nessun destinatario per famiglia ${pagamento.Famiglia}`)
+          return
+        }
+
+        const famigliaRes = await famiglieService.getById(pagamento.Famiglia)
+        const nomeFamiglia = famigliaRes.data.data?.Nome_Famiglia || 'Famiglia'
+
+        await adminService.sendEmail({
+          to: destinatario,
+          subject: 'Pagamento effettuato',
+          body: `Gentile volontario, il pagamento di €${parseFloat(pagamento.Importo || 0).toFixed(2)} per la famiglia "${nomeFamiglia}" è stato effettuato con successo.`
+        })
+
+        await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
+      } catch (err) {
+        console.error('[Pagamento] Errore invio notifica:', err.message)
       }
     }
   }
