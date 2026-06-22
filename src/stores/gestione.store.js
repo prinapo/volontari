@@ -182,6 +182,7 @@ export const useGestioneStore = defineStore('gestione', {
       this.error = null
       try {
         await gestioneService.createFamiglia({
+          id_famiglia: `FAM_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
           Nome_Famiglia: data.Nome_Famiglia,
           IBAN: data.IBAN || null,
           Intestatario_CC: data.Intestatario_CC || null

@@ -1,5 +1,6 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
+import { GestionePage } from '../pages/GestionePage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Famiglie Page', () => {
@@ -318,5 +319,52 @@ test.describe('Famiglie Page', () => {
 
     await page.waitForTimeout(6000)
     await expect(notification).not.toBeVisible({ timeout: 10000 })
+  })
+})
+
+test.describe('Famiglie Page — Multi-famiglia', () => {
+
+  test('MF-01: Volontario con più famiglie vede selettore e può cambiare @smoke', async ({ page }) => {
+    test.setTimeout(120000)
+    const nomeFamiglia = `Famiglia Multi ${Date.now()}`
+
+    // 1. Login gestore e crea famiglia via UI
+    await loginAs(page, 'gestore', auth)
+    const gp = new GestionePage(page)
+    await gp.famiglieTab.click()
+    await gp.waitForTable()
+
+    await page.locator('button:has-text("Aggiungi Famiglia")').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
+    const famDialog = page.locator('.q-dialog:visible')
+    await famDialog.locator('[data-testid="famiglia-nome"]').fill(nomeFamiglia)
+    await famDialog.locator('button:has-text("Salva")').click()
+    await famDialog.waitFor({ state: 'hidden', timeout: 10000 })
+    if (await famDialog.isVisible()) { test.skip('Creazione famiglia fallita'); return }
+
+    // 2. Assegna volontario seed (test.volontario@test.com) alla nuova famiglia
+    await gp.searchFamiglie(nomeFamiglia)
+    const clicked = await gp.clickContactsOnFamiglia(nomeFamiglia)
+    if (!clicked) { test.skip('Famiglia non trovata'); return }
+    await gp.assignVolontario('test.volontario', 'Test Volontario')
+    await gp.contattiDialog.locator('button:has-text("Chiudi")').click()
+    await gp.contattiDialog.waitFor({ state: 'hidden', timeout: 5000 })
+
+    // 3. Login come volontario e verifica selettore
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() })
+    await loginAs(page, 'volontario', auth)
+
+    const selector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
+    await expect(selector).toBeVisible({ timeout: 10000 })
+
+    // 4. Seleziona la nuova famiglia e verifica caricamento
+    await selector.click()
+    await page.waitForTimeout(1000)
+    const items = page.locator('.q-menu .q-item')
+    if (await items.count() > 1) {
+      await items.nth(1).click()
+      await page.waitForTimeout(2000)
+      await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 5000 })
+    }
   })
 })

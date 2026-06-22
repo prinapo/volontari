@@ -183,10 +183,10 @@ export default async function () {
   console.log(`\n✅ GUARD: API URL = ${url} — OK (locale)\n`)
 
   // Cleanup test data from previous runs
-  const token = await directusLogin(url, 'test.gestore@test.com', 'TestGest_2026!')
+  const token = await directusLogin(url, 'test.admin@test.com', 'TestAdmin_2026!')
   if (token) {
     await cleanupTestData(url, token)
   } else {
-    console.log('[CLEANUP] Skipped — could not login as gestore (database might be fresh)')
+    console.log('[CLEANUP] Skipped — could not login as admin (database might be fresh)')
   }
 }
