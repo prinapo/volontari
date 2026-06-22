@@ -3,34 +3,27 @@ import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Error Log', () => {
-
-  test('EL-01: Admin può leggere gli errori dalla collection ErrorLog @smoke', async ({ page }) => {
+  test('EL-01: Tab Errori in AdminPage è accessibile @smoke', async ({ page }) => {
     test.setTimeout(30000)
-
-    await loginAs(page, 'gestore', auth)
-    await page.goto('/gestione')
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
     await page.waitForTimeout(2000)
 
-    const token = await page.evaluate(() => localStorage.getItem('access_token'))
-    const res = await page.evaluate(async ({ token }) => {
-      try {
-        const r = await fetch('http://localhost:8055/items/ErrorLog?limit=1&fields=id', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (!r.ok) return { error: r.status, body: await r.text().catch(() => '') }
-        const data = await r.json()
-        return { items: data.data || [], total: (data.data || []).length }
-      } catch (err) {
-        return { error: err.message }
-      }
-    }, { token })
+    // Verifica che la pagina admin sia caricata
+    await expect(page.locator('.q-page')).toBeVisible({ timeout: 5000 })
 
-    console.log('[EL-01] Risultato:', JSON.stringify(res))
-    if (res.error === 403) {
-      console.log('[EL-01] Il ruolo gestore non ha permessi di lettura su ErrorLog — skip')
-      test.skip()
-      return
-    }
-    expect(res.error).toBeUndefined()
+    // Verifica che il tab Errori sia visibile e cliccabile
+    const erroriTab = page.locator('.q-tab').filter({ hasText: /errori/i })
+    await expect(erroriTab).toBeVisible({ timeout: 5000 })
+    await erroriTab.click()
+    await page.waitForTimeout(500)
+
+    // Verifica che il tab Errori sia attivo e la tabella visibile
+    await expect(page.locator('.q-tab--active')).toBeVisible({ timeout: 3000 })
+    const label = await page.locator('.q-tab--active').innerText()
+    expect(label.toLowerCase()).toContain('errori')
+    await expect(page.locator('.q-table')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('th:has-text("Livello")')).toBeVisible()
+    await expect(page.locator('th:has-text("Data")')).toBeVisible()
   })
 })
