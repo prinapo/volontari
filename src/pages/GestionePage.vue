@@ -2,7 +2,9 @@
   <q-page class="q-pa-md">
     <div v-if="!authStore.initialized" class="text-center q-mt-xl">
       <q-spinner size="lg" />
-      <div class="q-mt-sm">Caricamento...</div>
+      <div class="q-mt-sm">
+        Caricamento...
+      </div>
     </div>
 
     <q-inner-loading :showing="store.loading && authStore.initialized" />
@@ -28,18 +30,18 @@
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue'
-  import { useAuthStore } from 'stores/auth.store'
-  import { useGestioneStore } from 'stores/gestione.store'
-  import ContattiTab from 'components/Gestione/ContattiTab.vue'
-  import FamiglieTab from 'components/Gestione/FamiglieTab.vue'
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from 'stores/auth.store'
+import { useGestioneStore } from 'stores/gestione.store'
+import ContattiTab from 'components/Gestione/ContattiTab.vue'
+import FamiglieTab from 'components/Gestione/FamiglieTab.vue'
 
-  const authStore = useAuthStore()
-  const store = useGestioneStore()
+const authStore = useAuthStore()
+const store = useGestioneStore()
 
-  const tab = ref('famiglie')
+const tab = ref('famiglie')
 
-  onMounted(() => {
-    store.fetchAll()
-  })
+onMounted(() => {
+  store.fetchAll()
+})
 </script>

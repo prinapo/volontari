@@ -17,21 +17,30 @@ export const VERIFICA_ROLE_NAMES = [
 
 export const VERIFICA_ROLE_IDS = (import.meta.env.VITE_VERIFICA_ROLE_IDS || '')
   .split(',')
-  .map(id => id.trim())
+  .map((id) => id.trim())
   .filter(Boolean)
 
-export const GESTIONE_ROLE_NAMES = ['gestore volontari', 'gestione', 'gestoreverifica', 'administrator', 'admin']
+export const GESTIONE_ROLE_NAMES = [
+  'gestore volontari',
+  'gestione',
+  'gestoreverifica',
+  'administrator',
+  'admin'
+]
 
 export const GESTIONE_ROLE_IDS = (import.meta.env.VITE_GESTIONE_ROLE_IDS || '')
   .split(',')
-  .map(id => id.trim())
+  .map((id) => id.trim())
   .filter(Boolean)
 
-export const ADMIN_ROLE_NAMES = ['administrator', 'admin']
+export const ADMIN_ROLE_NAMES = [
+  'administrator',
+  'admin'
+]
 
 export const ADMIN_ROLE_IDS = (import.meta.env.VITE_ADMIN_ROLE_IDS || '')
   .split(',')
-  .map(id => id.trim())
+  .map((id) => id.trim())
   .filter(Boolean)
 
 export const STATI_GIUSTIFICATIVO = {

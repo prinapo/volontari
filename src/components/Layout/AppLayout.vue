@@ -14,7 +14,9 @@
           <q-tooltip>Menu</q-tooltip>
         </q-btn>
 
-        <q-toolbar-title> Portale Volontario </q-toolbar-title>
+        <q-toolbar-title>
+          Portale Volontario
+        </q-toolbar-title>
 
         <template v-if="authStore.isAuthenticated">
           <q-btn-dropdown flat :label="authStore.userName">
@@ -26,7 +28,9 @@
               </q-item>
               <q-item v-close-popup clickable @click="handleLogout">
                 <q-item-section>
-                  <q-item-label class="text-negative"> Esci </q-item-label>
+                  <q-item-label class="text-negative">
+                    Esci
+                  </q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -35,9 +39,16 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-if="authStore.isAuthenticated" v-model="drawerOpen" show-if-above :width="240">
+    <q-drawer
+      v-if="authStore.isAuthenticated"
+      v-model="drawerOpen"
+      show-if-above
+      :width="240"
+    >
       <q-list padding>
-        <q-item-label header> Navigazione </q-item-label>
+        <q-item-label header>
+          Navigazione
+        </q-item-label>
         <q-item
           v-if="authStore.hasFamiglieAccess"
           v-ripple
@@ -108,7 +119,9 @@
           <q-item-section>Duplicati</q-item-section>
         </q-item>
 
-        <q-item-label v-if="authStore.canAdmin" header class="q-mt-md"> Amministrazione </q-item-label>
+        <q-item-label v-if="authStore.canAdmin" header class="q-mt-md">
+          Amministrazione
+        </q-item-label>
 
         <q-item
           v-if="authStore.canAdmin"
@@ -133,9 +146,18 @@
     <q-dialog v-model="showChangePassword" persistent>
       <q-card style="width: 100%; max-width: 400px; min-width: unset">
         <q-card-section class="row items-center">
-          <div class="text-h6">Cambia password</div>
+          <div class="text-h6">
+            Cambia password
+          </div>
           <q-space />
-          <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
+          <q-btn
+            v-close-popup
+            icon="close"
+            flat
+            round
+            dense
+            aria-label="Chiudi"
+          >
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
@@ -153,7 +175,10 @@
             v-model="confirmPassword"
             type="password"
             label="Conferma password"
-            :rules="[val => !!val || 'Campo obbligatorio', val => val === newPassword || 'Le password non coincidono']"
+            :rules="[
+              val => !!val || 'Campo obbligatorio',
+              val => val === newPassword || 'Le password non coincidono'
+            ]"
             outlined
             dense
             lazy-rules
@@ -174,37 +199,38 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { useAuthStore } from 'stores/auth.store'
-  import { authService } from 'src/services/auth.service'
-  import { useQuasar } from 'quasar'
-  import { notifyError, notifySuccess } from 'src/utils/notify'
-  const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from 'stores/auth.store'
+import { authService } from 'src/services/auth.service'
+import { useQuasar } from 'quasar'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 
-  const $q = useQuasar()
-  const router = useRouter()
-  const authStore = useAuthStore()
+const $q = useQuasar()
+const router = useRouter()
+const authStore = useAuthStore()
 
-  const drawerOpen = ref(false)
-  const showChangePassword = ref(false)
-  const newPassword = ref('')
-  const confirmPassword = ref('')
+const drawerOpen = ref(false)
+const showChangePassword = ref(false)
+const newPassword = ref('')
+const confirmPassword = ref('')
 
-  async function handleLogout() {
-    await authStore.logout()
-    router.push('/login')
+async function handleLogout() {
+  await authStore.logout()
+  router.push('/login')
+}
+
+async function handleChangePassword() {
+  try {
+    await authService.changePassword(newPassword.value)
+    notifySuccess($q, 'Password cambiata con successo')
+    showChangePassword.value = false
+    newPassword.value = ''
+    confirmPassword.value = ''
+  } catch (err) {
+    notifyError($q, err, 'Errore nel cambio password')
   }
+}
 
-  async function handleChangePassword() {
-    try {
-      await authService.changePassword(newPassword.value)
-      notifySuccess($q, 'Password cambiata con successo')
-      showChangePassword.value = false
-      newPassword.value = ''
-      confirmPassword.value = ''
-    } catch (err) {
-      notifyError($q, err, 'Errore nel cambio password')
-    }
-  }
 </script>

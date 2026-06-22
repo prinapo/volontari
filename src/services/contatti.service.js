@@ -14,8 +14,7 @@ export const contattiService = {
     return api.get('/items/contatti', {
       params: {
         'filter[email][email_address][_eq]': email.toLowerCase(),
-        fields:
-          'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id'
+        fields: 'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id'
       }
     })
   },
@@ -25,8 +24,7 @@ export const contattiService = {
     return api.get('/items/contatti', {
       params: {
         'filter[email][email_address][_in]': list.map(e => e.toLowerCase()).join(','),
-        fields:
-          'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id',
+        fields: 'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id',
         limit: -1
       }
     })
@@ -113,7 +111,7 @@ export const contattiService = {
     }
     return api.get('/items/contatti', {
       params: {
-        filter: JSON.stringify(filter),
+        'filter': JSON.stringify(filter),
         fields: 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
         limit: 20
       }
@@ -133,8 +131,8 @@ export const contattiService = {
       params: {
         'filter[IsVolontario][_eq]': true,
         'filter[user_id][_null]': true,
-        fields: 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
-        limit: -1
+        'fields': 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
+        'limit': -1
       }
     })
   }

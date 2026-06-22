@@ -13,7 +13,12 @@
           </div>
           <div class="text-body1 text-pre-wrap">
             {{ displayValue || '—' }}
-            <q-icon v-if="!readonly" name="edit" size="xs" class="text-grey-4 q-ml-xs" />
+            <q-icon
+              v-if="!readonly"
+              name="edit"
+              size="xs"
+              class="text-grey-4 q-ml-xs"
+            />
           </div>
         </div>
       </div>
@@ -69,48 +74,54 @@
 </template>
 
 <script setup>
-  import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
-  const props = defineProps({
-    modelValue: { type: [String, Number], default: '' },
-    label: { type: String, default: '' },
-    readonly: { type: Boolean, default: false },
-    type: { type: String, default: 'text' },
-    rules: { type: Array, default: () => [] },
-    formatDisplay: { type: Function, default: null },
-    saving: { type: Boolean, default: false }
+const props = defineProps({
+  modelValue: { type: [String, Number], default: '' },
+  label: { type: String, default: '' },
+  readonly: { type: Boolean, default: false },
+  type: { type: String, default: 'text' },
+  rules: { type: Array, default: () => [] },
+  formatDisplay: { type: Function, default: null },
+  saving: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['update:modelValue', 'save', 'cancel'])
+
+const editing = ref(false)
+const editValue = ref(props.modelValue)
+const inputRef = ref(null)
+
+const displayValue = computed(() =>
+  props.formatDisplay ? props.formatDisplay(props.modelValue) : props.modelValue
+)
+
+function startEdit() {
+  editing.value = true
+  editValue.value = props.type === 'date'
+    ? (props.modelValue?.slice(0, 10) ?? '')
+    : props.modelValue
+  nextTick(() => {
+    inputRef.value?.focus()
   })
+}
 
-  const emit = defineEmits(['update:modelValue', 'save', 'cancel'])
-
-  const editing = ref(false)
-  const editValue = ref(props.modelValue)
-  const inputRef = ref(null)
-
-  const displayValue = computed(() => (props.formatDisplay ? props.formatDisplay(props.modelValue) : props.modelValue))
-
-  function startEdit() {
-    editing.value = true
-    editValue.value = props.type === 'date' ? (props.modelValue?.slice(0, 10) ?? '') : props.modelValue
-    nextTick(() => {
-      inputRef.value?.focus()
-    })
+function save() {
+  const raw = editValue.value
+  const current = props.type === 'date'
+    ? (props.modelValue?.slice(0, 10) ?? '')
+    : props.modelValue
+  if (raw === current) {
+    cancel()
+    return
   }
+  emit('save', raw)
+  editing.value = false
+}
 
-  function save() {
-    const raw = editValue.value
-    const current = props.type === 'date' ? (props.modelValue?.slice(0, 10) ?? '') : props.modelValue
-    if (raw === current) {
-      cancel()
-      return
-    }
-    emit('save', raw)
-    editing.value = false
-  }
-
-  function cancel() {
-    editing.value = false
-    editValue.value = props.modelValue
-    emit('cancel')
-  }
+function cancel() {
+  editing.value = false
+  editValue.value = props.modelValue
+  emit('cancel')
+}
 </script>

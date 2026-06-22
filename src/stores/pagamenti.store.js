@@ -18,7 +18,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
   }),
 
   getters: {
-    residuoAssociazione: state => nome => {
+    residuoAssociazione: (state) => (nome) => {
       const budget = state.budgetMap[nome] || 0
       const impegnato = state.inCorso
         .filter(p => {
@@ -55,65 +55,53 @@ export const usePagamentiStore = defineStore('pagamenti', {
         for (const a of this.associazioni) {
           this.budgetMap[a.Nome] = parseFloat(a.Budget) || 0
         }
-      } catch {
-        this.associazioni = []
-      }
+      } catch { this.associazioni = [] }
     },
 
     async fetchProposti() {
       try {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_eq]': STATO_PAGAMENTO.PROPOSTO,
-          fields:
-            '*,Progetto.id_progetto,Progetto.Cognome_Beneficiario,Progetto.Nome_Beneficiario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
-          limit: -1,
-          sort: '-DataProposta'
+          'fields': '*,Progetto.id_progetto,Progetto.Cognome_Beneficiario,Progetto.Nome_Beneficiario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
+          'limit': -1,
+          'sort': '-DataProposta'
         })
         this.proposti = res.data.data || []
-      } catch {
-        this.proposti = []
-      }
+      } catch { this.proposti = [] }
     },
 
     async fetchInCorso() {
       try {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_in]': `${STATO_PAGAMENTO.IN_PAGAMENTO},${STATO_PAGAMENTO.PAGATO}`,
-          fields:
-            '*,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
-          limit: -1,
-          sort: '-DataProposta'
+          'fields': '*,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
+          'limit': -1,
+          'sort': '-DataProposta'
         })
         this.inCorso = res.data.data || []
-      } catch {
-        this.inCorso = []
-      }
+      } catch { this.inCorso = [] }
     },
 
     async fetchFalliti() {
       try {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_eq]': STATO_PAGAMENTO.FALLITO,
-          fields: '*,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
-          limit: -1
+          'fields': '*,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
+          'limit': -1
         })
         this.falliti = res.data.data || []
-      } catch {
-        this.falliti = []
-      }
+      } catch { this.falliti = [] }
     },
 
     async fetchBatches() {
       try {
         const res = await pagamentiService.getBatches({
-          fields: '*',
-          limit: -1,
-          sort: '-DataCreazione'
+          'fields': '*',
+          'limit': -1,
+          'sort': '-DataCreazione'
         })
         this.batches = res.data.data || []
-      } catch {
-        this.batches = []
-      }
+      } catch { this.batches = [] }
     },
 
     async ricalcolaProposta(progettoId) {
@@ -132,7 +120,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           'filter[Progetto][_eq]': progettoId,
           'filter[_or][0][Stato][_eq]': STATO_PAGAMENTO.IN_PAGAMENTO,
           'filter[_or][1][Stato][_eq]': STATO_PAGAMENTO.PAGATO,
-          limit: -1
+          'limit': -1
         })
         const totaleStorico = (pagamentiRes.data.data || []).reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
 
@@ -143,7 +131,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const esistenteRes = await pagamentiService.getPagamenti({
           'filter[Progetto][_eq]': progettoId,
           'filter[Stato][_eq]': STATO_PAGAMENTO.PROPOSTO,
-          limit: 1
+          'limit': 1
         })
         const esistente = (esistenteRes.data.data || [])[0]
 
@@ -186,16 +174,12 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
         const pagamentiRes = await pagamentiService.getPagamenti({
           'filter[Progetto][_eq]': progettoId,
-          limit: -1
+          'limit': -1
         })
         const tutti = pagamentiRes.data.data || []
         const proposto = tutti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
-        const inPagamento = tutti
-          .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO)
-          .reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
-        const pagato = tutti
-          .filter(p => p.Stato === STATO_PAGAMENTO.PAGATO)
-          .reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+        const inPagamento = tutti.filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO).reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
+        const pagato = tutti.filter(p => p.Stato === STATO_PAGAMENTO.PAGATO).reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
 
         const allocato = parseFloat(progetto.Allocato) || 0
         const totaleProposto = proposto ? parseFloat(proposto.Importo) || 0 : 0
@@ -223,7 +207,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         const pagamentiRes = await pagamentiService.getPagamenti({
           'filter[id][_in]': pagamentoIds.join(','),
-          limit: -1
+          'limit': -1
         })
         const pagamenti = pagamentiRes.data.data || []
 
@@ -234,9 +218,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const totale = pagamenti.reduce((s, p) => s + (parseFloat(p.Importo) || 0), 0)
         const residuo = this.residuoAssociazione(associazione)
         if (totale > residuo) {
-          throw new Error(
-            `Capienza insufficiente per ${associazione}. Disponibile: €${residuo.toFixed(2)}, richiesto: €${totale.toFixed(2)}`
-          )
+          throw new Error(`Capienza insufficiente per ${associazione}. Disponibile: €${residuo.toFixed(2)}, richiesto: €${totale.toFixed(2)}`)
         }
 
         const userId = localStorage.getItem('user_id')
@@ -270,8 +252,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async segnaPagato(pagamentoId) {
       this.loading = true
       try {
-        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
-          .data?.[0]
+        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, 'limit': 1 })).data.data?.[0]
         if (!pagamento || pagamento.Stato !== STATO_PAGAMENTO.IN_PAGAMENTO) {
           throw new Error('Solo pagamenti in_pagamento possono essere segnati come pagati')
         }
@@ -283,16 +264,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
       } catch (err) {
         this.error = err.message
-      } finally {
-        this.loading = false
-      }
+      } finally { this.loading = false }
     },
 
     async segnaFallito(pagamentoId, note) {
       this.loading = true
       try {
-        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
-          .data?.[0]
+        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, 'limit': 1 })).data.data?.[0]
         if (!pagamento || pagamento.Stato !== STATO_PAGAMENTO.IN_PAGAMENTO) {
           throw new Error('Solo pagamenti in_pagamento possono essere segnati come falliti')
         }
@@ -304,16 +282,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
       } catch (err) {
         this.error = err.message
-      } finally {
-        this.loading = false
-      }
+      } finally { this.loading = false }
     },
 
     async segnaAnnullato(pagamentoId, motivo) {
       this.loading = true
       try {
-        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
-          .data?.[0]
+        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, 'limit': 1 })).data.data?.[0]
         if (!pagamento || !['in_pagamento', 'fallito'].includes(pagamento.Stato)) {
           throw new Error('Solo pagamenti in_pagamento o falliti possono essere annullati')
         }
@@ -326,16 +301,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
       } catch (err) {
         this.error = err.message
-      } finally {
-        this.loading = false
-      }
+      } finally { this.loading = false }
     },
 
     async correggiDati(pagamentoId, { iban, intestatario }) {
       this.loading = true
       try {
-        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
-          .data?.[0]
+        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, 'limit': 1 })).data.data?.[0]
         if (!pagamento || pagamento.Stato !== STATO_PAGAMENTO.FALLITO) {
           throw new Error('Solo pagamenti falliti sono modificabili')
         }
@@ -346,9 +318,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchFalliti()
       } catch (err) {
         this.error = err.message
-      } finally {
-        this.loading = false
-      }
+      } finally { this.loading = false }
     },
 
     async chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {

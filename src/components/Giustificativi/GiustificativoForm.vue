@@ -2,9 +2,18 @@
   <q-dialog v-model="model" persistent>
     <q-card style="width: 100%; max-width: 520px; min-width: unset">
       <q-card-section class="row items-center">
-        <div class="text-h6">Nuovo giustificativo</div>
+        <div class="text-h6">
+          Nuovo giustificativo
+        </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -92,7 +101,7 @@
               capture="environment"
               class="hidden"
               @change="onCameraCapture"
-            />
+            >
             <q-btn
               v-if="$q.platform.is.mobile"
               flat
@@ -108,71 +117,77 @@
       </q-card-section>
       <q-card-actions align="right">
         <q-btn v-close-popup data-testid="form-annulla" flat label="Annulla" />
-        <q-btn color="accent" label="Salva" data-testid="giustform-salva" :loading="saving" @click="handleSave" />
+        <q-btn
+          color="accent"
+          label="Salva"
+          data-testid="giustform-salva"
+          :loading="saving"
+          @click="handleSave"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
-  import { reactive, ref, computed } from 'vue'
-  import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
+import { reactive, ref, computed } from 'vue'
+import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
 
-  const props = defineProps({
-    modelValue: { type: Boolean, default: false },
-    progettoId: { type: String, default: '' },
-    famigliaId: { type: String, default: '' },
-    annoBando: { type: [Number, String], default: '' },
-    saving: { type: Boolean, default: false }
+const props = defineProps({
+  modelValue: { type: Boolean, default: false },
+  progettoId: { type: String, default: '' },
+  famigliaId: { type: String, default: '' },
+  annoBando: { type: [Number, String], default: '' },
+  saving: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['update:modelValue', 'save'])
+
+const model = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
+
+const formRef = ref(null)
+const dateProxy = ref(null)
+const cameraInput = ref(null)
+
+const today = new Date().toISOString().slice(0, 10)
+const form = reactive({
+  Descrizione: '',
+  Importo: null,
+  Data: today,
+  NotaVolontario: '',
+  File: null
+})
+
+async function handleSave() {
+  const isValid = await formRef.value?.validate()
+  if (!isValid) return
+  emit('save', {
+    ...form,
+    Stato: 'draft',
+    Progetto: props.progettoId,
+    Famiglia: props.famigliaId,
+    AnnoBando: props.annoBando,
+    Importo: parseFloat(form.Importo)
   })
+  resetForm()
+}
 
-  const emit = defineEmits(['update:modelValue', 'save'])
+function resetForm() {
+  form.Descrizione = ''
+  form.Importo = null
+  form.Data = today
+  form.NotaVolontario = ''
+  form.File = null
+}
 
-  const model = computed({
-    get: () => props.modelValue,
-    set: val => emit('update:modelValue', val)
-  })
-
-  const formRef = ref(null)
-  const dateProxy = ref(null)
-  const cameraInput = ref(null)
-
-  const today = new Date().toISOString().slice(0, 10)
-  const form = reactive({
-    Descrizione: '',
-    Importo: null,
-    Data: today,
-    NotaVolontario: '',
-    File: null
-  })
-
-  async function handleSave() {
-    const isValid = await formRef.value?.validate()
-    if (!isValid) return
-    emit('save', {
-      ...form,
-      Stato: 'draft',
-      Progetto: props.progettoId,
-      Famiglia: props.famigliaId,
-      AnnoBando: props.annoBando,
-      Importo: parseFloat(form.Importo)
-    })
-    resetForm()
+function onCameraCapture(event) {
+  const file = event.target.files?.[0]
+  if (file) {
+    form.File = file
   }
-
-  function resetForm() {
-    form.Descrizione = ''
-    form.Importo = null
-    form.Data = today
-    form.NotaVolontario = ''
-    form.File = null
-  }
-
-  function onCameraCapture(event) {
-    const file = event.target.files?.[0]
-    if (file) {
-      form.File = file
-    }
-    event.target.value = ''
-  }
+  event.target.value = ''
+}
 </script>

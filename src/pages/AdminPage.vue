@@ -2,7 +2,9 @@
   <q-page class="q-pa-md admin-page">
     <div v-if="!authStore.initialized" class="text-center q-mt-xl">
       <q-spinner size="lg" />
-      <div class="q-mt-sm">Caricamento...</div>
+      <div class="q-mt-sm">
+        Caricamento...
+      </div>
     </div>
     <template v-else>
       <div class="q-mb-md">
@@ -27,19 +29,24 @@
 
       <q-tab-panels v-model="activeTab" animated>
         <q-tab-panel name="utenti">
-          <div
-            v-if="!store.loading && store.users.length === 0 && !store.error"
-            class="text-center text-grey-5 q-py-xl"
-          >
+          <div v-if="!store.loading && store.users.length === 0 && !store.error" class="text-center text-grey-5 q-py-xl">
             <q-icon name="admin_panel_settings" size="64px" />
-            <div class="text-h6 q-mt-md">Nessun utente trovato</div>
-            <div class="text-body2">Verifica i permessi API di Directus.</div>
+            <div class="text-h6 q-mt-md">
+              Nessun utente trovato
+            </div>
+            <div class="text-body2">
+              Verifica i permessi API di Directus.
+            </div>
           </div>
 
           <div class="row items-center q-gutter-sm q-mb-md">
             <div>
-              <div class="text-h5 text-weight-medium">User Admin</div>
-              <div class="text-body2 text-grey-7">Gestisci utenti, ruoli e invii comunicazioni.</div>
+              <div class="text-h5 text-weight-medium">
+                User Admin
+              </div>
+              <div class="text-body2 text-grey-7">
+                Gestisci utenti, ruoli e invii comunicazioni.
+              </div>
             </div>
             <q-space />
             <q-input
@@ -55,7 +62,14 @@
                 <q-icon name="search" />
               </template>
             </q-input>
-            <q-btn flat round icon="refresh" :loading="store.loading" aria-label="Aggiorna" @click="store.fetchAll">
+            <q-btn
+              flat
+              round
+              icon="refresh"
+              :loading="store.loading"
+              aria-label="Aggiorna"
+              @click="store.fetchAll"
+            >
               <q-tooltip>Aggiorna</q-tooltip>
             </q-btn>
             <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
@@ -83,11 +97,7 @@
                 </q-item-section>
                 <q-item-section side>
                   <q-btn
-                    flat
-                    dense
-                    icon="person_add"
-                    color="primary"
-                    size="sm"
+                    flat dense icon="person_add" color="primary" size="sm"
                     :loading="savingVolontario"
                     aria-label="Crea account"
                     @click="creaUtenteVolontario(v)"
@@ -114,13 +124,21 @@
               <div class="q-pa-xs col-12">
                 <q-card flat bordered>
                   <q-card-section class="q-py-sm">
-                    <div class="text-weight-medium">{{ props.row.first_name }} {{ props.row.last_name }}</div>
-                    <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">—</div>
+                    <div class="text-weight-medium">
+                      {{ props.row.first_name }} {{ props.row.last_name }}
+                    </div>
+                    <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
+                      —
+                    </div>
                     <div class="text-caption">
                       {{ props.row.email }}
                     </div>
                     <div class="row items-center q-gutter-xs q-mt-xs">
-                      <q-badge :color="roleColor(props.row.role?.name)" outline class="q-px-sm q-py-xs">
+                      <q-badge
+                        :color="roleColor(props.row.role?.name)"
+                        outline
+                        class="q-px-sm q-py-xs"
+                      >
                         {{ props.row.role?.name || 'Nessun ruolo' }}
                       </q-badge>
                       <q-space />
@@ -136,7 +154,7 @@
                         map-options
                         class="admin-role-select admin-role-min-width"
                         :loading="store.saving"
-                        @update:model-value="val => handleRoleChange(props.row.id, val)"
+                        @update:model-value="(val) => handleRoleChange(props.row.id, val)"
                       >
                         <template #selected-item="opt">
                           <div class="text-caption">
@@ -163,8 +181,12 @@
 
             <template #body-cell-name="props">
               <q-td :props="props">
-                <div class="text-weight-medium">{{ props.row.first_name }} {{ props.row.last_name }}</div>
-                <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">—</div>
+                <div class="text-weight-medium">
+                  {{ props.row.first_name }} {{ props.row.last_name }}
+                </div>
+                <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
+                  —
+                </div>
               </q-td>
             </template>
 
@@ -176,7 +198,11 @@
 
             <template #body-cell-role="props">
               <q-td :props="props">
-                <q-badge :color="roleColor(props.row.role?.name)" outline class="q-px-sm q-py-xs">
+                <q-badge
+                  :color="roleColor(props.row.role?.name)"
+                  outline
+                  class="q-px-sm q-py-xs"
+                >
                   {{ props.row.role?.name || 'Nessun ruolo' }}
                 </q-badge>
               </q-td>
@@ -197,7 +223,7 @@
                     map-options
                     class="admin-role-select"
                     :loading="store.saving"
-                    @update:model-value="val => handleRoleChange(props.row.id, val)"
+                    @update:model-value="(val) => handleRoleChange(props.row.id, val)"
                   >
                     <template #selected-item="opt">
                       <div class="text-caption">
@@ -224,8 +250,12 @@
         <q-tab-panel name="progetti">
           <div class="row items-center q-gutter-sm q-mb-md">
             <div>
-              <div class="text-h5 text-weight-medium">Progetti</div>
-              <div class="text-body2 text-grey-7">Gestisci i nominativi (cognome e nome) dei beneficiari.</div>
+              <div class="text-h5 text-weight-medium">
+                Progetti
+              </div>
+              <div class="text-body2 text-grey-7">
+                Gestisci i nominativi (cognome e nome) dei beneficiari.
+              </div>
             </div>
             <q-space />
             <q-input
@@ -369,8 +399,12 @@
         <q-tab-panel name="associazioni">
           <div class="row items-center q-gutter-sm q-mb-md">
             <div>
-              <div class="text-h5 text-weight-medium">Associazioni</div>
-              <div class="text-body2 text-grey-7">Gestisci i budget annuali delle associazioni.</div>
+              <div class="text-h5 text-weight-medium">
+                Associazioni
+              </div>
+              <div class="text-body2 text-grey-7">
+                Gestisci i budget annuali delle associazioni.
+              </div>
             </div>
             <q-space />
             <q-btn flat round icon="refresh" aria-label="Aggiorna" @click="fetchAssociazioni">
@@ -382,19 +416,15 @@
             :rows="associazioni"
             :columns="assocColumns"
             row-key="id"
-            flat
-            bordered
+            flat bordered
             hide-pagination
             :pagination="{ rowsPerPage: 0 }"
           >
             <template #body-cell-budget="props">
               <q-td :props="props">
                 <q-input
-                  :model-value="
-                    assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget
-                  "
-                  outlined
-                  dense
+                  :model-value="assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget"
+                  outlined dense
                   type="number"
                   min="0"
                   step="0.01"
@@ -406,11 +436,7 @@
               <q-td :props="props">
                 <q-btn
                   v-if="assocBudgetCache[props.row.id] !== undefined"
-                  icon="save"
-                  color="positive"
-                  round
-                  flat
-                  size="sm"
+                  icon="save" color="positive" round flat size="sm"
                   :loading="savingAssoc"
                   @click="saveAssocBudget(props.row)"
                 >
@@ -424,18 +450,15 @@
         <q-tab-panel name="errori">
           <div class="row items-center q-gutter-sm q-mb-md">
             <div>
-              <div class="text-h5 text-weight-medium">Errori</div>
-              <div class="text-body2 text-grey-7">Errori API registrati dalle richieste del frontend.</div>
+              <div class="text-h5 text-weight-medium">
+                Errori
+              </div>
+              <div class="text-body2 text-grey-7">
+                Errori API registrati dalle richieste del frontend.
+              </div>
             </div>
             <q-space />
-            <q-btn
-              flat
-              round
-              icon="refresh"
-              aria-label="Aggiorna"
-              :loading="errorLogStore.loading"
-              @click="errorLogStore.fetchAll"
-            >
+            <q-btn flat round icon="refresh" aria-label="Aggiorna" :loading="errorLogStore.loading" @click="errorLogStore.fetchAll">
               <q-tooltip>Aggiorna</q-tooltip>
             </q-btn>
           </div>
@@ -444,8 +467,7 @@
             :rows="errorLogStore.items"
             :columns="erroriColumns"
             row-key="id"
-            flat
-            bordered
+            flat bordered
             hide-pagination
             :pagination="{ rowsPerPage: 0 }"
             :loading="errorLogStore.loading"
@@ -462,10 +484,7 @@
               <q-td :props="props">
                 <q-btn
                   v-if="!props.value"
-                  flat
-                  dense
-                  icon="mark_email_read"
-                  size="sm"
+                  flat dense icon="mark_email_read" size="sm"
                   color="grey"
                   aria-label="Segna come letto"
                   @click="errorLogStore.markAsRead(props.row.id)"
@@ -473,21 +492,6 @@
                   <q-tooltip>Segna come letto</q-tooltip>
                 </q-btn>
                 <q-icon v-else name="check" color="positive" size="sm" />
-              </q-td>
-            </template>
-            <template #body-cell-response="props">
-              <q-td :props="props">
-                <q-btn
-                  flat
-                  dense
-                  icon="visibility"
-                  size="sm"
-                  color="grey"
-                  aria-label="Vedi dettaglio"
-                  @click="toggleErrorDetail(props.row.id)"
-                >
-                  <q-tooltip>Vedi response body</q-tooltip>
-                </q-btn>
               </q-td>
             </template>
             <template #body-cell-message="props">
@@ -499,15 +503,7 @@
             </template>
             <template #body-cell-actions="props">
               <q-td :props="props">
-                <q-btn
-                  flat
-                  dense
-                  icon="delete"
-                  color="negative"
-                  size="sm"
-                  aria-label="Elimina"
-                  @click="errorLogStore.delete(props.row.id)"
-                >
+                <q-btn flat dense icon="delete" color="negative" size="sm" aria-label="Elimina" @click="errorLogStore.delete(props.row.id)">
                   <q-tooltip>Elimina</q-tooltip>
                 </q-btn>
               </q-td>
@@ -517,37 +513,14 @@
                 <q-card flat bordered>
                   <q-card-section>
                     <div class="row items-center q-gutter-x-sm">
-                      <q-badge :color="props.row.level === 'error' ? 'negative' : 'warning'">
-                        {{ props.row.level }}
-                      </q-badge>
+                      <q-badge :color="props.row.level === 'error' ? 'negative' : 'warning'">{{ props.row.level }}</q-badge>
                       <span class="text-caption text-grey-7">{{ props.row.timestamp }}</span>
                       <q-space />
-                      <q-btn
-                        v-if="!props.row.read"
-                        flat
-                        dense
-                        icon="mark_email_read"
-                        size="sm"
-                        @click="errorLogStore.markAsRead(props.row.id)"
-                      >
-                        <q-tooltip>Segna letto</q-tooltip>
-                      </q-btn>
+                      <q-btn v-if="!props.row.read" flat dense icon="mark_email_read" size="sm" @click="errorLogStore.markAsRead(props.row.id)"><q-tooltip>Segna letto</q-tooltip></q-btn>
                     </div>
                     <div class="text-caption q-mt-xs">{{ props.row.method }} {{ props.row.status }}</div>
-                    <div class="text-body2 q-mt-xs">
-                      {{ props.row.message }}
-                    </div>
-                    <div
-                      v-if="props.row.responseBody"
-                      class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders"
-                      style="
-                        max-height: 100px;
-                        overflow: auto;
-                        white-space: pre-wrap;
-                        font-family: monospace;
-                        font-size: 11px;
-                      "
-                    >
+                    <div class="text-body2 q-mt-xs">{{ props.row.message }}</div>
+                    <div v-if="props.row.responseBody" class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders" style="max-height: 100px; overflow: auto; white-space: pre-wrap; font-family: monospace; font-size: 11px;">
                       {{ props.row.responseBody }}
                     </div>
                   </q-card-section>
@@ -555,33 +528,6 @@
               </div>
             </template>
           </q-table>
-
-          <!-- Error Detail Dialog -->
-          <q-dialog v-model="errorDetailDialog">
-            <q-card style="width: 100%; max-width: 800px; min-width: unset">
-              <q-card-section class="row items-center">
-                <div class="text-h6">Dettaglio errore</div>
-                <q-space /><q-btn v-close-popup flat round dense icon="close" aria-label="Chiudi" />
-              </q-card-section>
-              <q-card-section>
-                <div
-                  v-if="errorDetailRow"
-                  style="
-                    white-space: pre-wrap;
-                    font-family: monospace;
-                    font-size: 12px;
-                    max-height: 500px;
-                    overflow: auto;
-                    background: #f5f5f5;
-                    padding: 12px;
-                    border-radius: 4px;
-                  "
-                >
-                  {{ errorDetailRow.responseBody }}
-                </div>
-              </q-card-section>
-            </q-card>
-          </q-dialog>
         </q-tab-panel>
       </q-tab-panels>
 
@@ -589,9 +535,18 @@
       <q-dialog v-model="showCreateDialog" persistent maximized>
         <q-card>
           <q-card-section class="row items-center">
-            <div class="text-h6">Aggiungi utente</div>
+            <div class="text-h6">
+              Aggiungi utente
+            </div>
             <q-space />
-            <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
+            <q-btn
+              v-close-popup
+              icon="close"
+              flat
+              round
+              dense
+              aria-label="Chiudi"
+            >
               <q-tooltip>Chiudi</q-tooltip>
             </q-btn>
           </q-card-section>
@@ -622,10 +577,7 @@
             </div>
 
             <!-- Contatto not found: show name fields -->
-            <div
-              v-if="store.contattoTrovato === null && searchEmail && !userCreated"
-              class="row q-col-gutter-md q-mb-md"
-            >
+            <div v-if="store.contattoTrovato === null && searchEmail && !userCreated" class="row q-col-gutter-md q-mb-md">
               <div class="col-12 col-sm-6">
                 <q-input v-model="newFirstName" label="Nome" outlined dense />
               </div>
@@ -664,7 +616,9 @@
           <template v-if="userCreated">
             <q-separator />
             <q-card-section>
-              <div class="text-h6 text-positive q-mb-sm"><q-icon name="check_circle" /> Utente creato con successo</div>
+              <div class="text-h6 text-positive q-mb-sm">
+                <q-icon name="check_circle" /> Utente creato con successo
+              </div>
               <div class="text-body2 q-mb-sm">
                 Email: <strong>{{ searchEmail }}</strong>
               </div>
@@ -674,7 +628,9 @@
 
               <q-separator class="q-mb-md" />
 
-              <div class="text-subtitle2 q-mb-sm">Invia email informativa (opzionale)</div>
+              <div class="text-subtitle2 q-mb-sm">
+                Invia email informativa (opzionale)
+              </div>
               <q-input
                 v-model="emailSubject"
                 label="Soggetto"
@@ -716,9 +672,18 @@
       <q-dialog v-model="showResetDialog" persistent>
         <q-card style="width: 100%; max-width: 400px; min-width: unset">
           <q-card-section class="row items-center">
-            <div class="text-h6">Reset password</div>
+            <div class="text-h6">
+              Reset password
+            </div>
             <q-space />
-            <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
+            <q-btn
+              v-close-popup
+              icon="close"
+              flat
+              round
+              dense
+              aria-label="Chiudi"
+            >
               <q-tooltip>Chiudi</q-tooltip>
             </q-btn>
           </q-card-section>
@@ -759,353 +724,327 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, reactive } from 'vue'
-  import { useQuasar } from 'quasar'
-  import { useAdminStore } from 'stores/admin.store'
-  import { useAuthStore } from 'stores/auth.store'
-  import { useErrorLogStore } from 'stores/error-log.store'
-  import { notifyError, notifySuccess } from 'src/utils/notify'
-  import { contattiService } from 'src/services/contatti.service'
-  import { usersService } from 'src/services/users.service'
+import { ref, computed, onMounted, reactive } from 'vue'
+import { useQuasar } from 'quasar'
+import { useAdminStore } from 'stores/admin.store'
+import { useAuthStore } from 'stores/auth.store'
+import { useErrorLogStore } from 'stores/error-log.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { contattiService } from 'src/services/contatti.service'
+import { usersService } from 'src/services/users.service'
 
-  const $q = useQuasar()
-  const store = useAdminStore()
-  const authStore = useAuthStore()
-  const errorLogStore = useErrorLogStore()
+const $q = useQuasar()
+const store = useAdminStore()
+const authStore = useAuthStore()
+const errorLogStore = useErrorLogStore()
 
-  const activeTab = ref('utenti')
+const activeTab = ref('utenti')
 
-  const usersSearch = ref('')
+const usersSearch = ref('')
 
-  const filteredUsers = computed(() => {
-    const q = usersSearch.value.toLowerCase().trim()
-    if (!q) return store.users
-    return store.users.filter(
-      u =>
-        (u.first_name || '').toLowerCase().includes(q) ||
-        (u.last_name || '').toLowerCase().includes(q) ||
-        (u.email || '').toLowerCase().includes(q)
-    )
-  })
+const filteredUsers = computed(() => {
+  const q = usersSearch.value.toLowerCase().trim()
+  if (!q) return store.users
+  return store.users.filter(u =>
+    (u.first_name || '').toLowerCase().includes(q) ||
+    (u.last_name || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q)
+  )
+})
 
-  const userColumns = [
-    { name: 'name', label: 'Nome', align: 'left', style: 'width: 200px' },
-    { name: 'email', label: 'Email', align: 'left' },
-    { name: 'role', label: 'Ruolo', align: 'center', style: 'width: 130px' },
-    { name: 'actions', label: 'Azioni', align: 'center', style: 'width: 220px' }
-  ]
+const userColumns = [
+  { name: 'name', label: 'Nome', align: 'left', style: 'width: 200px' },
+  { name: 'email', label: 'Email', align: 'left' },
+  { name: 'role', label: 'Ruolo', align: 'center', style: 'width: 130px' },
+  { name: 'actions', label: 'Azioni', align: 'center', style: 'width: 220px' }
+]
 
-  const progettiColumns = [
-    {
-      name: 'beneficiario',
-      label: 'Beneficiario',
-      align: 'left',
-      field: row => [row.Cognome_Beneficiario, row.Nome_Beneficiario].filter(Boolean).join(' ')
-    },
-    { name: 'cognome', label: 'Cognome', align: 'left' },
-    { name: 'nome', label: 'Nome', align: 'left' },
-    { name: 'actions', label: '', align: 'center' }
-  ]
+const progettiColumns = [
+  { name: 'beneficiario', label: 'Beneficiario', align: 'left', field: row => [row.Cognome_Beneficiario, row.Nome_Beneficiario].filter(Boolean).join(' ') },
+  { name: 'cognome', label: 'Cognome', align: 'left' },
+  { name: 'nome', label: 'Nome', align: 'left' },
+  { name: 'actions', label: '', align: 'center' }
+]
 
-  const editCache = reactive({})
+const editCache = reactive({})
 
-  const erroriColumns = [
-    { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left', style: 'width: 160px' },
-    { name: 'level', label: 'Livello', field: 'level', align: 'center', style: 'width: 80px' },
-    { name: 'method', label: 'Metodo', field: 'method', align: 'center', style: 'width: 80px' },
-    { name: 'status', label: 'Status', field: 'status', align: 'center', style: 'width: 70px' },
-    { name: 'message', label: 'Messaggio', field: 'message', align: 'left' },
-    { name: 'read', label: 'Letto', field: 'read', align: 'center', style: 'width: 70px' },
-    { name: 'response', label: 'Dettaglio', align: 'center', style: 'width: 50px' },
-    { name: 'actions', label: '', align: 'center', style: 'width: 50px' }
-  ]
+const erroriColumns = [
+  { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left', style: 'width: 160px' },
+  { name: 'level', label: 'Livello', field: 'level', align: 'center', style: 'width: 80px' },
+  { name: 'method', label: 'Metodo', field: 'method', align: 'center', style: 'width: 80px' },
+  { name: 'status', label: 'Status', field: 'status', align: 'center', style: 'width: 70px' },
+  { name: 'message', label: 'Messaggio', field: 'message', align: 'left' },
+  { name: 'read', label: 'Letto', field: 'read', align: 'center', style: 'width: 70px' },
+  { name: 'actions', label: '', align: 'center', style: 'width: 50px' }
+]
 
-  function getBuffer(progetto) {
-    const id = progetto.id_progetto
-    if (!editCache[id]) {
-      editCache[id] = {
-        cognome: progetto.Cognome_Beneficiario || '',
-        nome: progetto.Nome_Beneficiario || '',
-        origCognome: progetto.Cognome_Beneficiario || '',
-        origNome: progetto.Nome_Beneficiario || ''
-      }
+function getBuffer(progetto) {
+  const id = progetto.id_progetto
+  if (!editCache[id]) {
+    editCache[id] = {
+      cognome: progetto.Cognome_Beneficiario || '',
+      nome: progetto.Nome_Beneficiario || '',
+      origCognome: progetto.Cognome_Beneficiario || '',
+      origNome: progetto.Nome_Beneficiario || ''
     }
-    return editCache[id]
   }
+  return editCache[id]
+}
 
-  function setCognome(progetto, val) {
-    const buf = getBuffer(progetto)
-    buf.cognome = val
-  }
+function setCognome(progetto, val) {
+  const buf = getBuffer(progetto)
+  buf.cognome = val
+}
 
-  function setNome(progetto, val) {
-    const buf = getBuffer(progetto)
-    buf.nome = val
-  }
+function setNome(progetto, val) {
+  const buf = getBuffer(progetto)
+  buf.nome = val
+}
 
-  function isModified(progetto) {
-    const buf = editCache[progetto.id_progetto]
-    if (!buf) return false
-    return buf.cognome !== buf.origCognome || buf.nome !== buf.origNome
-  }
+const hasModified = computed(() =>
+  store.progetti.some(p => isModified(p))
+)
 
-  const hasModified = computed(() => store.progetti.some(p => isModified(p)))
-
-  async function saveAll() {
-    const modified = store.progetti.filter(p => isModified(p))
-    for (const p of modified) {
-      const ok = await store.updateProgettoBeneficiario(
-        p.id_progetto,
-        editCache[p.id_progetto].cognome,
-        editCache[p.id_progetto].nome
-      )
+async function saveAll() {
+  const modified = store.progetti.filter(p => isModified(p))
+  for (const p of modified) {
+    const ok = await store.updateProgettoBeneficiario(p.id_progetto, editCache[p.id_progetto].cognome, editCache[p.id_progetto].nome)
       const name = [p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')
       if (!ok) {
         notifyError($q, store.error, `Errore aggiornamento ${name}`)
-        return
+      return
+    }
+  }
+  notifySuccess($q, 'Tutti i beneficiari aggiornati')
+  refreshProgetti()
+}
+
+async function saveBeneficiario(progetto) {
+  const buf = editCache[progetto.id_progetto]
+  if (!buf) return
+  const ok = await store.updateProgettoBeneficiario(progetto.id_progetto, buf.cognome, buf.nome)
+  if (ok) {
+    notifySuccess($q, 'Beneficiario aggiornato')
+    buf.origCognome = buf.cognome
+    buf.origNome = buf.nome
+    await store.fetchProgetti()
+  } else if (store.error) {
+    notifyError($q, store.error, 'Errore aggiornamento beneficiario')
+  }
+}
+
+function refreshProgetti() {
+  Object.keys(editCache).forEach(k => delete editCache[k])
+  store.fetchProgetti()
+}
+
+// Associazioni
+const associazioni = ref([])
+const assocBudgetCache = reactive({})
+const savingAssoc = ref(false)
+const assocColumns = [
+  { name: 'nome', label: 'Associazione', field: 'Nome', align: 'left' },
+  { name: 'budget', label: 'Budget (€)', align: 'left' },
+  { name: 'actions', label: '', align: 'center' }
+]
+
+async function fetchAssociazioni() {
+  try {
+    const { associazioniService } = await import('src/services/associazioni.service')
+    const res = await associazioniService.getAll()
+    associazioni.value = res.data.data || []
+  } catch { associazioni.value = [] }
+}
+
+function editAssocBudget(row, val) {
+  assocBudgetCache[row.id] = parseFloat(val) || 0
+}
+
+async function saveAssocBudget(row) {
+  const val = assocBudgetCache[row.id]
+  if (val === undefined) return
+  savingAssoc.value = true
+  try {
+    const { associazioniService } = await import('src/services/associazioni.service')
+    await associazioniService.update(row.id, { Budget: val })
+    notifySuccess($q, 'Budget aggiornato')
+    delete assocBudgetCache[row.id]
+    await fetchAssociazioni()
+  } catch (err) {
+    notifyError($q, err, 'Errore aggiornamento budget')
+  } finally { savingAssoc.value = false }
+}
+
+// Volontari senza account Directus
+const volontariSenzaUtente = ref([])
+const savingVolontario = ref(false)
+
+async function fetchVolontariSenzaUtente() {
+  try {
+    const res = await contattiService.getVolontariSenzaUtente()
+    volontariSenzaUtente.value = res.data.data || []
+  } catch {
+    volontariSenzaUtente.value = []
+  }
+}
+
+async function creaUtenteVolontario(v) {
+  savingVolontario.value = true
+  try {
+    const rolesRes = await usersService.getRoleByName('Volontario')
+    const ruoloId = rolesRes.data.data?.[0]?.id
+    const email = v.email?.find(e => e.Primary)?.email_address || v.email?.[0]?.email_address
+    if (!email) { notifyError($q, null, 'Email mancante'); return }
+
+    const userRes = await usersService.searchByEmail(email)
+    const existing = (userRes.data.data || [])[0]
+    if (existing) {
+      await contattiService.update(v.id_contatto, { user_id: existing.id })
+    } else {
+      const newUserRes = await usersService.create({
+        email,
+        password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
+        first_name: v.Nome || '',
+        last_name: v.Cognome || '',
+        role: ruoloId
+      })
+      if (newUserRes.data.data?.id) {
+        await contattiService.update(v.id_contatto, { user_id: newUserRes.data.data.id })
+        await usersService.sendInvite(email, import.meta.env.VITE_RESET_URL)
       }
     }
-    notifySuccess($q, 'Tutti i beneficiari aggiornati')
-    refreshProgetti()
+    notifySuccess($q, 'Account creato per ' + (v.Nome || '') + ' ' + (v.Cognome || ''))
+    await fetchVolontariSenzaUtente()
+  } catch (err) {
+    notifyError($q, err, 'Errore creazione account')
+  } finally {
+    savingVolontario.value = false
   }
+}
 
-  async function saveBeneficiario(progetto) {
-    const buf = editCache[progetto.id_progetto]
-    if (!buf) return
-    const ok = await store.updateProgettoBeneficiario(progetto.id_progetto, buf.cognome, buf.nome)
-    if (ok) {
-      notifySuccess($q, 'Beneficiario aggiornato')
-      buf.origCognome = buf.cognome
-      buf.origNome = buf.nome
-      await store.fetchProgetti()
-    } else if (store.error) {
-      notifyError($q, store.error, 'Errore aggiornamento beneficiario')
-    }
-  }
+const roleOptions = computed(() => store.roles)
+const roleColor = (name) => {
+  const n = (name || '').toLowerCase()
+  if (n.includes('admin') || n.includes('administrator')) return 'negative'
+  if (n.includes('verifica') || n.includes('valid')) return 'primary'
+  if (n.includes('gestione') || n.includes('gestore')) return 'secondary'
+  return 'grey'
+}
 
-  function refreshProgetti() {
-    Object.keys(editCache).forEach(k => delete editCache[k])
-    store.fetchProgetti()
-  }
+// Create user dialog
+const showCreateDialog = ref(false)
+const searchEmail = ref('')
+const newFirstName = ref('')
+const newLastName = ref('')
+const newRole = ref(null)
+const userCreated = ref(false)
+const emailSubject = ref('')
+const emailBody = ref('')
 
-  // Associazioni
-  const associazioni = ref([])
-  const assocBudgetCache = reactive({})
-  const savingAssoc = ref(false)
-  const assocColumns = [
-    { name: 'nome', label: 'Associazione', field: 'Nome', align: 'left' },
-    { name: 'budget', label: 'Budget (€)', align: 'left' },
-    { name: 'actions', label: '', align: 'center' }
-  ]
+function openCreateDialog() {
+  searchEmail.value = ''
+  newFirstName.value = ''
+  newLastName.value = ''
+  newRole.value = null
+  userCreated.value = false
+  store.contattoTrovato = null
+  emailSubject.value = ''
+  emailBody.value = ''
+  showCreateDialog.value = true
+}
 
-  async function fetchAssociazioni() {
-    try {
-      const { associazioniService } = await import('src/services/associazioni.service')
-      const res = await associazioniService.getAll()
-      associazioni.value = res.data.data || []
-    } catch {
-      associazioni.value = []
-    }
-  }
-
-  function editAssocBudget(row, val) {
-    assocBudgetCache[row.id] = parseFloat(val) || 0
-  }
-
-  async function saveAssocBudget(row) {
-    const val = assocBudgetCache[row.id]
-    if (val === undefined) return
-    savingAssoc.value = true
-    try {
-      const { associazioniService } = await import('src/services/associazioni.service')
-      await associazioniService.update(row.id, { Budget: val })
-      notifySuccess($q, 'Budget aggiornato')
-      delete assocBudgetCache[row.id]
-      await fetchAssociazioni()
-    } catch (err) {
-      notifyError($q, err, 'Errore aggiornamento budget')
-    } finally {
-      savingAssoc.value = false
-    }
-  }
-
-  // Volontari senza account Directus
-  const volontariSenzaUtente = ref([])
-  const savingVolontario = ref(false)
-  const errorDetailDialog = ref(false)
-  const errorDetailRow = ref(null)
-
-  function toggleErrorDetail(id) {
-    const row = errorLogStore.items.find(i => i.id === id)
-    if (row?.responseBody) {
-      errorDetailRow.value = row
-      errorDetailDialog.value = true
-    }
-  }
-
-  async function fetchVolontariSenzaUtente() {
-    try {
-      const res = await contattiService.getVolontariSenzaUtente()
-      volontariSenzaUtente.value = res.data.data || []
-    } catch {
-      volontariSenzaUtente.value = []
-    }
-  }
-
-  async function creaUtenteVolontario(v) {
-    savingVolontario.value = true
-    try {
-      const rolesRes = await usersService.getRoleByName('Volontario')
-      const ruoloId = rolesRes.data.data?.[0]?.id
-      const email = v.email?.find(e => e.Primary)?.email_address || v.email?.[0]?.email_address
-      if (!email) {
-        notifyError($q, null, 'Email mancante')
-        return
-      }
-
-      const userRes = await usersService.searchByEmail(email)
-      const existing = (userRes.data.data || [])[0]
-      if (existing) {
-        await contattiService.update(v.id_contatto, { user_id: existing.id })
-      } else {
-        const newUserRes = await usersService.create({
-          email,
-          password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
-          first_name: v.Nome || '',
-          last_name: v.Cognome || '',
-          role: ruoloId
-        })
-        if (newUserRes.data.data?.id) {
-          await contattiService.update(v.id_contatto, { user_id: newUserRes.data.data.id })
-          await usersService.sendInvite(email, import.meta.env.VITE_RESET_URL)
-        }
-      }
-      notifySuccess($q, 'Account creato per ' + (v.Nome || '') + ' ' + (v.Cognome || ''))
-      await fetchVolontariSenzaUtente()
-    } catch (err) {
-      notifyError($q, err, 'Errore creazione account')
-    } finally {
-      savingVolontario.value = false
-    }
-  }
-
-  const roleOptions = computed(() => store.roles)
-  const roleColor = name => {
-    const n = (name || '').toLowerCase()
-    if (n.includes('admin') || n.includes('administrator')) return 'negative'
-    if (n.includes('verifica') || n.includes('valid')) return 'primary'
-    if (n.includes('gestione') || n.includes('gestore')) return 'secondary'
-    return 'grey'
-  }
-
-  // Create user dialog
-  const showCreateDialog = ref(false)
-  const searchEmail = ref('')
-  const newFirstName = ref('')
-  const newLastName = ref('')
-  const newRole = ref(null)
-  const userCreated = ref(false)
-  const emailSubject = ref('')
-  const emailBody = ref('')
-
-  function openCreateDialog() {
-    searchEmail.value = ''
+async function handleSearchContatto() {
+  await store.searchContatto(searchEmail.value)
+  if (!store.contattoTrovato) {
     newFirstName.value = ''
     newLastName.value = ''
-    newRole.value = null
-    userCreated.value = false
-    store.contattoTrovato = null
+  }
+}
+
+async function handleCreateUser() {
+  const ok = await store.createUser(
+    searchEmail.value,
+    newRole.value,
+    newFirstName.value,
+    newLastName.value
+  )
+  if (ok) {
+    notifySuccess($q, 'Utente creato con successo')
+    userCreated.value = true
+  } else if (store.error) {
+    notifyError($q, store.error, "Errore nella creazione dell'utente")
+  }
+}
+
+async function handleSendEmail() {
+  const nome = store.contattoTrovato
+    ? `${store.contattoTrovato.Nome} ${store.contattoTrovato.Cognome}`
+    : `${newFirstName.value} ${newLastName.value}`.trim()
+  const body = emailBody.value
+    .replace(/\{nome\}/g, nome)
+  const ok = await store.sendCustomEmail(searchEmail.value, emailSubject.value, body)
+  if (ok) {
+    notifySuccess($q, 'Email inviata con successo')
     emailSubject.value = ''
     emailBody.value = ''
-    showCreateDialog.value = true
+  } else if (store.error) {
+    notifyError($q, store.error, "Errore nell'invio dell'email")
   }
+}
 
-  async function handleSearchContatto() {
-    await store.searchContatto(searchEmail.value)
-    if (!store.contattoTrovato) {
-      newFirstName.value = ''
-      newLastName.value = ''
-    }
+// Reset password dialog
+const showResetDialog = ref(false)
+const resetUser = ref(null)
+const resetPassword = ref('')
+const showResetPwd = ref(false)
+
+function openResetPasswordDialog(user) {
+  resetUser.value = user
+  resetPassword.value = ''
+  showResetPwd.value = false
+  showResetDialog.value = true
+}
+
+async function handleResetPassword() {
+  const ok = await store.resetUserPassword(resetUser.value.id, resetPassword.value)
+  if (ok) {
+    notifySuccess($q, 'Password reimpostata con successo')
+    showResetDialog.value = false
+  } else if (store.error) {
+    notifyError($q, store.error, 'Errore nel reset della password')
   }
+}
 
-  async function handleCreateUser() {
-    const ok = await store.createUser(searchEmail.value, newRole.value, newFirstName.value, newLastName.value)
-    if (ok) {
-      notifySuccess($q, 'Utente creato con successo')
-      userCreated.value = true
-    } else if (store.error) {
-      notifyError($q, store.error, "Errore nella creazione dell'utente")
-    }
+async function handleRoleChange(userId, roleId) {
+  if (!roleId) return
+  const ok = await store.updateUserRole(userId, roleId)
+  if (ok) {
+    notifySuccess($q, 'Ruolo aggiornato')
+  } else if (store.error) {
+    notifyError($q, store.error, "Errore nell'aggiornamento del ruolo")
   }
+}
 
-  async function handleSendEmail() {
-    const nome = store.contattoTrovato
-      ? `${store.contattoTrovato.Nome} ${store.contattoTrovato.Cognome}`
-      : `${newFirstName.value} ${newLastName.value}`.trim()
-    const body = emailBody.value.replace(/\{nome\}/g, nome)
-    const ok = await store.sendCustomEmail(searchEmail.value, emailSubject.value, body)
-    if (ok) {
-      notifySuccess($q, 'Email inviata con successo')
-      emailSubject.value = ''
-      emailBody.value = ''
-    } else if (store.error) {
-      notifyError($q, store.error, "Errore nell'invio dell'email")
-    }
-  }
-
-  // Reset password dialog
-  const showResetDialog = ref(false)
-  const resetUser = ref(null)
-  const resetPassword = ref('')
-  const showResetPwd = ref(false)
-
-  function openResetPasswordDialog(user) {
-    resetUser.value = user
-    resetPassword.value = ''
-    showResetPwd.value = false
-    showResetDialog.value = true
-  }
-
-  async function handleResetPassword() {
-    const ok = await store.resetUserPassword(resetUser.value.id, resetPassword.value)
-    if (ok) {
-      notifySuccess($q, 'Password reimpostata con successo')
-      showResetDialog.value = false
-    } else if (store.error) {
-      notifyError($q, store.error, 'Errore nel reset della password')
-    }
-  }
-
-  async function handleRoleChange(userId, roleId) {
-    if (!roleId) return
-    const ok = await store.updateUserRole(userId, roleId)
-    if (ok) {
-      notifySuccess($q, 'Ruolo aggiornato')
-    } else if (store.error) {
-      notifyError($q, store.error, "Errore nell'aggiornamento del ruolo")
-    }
-  }
-
-  onMounted(() => {
-    store.fetchAll()
-    store.fetchProgetti()
-    fetchAssociazioni()
-    fetchVolontariSenzaUtente()
-    errorLogStore.fetchAll()
-  })
+onMounted(() => {
+  store.fetchAll()
+  store.fetchProgetti()
+  fetchAssociazioni()
+  fetchVolontariSenzaUtente()
+  errorLogStore.fetchAll()
+})
 </script>
 
 <style scoped>
-  .admin-role-select {
-    min-width: 140px;
-  }
-  .admin-role-min-width {
-    min-width: 120px;
-  }
-  .admin-scroll-area {
-    max-height: 70vh;
-  }
-  .inline-edit-input {
-    min-width: 120px;
-  }
+.admin-role-select {
+  min-width: 140px;
+}
+.admin-role-min-width {
+  min-width: 120px;
+}
+.admin-scroll-area {
+  max-height: 70vh;
+}
+.inline-edit-input {
+  min-width: 120px;
+}
 </style>

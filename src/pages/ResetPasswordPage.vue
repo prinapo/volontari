@@ -5,7 +5,9 @@
         <q-card class="login-card" flat bordered>
           <template v-if="!token">
             <q-card-section class="text-center q-pt-xl q-px-xl">
-              <div class="text-h6 text-negative">Link non valido</div>
+              <div class="text-h6 text-negative">
+                Link non valido
+              </div>
               <div class="text-body2 text-grey q-mt-sm">
                 Il link per il reset della password non è valido o è scaduto.
               </div>
@@ -17,15 +19,23 @@
 
           <template v-else-if="success">
             <q-card-section class="text-center q-pt-xl q-px-xl">
-              <div class="text-h6 text-positive">Password aggiornata</div>
-              <div class="text-body2 text-grey q-mt-sm">Reindirizzamento al login...</div>
+              <div class="text-h6 text-positive">
+                Password aggiornata
+              </div>
+              <div class="text-body2 text-grey q-mt-sm">
+                Reindirizzamento al login...
+              </div>
             </q-card-section>
           </template>
 
           <template v-else>
             <q-card-section class="text-center q-pt-xl">
-              <div class="text-h6 text-primary">Reimposta password</div>
-              <div class="text-caption text-grey q-mt-sm">Scegli una nuova password per il tuo account</div>
+              <div class="text-h6 text-primary">
+                Reimposta password
+              </div>
+              <div class="text-caption text-grey q-mt-sm">
+                Scegli una nuova password per il tuo account
+              </div>
             </q-card-section>
 
             <q-card-section class="q-px-xl q-pb-xl">
@@ -93,51 +103,51 @@
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import { useQuasar } from 'quasar'
-  import { authService } from 'src/services/auth.service'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { authService } from 'src/services/auth.service'
 
-  const $q = useQuasar()
-  const route = useRoute()
-  const router = useRouter()
+const $q = useQuasar()
+const route = useRoute()
+const router = useRouter()
 
-  const token = computed(() => route.query.token || null)
-  const newPassword = ref('')
-  const confirmPassword = ref('')
-  const showPwd1 = ref(false)
-  const showPwd2 = ref(false)
-  const loading = ref(false)
-  const error = ref(null)
-  const success = ref(false)
+const token = computed(() => route.query.token || null)
+const newPassword = ref('')
+const confirmPassword = ref('')
+const showPwd1 = ref(false)
+const showPwd2 = ref(false)
+const loading = ref(false)
+const error = ref(null)
+const success = ref(false)
 
-  async function handleReset() {
-    if (newPassword.value !== confirmPassword.value) {
-      error.value = 'Le password non coincidono'
-      return
-    }
-    loading.value = true
-    error.value = null
-    try {
-      await authService.resetPassword(token.value, newPassword.value)
-      success.value = true
-      $q.notify({
-        type: 'positive',
-        message: 'Password aggiornata con successo'
-      })
-      setTimeout(() => router.push('/login'), 2000)
-    } catch (err) {
-      const msg = err.response?.data?.errors?.[0]?.message || 'Errore durante il reset della password'
-      error.value = msg
-    } finally {
-      loading.value = false
-    }
+async function handleReset() {
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = 'Le password non coincidono'
+    return
   }
+  loading.value = true
+  error.value = null
+  try {
+    await authService.resetPassword(token.value, newPassword.value)
+    success.value = true
+    $q.notify({
+      type: 'positive',
+      message: 'Password aggiornata con successo'
+    })
+    setTimeout(() => router.push('/login'), 2000)
+  } catch (err) {
+    const msg = err.response?.data?.errors?.[0]?.message || 'Errore durante il reset della password'
+    error.value = msg
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
-  .login-card {
-    width: 100%;
-    max-width: 420px;
-  }
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
 </style>

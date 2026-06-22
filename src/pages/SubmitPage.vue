@@ -4,15 +4,29 @@
       <q-page class="q-pa-md submit-page">
         <div class="page-inner">
           <div class="text-center q-mb-lg">
-            <div class="text-h4 text-weight-medium">Invio giustificativi</div>
-            <div class="text-body1 text-grey-7">Questo form è per famiglie senza un volontario assegnato.</div>
-            <q-btn flat dense color="primary" icon="arrow_back" label="Torna al login" to="/login" class="q-mt-sm" />
+            <div class="text-h4 text-weight-medium">
+              Invio giustificativi
+            </div>
+            <div class="text-body1 text-grey-7">
+              Questo form è per famiglie senza un volontario assegnato.
+            </div>
+            <q-btn
+              flat
+              dense
+              color="primary"
+              icon="arrow_back"
+              label="Torna al login"
+              to="/login"
+              class="q-mt-sm"
+            />
           </div>
 
           <q-form ref="formRef" class="q-gutter-y-lg" @submit.prevent="handleSubmit">
             <q-card flat bordered>
               <q-card-section>
-                <div class="text-h6">Chi sei</div>
+                <div class="text-h6">
+                  Chi sei
+                </div>
               </q-card-section>
               <q-card-section class="q-gutter-y-md">
                 <div class="row q-col-gutter-md">
@@ -20,7 +34,6 @@
                     <q-input
                       v-model="form.nome_richiedente"
                       label="Nome *"
-                      data-testid="submit-nome-richiedente"
                       outlined
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
@@ -30,7 +43,6 @@
                     <q-input
                       v-model="form.cognome_richiedente"
                       label="Cognome *"
-                      data-testid="submit-cognome-richiedente"
                       outlined
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
@@ -40,7 +52,6 @@
                 <q-input
                   v-model="form.email"
                   label="Email *"
-                  data-testid="submit-email"
                   type="email"
                   outlined
                   :rules="[
@@ -52,7 +63,6 @@
                 <q-input
                   v-model="form.telefono"
                   label="Telefono *"
-                  data-testid="submit-telefono"
                   type="tel"
                   outlined
                   :rules="[val => !!val || 'Campo obbligatorio']"
@@ -61,7 +71,6 @@
                 <q-input
                   v-model="form.iban"
                   label="IBAN *"
-                  data-testid="submit-iban"
                   outlined
                   :rules="[val => !!val || 'Campo obbligatorio']"
                   lazy-rules
@@ -69,7 +78,6 @@
                 <q-input
                   v-model="form.intestatario"
                   label="Intestatario CC *"
-                  data-testid="submit-intestatario"
                   outlined
                   :rules="[val => !!val || 'Campo obbligatorio']"
                   lazy-rules
@@ -79,7 +87,9 @@
 
             <q-card flat bordered>
               <q-card-section>
-                <div class="text-h6">Beneficiario</div>
+                <div class="text-h6">
+                  Beneficiario
+                </div>
               </q-card-section>
               <q-card-section class="q-gutter-y-md">
                 <div class="row q-col-gutter-md">
@@ -87,7 +97,6 @@
                     <q-input
                       v-model="form.nome_beneficiario"
                       label="Nome *"
-                      data-testid="submit-nome-beneficiario"
                       outlined
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
@@ -97,7 +106,6 @@
                     <q-input
                       v-model="form.cognome_beneficiario"
                       label="Cognome *"
-                      data-testid="submit-cognome-beneficiario"
                       outlined
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
@@ -111,7 +119,9 @@
               <q-card flat bordered class="q-mt-md">
                 <q-card-section class="q-gutter-y-md">
                   <div class="row items-center q-mb-sm">
-                    <div class="text-subtitle2 text-grey-8">Giustificativo #{{ i + 1 }}</div>
+                    <div class="text-subtitle2 text-grey-8">
+                      Giustificativo #{{ i + 1 }}
+                    </div>
                     <q-space />
                     <q-btn
                       v-if="giustificativi.length > 1"
@@ -129,7 +139,6 @@
                   <q-input
                     v-model="g.descrizione"
                     label="Descrizione *"
-                    :data-testid="`giustificativo-descrizione-${i}`"
                     outlined
                     type="textarea"
                     :rules="[val => !!val || 'Campo obbligatorio']"
@@ -140,7 +149,6 @@
                       <q-input
                         v-model="g.importo"
                         label="Importo (€) *"
-                        :data-testid="`giustificativo-importo-${i}`"
                         type="number"
                         outlined
                         step="0.01"
@@ -172,18 +180,31 @@
                     <template #prepend>
                       <q-icon name="attach_file" />
                     </template>
-                    <template #hint> Formati: {{ FILE_ACCEPT }} </template>
+                    <template #hint>
+                      Formati: {{ FILE_ACCEPT }}
+                    </template>
                   </q-file>
                 </q-card-section>
               </q-card>
             </template>
 
             <div class="text-center q-mt-md">
-              <q-btn icon="add" color="secondary" label="Aggiungi giustificativo" @click="addGiustificativo" />
+              <q-btn
+                icon="add"
+                color="secondary"
+                label="Aggiungi giustificativo"
+                @click="addGiustificativo"
+              />
             </div>
 
             <div v-if="giustificativi.length > 0" class="text-center q-mb-xl q-mt-lg">
-              <q-btn type="submit" color="primary" size="lg" label="Invia" :loading="saving" />
+              <q-btn
+                type="submit"
+                color="primary"
+                size="lg"
+                label="Invia"
+                :loading="saving"
+              />
             </div>
           </q-form>
         </div>
@@ -193,97 +214,97 @@
 </template>
 
 <script setup>
-  import { reactive, ref } from 'vue'
-  import { useQuasar } from 'quasar'
-  import { submitService } from 'src/services/submit.service'
-  import { notifyError, notifySuccess } from 'src/utils/notify'
-  import { FILE_ACCEPT, FILE_MAX_SIZE, FOLDERS } from 'src/utils/constants'
+import { reactive, ref } from 'vue'
+import { useQuasar } from 'quasar'
+import { submitService } from 'src/services/submit.service'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { FILE_ACCEPT, FILE_MAX_SIZE, FOLDERS } from 'src/utils/constants'
 
-  const $q = useQuasar()
-  const formRef = ref(null)
-  const saving = ref(false)
+const $q = useQuasar()
+const formRef = ref(null)
+const saving = ref(false)
 
-  const today = new Date().toISOString().slice(0, 10)
+const today = new Date().toISOString().slice(0, 10)
 
-  const form = reactive({
-    nome_richiedente: '',
-    cognome_richiedente: '',
-    email: '',
-    telefono: '',
-    iban: '',
-    intestatario: '',
-    nome_beneficiario: '',
-    cognome_beneficiario: ''
-  })
+const form = reactive({
+  nome_richiedente: '',
+  cognome_richiedente: '',
+  email: '',
+  telefono: '',
+  iban: '',
+  intestatario: '',
+  nome_beneficiario: '',
+  cognome_beneficiario: ''
+})
 
-  const giustificativi = ref([])
+const giustificativi = ref([])
 
-  function addGiustificativo() {
-    giustificativi.value.push({ descrizione: '', importo: null, data: today, file: null })
-  }
+function addGiustificativo() {
+  giustificativi.value.push({ descrizione: '', importo: null, data: today, file: null })
+}
 
-  function removeGiustificativo(index) {
-    giustificativi.value.splice(index, 1)
-  }
+function removeGiustificativo(index) {
+  giustificativi.value.splice(index, 1)
+}
 
-  async function handleSubmit() {
-    const isValid = await formRef.value?.validate()
-    if (!isValid) return
+async function handleSubmit() {
+  const isValid = await formRef.value?.validate()
+  if (!isValid) return
 
-    saving.value = true
-    try {
-      for (const g of giustificativi.value) {
-        const uploadRes = await submitService.uploadFile(g.file, FOLDERS.INVII_PUBBLICI)
-        const allegatoId = uploadRes.data.data.id
+  saving.value = true
+  try {
+    for (const g of giustificativi.value) {
+      const uploadRes = await submitService.uploadFile(g.file, FOLDERS.INVII_PUBBLICI)
+      const allegatoId = uploadRes.data.data.id
 
-        await submitService.createSubmission({
-          ...form,
-          descrizione: g.descrizione,
-          importo: parseFloat(g.importo),
-          data: g.data,
-          allegato: allegatoId,
-          stato: 'in_attesa',
-          data_invio: new Date().toISOString()
-        })
-      }
-
-      notifySuccess($q, 'Grazie! I tuoi giustificativi sono stati ricevuti. Verranno verificati al più presto.')
-
-      resetForm()
-    } catch (err) {
-      const status = err?.response?.status
-      if (status === 413) {
-        notifyError($q, null, 'Il file è troppo grande. Il limite è 5MB per file.')
-      } else if (err?.message?.includes('Network Error') || !status) {
-        notifyError($q, null, 'Errore di connessione. Controlla la rete e riprova.')
-      } else if (status === 403) {
-        notifyError($q, null, "Permessi insufficienti. Contatta l'amministratore.")
-      } else if (status >= 500) {
-        notifyError($q, null, 'Errore del server. Riprova più tardi.')
-      } else {
-        notifyError($q, err, "Errore nell'invio. Riprova più tardi.")
-      }
-    } finally {
-      saving.value = false
+      await submitService.createSubmission({
+        ...form,
+        descrizione: g.descrizione,
+        importo: parseFloat(g.importo),
+        data: g.data,
+        allegato: allegatoId,
+        stato: 'in_attesa',
+        data_invio: new Date().toISOString()
+      })
     }
-  }
 
-  function resetForm() {
-    form.nome_richiedente = ''
-    form.cognome_richiedente = ''
-    form.email = ''
-    form.telefono = ''
-    form.iban = ''
-    form.intestatario = ''
-    form.nome_beneficiario = ''
-    form.cognome_beneficiario = ''
-    giustificativi.value = []
+    notifySuccess($q, 'Grazie! I tuoi giustificativi sono stati ricevuti. Verranno verificati al più presto.')
+
+    resetForm()
+  } catch (err) {
+    const status = err?.response?.status
+    if (status === 413) {
+      notifyError($q, null, 'Il file è troppo grande. Il limite è 5MB per file.')
+    } else if (err?.message?.includes('Network Error') || !status) {
+      notifyError($q, null, 'Errore di connessione. Controlla la rete e riprova.')
+    } else if (status === 403) {
+      notifyError($q, null, 'Permessi insufficienti. Contatta l\'amministratore.')
+    } else if (status >= 500) {
+      notifyError($q, null, 'Errore del server. Riprova più tardi.')
+    } else {
+      notifyError($q, err, "Errore nell'invio. Riprova più tardi.")
+    }
+  } finally {
+    saving.value = false
   }
+}
+
+function resetForm() {
+  form.nome_richiedente = ''
+  form.cognome_richiedente = ''
+  form.email = ''
+  form.telefono = ''
+  form.iban = ''
+  form.intestatario = ''
+  form.nome_beneficiario = ''
+  form.cognome_beneficiario = ''
+  giustificativi.value = []
+}
 </script>
 
 <style scoped>
-  .page-inner {
-    max-width: 640px;
-    margin: 0 auto;
-  }
+.page-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
 </style>

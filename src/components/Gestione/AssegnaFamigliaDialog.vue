@@ -2,9 +2,18 @@
   <q-dialog v-model="visible" persistent>
     <q-card style="width: 100%; max-width: 800px; min-width: unset">
       <q-card-section class="row items-center">
-        <div class="text-h6">Associa a famiglia</div>
+        <div class="text-h6">
+          Associa a famiglia
+        </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -49,7 +58,13 @@
 
           <template #body-cell-azioni="slotProps">
             <q-td :props="slotProps">
-              <q-btn flat dense icon="delete" color="negative" @click="handleRemove(slotProps.row)">
+              <q-btn
+                flat
+                dense
+                icon="delete"
+                color="negative"
+                @click="handleRemove(slotProps.row)"
+              >
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>
             </q-td>
@@ -101,112 +116,113 @@
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue'
-  import { useQuasar } from 'quasar'
-  import { useGestioneStore } from 'stores/gestione.store'
-  import { notifyError, notifySuccess } from 'src/utils/notify'
-  import { gestioneService } from 'src/services/gestione.service'
+import { ref, watch } from 'vue'
+import { useQuasar } from 'quasar'
+import { useGestioneStore } from 'stores/gestione.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { gestioneService } from 'src/services/gestione.service'
 
-  const props = defineProps({
-    modelValue: Boolean,
-    contatto: { type: Object, default: null },
-    ruolo: { type: String, default: 'Volontario' }
-  })
+const props = defineProps({
+  modelValue: Boolean,
+  contatto: { type: Object, default: null },
+  ruolo: { type: String, default: 'Volontario' }
+})
 
-  const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])
 
-  const $q = useQuasar()
-  const store = useGestioneStore()
+const $q = useQuasar()
+const store = useGestioneStore()
 
-  const visible = ref(false)
-  const loading = ref(false)
-  const famiglie = ref([])
-  const selectedFamiglia = ref(null)
-  const famigliaOptions = ref([])
-  const selectedRuolo = ref(props.ruolo)
+const visible = ref(false)
+const loading = ref(false)
+const famiglie = ref([])
+const selectedFamiglia = ref(null)
+const famigliaOptions = ref([])
+const selectedRuolo = ref(props.ruolo)
 
-  const ruoloOptions = [
-    { label: 'Volontario', value: 'Volontario' },
-    { label: 'Genitore', value: 'Genitore' }
-  ]
+const ruoloOptions = [
+  { label: 'Volontario', value: 'Volontario' },
+  { label: 'Genitore', value: 'Genitore' }
+]
 
-  const famigliaColumns = [
-    { name: 'nome', label: 'Famiglia', field: row => row.Famiglia?.Nome_Famiglia || '', align: 'left' },
-    { name: 'ruolo', label: 'Ruolo', field: 'Ruolo_nella_Famiglia', align: 'left' },
-    { name: 'azioni', label: '', align: 'center' }
-  ]
+const famigliaColumns = [
+  { name: 'nome', label: 'Famiglia', field: row => row.Famiglia?.Nome_Famiglia || '', align: 'left' },
+  { name: 'ruolo', label: 'Ruolo', field: 'Ruolo_nella_Famiglia', align: 'left' },
+  { name: 'azioni', label: '', align: 'center' }
+]
 
-  watch(
-    () => props.modelValue,
-    async val => {
-      visible.value = val
-      if (val && props.contatto) {
-        await loadFamiglie()
-      }
-    }
-  )
-
-  watch(visible, val => {
-    if (!val) emit('update:modelValue', false)
-  })
-
-  async function loadFamiglie() {
-    loading.value = true
-    try {
-      const res = await gestioneService.getFamiglieByContatto(props.contatto.id_contatto)
-      famiglie.value = res.data.data || []
-    } catch {
-      famiglie.value = []
-    } finally {
-      loading.value = false
-    }
+watch(() => props.modelValue, async (val) => {
+  visible.value = val
+  if (val && props.contatto) {
+    await loadFamiglie()
   }
+})
 
-  async function filterFamiglie(search, update) {
-    update(async () => {
-      if (!search) {
-        try {
-          const res = await gestioneService.getFamiglie({ limit: -1 })
-          famigliaOptions.value = res.data.data || []
-        } catch {
-          famigliaOptions.value = []
-        }
-        return
-      }
+watch(visible, (val) => {
+  if (!val) emit('update:modelValue', false)
+})
+
+async function loadFamiglie() {
+  loading.value = true
+  try {
+    const res = await gestioneService.getFamiglieByContatto(props.contatto.id_contatto)
+    famiglie.value = res.data.data || []
+  } catch {
+    famiglie.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+async function filterFamiglie(search, update) {
+  update(async () => {
+    if (!search) {
       try {
-        const res = await gestioneService.searchFamiglie(search)
+        const res = await gestioneService.getFamiglie({ limit: -1 })
         famigliaOptions.value = res.data.data || []
       } catch {
         famigliaOptions.value = []
       }
-    })
-  }
-
-  async function handleAssign() {
-    if (!selectedFamiglia.value) return
-    const ok = await store.assignToFamiglia(props.contatto.id_contatto, selectedFamiglia.value, selectedRuolo.value)
-    if (ok) {
-      notifySuccess($q, 'Famiglia assegnata')
-      selectedFamiglia.value = null
-      await loadFamiglie()
-    } else if (store.error) {
-      notifyError($q, store.error, "Errore nell'assegnazione della famiglia")
+      return
     }
-  }
-
-  async function handleRemove(row) {
-    const ok = await store.removeFromFamiglia(row.id, props.contatto.id_contatto, row.Ruolo_nella_Famiglia)
-    if (ok) {
-      notifySuccess($q, 'Famiglia rimossa')
-      await loadFamiglie()
-    } else if (store.error) {
-      notifyError($q, store.error, 'Errore nella rimozione della famiglia')
+    try {
+      const res = await gestioneService.searchFamiglie(search)
+      famigliaOptions.value = res.data.data || []
+    } catch {
+      famigliaOptions.value = []
     }
+  })
+}
+
+async function handleAssign() {
+  if (!selectedFamiglia.value) return
+  const ok = await store.assignToFamiglia(
+    props.contatto.id_contatto,
+    selectedFamiglia.value,
+    selectedRuolo.value
+  )
+  if (ok) {
+    notifySuccess($q, 'Famiglia assegnata')
+    selectedFamiglia.value = null
+    await loadFamiglie()
+  } else if (store.error) {
+    notifyError($q, store.error, "Errore nell'assegnazione della famiglia")
   }
+}
+
+async function handleRemove(row) {
+  const ok = await store.removeFromFamiglia(row.id, props.contatto.id_contatto, row.Ruolo_nella_Famiglia)
+  if (ok) {
+    notifySuccess($q, 'Famiglia rimossa')
+    await loadFamiglie()
+  } else if (store.error) {
+    notifyError($q, store.error, "Errore nella rimozione della famiglia")
+  }
+}
 </script>
 
 <style scoped>
-  .assegna-ruolo-min-width {
-    min-width: 120px;
-  }
+.assegna-ruolo-min-width {
+  min-width: 120px;
+}
 </style>

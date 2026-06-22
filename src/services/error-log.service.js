@@ -8,9 +8,9 @@ export const errorLogService = {
   getAll(params = {}) {
     return api.get('/items/ErrorLog', {
       params: {
-        fields: '*',
-        sort: '-timestamp',
-        limit: 100,
+        'fields': '*',
+        'sort': '-timestamp',
+        'limit': 100,
         ...params
       }
     })

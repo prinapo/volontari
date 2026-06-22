@@ -2,12 +2,31 @@
   <q-card flat bordered class="q-mb-md" :data-testid="'giustificativo-card-' + item.id">
     <q-card-section class="q-pa-md">
       <div class="row items-center q-gutter-sm q-mb-sm">
-        <q-badge :color="statoColor(item.Stato)" class="text-uppercase q-pa-xs">
+        <q-badge
+          :color="statoColor(item.Stato)"
+          class="text-uppercase q-pa-xs"
+        >
           {{ statoLabel(item.Stato) }}
         </q-badge>
         <q-space />
-        <q-btn v-if="canEdit" icon="send" flat dense color="accent" label="Invia" @click="$emit('submit', item)" />
-        <q-btn v-if="canEdit" icon="delete" flat dense color="negative" label="Elimina" @click="confirmDelete" />
+        <q-btn
+          v-if="canEdit"
+          icon="send"
+          flat
+          dense
+          color="accent"
+          label="Invia"
+          @click="$emit('submit', item)"
+        />
+        <q-btn
+          v-if="canEdit"
+          icon="delete"
+          flat
+          dense
+          color="negative"
+          label="Elimina"
+          @click="confirmDelete"
+        />
       </div>
     </q-card-section>
     <q-separator />
@@ -16,7 +35,7 @@
         :model-value="item.Descrizione"
         label="Descrizione"
         :readonly="!canEdit"
-        @save="val => $emit('save-field', { id: item.id, field: 'Descrizione', value: val })"
+        @save="(val) => $emit('save-field', { id: item.id, field: 'Descrizione', value: val })"
       />
 
       <div class="row q-gutter-x-md">
@@ -27,7 +46,7 @@
             type="number"
             :readonly="!canEdit"
             :format-display="formatCurrency"
-            @save="val => $emit('save-field', { id: item.id, field: 'Importo', value: parseFloat(val) || 0 })"
+            @save="(val) => $emit('save-field', { id: item.id, field: 'Importo', value: parseFloat(val) || 0 })"
           />
         </div>
         <div class="col-xs-12 col-sm-6">
@@ -37,14 +56,16 @@
             type="date"
             :readonly="!canEdit"
             :format-display="formatDate"
-            @save="val => $emit('save-field', { id: item.id, field: 'Data', value: val })"
+            @save="(val) => $emit('save-field', { id: item.id, field: 'Data', value: val })"
           />
         </div>
       </div>
 
       <!-- Attachment -->
       <div>
-        <div class="text-caption text-grey q-mb-xs">Allegato</div>
+        <div class="text-caption text-grey q-mb-xs">
+          Allegato
+        </div>
         <div class="row items-center q-gutter-sm">
           <template v-if="item.Allegato">
             <q-btn
@@ -98,7 +119,9 @@
         v-if="item.Stato === 'rifiutato' && item.NotaRifiuto"
         class="bg-red-1 q-pa-sm q-mx-md q-mb-md rounded-borders"
       >
-        <div class="text-caption text-negative text-weight-medium q-mb-xs">Motivazione del rifiuto</div>
+        <div class="text-caption text-negative text-weight-medium q-mb-xs">
+          Motivazione del rifiuto
+        </div>
         <div class="text-body2">
           {{ item.NotaRifiuto }}
         </div>
@@ -108,48 +131,48 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
-  import { useQuasar } from 'quasar'
-  import { FILE_ACCEPT } from 'src/utils/constants'
-  import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
-  import { assetUrl } from 'src/utils/assets'
-  import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import { ref } from 'vue'
+import { useQuasar } from 'quasar'
+import { FILE_ACCEPT } from 'src/utils/constants'
+import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import { assetUrl } from 'src/utils/assets'
+import InlineEditableField from 'components/Common/InlineEditableField.vue'
 
-  const $q = useQuasar()
+const $q = useQuasar()
 
-  const props = defineProps({
-    item: { type: Object, required: true },
-    canEdit: { type: Boolean, default: false }
+const props = defineProps({
+  item: { type: Object, required: true },
+  canEdit: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['save-field', 'submit', 'file-change', 'invalida'])
+
+const newFile = ref(null)
+
+function allegatoUrl(fileId) {
+  return assetUrl(fileId)
+}
+
+function downloadUrl(fileId) {
+  return assetUrl(fileId, true)
+}
+
+function confirmDelete() {
+  $q.dialog({
+    title: 'Eliminare giustificativo?',
+    message: 'Il giustificativo verrà nascosto ma i dati rimarranno salvati.',
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Elimina', color: 'negative' },
+    persistent: true
+  }).onOk(() => {
+    emit('invalida', props.item.id)
   })
+}
 
-  const emit = defineEmits(['save-field', 'submit', 'file-change', 'invalida'])
-
-  const newFile = ref(null)
-
-  function allegatoUrl(fileId) {
-    return assetUrl(fileId)
+function onFileChange(file) {
+  if (file) {
+    emit('file-change', { id: props.item.id, file })
+    newFile.value = null
   }
-
-  function downloadUrl(fileId) {
-    return assetUrl(fileId, true)
-  }
-
-  function confirmDelete() {
-    $q.dialog({
-      title: 'Eliminare giustificativo?',
-      message: 'Il giustificativo verrà nascosto ma i dati rimarranno salvati.',
-      cancel: { label: 'Annulla', flat: true },
-      ok: { label: 'Elimina', color: 'negative' },
-      persistent: true
-    }).onOk(() => {
-      emit('invalida', props.item.id)
-    })
-  }
-
-  function onFileChange(file) {
-    if (file) {
-      emit('file-change', { id: props.item.id, file })
-      newFile.value = null
-    }
-  }
+}
 </script>

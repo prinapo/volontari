@@ -5,8 +5,7 @@ export const referentiService = {
     return api.get('/items/Volontari_Referenti', {
       params: {
         'filter[Volontario][_eq]': volontarioId,
-        fields:
-          'id,Volontario,Referente,Referente.id_contatto,Referente.Nome,Referente.Cognome,Referente.Numero_di_cellulare,Referente.Numero_di_telefono',
+        fields: 'id,Volontario,Referente,Referente.id_contatto,Referente.Nome,Referente.Cognome,Referente.Numero_di_cellulare,Referente.Numero_di_telefono',
         limit: -1
       }
     })

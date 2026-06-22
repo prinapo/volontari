@@ -22,7 +22,9 @@ function isCountedInTotals(item) {
 }
 
 function calcolaStatoRendicontazione(giustificativi) {
-  const stati = giustificativi.filter(g => !g.Invalidato).map(g => String(g.Stato || '').toLowerCase())
+  const stati = giustificativi
+    .filter(g => !g.Invalidato)
+    .map(g => String(g.Stato || '').toLowerCase())
   if (stati.length === 0) return 'nessuno'
   if (stati.every(s => s === 'bozza' || s === '')) return 'bozza'
   if (stati.every(s => s === 'verificato' || s === 'approvato')) return 'verificato'
@@ -96,8 +98,8 @@ export const useVerificaStore = defineStore('verifica', {
   }),
 
   getters: {
-    anniBando: state => state.anniBandoList,
-    totalPages: state => Math.ceil(state.filterCount / state.limit)
+    anniBando: (state) => state.anniBandoList,
+    totalPages: (state) => Math.ceil(state.filterCount / state.limit)
   },
 
   actions: {
@@ -132,7 +134,9 @@ export const useVerificaStore = defineStore('verifica', {
         let famMap = new Map()
         if (famIds.length > 0) {
           const famRes = await famiglieService.getFamiglieBatch(famIds)
-          famMap = new Map((famRes.data.data || []).map(f => [String(f.id_famiglia), f]))
+          famMap = new Map(
+            (famRes.data.data || []).map(f => [String(f.id_famiglia), f])
+          )
         }
 
         const progettoIds = projects.map(p => p.id_progetto)
@@ -154,9 +158,7 @@ export const useVerificaStore = defineStore('verifica', {
                     g._rendicontazione = rendMap.get(g.Rendicontazione)
                   }
                 })
-              } catch {
-                /* silent */
-              }
+              } catch { /* silent */ }
             }
           } else {
             throw deepErr
@@ -173,7 +175,9 @@ export const useVerificaStore = defineStore('verifica', {
         allGiustificativi
           .filter(item => !item.Invalidato)
           .forEach(item => {
-            const projectId = typeof item.Progetto === 'object' ? item.Progetto?.id_progetto : item.Progetto
+            const projectId = typeof item.Progetto === 'object'
+              ? item.Progetto?.id_progetto
+              : item.Progetto
             const row = rowsByProject.get(projectId)
             if (!row) return
             row.giustificativi.push(item)
@@ -225,7 +229,9 @@ export const useVerificaStore = defineStore('verifica', {
         let famMap = new Map()
         if (famIds.length > 0) {
           const famRes = await famiglieService.getFamiglieBatch(famIds)
-          famMap = new Map((famRes.data.data || []).map(f => [String(f.id_famiglia), f]))
+          famMap = new Map(
+            (famRes.data.data || []).map(f => [String(f.id_famiglia), f])
+          )
         }
 
         const progettoIds = allProjects.map(p => p.id_progetto)
@@ -247,9 +253,7 @@ export const useVerificaStore = defineStore('verifica', {
                     g._rendicontazione = rendMap.get(g.Rendicontazione)
                   }
                 })
-              } catch {
-                /* silent */
-              }
+              } catch { /* silent */ }
             }
           } else {
             throw deepErr
@@ -266,7 +270,9 @@ export const useVerificaStore = defineStore('verifica', {
         allGiustificativi
           .filter(item => !item.Invalidato)
           .forEach(item => {
-            const projectId = typeof item.Progetto === 'object' ? item.Progetto?.id_progetto : item.Progetto
+            const projectId = typeof item.Progetto === 'object'
+              ? item.Progetto?.id_progetto
+              : item.Progetto
             const row = rowsByProject.get(projectId)
             if (!row) return
             row.giustificativi.push(item)
@@ -341,9 +347,7 @@ export const useVerificaStore = defineStore('verifica', {
           TotaleImporto: totaleImporto,
           StatoRendicontazione: statoRendicontazione
         })
-      } catch {
-        /* silent */
-      }
+      } catch { /* silent */ }
     },
 
     async fetchSubmissions({ page, limit, includeScartati } = {}) {
@@ -408,7 +412,7 @@ export const useVerificaStore = defineStore('verifica', {
       if (contattoIds.length > 0) {
         try {
           const fcRes = await gestioneService.queryFamiglieContatti(contattoIds)
-          for (const fc of fcRes.data.data || []) {
+          for (const fc of (fcRes.data.data || [])) {
             if (fc.Contatto) {
               const cid = typeof fc.Contatto === 'object' ? fc.Contatto.id_contatto : fc.Contatto
               const ru = String(fc.Ruolo_nella_Famiglia || '').toLowerCase()
@@ -423,9 +427,7 @@ export const useVerificaStore = defineStore('verifica', {
               }
             }
           }
-        } catch {
-          /* silent */
-        }
+        } catch { /* silent */ }
       }
 
       for (const submission of submissions) {
@@ -609,7 +611,7 @@ export const useVerificaStore = defineStore('verifica', {
         })
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento dati bancari"
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'aggiornamento dati bancari'
         throw err
       }
     },
@@ -635,7 +637,7 @@ export const useVerificaStore = defineStore('verifica', {
         await this.patchProgettoAggregates(formData.Progetto)
         return true
       } catch (err) {
-        this.error = err.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
+        this.error = err.response?.data?.errors?.[0]?.message || 'Errore nell\'aggiunta del giustificativo'
         throw err
       }
     },
@@ -714,10 +716,9 @@ export const useVerificaStore = defineStore('verifica', {
         const fcRes = await famiglieService.getFamiglieByContatto(contatto.id_contatto)
         const records = fcRes.data.data || []
         // Preferisci Genitore/Tutore (ruoli del form pubblico) su Volontario
-        const fc =
-          records.find(r => r.Ruolo_nella_Famiglia === 'Genitore') ||
-          records.find(r => r.Ruolo_nella_Famiglia === 'Tutore') ||
-          records[0]
+        const fc = records.find(r => r.Ruolo_nella_Famiglia === 'Genitore')
+          || records.find(r => r.Ruolo_nella_Famiglia === 'Tutore')
+          || records[0]
 
         let famigliaData = fc?.Famiglia && typeof fc.Famiglia === 'object' ? fc.Famiglia : null
 

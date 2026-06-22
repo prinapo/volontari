@@ -20,22 +20,21 @@ export const useFamiglieStore = defineStore('famiglie', {
   }),
 
   getters: {
-    hasMultipleFamiglie: state => state.famiglieContatti.length > 1,
-    famigliaOptions: state =>
-      state.famiglieContatti
-        .map(fc => ({
-          label: fc.Famiglia?.Nome_Famiglia || 'Famiglia senza nome',
-          value: fc.Famiglia?.id_famiglia
-        }))
-        .filter(o => o.value),
-    progetti: state => state.famiglia?.Progetti || [],
-    selectedProgetto: state => {
+    hasMultipleFamiglie: (state) => state.famiglieContatti.length > 1,
+    famigliaOptions: (state) => state.famiglieContatti.map(fc => ({
+      label: fc.Famiglia?.Nome_Famiglia || 'Famiglia senza nome',
+      value: fc.Famiglia?.id_famiglia
+    })).filter(o => o.value),
+    progetti: (state) => state.famiglia?.Progetti || [],
+    selectedProgetto: (state) => {
       if (!state.progetti || !state.selectedProgettoId) return null
-      return state.progetti.find(p => p.id_progetto === state.selectedProgettoId)
+      return state.progetti.find(
+        (p) => p.id_progetto === state.selectedProgettoId
+      )
     },
-    famigliaName: state => state.famiglia?.Nome_Famiglia || '',
-    iban: state => state.famiglia?.IBAN || '',
-    intestatarioCC: state => state.famiglia?.Intestatario_CC || ''
+    famigliaName: (state) => state.famiglia?.Nome_Famiglia || '',
+    iban: (state) => state.famiglia?.IBAN || '',
+    intestatarioCC: (state) => state.famiglia?.Intestatario_CC || '',
   },
 
   actions: {
@@ -86,7 +85,10 @@ export const useFamiglieStore = defineStore('famiglie', {
         if (this.progetti.length > 0) {
           this.selectedProgettoId = this.progetti[0].id_progetto
         }
-        await Promise.all([this.loadGenitori(famigliaId), this.loadVolontari(famigliaId)])
+        await Promise.all([
+          this.loadGenitori(famigliaId),
+          this.loadVolontari(famigliaId)
+        ])
       } catch (err) {
         this.error = err.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
       }
@@ -97,16 +99,14 @@ export const useFamiglieStore = defineStore('famiglie', {
       try {
         const res = await famiglieService.getGenitoriByFamiglia(famigliaId)
         const items = res.data.data || []
-        this.genitori = items
-          .map(r => ({
-            id_contatto: r.Contatto?.id_contatto,
-            Nome: r.Contatto?.Nome,
-            Cognome: r.Contatto?.Cognome,
-            Numero_di_cellulare: r.Contatto?.Numero_di_cellulare,
-            Numero_di_telefono: r.Contatto?.Numero_di_telefono,
-            _emails: []
-          }))
-          .filter(c => c.id_contatto)
+        this.genitori = items.map(r => ({
+          id_contatto: r.Contatto?.id_contatto,
+          Nome: r.Contatto?.Nome,
+          Cognome: r.Contatto?.Cognome,
+          Numero_di_cellulare: r.Contatto?.Numero_di_cellulare,
+          Numero_di_telefono: r.Contatto?.Numero_di_telefono,
+          _emails: []
+        })).filter(c => c.id_contatto)
 
         const contattoIds = this.genitori.map(g => g.id_contatto).filter(Boolean)
         if (contattoIds.length > 0) {

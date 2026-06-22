@@ -7,29 +7,12 @@ export const verificaService = {
       page,
       sort: sort || 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario',
       fields: [
-        'id_progetto',
-        'AnnoBando',
-        'Allocato',
-        'Ambito',
-        'Cognome_Beneficiario',
-        'Nome_Beneficiario',
-        'Titolo_Progetto',
-        'Famiglia',
-        'StatoRendicontazione',
-        'TotaleGiustificativi',
-        'TotaleImporto',
-        'StatoProgetto',
-        'TotaleVerificato',
-        'TotaleProposto',
-        'TotaleInPagamento',
-        'TotalePagato',
-        'ResiduoAllocato',
-        'Data_Inizio_Progetto',
-        'Data_Fine_Progetto',
-        'Eta',
-        'Descrizione_Progetto',
-        'Descrizione_Condizione',
-        'Dettaglio_Costi',
+        'id_progetto', 'AnnoBando', 'Allocato', 'Ambito',
+        'Cognome_Beneficiario', 'Nome_Beneficiario', 'Titolo_Progetto', 'Famiglia',
+        'StatoRendicontazione', 'TotaleGiustificativi', 'TotaleImporto',
+        'StatoProgetto', 'TotaleVerificato', 'TotaleProposto', 'TotaleInPagamento', 'TotalePagato', 'ResiduoAllocato',
+        'Data_Inizio_Progetto', 'Data_Fine_Progetto', 'Eta',
+        'Descrizione_Progetto', 'Descrizione_Condizione', 'Dettaglio_Costi',
         'Relazione_con_il_soggetto_richiedente',
         'Allegati_Progetto.directus_files_id.id',
         'Allegati_Progetto.directus_files_id.filename_download',
@@ -52,7 +35,16 @@ export const verificaService = {
         'filter[Progetto][_in]': progettoIds.join(','),
         sort: 'Data',
         limit: -1,
-        fields: ['id', 'Descrizione', 'Importo', 'Data', 'Stato', 'Allegato', 'Progetto', 'Invalidato'].join(',')
+        fields: [
+          'id',
+          'Descrizione',
+          'Importo',
+          'Data',
+          'Stato',
+          'Allegato',
+          'Progetto',
+          'Invalidato'
+        ].join(',')
       }
     })
   },
@@ -96,7 +88,10 @@ export const verificaService = {
 
   getSubmissions({ page = 1, limit = 25, includeScartati = false, meta } = {}) {
     const filter = includeScartati
-      ? { _or: [{ stato: { _eq: 'in_attesa' } }, { stato: { _eq: 'scartato' } }] }
+      ? { _or: [
+          { stato: { _eq: 'in_attesa' } },
+          { stato: { _eq: 'scartato' } }
+        ]}
       : { stato: { _eq: 'in_attesa' } }
     const params = {
       filter: JSON.stringify(filter),

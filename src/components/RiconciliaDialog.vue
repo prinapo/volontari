@@ -2,9 +2,18 @@
   <q-dialog v-model="model" persistent @show="initData">
     <q-card class="riconcilia-dialog-card" style="width: 100%; max-width: 600px; min-width: unset">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6">Riconcilia giustificativo</div>
+        <div class="text-h6">
+          Riconcilia giustificativo
+        </div>
         <q-space />
-        <q-btn v-close-popup icon="close" flat round dense aria-label="Chiudi">
+        <q-btn
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -28,60 +37,36 @@
           <q-card flat bordered class="q-mb-md">
             <q-card-section class="q-pa-sm">
               <div v-if="genitoriList.length > 0" class="q-mb-sm">
-                <div class="text-caption text-grey-7">Genitori</div>
-                <div v-for="g in genitoriList" :key="'g-' + g.id" class="text-body2 q-ml-sm">
+                <div class="text-caption text-grey-7">
+                  Genitori
+                </div>
+                <div v-for="g in genitoriList" :key="'g-'+g.id" class="text-body2 q-ml-sm">
                   <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
                   {{ displayFullName(g.Contatto) }}
-                  <span v-if="g._emails?.[0]" class="text-grey-7">
-                    —
-                    <a :href="'mailto:' + g._emails[0].email_address" class="text-primary">{{
-                      g._emails[0].email_address
-                    }}</a></span
-                  >
-                  <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7">
-                    — Cell.
-                    <a :href="'tel:' + g.Contatto.Numero_di_cellulare" class="text-primary">{{
-                      g.Contatto.Numero_di_cellulare
-                    }}</a></span
-                  >
-                  <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7">
-                    — Tel.
-                    <a :href="'tel:' + g.Contatto.Numero_di_telefono" class="text-primary">{{
-                      g.Contatto.Numero_di_telefono
-                    }}</a></span
-                  >
+                  <span v-if="g._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+g._emails[0].email_address" class="text-primary">{{ g._emails[0].email_address }}</a></span>
+                  <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+g.Contatto.Numero_di_cellulare" class="text-primary">{{ g.Contatto.Numero_di_cellulare }}</a></span>
+                  <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+g.Contatto.Numero_di_telefono" class="text-primary">{{ g.Contatto.Numero_di_telefono }}</a></span>
                 </div>
               </div>
               <div v-if="volontariList.length > 0" class="q-mb-sm">
-                <div class="text-caption text-grey-7">Volontari</div>
-                <div v-for="v in volontariList" :key="'v-' + v.id" class="text-body2 q-ml-sm">
+                <div class="text-caption text-grey-7">
+                  Volontari
+                </div>
+                <div v-for="v in volontariList" :key="'v-'+v.id" class="text-body2 q-ml-sm">
                   <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
                   {{ displayFullName(v.Contatto) }}
-                  <span v-if="v._emails?.[0]" class="text-grey-7">
-                    —
-                    <a :href="'mailto:' + v._emails[0].email_address" class="text-primary">{{
-                      v._emails[0].email_address
-                    }}</a></span
-                  >
-                  <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7">
-                    — Cell.
-                    <a :href="'tel:' + v.Contatto.Numero_di_cellulare" class="text-primary">{{
-                      v.Contatto.Numero_di_cellulare
-                    }}</a></span
-                  >
-                  <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7">
-                    — Tel.
-                    <a :href="'tel:' + v.Contatto.Numero_di_telefono" class="text-primary">{{
-                      v.Contatto.Numero_di_telefono
-                    }}</a></span
-                  >
+                  <span v-if="v._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+v._emails[0].email_address" class="text-primary">{{ v._emails[0].email_address }}</a></span>
+                  <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+v.Contatto.Numero_di_cellulare" class="text-primary">{{ v.Contatto.Numero_di_cellulare }}</a></span>
+                  <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+v.Contatto.Numero_di_telefono" class="text-primary">{{ v.Contatto.Numero_di_telefono }}</a></span>
                 </div>
               </div>
             </q-card-section>
           </q-card>
 
           <!-- Vertical comparison with individual save -->
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">Confronto dati</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm">
+            Confronto dati
+          </div>
           <div class="q-pb-md">
             <div v-for="field in leftFields" :key="field.key" class="q-mb-sm">
               <q-card flat bordered>
@@ -115,7 +100,9 @@
                     </q-icon>
                   </div>
 
-                  <div class="text-caption text-grey-6">valore nel database</div>
+                  <div class="text-caption text-grey-6">
+                    valore nel database
+                  </div>
                   <q-input
                     v-if="field.editable"
                     :model-value="rightValues[field.key]"
@@ -124,16 +111,13 @@
                     :error="isFieldDifferent(field.key)"
                     :type="field.inputType || 'text'"
                     dense
-                    @update:model-value="val => setRightValue(field.key, val)"
+                    @update:model-value="(val) => setRightValue(field.key, val)"
                   />
                   <div v-else class="text-body1">
                     {{ rightValues[field.key] || '—' }}
                   </div>
 
-                  <div
-                    v-if="field.saveable && isFieldDifferent(field.key)"
-                    class="text-center row q-gutter-xs justify-center"
-                  >
+                  <div v-if="field.saveable && isFieldDifferent(field.key)" class="text-center row q-gutter-xs justify-center">
                     <q-btn
                       icon="check"
                       color="positive"
@@ -156,10 +140,10 @@
                       @click="saveField(field.key)"
                     >
                       <q-tooltip>Salva</q-tooltip>
-                    </q-btn>
-                  </div>
-                </q-card-section>
-              </q-card>
+                  </q-btn>
+                </div>
+              </q-card-section>
+            </q-card>
             </div>
           </div>
 
@@ -180,15 +164,7 @@
                   </div>
                   <div class="text-center q-my-xs">
                     <template v-if="isFieldDifferent('IBAN')">
-                      <q-btn
-                        round
-                        flat
-                        icon="arrow_downward"
-                        color="primary"
-                        size="xs"
-                        aria-label="Copia IBAN"
-                        @click="copyField('IBAN')"
-                      >
+                      <q-btn round flat icon="arrow_downward" color="primary" size="xs" aria-label="Copia IBAN" @click="copyField('IBAN')">
                         <q-tooltip>Copia dal richiedente</q-tooltip>
                       </q-btn>
                     </template>
@@ -197,38 +173,10 @@
                     </q-icon>
                   </div>
                   <div class="text-caption text-grey-6">valore nel database</div>
-                  <q-input
-                    :model-value="rightValues.IBAN"
-                    outlined
-                    dense
-                    :color="isFieldDifferent('IBAN') ? 'negative' : 'primary'"
-                    :error="isFieldDifferent('IBAN')"
-                    @update:model-value="val => setRightValue('IBAN', val)"
-                  />
+                  <q-input :model-value="rightValues.IBAN" outlined dense :color="isFieldDifferent('IBAN') ? 'negative' : 'primary'" :error="isFieldDifferent('IBAN')" @update:model-value="val => setRightValue('IBAN', val)" />
                   <div v-if="isFieldDifferent('IBAN')" class="text-center row q-gutter-xs justify-center q-mt-xs">
-                    <q-btn
-                      icon="check"
-                      color="positive"
-                      round
-                      flat
-                      size="sm"
-                      aria-label="Dato già corretto"
-                      @click="confirmField('IBAN')"
-                    >
-                      <q-tooltip>Dato già corretto</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      icon="save"
-                      color="positive"
-                      round
-                      flat
-                      size="sm"
-                      data-testid="btn-save-field"
-                      aria-label="Salva"
-                      @click="saveField('IBAN')"
-                    >
-                      <q-tooltip>Salva</q-tooltip>
-                    </q-btn>
+                    <q-btn icon="check" color="positive" round flat size="sm" aria-label="Dato già corretto" @click="confirmField('IBAN')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
+                    <q-btn icon="save" color="positive" round flat size="sm" data-testid="btn-save-field" aria-label="Salva" @click="saveField('IBAN')"><q-tooltip>Salva</q-tooltip></q-btn>
                   </div>
                 </div>
 
@@ -245,15 +193,7 @@
                   </div>
                   <div class="text-center q-my-xs">
                     <template v-if="isFieldDifferent('Intestatario')">
-                      <q-btn
-                        round
-                        flat
-                        icon="arrow_downward"
-                        color="primary"
-                        size="xs"
-                        aria-label="Copia Intestatario"
-                        @click="copyField('Intestatario')"
-                      >
+                      <q-btn round flat icon="arrow_downward" color="primary" size="xs" aria-label="Copia Intestatario" @click="copyField('Intestatario')">
                         <q-tooltip>Copia dal richiedente</q-tooltip>
                       </q-btn>
                     </template>
@@ -262,41 +202,10 @@
                     </q-icon>
                   </div>
                   <div class="text-caption text-grey-6">valore nel database</div>
-                  <q-input
-                    :model-value="rightValues.Intestatario"
-                    outlined
-                    dense
-                    :color="isFieldDifferent('Intestatario') ? 'negative' : 'primary'"
-                    :error="isFieldDifferent('Intestatario')"
-                    @update:model-value="val => setRightValue('Intestatario', val)"
-                  />
-                  <div
-                    v-if="isFieldDifferent('Intestatario')"
-                    class="text-center row q-gutter-xs justify-center q-mt-xs"
-                  >
-                    <q-btn
-                      icon="check"
-                      color="positive"
-                      round
-                      flat
-                      size="sm"
-                      aria-label="Dato già corretto"
-                      @click="confirmField('Intestatario')"
-                    >
-                      <q-tooltip>Dato già corretto</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      icon="save"
-                      color="positive"
-                      round
-                      flat
-                      size="sm"
-                      data-testid="btn-save-field"
-                      aria-label="Salva"
-                      @click="saveField('Intestatario')"
-                    >
-                      <q-tooltip>Salva</q-tooltip>
-                    </q-btn>
+                  <q-input :model-value="rightValues.Intestatario" outlined dense :color="isFieldDifferent('Intestatario') ? 'negative' : 'primary'" :error="isFieldDifferent('Intestatario')" @update:model-value="val => setRightValue('Intestatario', val)" />
+                  <div v-if="isFieldDifferent('Intestatario')" class="text-center row q-gutter-xs justify-center q-mt-xs">
+                    <q-btn icon="check" color="positive" round flat size="sm" aria-label="Dato già corretto" @click="confirmField('Intestatario')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
+                    <q-btn icon="save" color="positive" round flat size="sm" data-testid="btn-save-field" aria-label="Salva" @click="saveField('Intestatario')"><q-tooltip>Salva</q-tooltip></q-btn>
                   </div>
                 </div>
               </q-card-section>
@@ -305,7 +214,9 @@
 
           <!-- Progetto -->
           <div class="q-mt-lg">
-            <div class="text-subtitle1 text-weight-medium q-mb-sm">Progetto</div>
+            <div class="text-subtitle1 text-weight-medium q-mb-sm">
+              Progetto
+            </div>
             <q-banner v-if="progettiList.length === 0" class="bg-warning text-dark q-mb-md" rounded>
               <template #avatar>
                 <q-icon name="warning" />
@@ -357,46 +268,45 @@
                         </q-icon>
                       </div>
 
-                      <div class="text-caption text-grey-6">valore nel database</div>
-                      <q-input
-                        :model-value="projectValues[field.key]"
-                        outlined
-                        :color="isProjectFieldDifferent(field.key) ? 'negative' : 'primary'"
-                        :error="isProjectFieldDifferent(field.key)"
-                        :disable="!field.editable"
-                        dense
-                        @update:model-value="val => setProjectValue(field.key, val)"
-                      />
-
-                      <div
-                        v-if="field.saveable && isProjectFieldDifferent(field.key)"
-                        class="text-center row q-gutter-xs justify-center"
-                      >
-                        <q-btn
-                          icon="check"
-                          color="positive"
-                          round
-                          flat
-                          size="sm"
-                          aria-label="Dato già corretto"
-                          @click="confirmProjectField(field.key)"
-                        >
-                          <q-tooltip>Dato già corretto</q-tooltip>
-                        </q-btn>
-                        <q-btn
-                          icon="save"
-                          color="positive"
-                          round
-                          flat
-                          size="sm"
-                          :aria-label="'Salva'"
-                          @click="saveProjectField(field.key)"
-                        >
-                          <q-tooltip>Salva</q-tooltip>
-                        </q-btn>
+                      <div class="text-caption text-grey-6">
+                        valore nel database
                       </div>
-                    </q-card-section>
-                  </q-card>
+                      <q-input
+                          :model-value="projectValues[field.key]"
+                          outlined
+                          :color="isProjectFieldDifferent(field.key) ? 'negative' : 'primary'"
+                          :error="isProjectFieldDifferent(field.key)"
+                          :disable="!field.editable"
+                          dense
+                          @update:model-value="(val) => setProjectValue(field.key, val)"
+                        />
+
+                        <div v-if="field.saveable && isProjectFieldDifferent(field.key)" class="text-center row q-gutter-xs justify-center">
+                          <q-btn
+                            icon="check"
+                            color="positive"
+                            round
+                            flat
+                            size="sm"
+                            aria-label="Dato già corretto"
+                            @click="confirmProjectField(field.key)"
+                          >
+                            <q-tooltip>Dato già corretto</q-tooltip>
+                          </q-btn>
+                          <q-btn
+                            icon="save"
+                            color="positive"
+                            round
+                            flat
+                            size="sm"
+                            :aria-label="'Salva'"
+                            @click="saveProjectField(field.key)"
+                          >
+                            <q-tooltip>Salva</q-tooltip>
+                          </q-btn>
+                        </div>
+                  </q-card-section>
+                </q-card>
                 </div>
               </div>
             </template>
@@ -404,7 +314,9 @@
 
           <!-- Giustificativo section -->
           <div class="q-mt-lg">
-            <div class="text-subtitle1 text-weight-medium q-mb-sm">Giustificativo</div>
+            <div class="text-subtitle1 text-weight-medium q-mb-sm">
+              Giustificativo
+            </div>
             <q-card flat bordered>
               <q-card-section class="q-pa-sm">
                 <q-input
@@ -460,7 +372,14 @@
 
           <!-- Notes -->
           <div class="q-mt-lg">
-            <q-input v-model="note" label="Note (opzionale)" outlined dense type="textarea" rows="2" />
+            <q-input
+              v-model="note"
+              label="Note (opzionale)"
+              outlined
+              dense
+              type="textarea"
+              rows="2"
+            />
           </div>
         </div>
       </q-scroll-area>
@@ -484,380 +403,374 @@
 </template>
 
 <script setup>
-  import { ref, computed, watch } from 'vue'
-  import { useQuasar } from 'quasar'
-  import { verificaService } from 'src/services/verifica.service'
-  import { useVerificaStore } from 'stores/verifica.store'
-  import { notifyError, notifySuccess } from 'src/utils/notify'
-  import { assetUrl } from 'src/utils/assets'
-  import { displayFullName } from 'src/utils/formatters'
+import { ref, computed, watch } from 'vue'
+import { useQuasar } from 'quasar'
+import { verificaService } from 'src/services/verifica.service'
+import { useVerificaStore } from 'stores/verifica.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { assetUrl } from 'src/utils/assets'
+import { displayFullName } from 'src/utils/formatters'
 
-  const $q = useQuasar()
-  const verificaStore = useVerificaStore()
+const $q = useQuasar()
+const verificaStore = useVerificaStore()
 
-  const props = defineProps({
-    modelValue: { type: Boolean, default: false },
-    submission: { type: Object, default: null }
-  })
+const props = defineProps({
+  modelValue: { type: Boolean, default: false },
+  submission: { type: Object, default: null }
+})
 
-  const emit = defineEmits(['update:modelValue', 'reconcile'])
+const emit = defineEmits(['update:modelValue', 'reconcile'])
 
-  const model = computed({
-    get: () => props.modelValue,
-    set: val => emit('update:modelValue', val)
-  })
+const model = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
 
-  // Selections
-  const selectedProgettoId = ref(null)
-  const note = ref('')
-  const saving = ref(false)
-  const savingField = ref(null)
-  const savingProjectField = ref(null)
+// Selections
+const selectedProgettoId = ref(null)
+const note = ref('')
+const saving = ref(false)
+const savingField = ref(null)
+const savingProjectField = ref(null)
 
-  // Data
-  const contattoIdRef = ref(null)
-  const famigliaIdRef = ref(null)
-  const famigliaDetail = ref(null)
-  const genitoriList = ref([])
-  const volontariList = ref([])
-  const progettiList = ref([])
+// Data
+const contattoIdRef = ref(null)
+const famigliaIdRef = ref(null)
+const famigliaDetail = ref(null)
+const genitoriList = ref([])
+const volontariList = ref([])
+const progettiList = ref([])
 
-  // Right-side editable values (contatto)
-  const rightValues = ref({
-    Nome: '',
-    Cognome: '',
-    Email: '',
-    Telefono: '',
-    IBAN: '',
-    Intestatario: ''
-  })
-  const confirmedFields = ref(new Set())
+// Right-side editable values (contatto)
+const rightValues = ref({
+  Nome: '',
+  Cognome: '',
+  Email: '',
+  Telefono: '',
+  IBAN: '',
+  Intestatario: ''
+})
+const confirmedFields = ref(new Set())
 
-  // Project editable values
-  const projectValues = ref({
-    Cognome_Beneficiario: '',
-    Nome_Beneficiario: '',
-    Intestatario: '',
-    AnnoBando: '',
-    Allocato: '',
-    Titolo: ''
-  })
-  const projectConfirmedFields = ref(new Set())
+// Project editable values
+const projectValues = ref({
+  Cognome_Beneficiario: '',
+  Nome_Beneficiario: '',
+  Intestatario: '',
+  AnnoBando: '',
+  Allocato: '',
+  Titolo: ''
+})
+const projectConfirmedFields = ref(new Set())
 
-  watch(selectedProgettoId, () => {
-    projectConfirmedFields.value = new Set()
-    initProjectValues()
-  })
+watch(selectedProgettoId, () => {
+  projectConfirmedFields.value = new Set()
+  initProjectValues()
+})
 
-  // Giustificativo fields
-  const giustDescrizione = ref('')
-  const giustImporto = ref(null)
-  const giustData = ref('')
+// Giustificativo fields
+const giustDescrizione = ref('')
+const giustImporto = ref(null)
+const giustData = ref('')
 
-  // Fields definition
-  const FIELD_MAP = {
-    Nome: 'nome_richiedente',
-    Cognome: 'cognome_richiedente',
-    Email: 'email',
-    Telefono: 'telefono',
-    IBAN: 'iban',
-    Intestatario: 'intestatario'
-  }
+// Fields definition
+const FIELD_MAP = {
+  Nome: 'nome_richiedente',
+  Cognome: 'cognome_richiedente',
+  Email: 'email',
+  Telefono: 'telefono',
+  IBAN: 'iban',
+  Intestatario: 'intestatario'
+}
 
-  const leftFields = [
-    { key: 'Nome', label: 'Nome', editable: true, saveable: true },
-    { key: 'Cognome', label: 'Cognome', editable: true, saveable: true },
-    { key: 'Telefono', label: 'Telefono', editable: true, saveable: true }
-  ]
+const leftFields = [
+  { key: 'Nome', label: 'Nome', editable: true, saveable: true },
+  { key: 'Cognome', label: 'Cognome', editable: true, saveable: true },
+  { key: 'Telefono', label: 'Telefono', editable: true, saveable: true }
+]
 
-  const PROJECT_FIELD_MAP = {
-    Cognome_Beneficiario: submission => submission.cognome_beneficiario || '',
-    Nome_Beneficiario: submission => submission.nome_beneficiario || '',
-    Intestatario: submission => submission.intestatario || ''
-  }
+const PROJECT_FIELD_MAP = {
+  Cognome_Beneficiario: (submission) => submission.cognome_beneficiario || '',
+  Nome_Beneficiario: (submission) => submission.nome_beneficiario || '',
+  Intestatario: (submission) => submission.intestatario || ''
+}
 
-  const projectFields = [
-    { key: 'Cognome_Beneficiario', label: 'Cognome', editable: true, saveable: true },
-    { key: 'Nome_Beneficiario', label: 'Nome', editable: true, saveable: true },
-    { key: 'Intestatario', label: 'Intestatario', editable: true, saveable: true }
-  ]
+const projectFields = [
+  { key: 'Cognome_Beneficiario', label: 'Cognome', editable: true, saveable: true },
+  { key: 'Nome_Beneficiario', label: 'Nome', editable: true, saveable: true },
+  { key: 'Intestatario', label: 'Intestatario', editable: true, saveable: true }
+]
 
-  // Computed
-  const selectedProgetto = computed(
-    () => progettiList.value.find(p => p.id_progetto === selectedProgettoId.value) || null
-  )
+// Computed
+const selectedProgetto = computed(() =>
+  progettiList.value.find(p => p.id_progetto === selectedProgettoId.value) || null
+)
 
-  const progettoOptions = computed(() =>
-    progettiList.value.map(p => ({
-      label: `${[p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')} (${p.AnnoBando || 'N/A'})`,
-      value: p.id_progetto
-    }))
-  )
+const progettoOptions = computed(() =>
+  progettiList.value.map(p => ({
+    label: `${[p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')} (${p.AnnoBando || 'N/A'})`,
+    value: p.id_progetto
+  }))
+)
 
-  function getSubmissionProjectValue(key) {
-    const submission = props.submission
-    if (!submission) return ''
-    if (key === 'Cognome_Beneficiario') return submission.cognome_beneficiario || ''
-    if (key === 'Nome_Beneficiario') return submission.nome_beneficiario || ''
-    return ''
-  }
+function getSubmissionProjectValue(key) {
+  const submission = props.submission
+  if (!submission) return ''
+  if (key === 'Cognome_Beneficiario') return submission.cognome_beneficiario || ''
+  if (key === 'Nome_Beneficiario') return submission.nome_beneficiario || ''
+  return ''
+}
 
-  function isProjectFieldDifferent(key) {
-    if (projectConfirmedFields.value.has(key)) return false
-    const left = getSubmissionProjectValue(key)
-    const right = (projectValues.value[key] || '').toString().trim()
-    if (!right && !left) return false
-    if (!right && left) return true
-    return left !== right
-  }
+function isProjectFieldDifferent(key) {
+  if (projectConfirmedFields.value.has(key)) return false
+  const left = getSubmissionProjectValue(key)
+  const right = (projectValues.value[key] || '').toString().trim()
+  if (!right && !left) return false
+  if (!right && left) return true
+  return left !== right
+}
 
-  function setProjectValue(key, val) {
+function setProjectValue(key, val) {
+  projectValues.value[key] = val
+  projectConfirmedFields.value.delete(key)
+}
+
+function confirmProjectField(key) {
+  projectConfirmedFields.value.add(key)
+}
+
+function copyProjectField(key) {
+  const srcMapping = PROJECT_FIELD_MAP[key]
+  if (!srcMapping || !props.submission) return
+  const val = typeof srcMapping === 'function' ? srcMapping(props.submission) : (props.submission[srcMapping] || '')
+  if (!val) return
+
+  $q.dialog({
+    title: 'Salva il dato',
+    message: `Vuoi salvare "${val}" come ${key} nel progetto?`,
+    cancel: { label: 'No', flat: true },
+    ok: { label: 'Sì, salva', color: 'primary' },
+    persistent: true
+  }).onOk(async () => {
     projectValues.value[key] = val
     projectConfirmedFields.value.delete(key)
-  }
+    await saveProjectField(key)
+  })
+}
 
-  function confirmProjectField(key) {
-    projectConfirmedFields.value.add(key)
-  }
-
-  function copyProjectField(key) {
-    const srcMapping = PROJECT_FIELD_MAP[key]
-    if (!srcMapping || !props.submission) return
-    const val = typeof srcMapping === 'function' ? srcMapping(props.submission) : props.submission[srcMapping] || ''
-    if (!val) return
-
-    $q.dialog({
-      title: 'Salva il dato',
-      message: `Vuoi salvare "${val}" come ${key} nel progetto?`,
-      cancel: { label: 'No', flat: true },
-      ok: { label: 'Sì, salva', color: 'primary' },
-      persistent: true
-    }).onOk(async () => {
-      projectValues.value[key] = val
-      projectConfirmedFields.value.delete(key)
-      await saveProjectField(key)
-    })
-  }
-
-  async function saveProjectField(key) {
-    if (!selectedProgetto.value) return
-    savingProjectField.value = key
-    try {
-      const val = projectValues.value[key]
-      const fieldMap = {
-        Cognome_Beneficiario: 'Cognome_Beneficiario',
-        Nome_Beneficiario: 'Nome_Beneficiario',
-        Intestatario: 'Interstatario_CC'
-      }
-      const directusField = fieldMap[key]
-      if (directusField && val) {
-        await verificaService.updateProgetto(selectedProgetto.value.id_progetto, { [directusField]: val })
-        notifySuccess($q, `${key} aggiornato`)
-      }
-    } catch (err) {
-      notifyError($q, err, `${key}: Errore aggiornamento`)
-    } finally {
-      savingProjectField.value = null
+async function saveProjectField(key) {
+  if (!selectedProgetto.value) return
+  savingProjectField.value = key
+  try {
+    const val = projectValues.value[key]
+    const fieldMap = { Cognome_Beneficiario: 'Cognome_Beneficiario', Nome_Beneficiario: 'Nome_Beneficiario', Intestatario: 'Interstatario_CC' }
+    const directusField = fieldMap[key]
+    if (directusField && val) {
+      await verificaService.updateProgetto(selectedProgetto.value.id_progetto, { [directusField]: val })
+      notifySuccess($q, `${key} aggiornato`)
     }
+  } catch (err) {
+    notifyError($q, err, `${key}: Errore aggiornamento`)
+  } finally {
+    savingProjectField.value = null
   }
+}
 
-  function initProjectValues() {
-    if (!selectedProgetto.value) {
-      projectValues.value = { Cognome_Beneficiario: '', Nome_Beneficiario: '', Intestatario: '' }
-      return
-    }
-    projectValues.value = {
-      Cognome_Beneficiario: selectedProgetto.value.Cognome_Beneficiario || '',
-      Nome_Beneficiario: selectedProgetto.value.Nome_Beneficiario || '',
-      Intestatario: selectedProgetto.value.Interstatario_CC || ''
-    }
+function initProjectValues() {
+  if (!selectedProgetto.value) {
+    projectValues.value = { Cognome_Beneficiario: '', Nome_Beneficiario: '', Intestatario: '' }
+    return
   }
-
-  // Helpers
-  function getLeftValue(key) {
-    const srcKey = FIELD_MAP[key]
-    return (props.submission && srcKey ? props.submission[srcKey] : '') || ''
+  projectValues.value = {
+    Cognome_Beneficiario: selectedProgetto.value.Cognome_Beneficiario || '',
+    Nome_Beneficiario: selectedProgetto.value.Nome_Beneficiario || '',
+    Intestatario: selectedProgetto.value.Interstatario_CC || ''
   }
+}
 
-  function isFieldDifferent(key) {
-    if (confirmedFields.value.has(key)) return false
-    const left = getLeftValue(key)
-    const right = (rightValues.value[key] || '').toString().trim()
-    if (!right && !left) return false
-    if (!right && left) return true
-    return left !== right
-  }
+// Helpers
+function getLeftValue(key) {
+  const srcKey = FIELD_MAP[key]
+  return (props.submission && srcKey ? props.submission[srcKey] : '') || ''
+}
 
-  function confirmField(key) {
-    confirmedFields.value.add(key)
-  }
+function isFieldDifferent(key) {
+  if (confirmedFields.value.has(key)) return false
+  const left = getLeftValue(key)
+  const right = (rightValues.value[key] || '').toString().trim()
+  if (!right && !left) return false
+  if (!right && left) return true
+  return left !== right
+}
 
-  function setRightValue(key, val) {
+function confirmField(key) {
+  confirmedFields.value.add(key)
+}
+
+function setRightValue(key, val) {
+  rightValues.value[key] = val
+  confirmedFields.value.delete(key)
+}
+
+function copyField(key) {
+  const srcKey = FIELD_MAP[key]
+  if (!srcKey || !props.submission) return
+  const val = props.submission[srcKey] || ''
+  if (!val) return
+
+  const label = leftFields.find(f => f.key === key)?.label || key
+  $q.dialog({
+    title: 'Salva il dato',
+    message: `Vuoi salvare "${val}" come ${label} nel database?`,
+    cancel: { label: 'No', flat: true },
+    ok: { label: 'Sì, salva', color: 'primary' },
+    persistent: true
+  }).onOk(async () => {
     rightValues.value[key] = val
     confirmedFields.value.delete(key)
+    await saveField(key)
+  })
+}
+
+async function saveField(key) {
+  savingField.value = key
+  try {
+    const val = rightValues.value[key]
+    await verificaStore.reconcileUpdateField(contattoIdRef.value, famigliaIdRef.value, key, val)
+    notifySuccess($q, `${leftFields.find(f => f.key === key)?.label || key} aggiornato`)
+  } catch (err) {
+    notifyError($q, err, `${key}: Errore sconosciuto`)
+  } finally {
+    savingField.value = null
   }
+}
 
-  function copyField(key) {
-    const srcKey = FIELD_MAP[key]
-    if (!srcKey || !props.submission) return
-    const val = props.submission[srcKey] || ''
-    if (!val) return
-
-    const label = leftFields.find(f => f.key === key)?.label || key
-    $q.dialog({
-      title: 'Salva il dato',
-      message: `Vuoi salvare "${val}" come ${label} nel database?`,
-      cancel: { label: 'No', flat: true },
-      ok: { label: 'Sì, salva', color: 'primary' },
-      persistent: true
-    }).onOk(async () => {
-      rightValues.value[key] = val
-      confirmedFields.value.delete(key)
-      await saveField(key)
-    })
-  }
-
-  async function saveField(key) {
-    savingField.value = key
-    try {
-      const val = rightValues.value[key]
-      await verificaStore.reconcileUpdateField(contattoIdRef.value, famigliaIdRef.value, key, val)
-      notifySuccess($q, `${leftFields.find(f => f.key === key)?.label || key} aggiornato`)
-    } catch (err) {
-      notifyError($q, err, `${key}: Errore sconosciuto`)
-    } finally {
-      savingField.value = null
-    }
-  }
-
-  // Data loading
-  async function loadFamigliaMembers(famigliaId) {
-    if (!famigliaId) {
-      genitoriList.value = []
-      volontariList.value = []
-      return
-    }
-    try {
-      const { genitori, volontari } = await verificaStore.loadFamigliaContacts(famigliaId)
-      genitoriList.value = genitori
-      volontariList.value = volontari
-    } catch {
-      genitoriList.value = []
-      volontariList.value = []
-    }
-  }
-
-  async function loadProgetti(famigliaId) {
-    if (!famigliaId) {
-      progettiList.value = []
-      return
-    }
-    try {
-      const res = await verificaService.findProgettoByFamiglia(famigliaId)
-      progettiList.value = res.data.data || []
-    } catch (err) {
-      progettiList.value = []
-    }
-  }
-
-  async function initData() {
-    if (!props.submission) return
-
-    selectedProgettoId.value = null
-    note.value = ''
-    contattoIdRef.value = null
-    famigliaIdRef.value = null
-    famigliaDetail.value = null
+// Data loading
+async function loadFamigliaMembers(famigliaId) {
+  if (!famigliaId) {
     genitoriList.value = []
     volontariList.value = []
+    return
+  }
+  try {
+    const { genitori, volontari } = await verificaStore.loadFamigliaContacts(famigliaId)
+    genitoriList.value = genitori
+    volontariList.value = volontari
+  } catch {
+    genitoriList.value = []
+    volontariList.value = []
+  }
+}
+
+async function loadProgetti(famigliaId) {
+  if (!famigliaId) {
     progettiList.value = []
-    rightValues.value = { Nome: '', Cognome: '', Email: '', Telefono: '', IBAN: '', Intestatario: '' }
-    confirmedFields.value = new Set()
-    projectValues.value = {
-      Cognome_Beneficiario: '',
-      Nome_Beneficiario: '',
-      Intestatario: '',
-      AnnoBando: '',
-      Allocato: '',
-      Titolo: ''
-    }
-    projectConfirmedFields.value = new Set()
-    giustDescrizione.value = props.submission.descrizione || ''
-    giustImporto.value = props.submission.importo || null
-    giustData.value = toLocalDate(props.submission.data)
+    return
+  }
+  try {
+    const res = await verificaService.findProgettoByFamiglia(famigliaId)
+    progettiList.value = res.data.data || []
+  } catch (err) {
+    progettiList.value = []
+  }
+}
 
-    const email = props.submission.email
-    if (!email) {
-      return
-    }
+async function initData() {
+  if (!props.submission) return
 
-    try {
-      const ctx = await verificaStore.resolveSubmissionContext(email)
-      contattoIdRef.value = ctx.contattoId
-      famigliaIdRef.value = ctx.famigliaId
-      rightValues.value = { ...ctx.rightValues }
-      famigliaDetail.value = ctx.famigliaDetail
+  selectedProgettoId.value = null
+  note.value = ''
+  contattoIdRef.value = null
+  famigliaIdRef.value = null
+  famigliaDetail.value = null
+  genitoriList.value = []
+  volontariList.value = []
+  progettiList.value = []
+  rightValues.value = { Nome: '', Cognome: '', Email: '', Telefono: '', IBAN: '', Intestatario: '' }
+  confirmedFields.value = new Set()
+  projectValues.value = { Cognome_Beneficiario: '', Nome_Beneficiario: '', Intestatario: '', AnnoBando: '', Allocato: '', Titolo: '' }
+  projectConfirmedFields.value = new Set()
+  giustDescrizione.value = props.submission.descrizione || ''
+  giustImporto.value = props.submission.importo || null
+  giustData.value = toLocalDate(props.submission.data)
 
-      if (ctx.famigliaId) {
-        await Promise.all([loadFamigliaMembers(ctx.famigliaId), loadProgetti(ctx.famigliaId)])
+  const email = props.submission.email
+  if (!email) {
+    return
+  }
 
-        if (progettiList.value.length === 1) {
-          selectedProgettoId.value = progettiList.value[0].id_progetto
-          initProjectValues()
-        }
-      } else {
-        // no famigliaId
+  try {
+    const ctx = await verificaStore.resolveSubmissionContext(email)
+    contattoIdRef.value = ctx.contattoId
+    famigliaIdRef.value = ctx.famigliaId
+    rightValues.value = { ...ctx.rightValues }
+    famigliaDetail.value = ctx.famigliaDetail
+
+    if (ctx.famigliaId) {
+      await Promise.all([
+        loadFamigliaMembers(ctx.famigliaId),
+        loadProgetti(ctx.famigliaId)
+      ])
+
+      if (progettiList.value.length === 1) {
+        selectedProgettoId.value = progettiList.value[0].id_progetto
+        initProjectValues()
       }
-    } catch (err) {
-      // silent
+    } else {
+      // no famigliaId
     }
+  } catch (err) {
+    // silent
   }
+}
 
-  async function confirmReconcile() {
-    if (!selectedProgettoId.value) return
-    saving.value = true
-    try {
-      const allCopiedFields = [
-        ...[...confirmedFields.value],
-        ...[...projectConfirmedFields.value].map(f => `Progetto_${f}`)
-      ]
-      emit('reconcile', {
-        submissionId: props.submission?.id,
-        contattoId: contattoIdRef.value,
-        emailRecordId: null,
-        famigliaId: famigliaIdRef.value,
-        progettoId: selectedProgettoId.value,
-        note: note.value,
-        descrizione: giustDescrizione.value,
-        importo: parseFloat(giustImporto.value) || 0,
-        data: giustData.value,
-        allegato: props.submission?.allegato,
-        rightValues: { ...rightValues.value },
-        projectValues: { ...projectValues.value },
-        copiedFields: allCopiedFields
-      })
-      model.value = false
-    } finally {
-      saving.value = false
-    }
+async function confirmReconcile() {
+  if (!selectedProgettoId.value) return
+  saving.value = true
+  try {
+    const allCopiedFields = [
+      ...[...confirmedFields.value],
+      ...[...projectConfirmedFields.value].map(f => `Progetto_${f}`)
+    ]
+    emit('reconcile', {
+      submissionId: props.submission?.id,
+      contattoId: contattoIdRef.value,
+      emailRecordId: null,
+      famigliaId: famigliaIdRef.value,
+      progettoId: selectedProgettoId.value,
+      note: note.value,
+      descrizione: giustDescrizione.value,
+      importo: parseFloat(giustImporto.value) || 0,
+      data: giustData.value,
+      allegato: props.submission?.allegato,
+      rightValues: { ...rightValues.value },
+      projectValues: { ...projectValues.value },
+      copiedFields: allCopiedFields
+    })
+    model.value = false
+  } finally {
+    saving.value = false
   }
+}
 
-  function toLocalDate(isoStr) {
-    if (!isoStr) return ''
-    const d = new Date(isoStr)
-    if (isNaN(d.getTime())) return isoStr.substring(0, 10)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
+function toLocalDate(isoStr) {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  if (isNaN(d.getTime())) return isoStr.substring(0, 10)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+
 </script>
 
 <style scoped>
-  .riconcilia-scroll-area {
-    height: 65vh;
-  }
-  .riconcilia-dialog-card {
-    background: #fafaf7;
-  }
+.riconcilia-scroll-area {
+  height: 65vh;
+}
+.riconcilia-dialog-card {
+  background: #FAFAF7;
+}
 </style>

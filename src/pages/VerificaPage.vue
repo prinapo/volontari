@@ -10,11 +10,22 @@
         <q-tab-panel name="rendicontazione">
           <div class="row items-center q-gutter-sm q-mb-md">
             <div>
-              <div class="text-h5 text-weight-medium">Verifica rendicontazione</div>
-              <div class="text-body2 text-grey-7">Controllo importi rimborsabili e verifica giustificativi.</div>
+              <div class="text-h5 text-weight-medium">
+                Verifica rendicontazione
+              </div>
+              <div class="text-body2 text-grey-7">
+                Controllo importi rimborsabili e verifica giustificativi.
+              </div>
             </div>
             <q-space />
-            <q-btn flat round icon="refresh" :loading="store.loading" aria-label="Aggiorna dati" @click="loadData">
+            <q-btn
+              flat
+              round
+              icon="refresh"
+              :loading="store.loading"
+              aria-label="Aggiorna dati"
+              @click="loadData"
+            >
               <q-tooltip>Aggiorna dati</q-tooltip>
             </q-btn>
             <q-btn
@@ -28,7 +39,13 @@
 
           <div class="row q-col-gutter-md q-mb-md">
             <div class="col-12 col-sm-6 col-md-4">
-              <q-input v-model="search" outlined dense debounce="300" label="Cerca famiglia">
+              <q-input
+                v-model="search"
+                outlined
+                dense
+                debounce="300"
+                label="Cerca famiglia"
+              >
                 <template #prepend>
                   <q-icon name="search" />
                 </template>
@@ -49,25 +66,33 @@
           </div>
           <div class="summary-grid q-mb-md">
             <div class="summary-cell">
-              <div class="text-caption text-grey-7">Famiglie/progetti</div>
+              <div class="text-caption text-grey-7">
+                Famiglie/progetti
+              </div>
               <div class="text-h6">
                 {{ filteredRows.length }}
               </div>
             </div>
             <div class="summary-cell">
-              <div class="text-caption text-grey-7">Rendicontato</div>
+              <div class="text-caption text-grey-7">
+                Rendicontato
+              </div>
               <div class="text-h6 text-primary">
                 {{ formatCurrency(selectedTotals.rendicontato) }}
               </div>
             </div>
             <div class="summary-cell">
-              <div class="text-caption text-grey-7">Rimborsabile 80%</div>
+              <div class="text-caption text-grey-7">
+                Rimborsabile 80%
+              </div>
               <div class="text-h6 text-positive">
                 {{ formatCurrency(selectedTotals.rimborsabile) }}
               </div>
             </div>
             <div class="summary-cell">
-              <div class="text-caption text-grey-7">Pronte</div>
+              <div class="text-caption text-grey-7">
+                Pronte
+              </div>
               <div class="text-h6">
                 {{ aspiRows.length }}
               </div>
@@ -114,7 +139,9 @@
                     <q-card-section class="q-pa-sm">
                       <div class="row q-col-gutter-md q-mb-md">
                         <div class="col-12 col-sm-6">
-                          <div class="text-subtitle2 text-grey-8 q-mb-xs">Dati bancari</div>
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Dati bancari
+                          </div>
                           <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
                             Intestatario: {{ props.row.intestatario }}
                           </div>
@@ -124,11 +151,7 @@
                             </q-badge>
                             <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
                             <q-btn
-                              flat
-                              round
-                              dense
-                              size="sm"
-                              icon="edit"
+                              flat round dense size="sm" icon="edit"
                               data-testid="btn-edit-bancari"
                               aria-label="Modifica dati bancari"
                               @click="openBancariDialog(props.row)"
@@ -138,7 +161,9 @@
                           </div>
                         </div>
                         <div class="col-12 col-sm-6">
-                          <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile 80%</div>
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Rimborsabile 80%
+                          </div>
                           <div class="text-positive text-weight-medium">
                             {{ formatCurrency(props.row.totaleRimborsabile) }}
                           </div>
@@ -148,67 +173,39 @@
                       <!-- Pagato / Allocato + StatoProgetto mobile -->
                       <div class="row items-center q-gutter-x-sm q-mb-sm">
                         <div class="text-caption text-grey-7">Pagato:</div>
-                        <div class="text-body2 text-weight-medium">
-                          {{ formatCurrency(props.row.totalePagato) }}
-                        </div>
+                        <div class="text-body2 text-weight-medium">{{ formatCurrency(props.row.totalePagato) }}</div>
                         <div class="text-caption text-grey-7">/ {{ formatCurrency(props.row.allocato) }}</div>
                         <q-space />
-                        <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline> Chiuso </q-badge>
-                        <q-badge v-else color="positive" outline> Aperto </q-badge>
+                        <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline>Chiuso</q-badge>
+                        <q-badge v-else color="positive" outline>Aperto</q-badge>
                       </div>
                       <q-separator class="q-mb-md" />
-                      <div class="text-subtitle2 text-grey-8 q-mb-xs">Genitori</div>
-                      <div
-                        v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]"
-                        class="text-caption text-grey"
-                      >
+                      <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                        Genitori
+                      </div>
+                      <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
                         <q-spinner size="xs" /> Caricamento...
                       </div>
-                      <div
-                        v-else-if="
-                          !genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0
-                        "
-                        class="text-caption text-grey"
-                      >
+                      <div v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
                         Nessun genitore assegnato.
                       </div>
                       <q-list v-else dense class="q-mb-sm">
-                        <q-item
-                          v-for="g in genitoriCache[props.row.idFamiglia]"
-                          :key="g.id"
-                          dense
-                          class="q-px-none q-py-xs"
-                        >
-                          <q-item-section
-                            ><ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []"
-                          /></q-item-section>
+                        <q-item v-for="g in genitoriCache[props.row.idFamiglia]" :key="g.id" dense class="q-px-none q-py-xs">
+                          <q-item-section><ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">Volontari</div>
-                      <div
-                        v-if="contattiLoading && !volontariCache[props.row.idFamiglia]"
-                        class="text-caption text-grey"
-                      >
+                      <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">
+                        Volontari
+                      </div>
+                      <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
                         <q-spinner size="xs" /> Caricamento...
                       </div>
-                      <div
-                        v-else-if="
-                          !volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0
-                        "
-                        class="text-caption text-grey"
-                      >
+                      <div v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
                         Nessun volontario assegnato.
                       </div>
                       <q-list v-else dense class="q-mb-sm">
-                        <q-item
-                          v-for="v in volontariCache[props.row.idFamiglia]"
-                          :key="v.id"
-                          dense
-                          class="q-px-none q-py-xs"
-                        >
-                          <q-item-section
-                            ><ContattoInfoLine :contact="v.Contatto" :emails="v._emails || []"
-                          /></q-item-section>
+                        <q-item v-for="v in volontariCache[props.row.idFamiglia]" :key="v.id" dense class="q-px-none q-py-xs">
+                          <q-item-section><ContattoInfoLine :contact="v.Contatto" :emails="v._emails || []" /></q-item-section>
                         </q-item>
                       </q-list>
                       <q-separator />
@@ -229,7 +226,7 @@
                                     type="text"
                                     :readonly="!canVerifica || g.Stato !== 'inviato'"
                                     :saving="savingField === `${g.id}-Descrizione`"
-                                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
+                                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
                                   />
                                   <div v-if="g.NotaVolontario" class="text-caption text-grey-6 ellipsis-2">
                                     {{ g.NotaVolontario }}
@@ -241,9 +238,9 @@
                                     label="Importo"
                                     type="number"
                                     :readonly="!canVerifica || g.Stato !== 'inviato'"
-                                    :format-display="v => formatCurrency(v)"
+                                    :format-display="(v) => formatCurrency(v)"
                                     :saving="savingField === `${g.id}-Importo`"
-                                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
+                                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
                                   />
                                 </div>
                                 <div class="col-6 col-sm-3">
@@ -252,13 +249,15 @@
                                     label="Data"
                                     type="date"
                                     :readonly="!canVerifica || g.Stato !== 'inviato'"
-                                    :format-display="v => formatDate(v) || '—'"
+                                    :format-display="(v) => formatDate(v) || '—'"
                                     :saving="savingField === `${g.id}-Data`"
-                                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
+                                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
                                   />
                                 </div>
                                 <div class="col-6 col-sm-3">
-                                  <div class="text-caption text-grey">Allegato</div>
+                                  <div class="text-caption text-grey">
+                                    Allegato
+                                  </div>
                                   <div v-if="g.Allegato" class="row q-gutter-x-xs">
                                     <q-btn
                                       :href="assetUrl(g.Allegato)"
@@ -286,7 +285,9 @@
                                       <q-tooltip>Scarica allegato</q-tooltip>
                                     </q-btn>
                                   </div>
-                                  <div v-else class="text-grey-5">—</div>
+                                  <div v-else class="text-grey-5">
+                                    —
+                                  </div>
                                 </div>
                                 <div class="col-3 col-sm-1">
                                   <q-badge :color="statoColor(g.Stato)" outline>
@@ -321,10 +322,7 @@
                                       <q-tooltip>Rifiuta</q-tooltip>
                                     </q-btn>
                                   </div>
-                                  <div
-                                    v-else-if="g.Stato === 'verificato'"
-                                    class="text-positive row items-center q-gutter-xs"
-                                  >
+                                  <div v-else-if="g.Stato === 'verificato'" class="text-positive row items-center q-gutter-xs">
                                     <q-icon name="check_circle" size="md" /><span class="text-body2">Verificato</span>
                                   </div>
                                   <div v-else-if="g.Stato === 'rifiutato'">
@@ -356,7 +354,9 @@
                           </q-card>
                         </div>
                       </template>
-                      <div v-else class="text-caption text-grey">Nessun giustificativo presente.</div>
+                      <div v-else class="text-caption text-grey">
+                        Nessun giustificativo presente.
+                      </div>
                     </q-card-section>
                     <q-card-actions class="q-pa-sm q-gutter-xs">
                       <q-btn
@@ -396,10 +396,7 @@
                       </q-btn>
                       <q-btn
                         v-if="canVerifica && props.row.statoProgetto === 'aperto'"
-                        flat
-                        round
-                        dense
-                        size="sm"
+                        flat round dense size="sm"
                         icon="lock"
                         color="warning"
                         aria-label="Chiudi progetto"
@@ -448,7 +445,9 @@
                     <div class="text-weight-medium">
                       {{ formatCurrency(props.row.totaleRendicontato) }}
                     </div>
-                    <div class="text-caption text-grey-7">{{ totalGiustificativi(props.row) }} giustificativi</div>
+                    <div class="text-caption text-grey-7">
+                      {{ totalGiustificativi(props.row) }} giustificativi
+                    </div>
                   </template>
 
                   <template v-else-if="col.name === 'stato'">
@@ -462,9 +461,7 @@
 
                   <template v-else-if="col.name === 'pagato'">
                     <div class="text-right">
-                      <div class="text-body2">
-                        {{ formatCurrency(props.row.totalePagato) }}
-                      </div>
+                      <div class="text-body2">{{ formatCurrency(props.row.totalePagato) }}</div>
                       <div class="text-caption text-grey-6">/ {{ formatCurrency(props.row.allocato) }}</div>
                     </div>
                   </template>
@@ -530,7 +527,9 @@
                     <div class="q-px-md q-pt-md q-pb-xs">
                       <div class="row q-col-gutter-md q-mb-md">
                         <div class="col-6">
-                          <div class="text-subtitle2 text-grey-8 q-mb-xs">Dati bancari</div>
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Dati bancari
+                          </div>
                           <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
                             Intestatario: {{ props.row.intestatario }}
                           </div>
@@ -554,62 +553,42 @@
                           </div>
                         </div>
                         <div class="col-6">
-                          <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile 80%</div>
+                          <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                            Rimborsabile 80%
+                          </div>
                           <div class="text-positive text-weight-medium">
                             {{ formatCurrency(props.row.totaleRimborsabile) }}
                           </div>
                         </div>
                       </div>
                       <q-separator class="q-mb-md" />
-                      <div class="text-subtitle2 text-grey-8 q-mb-xs">Genitori</div>
-                      <div
-                        v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]"
-                        class="text-caption text-grey"
-                      >
+                      <div class="text-subtitle2 text-grey-8 q-mb-xs">
+                        Genitori
+                      </div>
+                      <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
                         <q-spinner size="xs" /> Caricamento...
                       </div>
-                      <div
-                        v-else-if="
-                          !genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0
-                        "
-                        class="text-caption text-grey"
-                      >
+                      <div v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
                         Nessun genitore assegnato.
                       </div>
                       <q-list v-else dense class="q-mb-sm">
-                        <q-item
-                          v-for="g in genitoriCache[props.row.idFamiglia]"
-                          :key="g.id"
-                          dense
-                          class="q-px-none q-py-xs"
-                        >
+                        <q-item v-for="g in genitoriCache[props.row.idFamiglia]" :key="g.id" dense class="q-px-none q-py-xs">
                           <q-item-section>
                             <ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []" />
                           </q-item-section>
                         </q-item>
                       </q-list>
-                      <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">Volontari</div>
-                      <div
-                        v-if="contattiLoading && !volontariCache[props.row.idFamiglia]"
-                        class="text-caption text-grey"
-                      >
+                      <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">
+                        Volontari
+                      </div>
+                      <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
                         <q-spinner size="xs" /> Caricamento...
                       </div>
-                      <div
-                        v-else-if="
-                          !volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0
-                        "
-                        class="text-caption text-grey"
-                      >
+                      <div v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
                         Nessun volontario assegnato.
                       </div>
                       <q-list v-else dense class="q-mb-sm">
-                        <q-item
-                          v-for="v in volontariCache[props.row.idFamiglia]"
-                          :key="v.id"
-                          dense
-                          class="q-px-none q-py-xs"
-                        >
+                        <q-item v-for="v in volontariCache[props.row.idFamiglia]" :key="v.id" dense class="q-px-none q-py-xs">
                           <q-item-section>
                             <ContattoInfoLine :contact="v.Contatto" :emails="v._emails || []" />
                           </q-item-section>
@@ -622,7 +601,11 @@
                     </div>
 
                     <q-list v-if="props.row.giustificativi.length > 0" dense separator class="giust-sub-list">
-                      <q-item v-for="g in props.row.giustificativi" :key="g.id" class="giust-item">
+                      <q-item
+                        v-for="g in props.row.giustificativi"
+                        :key="g.id"
+                        class="giust-item"
+                      >
                         <q-item-section class="col-3">
                           <InlineEditableField
                             :model-value="g.Descrizione"
@@ -630,7 +613,7 @@
                             type="text"
                             :readonly="!canVerifica || g.Stato !== 'inviato'"
                             :saving="savingField === `${g.id}-Descrizione`"
-                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
+                            @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
                           />
                           <div v-if="g.NotaVolontario" class="text-caption text-grey-6 q-mt-xs ellipsis-2">
                             {{ g.NotaVolontario }}
@@ -643,9 +626,9 @@
                             label="Importo"
                             type="number"
                             :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :format-display="v => formatCurrency(v)"
+                            :format-display="(v) => formatCurrency(v)"
                             :saving="savingField === `${g.id}-Importo`"
-                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
+                            @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
                           />
                         </q-item-section>
 
@@ -655,9 +638,9 @@
                             label="Data"
                             type="date"
                             :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :format-display="v => formatDate(v) || '—'"
+                            :format-display="(v) => formatDate(v) || '—'"
                             :saving="savingField === `${g.id}-Data`"
-                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
+                            @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
                           />
                         </q-item-section>
 
@@ -689,7 +672,9 @@
                               <q-tooltip>Scarica allegato</q-tooltip>
                             </q-btn>
                           </div>
-                          <div v-else class="text-grey-5 text-body2">—</div>
+                          <div v-else class="text-grey-5 text-body2">
+                            —
+                          </div>
                         </q-item-section>
 
                         <q-item-section class="col-1">
@@ -758,7 +743,9 @@
                       </q-item>
                     </q-list>
 
-                    <div v-else class="q-pa-md text-grey-5 text-center">Nessun giustificativo per questo progetto.</div>
+                    <div v-else class="q-pa-md text-grey-5 text-center">
+                      Nessun giustificativo per questo progetto.
+                    </div>
                   </div>
                 </q-td>
               </q-tr>
@@ -789,8 +776,7 @@
           </q-card-section>
           <q-card-section>
             <div class="text-body2 q-mb-sm">
-              Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong
-              >?
+              Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong>?
             </div>
             <div class="text-caption text-grey-7 q-mb-md">
               Una volta chiuso, non verranno più generate nuove proposte di pagamento.
@@ -819,7 +805,9 @@
       <q-dialog v-model="rejectDialog" persistent>
         <q-card class="reject-dialog-card">
           <q-card-section>
-            <div class="text-h6">Rifiuta giustificativo</div>
+            <div class="text-h6">
+              Rifiuta giustificativo
+            </div>
             <div class="text-caption text-grey-7">
               {{ rejectItem?.Descrizione || '' }}
             </div>
@@ -859,381 +847,377 @@
         @save="handleAddSave"
       />
 
-      <ProgettoDetailDialog v-model="detailDialog" :progetto="selectedProgettoRow" />
+      <ProgettoDetailDialog
+        v-model="detailDialog"
+        :progetto="selectedProgettoRow"
+      />
     </div>
   </q-page>
 </template>
 
 <script setup>
-  import { computed, onMounted, ref, watch } from 'vue'
-  import { copyToClipboard, useQuasar } from 'quasar'
-  import { useVerificaStore } from 'stores/verifica.store'
-  import { notifyError, notifySuccess } from 'src/utils/notify'
-  import { assetUrl } from 'src/utils/assets'
-  import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
-  import { useAuthStore } from 'stores/auth.store'
-  import InlineEditableField from 'components/Common/InlineEditableField.vue'
-  import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
-  import BancariDialog from 'components/Common/BancariDialog.vue'
-  import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
-  import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
-  import PagamentiTab from 'components/Verifica/PagamentiTab.vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { copyToClipboard, useQuasar } from 'quasar'
+import { useVerificaStore } from 'stores/verifica.store'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { assetUrl } from 'src/utils/assets'
+import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import { useAuthStore } from 'stores/auth.store'
+import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
+import BancariDialog from 'components/Common/BancariDialog.vue'
+import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
+import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
+import PagamentiTab from 'components/Verifica/PagamentiTab.vue'
 
-  const $q = useQuasar()
-  const store = useVerificaStore()
-  const authStore = useAuthStore()
+const $q = useQuasar()
+const store = useVerificaStore()
+const authStore = useAuthStore()
 
-  const selectedAnno = ref(null)
-  const search = ref('')
-  const verifyingId = ref(null)
-  const rejectingId = ref(null)
-  const savingField = ref(null)
-  const addingForRow = ref(null)
-  const showAddForm = computed({
-    get: () => addingForRow.value !== null,
-    set: val => {
-      if (!val) addingForRow.value = null
-    }
+const selectedAnno = ref(null)
+const search = ref('')
+const verifyingId = ref(null)
+const rejectingId = ref(null)
+const savingField = ref(null)
+const addingForRow = ref(null)
+const showAddForm = computed({
+  get: () => addingForRow.value !== null,
+  set: (val) => { if (!val) addingForRow.value = null }
+})
+const verificaTab = ref('rendicontazione')
+
+const bancariDialog = ref(false)
+const editingRow = ref(null)
+const genitoriCache = ref({})
+const volontariCache = ref({})
+const contattiLoading = ref(false)
+const savingBancari = ref(false)
+
+const rejectDialog = ref(false)
+const rejectNota = ref('')
+const rejectItem = ref(null)
+const rejectProgettoId = ref(null)
+
+const chiudiProgettoDialog = ref(false)
+const chiudiProgettoRow = ref(null)
+const chiudiProgettoNota = ref('')
+const savingChiudiProgetto = ref(false)
+
+const selectedProgetto = ref(null)
+const detailDialog = ref(false)
+
+const selectedProgettoRow = computed(() =>
+  filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {}
+)
+
+const pagination = ref({
+  sortBy: 'famiglia',
+  descending: false,
+  page: 1,
+  rowsPerPage: 25
+})
+
+const annoOptions = computed(() => store.anniBando.map(anno => ({
+  label: String(anno),
+  value: anno
+})))
+
+const canVerifica = computed(() => authStore.canVerifica)
+
+const columns = [
+  { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },
+  { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left', sortable: true },
+  { name: 'allocato', label: 'Allocato', field: 'allocato', align: 'right', sortable: true },
+  { name: 'rendicontato', label: 'Rendicontato', field: 'totaleRendicontato', align: 'right', sortable: true },
+  { name: 'pagato', label: 'Pagato', field: 'totalePagato', align: 'right' },
+  { name: 'stato', label: 'Stato', field: 'id', align: 'left' },
+  { name: 'actions', label: '', field: 'id', align: 'right' }
+]
+
+const filteredRows = computed(() => store.rows)
+
+const selectedTotals = computed(() => {
+  return filteredRows.value.reduce((totals, row) => {
+    totals.rendicontato += row.totaleRendicontato
+    totals.rimborsabile += row.totaleRimborsabile
+    return totals
+  }, { rendicontato: 0, rimborsabile: 0 })
+})
+
+const aspiRows = computed(() => {
+  return filteredRows.value.filter(row => {
+    if (row.totaleRimborsabile <= 0 || !row.iban || !row.intestatario) return false
+    if (hasPendingGiustificativi(row)) return false
+    return true
   })
-  const verificaTab = ref('rendicontazione')
+})
 
-  const bancariDialog = ref(false)
-  const editingRow = ref(null)
-  const genitoriCache = ref({})
-  const volontariCache = ref({})
-  const contattiLoading = ref(false)
-  const savingBancari = ref(false)
+onMounted(() => {
+  store.fetchAnni()
+  loadData()
+})
 
-  const rejectDialog = ref(false)
-  const rejectNota = ref('')
-  const rejectItem = ref(null)
-  const rejectProgettoId = ref(null)
-
-  const chiudiProgettoDialog = ref(false)
-  const chiudiProgettoRow = ref(null)
-  const chiudiProgettoNota = ref('')
-  const savingChiudiProgetto = ref(false)
-
-  const selectedProgetto = ref(null)
-  const detailDialog = ref(false)
-
-  const selectedProgettoRow = computed(
-    () => filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {}
-  )
-
-  const pagination = ref({
-    sortBy: 'famiglia',
-    descending: false,
-    page: 1,
-    rowsPerPage: 25
+async function loadData() {
+  await store.fetchAllPages({
+    search: search.value || undefined,
+    anno: selectedAnno.value || undefined
   })
+}
 
-  const annoOptions = computed(() =>
-    store.anniBando.map(anno => ({
-      label: String(anno),
-      value: anno
-    }))
-  )
+watch([search, selectedAnno], () => {
+  pagination.value.page = 1
+  loadData()
+})
 
-  const canVerifica = computed(() => authStore.canVerifica)
+function hasPendingGiustificativi(row) {
+  return row.giustificativi.some(g => g.Stato === 'inviato')
+}
 
-  const columns = [
-    { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },
-    { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left', sortable: true },
-    { name: 'allocato', label: 'Allocato', field: 'allocato', align: 'right', sortable: true },
-    { name: 'rendicontato', label: 'Rendicontato', field: 'totaleRendicontato', align: 'right', sortable: true },
-    { name: 'pagato', label: 'Pagato', field: 'totalePagato', align: 'right' },
-    { name: 'stato', label: 'Stato', field: 'id', align: 'left' },
-    { name: 'actions', label: '', field: 'id', align: 'right' }
+function totalGiustificativi(row) {
+  return row.giustificativi.filter(g => !g.Invalidato).length
+}
+
+function allVerified(row) {
+  const validGiust = row.giustificativi.filter(g => !g.Invalidato)
+  return validGiust.length > 0 && validGiust.every(g => g.Stato === 'verificato')
+}
+
+function statoRiga(row) {
+  if (row.totaleRendicontato === 0) {
+    return { label: 'Non ricevuta', color: 'grey' }
+  }
+  if (!row.iban || !row.intestatario) {
+    return { label: 'Dati bancari mancanti', color: 'warning' }
+  }
+  if (hasPendingGiustificativi(row)) {
+    return { label: 'Da verificare', color: 'orange' }
+  }
+  if (allVerified(row)) {
+    return { label: 'Pronto', color: 'positive' }
+  }
+  return { label: 'Da completare', color: 'warning' }
+}
+
+async function loadFamigliaContatti(famigliaId) {
+  if (!famigliaId) return
+  if (genitoriCache.value[famigliaId] && volontariCache.value[famigliaId]) return
+  contattiLoading.value = true
+  try {
+    const { genitori, volontari } = await store.loadFamigliaContacts(famigliaId)
+    genitoriCache.value = { ...genitoriCache.value, [famigliaId]: genitori }
+    volontariCache.value = { ...volontariCache.value, [famigliaId]: volontari }
+  } catch {
+    genitoriCache.value = { ...genitoriCache.value, [famigliaId]: [] }
+    volontariCache.value = { ...volontariCache.value, [famigliaId]: [] }
+  } finally {
+    contattiLoading.value = false
+  }
+}
+
+function toggleExpand(props) {
+  props.expand = !props.expand
+  if (props.expand) loadFamigliaContatti(props.row.idFamiglia)
+}
+
+function openBancariDialog(row) {
+  editingRow.value = row
+  bancariDialog.value = true
+}
+
+async function saveBancari({ iban, intestatario }) {
+  if (!editingRow.value) return
+  savingBancari.value = true
+  try {
+    await store.updateBancari(editingRow.value.idFamiglia, { iban, intestatario })
+    notifySuccess($q, 'Dati bancari aggiornati')
+    bancariDialog.value = false
+  } catch (err) {
+    notifyError($q, err, "Errore nell'aggiornamento")
+  } finally {
+    savingBancari.value = false
+  }
+}
+
+function openChiudiProgetto(row) {
+  chiudiProgettoRow.value = row
+  chiudiProgettoNota.value = ''
+  chiudiProgettoDialog.value = true
+}
+
+async function handleChiudiProgetto() {
+  savingChiudiProgetto.value = true
+  try {
+    const { usePagamentiStore } = await import('stores/pagamenti.store')
+    const pagStore = usePagamentiStore()
+    await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
+      automatica: false,
+      motivo: chiudiProgettoNota.value || null
+    })
+    notifySuccess($q, 'Progetto chiuso')
+    chiudiProgettoDialog.value = false
+    await store.fetchAll()
+  } catch (err) {
+    notifyError($q, err, 'Errore chiusura progetto')
+  } finally {
+    savingChiudiProgetto.value = false
+  }
+}
+
+async function handleVerify(progettoId, item) {
+  verifyingId.value = item.id
+  try {
+    await store.verifyGiustificativo(progettoId, item.id)
+    notifySuccess($q, 'Giustificativo verificato')
+  } catch (err) {
+    notifyError($q, err, 'Errore nella verifica')
+  } finally {
+    verifyingId.value = null
+  }
+}
+
+async function handleSendDraft(progettoId, item) {
+  verifyingId.value = item.id
+  try {
+    await store.updateGiustificativoField(progettoId, item.id, 'Stato', 'inviato')
+    notifySuccess($q, 'Giustificativo inviato')
+  } catch (err) {
+    notifyError($q, err, "Errore nell'invio")
+  } finally {
+    verifyingId.value = null
+  }
+}
+
+function handleReject(progettoId, item) {
+  rejectProgettoId.value = progettoId
+  rejectItem.value = item
+  rejectNota.value = ''
+  rejectDialog.value = true
+}
+
+async function handleFieldSave(progettoId, item, field, value) {
+  savingField.value = `${item.id}-${field}`
+  try {
+    await store.updateGiustificativoField(progettoId, item.id, field, value)
+    notifySuccess($q, 'Campo aggiornato')
+  } catch (err) {
+    notifyError($q, err, "Errore nell'aggiornamento")
+  } finally {
+    savingField.value = null
+  }
+}
+
+async function handleAddSave(formData) {
+  const row = addingForRow.value
+  if (!row) return
+  try {
+    await store.addGiustificativo(formData, formData.File)
+    notifySuccess($q, 'Giustificativo creato')
+    addingForRow.value = null
+  } catch (err) {
+    notifyError($q, err, 'Errore nella creazione')
+  }
+}
+
+async function confirmReject() {
+  if (!rejectNota.value || !rejectItem.value) return
+  rejectingId.value = rejectItem.value.id
+  try {
+    await store.rejectGiustificativo(rejectProgettoId.value, rejectItem.value.id, rejectNota.value)
+    $q.notify({ type: 'warning', message: 'Giustificativo rifiutato' })
+    rejectDialog.value = false
+  } catch (err) {
+    notifyError($q, err, 'Errore nel rifiuto')
+  } finally {
+    rejectingId.value = null
+  }
+}
+
+function escapeCsv(value) {
+  const normalized = value == null ? '' : String(value)
+  return `"${normalized.replace(/"/g, '""')}"`
+}
+
+function aspiLine(row) {
+  return [
+    row.idFamiglia,
+    row.famiglia,
+    row.beneficiario,
+    row.intestatario,
+    row.iban,
+    row.totaleRimborsabile.toFixed(2).replace('.', ',')
   ]
+}
 
-  const filteredRows = computed(() => store.rows)
+function exportAspi() {
+  const header = ['ID famiglia', 'Famiglia', 'Beneficiario', 'Intestatario', 'IBAN', 'Importo']
+  const csv = [
+    header.map(escapeCsv).join(';'),
+    ...aspiRows.value.map(row => aspiLine(row).map(escapeCsv).join(';'))
+  ].join('\n')
 
-  const selectedTotals = computed(() => {
-    return filteredRows.value.reduce(
-      (totals, row) => {
-        totals.rendicontato += row.totaleRendicontato
-        totals.rimborsabile += row.totaleRimborsabile
-        return totals
-      },
-      { rendicontato: 0, rimborsabile: 0 }
-    )
-  })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'aspi-rendicontazione.csv'
+  link.click()
+  URL.revokeObjectURL(url)
+}
 
-  const aspiRows = computed(() => {
-    return filteredRows.value.filter(row => {
-      if (row.totaleRimborsabile <= 0 || !row.iban || !row.intestatario) return false
-      if (hasPendingGiustificativi(row)) return false
-      return true
-    })
-  })
+async function copyAspiLine(row) {
+  await copyToClipboard(aspiLine(row).join('\t'))
+  $q.notify({ type: 'positive', message: 'Riga esportazione copiata' })
+}
 
-  onMounted(() => {
-    store.fetchAnni()
-    loadData()
-  })
-
-  async function loadData() {
-    await store.fetchAllPages({
-      search: search.value || undefined,
-      anno: selectedAnno.value || undefined
-    })
-  }
-
-  watch([search, selectedAnno], () => {
-    pagination.value.page = 1
-    loadData()
-  })
-
-  function hasPendingGiustificativi(row) {
-    return row.giustificativi.some(g => g.Stato === 'inviato')
-  }
-
-  function totalGiustificativi(row) {
-    return row.giustificativi.filter(g => !g.Invalidato).length
-  }
-
-  function allVerified(row) {
-    const validGiust = row.giustificativi.filter(g => !g.Invalidato)
-    return validGiust.length > 0 && validGiust.every(g => g.Stato === 'verificato')
-  }
-
-  function statoRiga(row) {
-    if (row.totaleRendicontato === 0) {
-      return { label: 'Non ricevuta', color: 'grey' }
-    }
-    if (!row.iban || !row.intestatario) {
-      return { label: 'Dati bancari mancanti', color: 'warning' }
-    }
-    if (hasPendingGiustificativi(row)) {
-      return { label: 'Da verificare', color: 'orange' }
-    }
-    if (allVerified(row)) {
-      return { label: 'Pronto', color: 'positive' }
-    }
-    return { label: 'Da completare', color: 'warning' }
-  }
-
-  async function loadFamigliaContatti(famigliaId) {
-    if (!famigliaId) return
-    if (genitoriCache.value[famigliaId] && volontariCache.value[famigliaId]) return
-    contattiLoading.value = true
-    try {
-      const { genitori, volontari } = await store.loadFamigliaContacts(famigliaId)
-      genitoriCache.value = { ...genitoriCache.value, [famigliaId]: genitori }
-      volontariCache.value = { ...volontariCache.value, [famigliaId]: volontari }
-    } catch {
-      genitoriCache.value = { ...genitoriCache.value, [famigliaId]: [] }
-      volontariCache.value = { ...volontariCache.value, [famigliaId]: [] }
-    } finally {
-      contattiLoading.value = false
-    }
-  }
-
-  function toggleExpand(props) {
-    props.expand = !props.expand
-    if (props.expand) loadFamigliaContatti(props.row.idFamiglia)
-  }
-
-  function openBancariDialog(row) {
-    editingRow.value = row
-    bancariDialog.value = true
-  }
-
-  async function saveBancari({ iban, intestatario }) {
-    if (!editingRow.value) return
-    savingBancari.value = true
-    try {
-      await store.updateBancari(editingRow.value.idFamiglia, { iban, intestatario })
-      notifySuccess($q, 'Dati bancari aggiornati')
-      bancariDialog.value = false
-    } catch (err) {
-      notifyError($q, err, "Errore nell'aggiornamento")
-    } finally {
-      savingBancari.value = false
-    }
-  }
-
-  function openChiudiProgetto(row) {
-    chiudiProgettoRow.value = row
-    chiudiProgettoNota.value = ''
-    chiudiProgettoDialog.value = true
-  }
-
-  async function handleChiudiProgetto() {
-    savingChiudiProgetto.value = true
-    try {
-      const { usePagamentiStore } = await import('stores/pagamenti.store')
-      const pagStore = usePagamentiStore()
-      await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
-        automatica: false,
-        motivo: chiudiProgettoNota.value || null
-      })
-      notifySuccess($q, 'Progetto chiuso')
-      chiudiProgettoDialog.value = false
-      await store.fetchAll()
-    } catch (err) {
-      notifyError($q, err, 'Errore chiusura progetto')
-    } finally {
-      savingChiudiProgetto.value = false
-    }
-  }
-
-  async function handleVerify(progettoId, item) {
-    verifyingId.value = item.id
-    try {
-      await store.verifyGiustificativo(progettoId, item.id)
-      notifySuccess($q, 'Giustificativo verificato')
-    } catch (err) {
-      notifyError($q, err, 'Errore nella verifica')
-    } finally {
-      verifyingId.value = null
-    }
-  }
-
-  async function handleSendDraft(progettoId, item) {
-    verifyingId.value = item.id
-    try {
-      await store.updateGiustificativoField(progettoId, item.id, 'Stato', 'inviato')
-      notifySuccess($q, 'Giustificativo inviato')
-    } catch (err) {
-      notifyError($q, err, "Errore nell'invio")
-    } finally {
-      verifyingId.value = null
-    }
-  }
-
-  function handleReject(progettoId, item) {
-    rejectProgettoId.value = progettoId
-    rejectItem.value = item
-    rejectNota.value = ''
-    rejectDialog.value = true
-  }
-
-  async function handleFieldSave(progettoId, item, field, value) {
-    savingField.value = `${item.id}-${field}`
-    try {
-      await store.updateGiustificativoField(progettoId, item.id, field, value)
-      notifySuccess($q, 'Campo aggiornato')
-    } catch (err) {
-      notifyError($q, err, "Errore nell'aggiornamento")
-    } finally {
-      savingField.value = null
-    }
-  }
-
-  async function handleAddSave(formData) {
-    const row = addingForRow.value
-    if (!row) return
-    try {
-      await store.addGiustificativo(formData, formData.File)
-      notifySuccess($q, 'Giustificativo creato')
-      addingForRow.value = null
-    } catch (err) {
-      notifyError($q, err, 'Errore nella creazione')
-    }
-  }
-
-  async function confirmReject() {
-    if (!rejectNota.value || !rejectItem.value) return
-    rejectingId.value = rejectItem.value.id
-    try {
-      await store.rejectGiustificativo(rejectProgettoId.value, rejectItem.value.id, rejectNota.value)
-      $q.notify({ type: 'warning', message: 'Giustificativo rifiutato' })
-      rejectDialog.value = false
-    } catch (err) {
-      notifyError($q, err, 'Errore nel rifiuto')
-    } finally {
-      rejectingId.value = null
-    }
-  }
-
-  function escapeCsv(value) {
-    const normalized = value == null ? '' : String(value)
-    return `"${normalized.replace(/"/g, '""')}"`
-  }
-
-  function aspiLine(row) {
-    return [
-      row.idFamiglia,
-      row.famiglia,
-      row.beneficiario,
-      row.intestatario,
-      row.iban,
-      row.totaleRimborsabile.toFixed(2).replace('.', ',')
-    ]
-  }
-
-  function exportAspi() {
-    const header = ['ID famiglia', 'Famiglia', 'Beneficiario', 'Intestatario', 'IBAN', 'Importo']
-    const csv = [
-      header.map(escapeCsv).join(';'),
-      ...aspiRows.value.map(row => aspiLine(row).map(escapeCsv).join(';'))
-    ].join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'aspi-rendicontazione.csv'
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  async function copyAspiLine(row) {
-    await copyToClipboard(aspiLine(row).join('\t'))
-    $q.notify({ type: 'positive', message: 'Riga esportazione copiata' })
-  }
-
-  function openRowDetail(row) {
-    selectedProgetto.value = row.idProgetto
-    detailDialog.value = true
-  }
+function openRowDetail(row) {
+  selectedProgetto.value = row.idProgetto
+  detailDialog.value = true
+}
 </script>
 
 <style scoped>
-  .page-inner {
-    margin: 0 auto;
-  }
+.page-inner {
+  margin: 0 auto;
+}
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-cell {
+  min-height: 76px;
+  padding: 12px 14px;
+  border: 1px solid #dedede;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.verifica-table {
+  background: #ffffff;
+}
+
+.expandable-content {
+  background: #f8f9fa;
+  border-top: 1px solid #dedede;
+}
+
+.giust-sub-list .giust-item {
+  border-bottom: 1px solid #eee;
+}
+
+.giust-sub-list .giust-item:last-child {
+  border-bottom: none;
+}
+
+.reject-dialog-card {
+  min-width: 400px;
+}
+
+@media (max-width: 720px) {
   .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .summary-cell {
-    min-height: 76px;
-    padding: 12px 14px;
-    border: 1px solid #dedede;
-    border-radius: 12px;
-    background: #ffffff;
-  }
-
-  .verifica-table {
-    background: #ffffff;
-  }
-
-  .expandable-content {
-    background: #f8f9fa;
-    border-top: 1px solid #dedede;
-  }
-
-  .giust-sub-list .giust-item {
-    border-bottom: 1px solid #eee;
-  }
-
-  .giust-sub-list .giust-item:last-child {
-    border-bottom: none;
-  }
-
-  .reject-dialog-card {
-    min-width: 400px;
-  }
-
-  @media (max-width: 720px) {
-    .summary-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
+}
 </style>

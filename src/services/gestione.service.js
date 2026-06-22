@@ -3,7 +3,12 @@ import api from './api'
 export const gestioneService = {
   getFamiglie({ page = 1, limit = 25, sort, search, meta, famigliaIds, excludeIds } = {}) {
     const params = {
-      fields: ['id_famiglia', 'Nome_Famiglia', 'IBAN', 'Intestatario_CC'].join(','),
+      fields: [
+        'id_famiglia',
+        'Nome_Famiglia',
+        'IBAN',
+        'Intestatario_CC'
+      ].join(','),
       limit,
       page
     }
@@ -43,7 +48,13 @@ export const gestioneService = {
         'filter[Contatto][_eq]': contattoId,
         'filter[_or][0][Disattivo][_null]': true,
         'filter[_or][1][Disattivo][_eq]': false,
-        fields: ['id', 'Ruolo_nella_Famiglia', 'Contatto', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(',')
+        fields: [
+          'id',
+          'Ruolo_nella_Famiglia',
+          'Contatto',
+          'Famiglia.id_famiglia',
+          'Famiglia.Nome_Famiglia'
+        ].join(',')
       }
     })
   },
@@ -55,7 +66,13 @@ export const gestioneService = {
         'filter[Contatto][_in]': ids,
         'filter[_or][0][Disattivo][_null]': true,
         'filter[_or][1][Disattivo][_eq]': false,
-        fields: ['id', 'Ruolo_nella_Famiglia', 'Contatto', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(','),
+        fields: [
+          'id',
+          'Ruolo_nella_Famiglia',
+          'Contatto',
+          'Famiglia.id_famiglia',
+          'Famiglia.Nome_Famiglia'
+        ].join(','),
         limit: -1
       }
     })
@@ -67,7 +84,10 @@ export const gestioneService = {
         filter: JSON.stringify({
           _and: [
             { Famiglia: { _eq: famigliaId } },
-            { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
+            { _or: [
+              { Disattivo: { _null: true } },
+              { Disattivo: { _eq: false } }
+            ]}
           ]
         }),
         fields: [
@@ -92,7 +112,7 @@ export const gestioneService = {
         'filter[Ruolo_nella_Famiglia][_eq]': Ruolo_nella_Famiglia,
         'filter[_or][0][Disattivo][_null]': true,
         'filter[_or][1][Disattivo][_eq]': false,
-        limit: 1
+        'limit': 1
       }
     })
     const activeItems = active.data.data || []
@@ -103,7 +123,7 @@ export const gestioneService = {
         'filter[Famiglia][_eq]': Famiglia,
         'filter[Ruolo_nella_Famiglia][_eq]': Ruolo_nella_Famiglia,
         'filter[Disattivo][_eq]': true,
-        limit: 1
+        'limit': 1
       }
     })
     const items = inactive.data.data || []

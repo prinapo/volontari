@@ -6,7 +6,7 @@ export const famiglieService = {
       params: {
         'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
         'filter[Contatto][_eq]': contattoId,
-        fields: ['id', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(',')
+        'fields': ['id', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(',')
       }
     })
   },
@@ -53,7 +53,7 @@ export const famiglieService = {
       params: {
         'filter[Famiglia][_eq]': famigliaId,
         'filter[Ruolo_nella_Famiglia][_eq]': 'Genitore',
-        fields: [
+        'fields': [
           'id',
           'Contatto.id_contatto',
           'Contatto.Nome',
@@ -89,7 +89,7 @@ export const famiglieService = {
       params: {
         'filter[Famiglia][_eq]': famigliaId,
         'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-        fields: [
+        'fields': [
           'id',
           'Contatto.id_contatto',
           'Contatto.Nome',

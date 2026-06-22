@@ -7,11 +7,10 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    'plugin:vue/vue3-recommended',
-    'prettier'
+    'plugin:vue/vue3-recommended'
   ],
   parserOptions: {
-    ecmaVersion: 'latest',
+    ecmaVersion: 2021,
     sourceType: 'module'
   },
   rules: {
