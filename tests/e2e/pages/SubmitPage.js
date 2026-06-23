@@ -30,7 +30,10 @@ export class SubmitPage {
   }
 
   _fieldByLabel(parent, label) {
-    return parent.locator('.q-field').filter({ has: this.page.locator(`.q-field__label:text-is("${label}")`) }).locator('input, textarea')
+    return parent
+      .locator('.q-field')
+      .filter({ has: this.page.locator(`.q-field__label:text-is("${label}")`) })
+      .locator('input, textarea')
   }
 
   get nomeRichiedente() {
@@ -94,7 +97,7 @@ export class SubmitPage {
   }
 
   getFileInput(index = 0) {
-    return this.giustificativoCard(index).locator('.q-file input[type="file"]')
+    return this.giustificativoCard(index).locator('input[type="file"]').first()
   }
 
   getGiustificativoTitle(index) {
@@ -124,15 +127,25 @@ export class SubmitPage {
     await this.getDescrizioneInput(index).fill(data.descrizione)
     await this.getImportoInput(index).fill(String(data.importo))
     if (data.data) {
-      await this.getDataInput(index).fill(data.data)
+      const input = this.getDataInput(index)
+      await input.evaluate((el, date) => {
+        el.value = date
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+      }, data.data)
     }
     const filePath = data.file || this.testFilePath
     await this.getFileInput(index).setInputFiles(filePath)
   }
 
-  async clickTornaAlLogin() { await this.tornaAlLoginLink.click() }
-  async clickAddGiustificativo() { await this.addGiustificativoBtn.click() }
-  async clickDeleteGiustificativo(index) { await this.getDeleteBtn(index).click() }
+  async clickTornaAlLogin() {
+    await this.tornaAlLoginLink.click()
+  }
+  async clickAddGiustificativo() {
+    await this.addGiustificativoBtn.click()
+  }
+  async clickDeleteGiustificativo(index) {
+    await this.getDeleteBtn(index).click()
+  }
   async clickSubmit() {
     await this.submitBtn.scrollIntoViewIfNeeded()
     await this.submitBtn.click()
@@ -143,10 +156,13 @@ export class SubmitPage {
   }
 
   async waitForFormReset() {
-    await this.page.waitForFunction(() => {
-      const inputs = document.querySelectorAll('.q-field input')
-      return inputs.length > 0 && Array.from(inputs).every(i => i.value === '')
-    }, { timeout: 10000 })
+    await this.page.waitForFunction(
+      () => {
+        const inputs = document.querySelectorAll('.q-field input')
+        return inputs.length > 0 && Array.from(inputs).every(i => i.value === '')
+      },
+      { timeout: 10000 }
+    )
   }
 
   async getFormValues() {

@@ -252,5 +252,20 @@ describe('auth store', () => {
 
       expect(store.user.role.name).toBe('Administrator')
     })
+
+    it('skips resolution when user.role already has a name', async () => {
+      const store = useAuthStore()
+      store.user = { id: 'user-1', role: { name: 'Volontario' } }
+      await store.resolveUserRole()
+      expect(mockGetRole).not.toHaveBeenCalled()
+    })
+
+    it('does nothing when role is empty string', async () => {
+      const store = useAuthStore()
+      store.token = 'header.' + btoa(JSON.stringify({ role: '', exp: 9999999999 })) + '.sig'
+      store.user = { id: 'user-1', role: '' }
+      await store.resolveUserRole()
+      expect(store.user.role).toBe('')
+    })
   })
 })

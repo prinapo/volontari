@@ -1,5 +1,8 @@
 import api from './api'
 
+const CONTATTI_FIELDS =
+  'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id'
+
 export const contattiService = {
   getByUserId(userId) {
     return api.get('/items/contatti', {
@@ -14,8 +17,7 @@ export const contattiService = {
     return api.get('/items/contatti', {
       params: {
         'filter[email][email_address][_eq]': email.toLowerCase(),
-        fields:
-          'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id'
+        fields: CONTATTI_FIELDS
       }
     })
   },
@@ -25,8 +27,7 @@ export const contattiService = {
     return api.get('/items/contatti', {
       params: {
         'filter[email][email_address][_in]': list.map(e => e.toLowerCase()).join(','),
-        fields:
-          'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id',
+        fields: CONTATTI_FIELDS,
         limit: -1
       }
     })
@@ -44,27 +45,28 @@ export const contattiService = {
     }
 
     switch (true) {
-    case isVolontario: {
-      filter.IsVolontario = { _eq: true }
-    
-    break;
-    }
-    case isGenitore: {
-      filter.IsGenitore = { _eq: true }
-      filter.IsVolontario = { _eq: false }
-    
-    break;
-    }
-    case isReferente: {
-      filter.IsReferente = { _eq: true }
-    
-    break;
-    }
-    default: if (isVolontario === false && isGenitore === false && isReferente === false) {
-      filter.IsVolontario = { _eq: false }
-      filter.IsGenitore = { _eq: false }
-      filter.IsReferente = { _eq: false }
-    }
+      case isVolontario: {
+        filter.IsVolontario = { _eq: true }
+
+        break
+      }
+      case isGenitore: {
+        filter.IsGenitore = { _eq: true }
+        filter.IsVolontario = { _eq: false }
+
+        break
+      }
+      case isReferente: {
+        filter.IsReferente = { _eq: true }
+
+        break
+      }
+      default:
+        if (isVolontario === false && isGenitore === false && isReferente === false) {
+          filter.IsVolontario = { _eq: false }
+          filter.IsGenitore = { _eq: false }
+          filter.IsReferente = { _eq: false }
+        }
     }
 
     if (stato === 'Attivi') {

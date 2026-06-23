@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>27/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>4/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>27/27</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -90,60 +90,60 @@
 <a name='L25'></a><a href='#L25'>25</a>
 <a name='L26'></a><a href='#L26'>26</a>
 <a name='L27'></a><a href='#L27'>27</a>
-<a name='L28'></a><a href='#L28'>28</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >&lt;template&gt;</span></span></span>
-<span class="cstat-no" title="statement not covered" >  &lt;span class="contatto-info-line"&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;span v-if="contact" class="text-body2"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      {{ contact.Nome || '' }} {{ contact.Cognome || '' }}</span>
-<span class="cstat-no" title="statement not covered" >    &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;template v-for="em in emails" :key="em.email_address"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;q-icon name="email" size="xs" class="q-ml-sm q-mr-xs text-grey-6" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;a :href="'mailto:'+em.email_address" class="text-primary text-caption"&gt;{{ em.email_address }}&lt;/a&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-xs" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;/template&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;template v-if="contact?.Numero_di_cellulare"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;q-icon name="smartphone" size="xs" class="q-ml-sm q-mr-xs text-grey-6" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;a :href="'tel:'+contact.Numero_di_cellulare" class="text-primary text-caption"&gt;{{ contact.Numero_di_cellulare }}&lt;/a&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;/template&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;template v-if="contact?.Numero_di_telefono"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;q-icon name="phone" size="xs" class="q-ml-sm q-mr-xs text-grey-6" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;a :href="'tel:'+contact.Numero_di_telefono" class="text-primary text-caption"&gt;{{ contact.Numero_di_telefono }}&lt;/a&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;/template&gt;</span>
-<span class="cstat-no" title="statement not covered" >  &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >&lt;/template&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >&lt;script setup&gt;</span>
-<span class="cstat-no" title="statement not covered" >defineProps({</span>
-<span class="cstat-no" title="statement not covered" >  contact: { type: Object, default: null },</span>
-<span class="cstat-no" title="statement not covered" >  emails: { type: Array, default: () =&gt; [] }</span>
-<span class="cstat-no" title="statement not covered" >})</span>
-<span class="cstat-no" title="statement not covered" >&lt;/script&gt;</span>
+<a name='L28'></a><a href='#L28'>28</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">&lt;template&gt;
+  &lt;span class="contatto-info-line"&gt;
+    &lt;span v-if="contact" class="text-body2"&gt;
+      {{ contact.Nome<span class="branch-0 cbranch-no" title="branch not covered" > || '' }} </span>{{ contact.Cognome || '' }}
+    &lt;/span&gt;
+    &lt;template v-for="em in emails" :key="em.email_address"&gt;
+      &lt;q-icon name="email" size="xs" class="q-ml-sm q-mr-xs text-grey-6" /&gt;
+      &lt;a :href="'mailto:'+em.email_address" class="text-primary text-caption"&gt;{{ em.email_address }}&lt;/a&gt;
+      &lt;q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-xs" /&gt;
+    &lt;/template&gt;
+    &lt;template v-if="contact?.Numero_di_cellulare"&gt;
+      &lt;q-icon name="smartphone" size="xs" class="q-ml-sm q-mr-xs text-grey-6" /&gt;
+      &lt;a :href="'tel:'+contact.Numero_di_cellulare" class="text-primary text-caption"&gt;{{ contact.Numero_di_cellulare }}&lt;/a&gt;
+    &lt;/template&gt;
+    &lt;template v-if="contact?.Numero_di_telefono"&gt;
+      &lt;q-icon name="phone" size="xs" class="q-ml-sm q-mr-xs text-grey-6" /&gt;
+      &lt;a :href="'tel:'+contact.Numero_di_telefono" class="text-primary text-caption"&gt;{{ contact.Numero_di_telefono }}&lt;/a&gt;
+    &lt;/template&gt;
+  &lt;/span&gt;
+&lt;/template&gt;
+&nbsp;
+&lt;script setup&gt;
+defineProps({
+  contact: { type: Object, default: null },
+  emails: { type: Array, default: () =&gt; [] }
+})
+&lt;/script&gt;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -151,7 +151,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-22T16:42:21.716Z
+                at 2026-06-22T19:06:42.515Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

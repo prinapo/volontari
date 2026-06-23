@@ -57,6 +57,14 @@ test.describe('Pagine Pubbliche', () => {
     await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10000 })
     await expect(page.locator('text=Invio giustificativi')).toBeVisible()
   })
+
+  test('A-SS-01: LoginPage screenshot non cambia @visual', async ({ page }) => {
+    await page.goto('/login')
+    await expect(page.locator('.login-card').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: 'Accedi' })).toBeVisible()
+    await page.waitForTimeout(500)
+    await expect(page).toHaveScreenshot('login-page.png', { maxDiffPixels: 500, animations: 'disabled' })
+  })
 })
 
 test.describe('Route Guards', () => {
@@ -108,7 +116,10 @@ test.describe('Route Guards', () => {
 
   test('RG-05: Admin accede a /admin @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    if (!auth.admin) { test.skip('Nessun utente Admin configurato'); return }
+    if (!auth.admin) {
+      test.skip('Nessun utente Admin configurato')
+      return
+    }
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     try {

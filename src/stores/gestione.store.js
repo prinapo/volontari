@@ -21,6 +21,41 @@ export const useGestioneStore = defineStore('gestione', {
   }),
 
   actions: {
+    async _findOrCreateUser(contattoId) {
+      const contattoRes = await contattiService.getById(contattoId)
+      const contatto = contattoRes.data.data
+      if (!contatto) return { error: 'Contatto non trovato' }
+      if (contatto.user_id) return { success: true, contatto }
+
+      const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
+      if (!email) return { error: 'Email mancante' }
+
+      const userRes = await usersService.searchByEmail(email)
+      const existing = (userRes.data.data || [])[0]
+      if (existing) {
+        await contattiService.update(contattoId, { user_id: existing.id })
+        return { success: true, contatto }
+      }
+
+      const rolesRes = await usersService.getRoleByName('Volontario')
+      const ruoloId = rolesRes.data.data?.[0]?.id
+      if (!ruoloId) return { error: "Ruolo Volontario non trovato in Directus. Contatta l'amministratore." }
+
+      const newUserRes = await usersService.create({
+        email,
+        password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
+        first_name: contatto.Nome || '',
+        last_name: contatto.Cognome || '',
+        role: ruoloId
+      })
+      const newUserId = newUserRes.data.data?.id
+      if (newUserId) {
+        await contattiService.update(contattoId, { user_id: newUserId })
+        await usersService.sendInvite(email, RESET_URL)
+      }
+      return { success: true, contatto }
+    },
+
     async fetchAll(params = {}) {
       this.loading = true
       this.error = null
@@ -137,11 +172,13 @@ export const useGestioneStore = defineStore('gestione', {
           }
           const emailRes = await emailService.getRecordByContatto(id)
           const existing = emailRes.data.data?.[0]
-          await (existing ? emailService.update(existing.id, { email_address: newEmail }) : emailService.create({
-              email_address: newEmail,
-              Contatto_Relation: id,
-              Primary: true
-            }));
+          await (existing
+            ? emailService.update(existing.id, { email_address: newEmail })
+            : emailService.create({
+                email_address: newEmail,
+                Contatto_Relation: id,
+                Primary: true
+              }))
         }
 
         return true
@@ -212,39 +249,10 @@ export const useGestioneStore = defineStore('gestione', {
       this.error = null
       try {
         if (ruolo === 'Volontario') {
-          const contattoRes = await contattiService.getById(contattoId)
-          const contatto = contattoRes.data.data
-          if (contatto && !contatto.user_id) {
-            const email =
-              contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
-            if (!email) {
-              this.error = 'Email mancante: sistema il contatto prima di associarlo come volontario'
-              return false
-            }
-            const userRes = await usersService.searchByEmail(email)
-            const existing = (userRes.data.data || [])[0]
-            if (existing) {
-              await contattiService.update(contattoId, { user_id: existing.id })
-            } else {
-              const rolesRes = await usersService.getRoleByName('Volontario')
-              const ruoloId = rolesRes.data.data?.[0]?.id
-              if (!ruoloId) {
-                this.error = "Ruolo Volontario non trovato in Directus. Contatta l'amministratore."
-                return false
-              }
-              const newUserRes = await usersService.create({
-                email,
-                password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
-                first_name: contatto.Nome || '',
-                last_name: contatto.Cognome || '',
-                role: ruoloId
-              })
-              const newUserId = newUserRes.data.data?.id
-              if (newUserId) {
-                await contattiService.update(contattoId, { user_id: newUserId })
-                await usersService.sendInvite(email, RESET_URL)
-              }
-            }
+          const result = await this._findOrCreateUser(contattoId)
+          if (result.error) {
+            this.error = 'Email mancante: sistema il contatto prima di associarlo come volontario'
+            return false
           }
         }
         await gestioneService.assignToFamiglia({
@@ -318,35 +326,10 @@ export const useGestioneStore = defineStore('gestione', {
     async markAsReferente(contattoId) {
       this.error = null
       try {
-        const contattoRes = await contattiService.getById(contattoId)
-        const contatto = contattoRes.data.data
-        if (contatto && !contatto.user_id) {
-          const email =
-            contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
-          if (!email) {
-            this.error = "Email mancante: prima aggiungi un'email al contatto"
-            return false
-          }
-          const userRes = await usersService.searchByEmail(email)
-          const existing = (userRes.data.data || [])[0]
-          if (existing) {
-            await contattiService.update(contattoId, { user_id: existing.id })
-          } else {
-            const rolesRes = await usersService.getRoleByName('Volontario')
-            const ruoloId = rolesRes.data.data?.[0]?.id
-            const newUserRes = await usersService.create({
-              email,
-              password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
-              first_name: contatto.Nome || '',
-              last_name: contatto.Cognome || '',
-              role: ruoloId
-            })
-            const newUserId = newUserRes.data.data?.id
-            if (newUserId) {
-              await contattiService.update(contattoId, { user_id: newUserId })
-              await usersService.sendInvite(email, RESET_URL)
-            }
-          }
+        const result = await this._findOrCreateUser(contattoId)
+        if (result.error) {
+          this.error = "Email mancante: prima aggiungi un'email al contatto"
+          return false
         }
         await contattiService.update(contattoId, { IsReferente: true })
         return true
@@ -374,38 +357,10 @@ export const useGestioneStore = defineStore('gestione', {
       this.saving = true
       this.error = null
       try {
-        const contattoRes = await contattiService.getById(contattoId)
-        const contatto = contattoRes.data.data
-        if (!contatto) {
-          this.error = 'Contatto non trovato'
+        const result = await this._findOrCreateUser(contattoId)
+        if (result.error) {
+          this.error = result.error
           return false
-        }
-
-        const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
-        if (!email) {
-          this.error = 'Email mancante'
-          return false
-        }
-
-        const userRes = await usersService.searchByEmail(email)
-        const existing = (userRes.data.data || [])[0]
-        if (existing) {
-          await contattiService.update(contattoId, { user_id: existing.id })
-        } else {
-          const rolesRes = await usersService.getRoleByName('Volontario')
-          const ruoloId = rolesRes.data.data?.[0]?.id
-          const newUserRes = await usersService.create({
-            email,
-            password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
-            first_name: contatto.Nome || '',
-            last_name: contatto.Cognome || '',
-            role: ruoloId
-          })
-          const newUserId = newUserRes.data.data?.id
-          if (newUserId) {
-            await contattiService.update(contattoId, { user_id: newUserId })
-            await usersService.sendInvite(email, RESET_URL)
-          }
         }
         await this.fetchVolontariSenzaUtente()
         return true

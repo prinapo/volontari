@@ -125,11 +125,27 @@ describe('pagamenti store', () => {
   })
 
   it('ricalcolaProposta creates missing proposal', async () => {
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, Allocato: '1000', Famiglia: 'fam-1', IBAN: '', Intestatario_CC: '', StatoProgetto: 'aperto' } } })
-    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '800' }] } })
-    mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ Importo: '200', Stato: 'in_pagamento' }] } })
+    mockGetProgettoById.mockResolvedValue({
+      data: {
+        data: {
+          id_progetto: 1,
+          Allocato: '1000',
+          Famiglia: 'fam-1',
+          IBAN: '',
+          Intestatario_CC: '',
+          StatoProgetto: 'aperto'
+        }
+      }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '800' }] }
+    })
+    mockGetPagamenti
+      .mockResolvedValueOnce({ data: { data: [{ Importo: '200', Stato: 'in_pagamento' }] } })
       .mockResolvedValueOnce({ data: { data: [] } })
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } } })
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } }
+    })
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [{ Stato: 'verificato', Importo: '800' }] } })
     mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgettoStats.mockResolvedValue({})
@@ -141,7 +157,9 @@ describe('pagamenti store', () => {
   })
 
   it('creaBatch creates batch for proposals', async () => {
-    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 'p-1', Stato: 'proposto', Progetto: 1, Importo: '100' }] } })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'p-1', Stato: 'proposto', Progetto: 1, Importo: '100' }] }
+    })
     mockCreateBatch.mockResolvedValue({ data: { data: { id: 'b-1' } } })
     mockUpdatePagamento.mockResolvedValue({})
     mockGetAssociazioni.mockResolvedValue({ data: { data: [{ Nome: 'A', Budget: '1000' }] } })
@@ -158,10 +176,14 @@ describe('pagamenti store', () => {
 
   it('segnaPagato marks as paid', async () => {
     mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 1, Famiglia: 'fam-1', Importo: 100 }] } })
+      .mockResolvedValueOnce({
+        data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 1, Famiglia: 'fam-1', Importo: 100 }] }
+      })
       .mockResolvedValue({ data: { data: [] } })
     mockUpdatePagamento.mockResolvedValue({})
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } } })
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } }
+    })
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgettoStats.mockResolvedValue({})
     mockGetFamigliaVolontari.mockResolvedValue({ data: { data: [] } })
@@ -179,7 +201,9 @@ describe('pagamenti store', () => {
       .mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 1 }] } })
       .mockResolvedValue({ data: { data: [] } })
     mockUpdatePagamento.mockResolvedValue({})
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } } })
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } }
+    })
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgettoStats.mockResolvedValue({})
     mockGetAssociazioni.mockResolvedValue({ data: { data: [] } })
@@ -190,7 +214,9 @@ describe('pagamenti store', () => {
   })
 
   it('correggiDati fixes failed payment', async () => {
-    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 'p-1', Stato: 'fallito', Famiglia: 'fam-1', Progetto: 1, Importo: 100 }] } })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'p-1', Stato: 'fallito', Famiglia: 'fam-1', Progetto: 1, Importo: 100 }] }
+    })
     mockUpdatePagamento.mockResolvedValue({})
     mockGetAssociazioni.mockResolvedValue({ data: { data: [] } })
     const store = usePagamentiStore()
@@ -212,7 +238,9 @@ describe('pagamenti store', () => {
 
   it('inviaNotificaPagamento sends email to volontario', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
-    mockGetFamigliaVolontari.mockResolvedValue({ data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] } })
+    mockGetFamigliaVolontari.mockResolvedValue({
+      data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
+    })
     mockGetFamigliaById.mockResolvedValue({ data: { data: { Nome_Famiglia: 'Fam Test' } } })
     mockSendEmail.mockResolvedValue({})
     mockUpdatePagamento.mockResolvedValue({})
@@ -226,5 +254,47 @@ describe('pagamenti store', () => {
     const store = usePagamentiStore()
     await store.inviaNotificaPagamento({ NotificaInviata: true })
     expect(mockGetProgettoById).not.toHaveBeenCalled()
+  })
+
+  it('fetchAssociazioni handles error silently', async () => {
+    mockGetAssociazioni.mockRejectedValue(new Error('fail'))
+    const store = usePagamentiStore()
+    await store.fetchAssociazioni()
+    expect(store.associazioni).toEqual([])
+  })
+
+  it('fetchProposti handles error silently', async () => {
+    mockGetPagamenti.mockRejectedValue(new Error('fail'))
+    const store = usePagamentiStore()
+    await store.fetchProposti()
+    expect(store.proposti).toEqual([])
+  })
+
+  it('fetchInCorso handles error silently', async () => {
+    mockGetPagamenti.mockRejectedValue(new Error('fail'))
+    const store = usePagamentiStore()
+    await store.fetchInCorso()
+    expect(store.inCorso).toEqual([])
+  })
+
+  it('fetchFalliti handles error silently', async () => {
+    mockGetPagamenti.mockRejectedValue(new Error('fail'))
+    const store = usePagamentiStore()
+    await store.fetchFalliti()
+    expect(store.falliti).toEqual([])
+  })
+
+  it('fetchBatches handles error silently', async () => {
+    mockGetBatches.mockRejectedValue(new Error('fail'))
+    const store = usePagamentiStore()
+    await store.fetchBatches()
+    expect(store.batches).toEqual([])
+  })
+
+  it('chiudiProgetto handles error', async () => {
+    mockUpdateProgettoStats.mockRejectedValue(new Error('fail'))
+    const store = usePagamentiStore()
+    await store.chiudiProgetto(1, { automatica: false })
+    expect(store.error).toBe('fail')
   })
 })

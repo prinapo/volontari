@@ -8,18 +8,18 @@
 
 ## Quality toolchain
 
-| Tool | Purpose | Config |
-|---|---|---|
-| ESLint 8 | JS + Vue linting | `.eslintrc.cjs` |
-| Prettier 3 | Formatting | `.prettierrc` |
-| Stylelint 16 | SCSS linting | `.stylelintrc.cjs` |
-| commitlint | Conventional commits | `commitlint.config.cjs` |
-| Husky 9 | Git hooks | `.husky/pre-commit`, `.husky/commit-msg` |
-| lint-staged | Auto-fix on commit | Defined in `package.json` |
-| knip 5 | Dead code detection | Defined in `package.json` |
-| Playwright | E2E tests | `tests/e2e/playwright.config.js` |
-| GitHub Actions | CI/CD | `.github/workflows/ci.yml` |
-| Dependabot | Auto-dependency updates | `.github/dependabot.yml` |
+| Tool           | Purpose                 | Config                                   |
+| -------------- | ----------------------- | ---------------------------------------- |
+| ESLint 8       | JS + Vue linting        | `.eslintrc.cjs`                          |
+| Prettier 3     | Formatting              | `.prettierrc`                            |
+| Stylelint 16   | SCSS linting            | `.stylelintrc.cjs`                       |
+| commitlint     | Conventional commits    | `commitlint.config.cjs`                  |
+| Husky 9        | Git hooks               | `.husky/pre-commit`, `.husky/commit-msg` |
+| lint-staged    | Auto-fix on commit      | Defined in `package.json`                |
+| knip 5         | Dead code detection     | Defined in `package.json`                |
+| Playwright     | E2E tests               | `tests/e2e/playwright.config.js`         |
+| GitHub Actions | CI/CD                   | `.github/workflows/ci.yml`               |
+| Dependabot     | Auto-dependency updates | `.github/dependabot.yml`                 |
 
 ## Commands
 
@@ -62,9 +62,20 @@ Use `type(scope): message` where type is one of: feat, fix, chore, docs, refacto
 - `.json`, `.md` → Prettier --write
 - Commit messages validated with conventional-changelog
 
-## Testing
+## Unit testing (Vitest)
+
+- Run: `npm run test:unit` (240 tests, no backend needed)
+- Coverage: `npm run test:unit:coverage`
+- Path: `tests/unit/`
+- Utils coverage: 100%, Stores: 82%, Services: 78%
+
+## E2E testing (Playwright)
 
 - Run: `npm run test:e2e` (needs Directus accessible)
-- Tags: `@smoke` (critical path), `@crud` (data persistence), `@regression` (edge cases)
+- 16 spec files, 151+ tests, 27 test files
+- Tags: `@smoke` (critical path), `@crud` (data persistence), `@regression` (edge cases), `@visual` (screenshots)
 - Page Object Model in `tests/e2e/pages/`
 - Two projects in Playwright: `chromium` (desktop) and `mobile` (Pixel 6)
+- Screenshot tests: update baseline with `PLAYWRIGHT_UPDATE_SNAPSHOTS=1 npm run test:e2e`
+- Visual tests (`@visual`) verify UI consistency across commits
+- CI/CD: `.github/workflows/ci.yml` — quality (lint+build) → e2e (playwright)

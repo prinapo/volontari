@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { adminService } from 'src/services/admin.service'
 import { associazioniService } from 'src/services/associazioni.service'
-import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
@@ -137,7 +136,10 @@ export const usePagamentiStore = defineStore('pagamenti', {
           'filter[_or][1][Stato][_eq]': STATO_PAGAMENTO.PAGATO,
           limit: -1
         })
-        const totaleStorico = (pagamentiRes.data.data || []).reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
+        const totaleStorico = (pagamentiRes.data.data || []).reduce(
+          (s, p) => s + (Number.parseFloat(p.Importo) || 0),
+          0
+        )
 
         const allocato = Number.parseFloat(progetto.Allocato) || 0
         const erogabile = Math.min(totaleVerificato, allocato)
@@ -151,15 +153,17 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const esistente = (esistenteRes.data.data || [])[0]
 
         if (nuovoProposto > 0) {
-          await (esistente ? pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }) : pagamentiService.createPagamento({
-              Progetto: progettoId,
-              Famiglia: progetto.Famiglia,
-              Importo: nuovoProposto,
-              Stato: STATO_PAGAMENTO.PROPOSTO,
-              IBAN: progetto.IBAN || '',
-              Intestatario: progetto.Intestatario_CC || '',
-              DataProposta: new Date().toISOString()
-            }));
+          await (esistente
+            ? pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
+            : pagamentiService.createPagamento({
+                Progetto: progettoId,
+                Famiglia: progetto.Famiglia,
+                Importo: nuovoProposto,
+                Stato: STATO_PAGAMENTO.PROPOSTO,
+                IBAN: progetto.IBAN || '',
+                Intestatario: progetto.Intestatario_CC || '',
+                DataProposta: new Date().toISOString()
+              }))
         } else if (esistente) {
           await pagamentiService.deletePagamento(esistente.id)
         }

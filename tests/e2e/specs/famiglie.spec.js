@@ -4,21 +4,23 @@ import { GestionePage } from '../pages/GestionePage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Famiglie Page', () => {
-
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await page.waitForTimeout(1500)
   })
 
-  test('F-01: Pagina carica tutti i dati corretti all\'avvio @smoke', async ({ page }) => {
+  test("F-01: Pagina carica tutti i dati corretti all'avvio @smoke", async ({ page }) => {
     await expect(page.locator('.text-h6').first()).toBeVisible()
     const famigliaName = await page.locator('.text-h6').first().innerText()
     expect(famigliaName.trim()).toBeTruthy()
 
     await expect(page.locator('.q-select')).toBeVisible()
 
-    const hasTotale = await page.locator('text=Totale Giustificativi').isVisible().catch(() => false)
+    const hasTotale = await page
+      .locator('text=Totale Giustificativi')
+      .isVisible()
+      .catch(() => false)
     if (!hasTotale) {
       console.log('F-01: Totale Giustificativi not visible (seed data may be incomplete)')
     }
@@ -29,7 +31,7 @@ test.describe('Famiglie Page', () => {
 
   test('G-01: Genitori con Nome, Email cliccabile, Telefoni cliccabili @smoke', async ({ page }) => {
     const genitoriSection = page.locator('text=Genitori').locator('..')
-    if (await genitoriSection.count() === 0) {
+    if ((await genitoriSection.count()) === 0) {
       test.skip()
       return
     }
@@ -68,7 +70,7 @@ test.describe('Famiglie Page', () => {
     await expect(fields.first().locator('.text-body1')).not.toBeVisible()
   })
 
-  const expandDatiBancari = async (page) => {
+  const expandDatiBancari = async page => {
     await page.locator('.q-expansion-item:has-text("Dati bancari")').locator('text=Dati bancari').click()
     await page.waitForTimeout(800)
   }
@@ -87,9 +89,7 @@ test.describe('Famiglie Page', () => {
     const testIBAN = `IT60X${ts.padStart(22, '0')}`
 
     const [patchResp] = await Promise.all([
-      page.waitForResponse(
-        resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'
-      ),
+      page.waitForResponse(resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'),
       (async () => {
         await ibanField.click()
         const input = ibanField.locator('input')
@@ -127,7 +127,7 @@ test.describe('Famiglie Page', () => {
     await page.reload()
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await expandDatiBancari(page)
-    const afterReload = (await (getExpandedField(page, 0)).locator('.text-body1').innerText()).trim()
+    const afterReload = (await getExpandedField(page, 0).locator('.text-body1').innerText()).trim()
     expect(afterReload).toBe(originalValue)
   })
 
@@ -158,9 +158,7 @@ test.describe('Famiglie Page', () => {
     const testName = `__TEST_Int_${Date.now()}`
 
     const [patchResp] = await Promise.all([
-      page.waitForResponse(
-        resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'
-      ),
+      page.waitForResponse(resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'),
       (async () => {
         await intestatarioField.click()
         const input = intestatarioField.locator('input')
@@ -176,7 +174,7 @@ test.describe('Famiglie Page', () => {
     await page.reload()
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     await expandDatiBancari(page)
-    await expect((getExpandedField(page, 1)).locator('.text-body1')).toContainText(testName, { timeout: 5000 })
+    await expect(getExpandedField(page, 1).locator('.text-body1')).toContainText(testName, { timeout: 5000 })
   })
 
   test('PS-01: ProgettoSelector opzioni formato corretto @smoke', async ({ page }) => {
@@ -226,7 +224,11 @@ test.describe('Famiglie Page', () => {
       return
     }
     const totaleText = await page.locator('text=Totale Giustificativi').locator('..').locator('.text-h6').innerText()
-    const rimborsabileText = await page.getByText('Totale Rimborsabile', { exact: true }).locator('..').locator('.text-h6').innerText()
+    const rimborsabileText = await page
+      .getByText('Totale Rimborsabile', { exact: true })
+      .locator('..')
+      .locator('.text-h6')
+      .innerText()
 
     const totale = parseFloat(totaleText.replace(/[€\s.]/g, '').replace(',', '.'))
     const rimborsabile = parseFloat(rimborsabileText.replace(/[€\s.]/g, '').replace(',', '.'))
@@ -251,7 +253,7 @@ test.describe('Famiglie Page', () => {
 
   test('EN-01: Genitori mostrano email con badge Primaria @smoke', async ({ page }) => {
     const genitoriHeader = page.locator('.text-caption.text-grey.text-uppercase:has-text("Genitori")')
-    if (await genitoriHeader.count() === 0) {
+    if ((await genitoriHeader.count()) === 0) {
       test.skip()
       return
     }
@@ -300,9 +302,7 @@ test.describe('Famiglie Page', () => {
     const testIBAN = `IT60X${ts.padStart(22, '0')}`
 
     const [patchResp] = await Promise.all([
-      page.waitForResponse(
-        resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'
-      ),
+      page.waitForResponse(resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'),
       (async () => {
         await ibanField.click()
         const input = ibanField.locator('input')
@@ -323,10 +323,46 @@ test.describe('Famiglie Page', () => {
 })
 
 test.describe('Famiglie Page — Multi-famiglia', () => {
+  let createdFamigliaName = ''
+
+  test.afterEach(async ({ page }) => {
+    if (!createdFamigliaName) return
+    try {
+      const res = await fetch('http://localhost:8055/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: auth.admin.email, password: auth.admin.password })
+      })
+      const {
+        data: { access_token: token }
+      } = await res.json()
+      const authH = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+
+      const fRes = await fetch(
+        `http://localhost:8055/items/Famiglie?filter[Nome_Famiglia][_eq]=${encodeURIComponent(createdFamigliaName)}&fields=id_famiglia`,
+        { headers: authH }
+      )
+      const fData = await fRes.json()
+      for (const f of fData.data || []) {
+        const fcRes = await fetch(
+          `http://localhost:8055/items/Famiglie_Contatti?filter[Famiglia][_eq]=${f.id_famiglia}&fields=id`,
+          { headers: authH }
+        )
+        const fcData = await fcRes.json()
+        for (const fc of fcData.data || []) {
+          await fetch(`http://localhost:8055/items/Famiglie_Contatti/${fc.id}`, { method: 'DELETE', headers: authH })
+        }
+        await fetch(`http://localhost:8055/items/Famiglie/${f.id_famiglia}`, { method: 'DELETE', headers: authH })
+      }
+    } catch {
+      /* cleanup best-effort */
+    }
+  })
 
   test('MF-01: Volontario con più famiglie vede selettore e può cambiare @smoke', async ({ page }) => {
     test.setTimeout(120000)
-    const nomeFamiglia = `Famiglia Multi ${Date.now()}`
+    createdFamigliaName = `Famiglia Multi ${Date.now()}`
+    const nomeFamiglia = createdFamigliaName
 
     // 1. Login gestore e crea famiglia via UI
     await loginAs(page, 'gestore', auth)
@@ -340,18 +376,27 @@ test.describe('Famiglie Page — Multi-famiglia', () => {
     await famDialog.locator('[data-testid="famiglia-nome"]').fill(nomeFamiglia)
     await famDialog.locator('button:has-text("Salva")').click()
     await famDialog.waitFor({ state: 'hidden', timeout: 10000 })
-    if (await famDialog.isVisible()) { test.skip('Creazione famiglia fallita'); return }
+    if (await famDialog.isVisible()) {
+      test.skip('Creazione famiglia fallita')
+      return
+    }
 
     // 2. Assegna volontario seed (test.volontario@test.com) alla nuova famiglia
     await gp.searchFamiglie(nomeFamiglia)
     const clicked = await gp.clickContactsOnFamiglia(nomeFamiglia)
-    if (!clicked) { test.skip('Famiglia non trovata'); return }
+    if (!clicked) {
+      test.skip('Famiglia non trovata')
+      return
+    }
     await gp.assignVolontario('test.volontario', 'Test Volontario')
     await gp.contattiDialog.locator('button:has-text("Chiudi")').click()
     await gp.contattiDialog.waitFor({ state: 'hidden', timeout: 5000 })
 
     // 3. Login come volontario e verifica selettore
-    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() })
+    await page.evaluate(() => {
+      localStorage.clear()
+      sessionStorage.clear()
+    })
     await loginAs(page, 'volontario', auth)
 
     const selector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
@@ -361,10 +406,16 @@ test.describe('Famiglie Page — Multi-famiglia', () => {
     await selector.click()
     await page.waitForTimeout(1000)
     const items = page.locator('.q-menu .q-item')
-    if (await items.count() > 1) {
+    if ((await items.count()) > 1) {
       await items.nth(1).click()
       await page.waitForTimeout(2000)
       await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 5000 })
     }
   })
+})
+
+test('F-SS-01: FamigliePage screenshot con dati @visual', async ({ page }) => {
+  await loginAs(page, 'volontario', auth)
+  await page.waitForTimeout(3000)
+  await expect(page).toHaveScreenshot('famiglie-page.png', { maxDiffPixels: 500, animations: 'disabled' })
 })

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/319</span>
+                <span class='fraction'>0/327</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/319</span>
+                <span class='fraction'>0/327</span>
             </div>
         
             
@@ -382,7 +382,23 @@
 <a name='L317'></a><a href='#L317'>317</a>
 <a name='L318'></a><a href='#L318'>318</a>
 <a name='L319'></a><a href='#L319'>319</a>
-<a name='L320'></a><a href='#L320'>320</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -964,60 +980,68 @@
 <span class="cstat-no" title="statement not covered" >  if (!val) emit('update:modelValue', false)</span>
 <span class="cstat-no" title="statement not covered" >})</span>
 <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >async function saveEmails(contattoId) {</span>
+<span class="cstat-no" title="statement not covered" >  try {</span>
+<span class="cstat-no" title="statement not covered" >    for (const em of emails.value) {</span>
+<span class="cstat-no" title="statement not covered" >      if (em.id &amp;&amp; em.email_address) {</span>
+<span class="cstat-no" title="statement not covered" >        await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })</span>
+<span class="cstat-no" title="statement not covered" >      } else if (!em.id &amp;&amp; em.email_address) {</span>
+<span class="cstat-no" title="statement not covered" >        await emailService.create({</span>
+<span class="cstat-no" title="statement not covered" >          email_address: em.email_address,</span>
+<span class="cstat-no" title="statement not covered" >          Contatto_Relation: contattoId,</span>
+<span class="cstat-no" title="statement not covered" >          Primary: em.Primary</span>
+<span class="cstat-no" title="statement not covered" >        })</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >    for (const origId of originalEmailIds.value) {</span>
+<span class="cstat-no" title="statement not covered" >      if (!emails.value.some(e =&gt; e.id === origId)) {</span>
+<span class="cstat-no" title="statement not covered" >        await emailService.remove(origId)</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >    notifyError($q, error, "Errore nell'aggiornamento delle email")</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >async function handleSaveEdit() {</span>
+<span class="cstat-no" title="statement not covered" >  const ok = await store.updateContatto(props.editItem.id_contatto, {</span>
+<span class="cstat-no" title="statement not covered" >    Nome: form.value.Nome,</span>
+<span class="cstat-no" title="statement not covered" >    Cognome: form.value.Cognome,</span>
+<span class="cstat-no" title="statement not covered" >    Numero_di_cellulare: form.value.Numero_di_cellulare || null,</span>
+<span class="cstat-no" title="statement not covered" >    Numero_di_telefono: form.value.Numero_di_telefono || null,</span>
+<span class="cstat-no" title="statement not covered" >    IsReferente: form.value.IsReferente</span>
+<span class="cstat-no" title="statement not covered" >  })</span>
+<span class="cstat-no" title="statement not covered" >  if (!ok) {</span>
+<span class="cstat-no" title="statement not covered" >    notifyError($q, store.error || 'Errore nella modifica')</span>
+<span class="cstat-no" title="statement not covered" >    return</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" >  await saveEmails(props.editItem.id_contatto)</span>
+<span class="cstat-no" title="statement not covered" >  emit('saved')</span>
+<span class="cstat-no" title="statement not covered" >  visible.value = false</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >async function handleSaveCreate() {</span>
+<span class="cstat-no" title="statement not covered" >  const contattoId = await store.createGenitore({</span>
+<span class="cstat-no" title="statement not covered" >    id_contatto: generateContattoId(),</span>
+<span class="cstat-no" title="statement not covered" >    Nome: form.value.Nome,</span>
+<span class="cstat-no" title="statement not covered" >    Cognome: form.value.Cognome,</span>
+<span class="cstat-no" title="statement not covered" >    Email: emails.value[0]?.email_address || '',</span>
+<span class="cstat-no" title="statement not covered" >    Numero_di_cellulare: form.value.Numero_di_cellulare,</span>
+<span class="cstat-no" title="statement not covered" >    Numero_di_telefono: form.value.Numero_di_telefono,</span>
+<span class="cstat-no" title="statement not covered" >    IsReferente: form.value.IsReferente</span>
+<span class="cstat-no" title="statement not covered" >  })</span>
+<span class="cstat-no" title="statement not covered" >  if (!contattoId) {</span>
+<span class="cstat-no" title="statement not covered" >    notifyError($q, store.error || 'Errore nella creazione')</span>
+<span class="cstat-no" title="statement not covered" >    return</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" >  emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })</span>
+<span class="cstat-no" title="statement not covered" >  visible.value = false</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >async function handleSave() {</span>
 <span class="cstat-no" title="statement not covered" >  if (!form.value.Nome || !form.value.Cognome) return</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  if (isEdit.value) {</span>
-<span class="cstat-no" title="statement not covered" >    const ok = await store.updateContatto(props.editItem.id_contatto, {</span>
-<span class="cstat-no" title="statement not covered" >      Nome: form.value.Nome,</span>
-<span class="cstat-no" title="statement not covered" >      Cognome: form.value.Cognome,</span>
-<span class="cstat-no" title="statement not covered" >      Numero_di_cellulare: form.value.Numero_di_cellulare || null,</span>
-<span class="cstat-no" title="statement not covered" >      Numero_di_telefono: form.value.Numero_di_telefono || null,</span>
-<span class="cstat-no" title="statement not covered" >      IsReferente: form.value.IsReferente</span>
-<span class="cstat-no" title="statement not covered" >    })</span>
-<span class="cstat-no" title="statement not covered" >    if (ok) {</span>
-<span class="cstat-no" title="statement not covered" >      try {</span>
-<span class="cstat-no" title="statement not covered" >        for (const em of emails.value) {</span>
-<span class="cstat-no" title="statement not covered" >          if (em.id &amp;&amp; em.email_address) {</span>
-<span class="cstat-no" title="statement not covered" >            await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })</span>
-<span class="cstat-no" title="statement not covered" >          } else if (!em.id &amp;&amp; em.email_address) {</span>
-<span class="cstat-no" title="statement not covered" >            await emailService.create({</span>
-<span class="cstat-no" title="statement not covered" >              email_address: em.email_address,</span>
-<span class="cstat-no" title="statement not covered" >              Contatto_Relation: props.editItem.id_contatto,</span>
-<span class="cstat-no" title="statement not covered" >              Primary: em.Primary</span>
-<span class="cstat-no" title="statement not covered" >            })</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        for (const origId of originalEmailIds.value) {</span>
-<span class="cstat-no" title="statement not covered" >          if (!emails.value.some(e =&gt; e.id === origId)) {</span>
-<span class="cstat-no" title="statement not covered" >            await emailService.remove(origId)</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        notifyError($q, error, "Errore nell'aggiornamento delle email")</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >      emit('saved')</span>
-<span class="cstat-no" title="statement not covered" >      visible.value = false</span>
-<span class="cstat-no" title="statement not covered" >    } else {</span>
-<span class="cstat-no" title="statement not covered" >      notifyError($q, store.error || 'Errore nella modifica')</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  } else {</span>
-<span class="cstat-no" title="statement not covered" >    const contattoId = await store.createGenitore({</span>
-<span class="cstat-no" title="statement not covered" >      id_contatto: generateContattoId(),</span>
-<span class="cstat-no" title="statement not covered" >      Nome: form.value.Nome,</span>
-<span class="cstat-no" title="statement not covered" >      Cognome: form.value.Cognome,</span>
-<span class="cstat-no" title="statement not covered" >      Email: emails.value[0]?.email_address || '',</span>
-<span class="cstat-no" title="statement not covered" >      Numero_di_cellulare: form.value.Numero_di_cellulare,</span>
-<span class="cstat-no" title="statement not covered" >      Numero_di_telefono: form.value.Numero_di_telefono,</span>
-<span class="cstat-no" title="statement not covered" >      IsReferente: form.value.IsReferente</span>
-<span class="cstat-no" title="statement not covered" >    })</span>
-<span class="cstat-no" title="statement not covered" >    if (contattoId) {</span>
-<span class="cstat-no" title="statement not covered" >      emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })</span>
-<span class="cstat-no" title="statement not covered" >      visible.value = false</span>
-<span class="cstat-no" title="statement not covered" >    } else {</span>
-<span class="cstat-no" title="statement not covered" >      notifyError($q, store.error || 'Errore nella creazione')</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" >  if (isEdit.value) return handleSaveEdit()</span>
+<span class="cstat-no" title="statement not covered" >  return handleSaveCreate()</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 <span class="cstat-no" title="statement not covered" >&lt;/script&gt;</span>
 &nbsp;</pre></td></tr></table></pre>
@@ -1027,7 +1051,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-22T16:42:21.716Z
+                at 2026-06-22T19:06:42.515Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -261,59 +261,67 @@ watch(visible, (val) => {
   if (!val) emit('update:modelValue', false)
 })
 
+async function saveEmails(contattoId) {
+  try {
+    for (const em of emails.value) {
+      if (em.id && em.email_address) {
+        await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
+      } else if (!em.id && em.email_address) {
+        await emailService.create({
+          email_address: em.email_address,
+          Contatto_Relation: contattoId,
+          Primary: em.Primary
+        })
+      }
+    }
+    for (const origId of originalEmailIds.value) {
+      if (!emails.value.some(e => e.id === origId)) {
+        await emailService.remove(origId)
+      }
+    }
+  } catch (error) {
+    notifyError($q, error, "Errore nell'aggiornamento delle email")
+  }
+}
+
+async function handleSaveEdit() {
+  const ok = await store.updateContatto(props.editItem.id_contatto, {
+    Nome: form.value.Nome,
+    Cognome: form.value.Cognome,
+    Numero_di_cellulare: form.value.Numero_di_cellulare || null,
+    Numero_di_telefono: form.value.Numero_di_telefono || null,
+    IsReferente: form.value.IsReferente
+  })
+  if (!ok) {
+    notifyError($q, store.error || 'Errore nella modifica')
+    return
+  }
+  await saveEmails(props.editItem.id_contatto)
+  emit('saved')
+  visible.value = false
+}
+
+async function handleSaveCreate() {
+  const contattoId = await store.createGenitore({
+    id_contatto: generateContattoId(),
+    Nome: form.value.Nome,
+    Cognome: form.value.Cognome,
+    Email: emails.value[0]?.email_address || '',
+    Numero_di_cellulare: form.value.Numero_di_cellulare,
+    Numero_di_telefono: form.value.Numero_di_telefono,
+    IsReferente: form.value.IsReferente
+  })
+  if (!contattoId) {
+    notifyError($q, store.error || 'Errore nella creazione')
+    return
+  }
+  emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
+  visible.value = false
+}
+
 async function handleSave() {
   if (!form.value.Nome || !form.value.Cognome) return
-
-  if (isEdit.value) {
-    const ok = await store.updateContatto(props.editItem.id_contatto, {
-      Nome: form.value.Nome,
-      Cognome: form.value.Cognome,
-      Numero_di_cellulare: form.value.Numero_di_cellulare || null,
-      Numero_di_telefono: form.value.Numero_di_telefono || null,
-      IsReferente: form.value.IsReferente
-    })
-    if (ok) {
-      try {
-        for (const em of emails.value) {
-          if (em.id && em.email_address) {
-            await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
-          } else if (!em.id && em.email_address) {
-            await emailService.create({
-              email_address: em.email_address,
-              Contatto_Relation: props.editItem.id_contatto,
-              Primary: em.Primary
-            })
-          }
-        }
-        for (const origId of originalEmailIds.value) {
-          if (!emails.value.some(e => e.id === origId)) {
-            await emailService.remove(origId)
-          }
-        }
-      } catch (error) {
-        notifyError($q, error, "Errore nell'aggiornamento delle email")
-      }
-      emit('saved')
-      visible.value = false
-    } else {
-      notifyError($q, store.error || 'Errore nella modifica')
-    }
-  } else {
-    const contattoId = await store.createGenitore({
-      id_contatto: generateContattoId(),
-      Nome: form.value.Nome,
-      Cognome: form.value.Cognome,
-      Email: emails.value[0]?.email_address || '',
-      Numero_di_cellulare: form.value.Numero_di_cellulare,
-      Numero_di_telefono: form.value.Numero_di_telefono,
-      IsReferente: form.value.IsReferente
-    })
-    if (contattoId) {
-      emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
-      visible.value = false
-    } else {
-      notifyError($q, store.error || 'Errore nella creazione')
-    }
-  }
+  if (isEdit.value) return handleSaveEdit()
+  return handleSaveCreate()
 }
 </script>

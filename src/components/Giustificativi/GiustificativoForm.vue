@@ -57,8 +57,8 @@
             >
               <template #append>
                 <q-icon name="event" class="cursor-pointer">
-                  <q-popup-proxy ref="dateProxy" cover transition-show="scale" transition-hide="scale">
-                    <q-date v-model="form.Data" mask="YYYY-MM-DD" today-btn />
+                  <q-popup-proxy ref="dateProxy" cover>
+                    <q-date v-model="form.Data" mask="YYYY-MM-DD" today-btn @update:model-value="dateProxy.hide()" />
                   </q-popup-proxy>
                 </q-icon>
               </template>
@@ -75,43 +75,40 @@
             class="q-mb-sm"
             rows="2"
           />
-          <div class="row q-gutter-sm items-center">
-            <q-file
-              v-model="form.File"
-              label="Allega file *"
-              :accept="FILE_ACCEPT"
-              :max-file-size="FILE_MAX_SIZE"
-              outlined
-              dense
-              clearable
-              class="col"
-              data-testid="giustform-file"
-              :rules="[val => !!val || 'Campo obbligatorio']"
-              lazy-rules
-              hide-hint
-            >
-              <template #prepend>
-                <q-icon name="attach_file" />
-              </template>
-            </q-file>
+          <div class="row items-center q-gutter-sm">
             <input
-              ref="cameraInput"
+              ref="fileInput"
               type="file"
               :accept="FILE_ACCEPT"
-              capture="environment"
-              class="hidden"
-              @change="onCameraCapture"
+              hidden
+              @change="onFileChange"
             >
             <q-btn
-              v-if="$q.platform.is.mobile"
+              icon="attach_file"
+              label="Allega file"
+              :color="fileBtnColor"
+              :flat="!fileTouched || !form.File"
+              :outline="!form.File"
+              :class="{ 'bg-green-1': form.File }"
+              @click="$refs.fileInput.click()"
+            />
+            <q-btn
+              v-if="form.File"
               flat
-              color="secondary"
-              icon="photo_camera"
-              aria-label="Foto"
-              @click="$refs.cameraInput.click()"
+              dense
+              icon="close"
+              size="xs"
+              color="negative"
+              @click="removeFile"
             >
-              <q-tooltip>Foto</q-tooltip>
+              <q-tooltip>Rimuovi file</q-tooltip>
             </q-btn>
+          </div>
+          <div v-if="form.File" class="text-caption text-green q-mt-xs">
+            {{ form.File.name }}
+          </div>
+          <div v-else-if="fileTouched && !form.File" class="text-caption text-negative q-mt-xs">
+            Campo obbligatorio
           </div>
         </q-form>
       </q-card-section>
@@ -150,7 +147,7 @@ const model = computed({
 
 const formRef = ref(null)
 const dateProxy = ref(null)
-const cameraInput = ref(null)
+const fileInput = ref(null)
 
 const today = new Date().toISOString().slice(0, 10)
 const form = reactive({
@@ -160,8 +157,31 @@ const form = reactive({
   NotaVolontario: '',
   File: null
 })
+const fileTouched = ref(false)
+
+const fileBtnColor = computed(() => {
+  if (form.File) return 'green'
+  if (fileTouched.value) return 'negative'
+  return 'grey-7'
+})
+
+function onFileChange(event) {
+  const file = event.target.files?.[0]
+  if (file) {
+    if (file.size > FILE_MAX_SIZE) return
+    form.File = file
+    fileTouched.value = true
+  }
+  event.target.value = ''
+}
+
+function removeFile() {
+  form.File = null
+  if (fileInput.value) fileInput.value.value = ''
+}
 
 async function handleSave() {
+  fileTouched.value = true
   const isValid = await formRef.value?.validate()
   if (!isValid) return
   emit('save', {
@@ -181,13 +201,7 @@ function resetForm() {
   form.Data = today
   form.NotaVolontario = ''
   form.File = null
-}
-
-function onCameraCapture(event) {
-  const file = event.target.files?.[0]
-  if (file) {
-    form.File = file
-  }
-  event.target.value = ''
+  fileTouched.value = false
+  if (fileInput.value) fileInput.value.value = ''
 }
 </script>

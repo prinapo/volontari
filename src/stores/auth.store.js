@@ -201,6 +201,57 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    _findDiscrepancies(projects, giustByProject) {
+      const result = []
+      for (const project of projects) {
+        const projId = project.id_progetto
+        const giustificativi = giustByProject[projId] || []
+        const discrepancy = this._compareProject(project, projId, giustificativi)
+        if (discrepancy) result.push(discrepancy)
+      }
+      return result
+    },
+
+    _compareProject(project, projId, giustificativi) {
+      const count = giustificativi.length
+      const totaleImporto = giustificativi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
+      const statoCalcolato = this._calcolaStatoRendicontazione(giustificativi)
+
+      const statoDB = project.StatoRendicontazione || 'nessuno'
+      const countDB = project.TotaleGiustificativi || 0
+      const importoDB = Number.parseFloat(project.TotaleImporto) || 0
+
+      if (statoDB !== statoCalcolato || countDB !== count || Math.abs(importoDB - totaleImporto) > 0.01) {
+        return {
+          progettoId: projId,
+          beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
+          annoBando: project.AnnoBando || '',
+          statoDB,
+          statoCalcolato,
+          countDB,
+          countCalcolato: count,
+          importoDB,
+          importoCalcolato: totaleImporto,
+          giustificativi: giustificativi.map(g => ({
+            id: g.id,
+            descrizione: g.Descrizione || '',
+            stato: g.Stato || '',
+            importo: Number.parseFloat(g.Importo) || 0
+          }))
+        }
+      }
+      return null
+    },
+
+    _calcolaStatoRendicontazione(giustificativi) {
+      if (giustificativi.length === 0) return 'nessuno'
+      const stati = giustificativi.map(g => (g.Stato || '').toLowerCase())
+      if (stati.every(s => s === 'verificato' || s === 'approvato')) return 'verificato'
+      if (stati.includes('inviato')) return 'in_attesa'
+      if (stati.every(s => s === 'bozza' || s === '')) return 'bozza'
+      return 'parziale'
+    },
+
     async checkRendicontazioneConsistency() {
       if (!this.canAdmin) return
 
@@ -233,53 +284,7 @@ export const useAuthStore = defineStore('auth', {
           giustByProject[pid].push(g)
         }
 
-        const discrepancies = []
-
-        for (const project of projects) {
-          const projId = project.id_progetto
-          const giustificativi = giustByProject[projId] || []
-
-          const count = giustificativi.length
-          const totaleImporto = giustificativi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
-
-          let statoCalcolato = 'nessuno'
-          if (count > 0) {
-            const stati = giustificativi.map(g => (g.Stato || '').toLowerCase())
-            if (stati.every(s => s === 'verificato' || s === 'approvato')) {
-              statoCalcolato = 'verificato'
-            } else if (stati.includes('inviato')) {
-              statoCalcolato = 'in_attesa'
-            } else if (stati.every(s => s === 'bozza' || s === '')) {
-              statoCalcolato = 'bozza'
-            } else {
-              statoCalcolato = 'parziale'
-            }
-          }
-
-          const statoDB = project.StatoRendicontazione || 'nessuno'
-          const countDB = project.TotaleGiustificativi || 0
-          const importoDB = Number.parseFloat(project.TotaleImporto) || 0
-
-          if (statoDB !== statoCalcolato || countDB !== count || Math.abs(importoDB - totaleImporto) > 0.01) {
-            discrepancies.push({
-              progettoId: projId,
-              beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
-              annoBando: project.AnnoBando || '',
-              statoDB,
-              statoCalcolato,
-              countDB,
-              countCalcolato: count,
-              importoDB,
-              importoCalcolato: totaleImporto,
-              giustificativi: giustificativi.map(g => ({
-                id: g.id,
-                descrizione: g.Descrizione || '',
-                stato: g.Stato || '',
-                importo: Number.parseFloat(g.Importo) || 0
-              }))
-            })
-          }
-        }
+        const discrepancies = this._findDiscrepancies(projects, giustByProject)
 
         this.rendicontazioneCheck = {
           checked: true,

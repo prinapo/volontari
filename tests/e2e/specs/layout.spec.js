@@ -48,6 +48,15 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     expect(await adminItem.count()).toBe(0)
   })
 
+  test('LB-SS-01: Sidebar volontario screenshot @visual', async ({ page }) => {
+    await loginAs(page, 'volontario', auth)
+    await openDrawerIfMobile(page)
+    await page.waitForTimeout(500)
+    const drawer = page.locator('.q-drawer')
+    await expect(drawer).toBeVisible({ timeout: 5000 })
+    await expect(page).toHaveScreenshot('sidebar-volontario.png', { maxDiffPixels: 500, animations: 'disabled' })
+  })
+
   test('LB-03: Verificatore vede Verifica e Riconciliazione @smoke', async ({ page }) => {
     await loginAs(page, 'verificatore', auth)
     await openDrawerIfMobile(page)

@@ -400,12 +400,22 @@ aria-label="Salva"
                   <div class="col-12 col-sm-6">
                     <q-input
                       v-model="giustData"
+                      class="cursor-pointer"
                       label="Data"
                       outlined
                       dense
-                      type="date"
+                      readonly
                       :rules="[val => !!val || 'Inserisci una data']"
-                    />
+                      @click="dateProxy?.show()"
+                    >
+                      <template #append>
+                        <q-icon name="event" class="cursor-pointer">
+                          <q-popup-proxy ref="dateProxy" cover>
+                            <q-date v-model="giustData" mask="YYYY-MM-DD" today-btn @update:model-value="dateProxy.hide()" />
+                          </q-popup-proxy>
+                        </q-icon>
+                      </template>
+                    </q-input>
                   </div>
                 </div>
                 <q-separator v-if="submission?.allegato" class="q-my-sm" />
@@ -528,6 +538,7 @@ watch(selectedProgettoId, () => {
 const giustDescrizione = ref('')
 const giustImporto = ref(null)
 const giustData = ref('')
+const dateProxy = ref(null)
 
 // Fields definition
 const FIELD_MAP = {

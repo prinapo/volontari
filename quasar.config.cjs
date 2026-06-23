@@ -4,10 +4,23 @@ module.exports = function (ctx) {
   return {
     boot: ['axios', 'auth'],
     css: ['app.scss'],
-    extras: ['material-icons', 'mdi-v7'],
+    extras: ['material-icons'],
     build: {
       distDir: 'dist/spa',
       vueRouterMode: 'history',
+      vitePlugins: [
+        [
+          'rollup-plugin-visualizer',
+          {
+            filename: 'dist/bundle-report.html',
+            template: 'treemap',
+            gzipSize: true,
+            brotliSize: true,
+            open: false
+          },
+          { client: true, server: false }
+        ]
+      ],
       env: {
         VITE_API_URL: ctx.dev
           ? 'http://localhost:9000'
@@ -39,7 +52,7 @@ module.exports = function (ctx) {
         }
       }
     },
-    animations: 'all',
+    animations: [],
     sourceFiles: {
       rootComponent: 'src/App.vue',
       router: 'src/router/index',

@@ -29,7 +29,52 @@
       <div class="text-caption text-grey">
         {{ label }}
       </div>
-      <div class="row items-center q-gutter-xs">
+      <div v-if="type === 'date'" class="row items-center q-gutter-xs">
+        <q-input
+          ref="inputRef"
+          v-model="editValue"
+          outlined
+          dense
+          autofocus
+          readonly
+          class="col cursor-pointer"
+          @click="dateProxy?.show()"
+        >
+          <template #append>
+            <q-icon name="event" class="cursor-pointer">
+              <q-popup-proxy ref="dateProxy" cover>
+                <q-date v-model="editValue" mask="YYYY-MM-DD" today-btn @update:model-value="dateProxy.hide()" />
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
+        <q-btn
+          data-testid="inline-save"
+          icon="check"
+          color="positive"
+          dense
+          size="xs"
+          flat
+          :loading="saving"
+          aria-label="Salva"
+          @click.stop="save"
+        >
+          <q-tooltip>Salva</q-tooltip>
+        </q-btn>
+        <q-btn
+          data-testid="inline-cancel"
+          icon="close"
+          color="negative"
+          dense
+          size="xs"
+          flat
+          aria-label="Annulla"
+          @click.stop="cancel"
+        >
+          <q-tooltip>Annulla</q-tooltip>
+        </q-btn>
+      </div>
+      <div v-else class="row items-center q-gutter-xs">
         <q-input
           ref="inputRef"
           v-model="editValue"
@@ -74,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
@@ -91,6 +136,7 @@ const emit = defineEmits(['update:modelValue', 'save', 'cancel'])
 const editing = ref(false)
 const editValue = ref(props.modelValue)
 const inputRef = ref(null)
+const dateProxy = ref(null)
 
 const displayValue = computed(() =>
   props.formatDisplay ? props.formatDisplay(props.modelValue) : props.modelValue
@@ -101,9 +147,6 @@ function startEdit() {
   editValue.value = props.type === 'date'
     ? (props.modelValue?.slice(0, 10) ?? '')
     : props.modelValue
-  nextTick(() => {
-    inputRef.value?.focus()
-  })
 }
 
 function save() {

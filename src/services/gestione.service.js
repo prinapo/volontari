@@ -1,5 +1,15 @@
 import api from './api'
 
+const FAMIGLIE_CONTATTI_FIELDS = [
+  'id',
+  'Ruolo_nella_Famiglia',
+  'Contatto',
+  'Famiglia.id_famiglia',
+  'Famiglia.Nome_Famiglia'
+].join(',')
+
+const ATTIVO_FILTER_OR = { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
+
 export const gestioneService = {
   getFamiglie({ page = 1, limit = 25, sort, search, meta, famigliaIds, excludeIds } = {}) {
     const params = {
@@ -41,9 +51,8 @@ export const gestioneService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Contatto][_eq]': contattoId,
-        'filter[_or][0][Disattivo][_null]': true,
-        'filter[_or][1][Disattivo][_eq]': false,
-        fields: ['id', 'Ruolo_nella_Famiglia', 'Contatto', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(',')
+        ...ATTIVO_FILTER_OR,
+        fields: FAMIGLIE_CONTATTI_FIELDS
       }
     })
   },
@@ -53,9 +62,8 @@ export const gestioneService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Contatto][_in]': ids,
-        'filter[_or][0][Disattivo][_null]': true,
-        'filter[_or][1][Disattivo][_eq]': false,
-        fields: ['id', 'Ruolo_nella_Famiglia', 'Contatto', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(','),
+        ...ATTIVO_FILTER_OR,
+        fields: FAMIGLIE_CONTATTI_FIELDS,
         limit: -1
       }
     })
@@ -90,8 +98,7 @@ export const gestioneService = {
         'filter[Contatto][_eq]': Contatto,
         'filter[Famiglia][_eq]': Famiglia,
         'filter[Ruolo_nella_Famiglia][_eq]': Ruolo_nella_Famiglia,
-        'filter[_or][0][Disattivo][_null]': true,
-        'filter[_or][1][Disattivo][_eq]': false,
+        ...ATTIVO_FILTER_OR,
         limit: 1
       }
     })
@@ -125,8 +132,7 @@ export const gestioneService = {
         'groupBy[]': 'Famiglia',
         'filter[Famiglia][_in]': famigliaIds.join(','),
         'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-        'filter[_or][0][Disattivo][_null]': true,
-        'filter[_or][1][Disattivo][_eq]': false
+        ...ATTIVO_FILTER_OR
       }
     })
   },
@@ -137,8 +143,7 @@ export const gestioneService = {
         'aggregate[count]': 'id',
         'groupBy[]': 'Famiglia',
         'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-        'filter[_or][0][Disattivo][_null]': true,
-        'filter[_or][1][Disattivo][_eq]': false,
+        ...ATTIVO_FILTER_OR,
         limit: -1
       }
     })

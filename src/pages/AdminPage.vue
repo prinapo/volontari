@@ -497,13 +497,20 @@ bordered
                 </q-badge>
               </q-td>
             </template>
+            <template #body-cell-message="props">
+              <q-td :props="props">
+                <div class="ellipsis cursor-pointer text-primary" style="max-width: 300px" @click="showErrorDetail(props.value)">
+                  {{ props.value || '' }}
+                </div>
+              </q-td>
+            </template>
             <template #body-cell-read="props">
               <q-td :props="props">
                 <q-btn
                   v-if="!props.value"
                   flat
-dense
-icon="mark_email_read"
+ dense
+ icon="mark_email_read"
 size="sm"
                   color="grey"
                   aria-label="Segna come letto"
@@ -514,17 +521,10 @@ size="sm"
                 <q-icon v-else name="check" color="positive" size="sm" />
               </q-td>
             </template>
-            <template #body-cell-message="props">
-              <q-td :props="props">
-                <div class="ellipsis" style="max-width: 300px">
-                  {{ props.value }}
-                </div>
-              </q-td>
-            </template>
             <template #body-cell-actions="props">
               <q-td :props="props">
                 <q-btn
-flat
+ flat
 dense
 icon="delete"
 color="negative"
@@ -752,6 +752,25 @@ size="sm"
           </q-card-actions>
         </q-card>
       </q-dialog>
+
+      <!-- Error detail dialog -->
+      <q-dialog v-model="errorDetail.visible">
+        <q-card style="width: 100%; max-width: 600px; min-width: unset">
+          <q-card-section class="row items-center">
+            <div class="text-h6">
+              Dettaglio errore
+            </div>
+            <q-space />
+            <q-btn v-close-popup icon="close" flat round dense />
+          </q-card-section>
+          <q-card-section class="q-pt-none text-body2" style="white-space: pre-wrap; word-break: break-word;">
+            {{ errorDetail.text }}
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn v-close-popup flat label="Chiudi" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </template>
   </q-page>
 </template>
@@ -767,6 +786,10 @@ import { useAuthStore } from 'stores/auth.store'
 import { useErrorLogStore } from 'stores/error-log.store'
 
 const $q = useQuasar()
+const errorDetail = ref({ visible: false, text: '' })
+function showErrorDetail(text) {
+  errorDetail.value = { visible: true, text: text || '' }
+}
 const store = useAdminStore()
 const authStore = useAuthStore()
 const errorLogStore = useErrorLogStore()

@@ -83,26 +83,27 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[CLEANUP] Deleted ${giustificativi.data.length} test giustificativi`)
   }
 
-  // 3. Delete test famiglie
-  const famiglie = await apiGet(baseUrl, token, '/items/Famiglie', {
-    filter: JSON.stringify({ id_famiglia: { _startswith: 'TEST_FAM_AUTO_' } }),
-    fields: 'id_famiglia',
-    limit: -1
-  })
-  for (const f of (famiglie.data || [])) {
-    // Delete Famiglie_Contatti first
-    const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
-      filter: JSON.stringify({ Famiglia: { _eq: f.id_famiglia } }),
-      fields: 'id',
+  // 3. Delete test famiglie (TEST_FAM_AUTO_ and FAM_ prefixes)
+  for (const prefix of ['TEST_FAM_AUTO_', 'FAM_']) {
+    const famiglie = await apiGet(baseUrl, token, '/items/Famiglie', {
+      filter: JSON.stringify({ id_famiglia: { _startswith: prefix } }),
+      fields: 'id_famiglia',
       limit: -1
     })
-    for (const r of (fc.data || [])) {
-      await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${r.id}`)
+    for (const f of (famiglie.data || [])) {
+      const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
+        filter: JSON.stringify({ Famiglia: { _eq: f.id_famiglia } }),
+        fields: 'id',
+        limit: -1
+      })
+      for (const r of (fc.data || [])) {
+        await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${r.id}`)
+      }
+      await apiDelete(baseUrl, token, `/items/Famiglie/${f.id_famiglia}`)
     }
-    await apiDelete(baseUrl, token, `/items/Famiglie/${f.id_famiglia}`)
-  }
-  if ((famiglie.data || []).length > 0) {
-    console.log(`[CLEANUP] Deleted ${famiglie.data.length} test famiglie`)
+    if ((famiglie.data || []).length > 0) {
+      console.log(`[CLEANUP] Deleted ${famiglie.data.length} test famiglie (${prefix}*)`)
+    }
   }
 
   // 4. Delete contatti created by tests (all known patterns)

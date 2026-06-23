@@ -1,17 +1,18 @@
 <template>
   <div>
     <div class="row items-center q-gutter-sm q-mb-md">
-      <q-btn-toggle
+      <q-tabs
         v-model="subTab"
-        :options="[
-          { label: 'Bonifici da fare', value: 'proposti' },
-          { label: 'Da riscontrare', value: 'incorso' },
-          { label: 'Falliti', value: 'falliti' }
-        ]"
         dense
-        outline
-        color="primary"
-      />
+        class="text-grey"
+        active-color="primary"
+        indicator-color="primary"
+        narrow-indicator
+      >
+        <q-tab name="proposti" label="Bonifici da fare" />
+        <q-tab name="incorso" label="Da riscontrare" />
+        <q-tab name="falliti" label="Falliti" />
+      </q-tabs>
       <q-space />
 
       <!-- Indicatori capienza -->

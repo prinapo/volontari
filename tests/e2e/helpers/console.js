@@ -3,17 +3,20 @@ import { test as base, expect } from '@playwright/test'
 const PRODUCTION_DOMAINS = ['sostienilsostegno.com', 'app.sostienilsostegno']
 
 const EXPECTED_API_ERRORS = [
-  '/auth/login',       // 401 — intentional wrong credentials (A-03)
-  '/auth/password/request',  // 400 — local Directus without SMTP (RP-10)
-  '/auth/password/reset',  // 422/401 — intentional bad token (RP-04, RP-10)
-  '/items/Progetti',   // 500 — intentional API error test (EH-01)
+  '/auth/login', // 401 — intentional wrong credentials (A-03)
+  '/auth/password/request', // 400 — local Directus without SMTP (RP-10)
+  '/auth/password/reset', // 422/401 — intentional bad token (RP-04, RP-10)
+  '/items/Progetti', // 500 — intentional API error test (EH-01)
   '/items/Giustificativi', // 403 — GestoreVerifica senza permessi scrittura (RC-05)
   '/items/Famiglie_Contatti', // 403 — GestoreVerifica senza permessi su soft-delete
-  '/users',            // 400 — Gestore non può creare utenti Directus (RF-02)
+  '/users', // 400 — Gestore non può creare utenti Directus (RF-02)
+  '/items/ErrorLog', // 403 — Verificatore senza permessi su ErrorLog
+  '/items/Pagamenti', // 403 — Verificatore senza permessi su Pagamenti
+  '/items/Associazioni', // 403 — Verificatore senza permessi su Associazioni
+  '/items/BatchPagamenti' // 403 — Verificatore senza permessi su BatchPagamenti
 ]
 
-const EXPECTED_CONSOLE_ERROR_PATTERNS = [
-]
+const EXPECTED_CONSOLE_ERROR_PATTERNS = []
 
 export const test = base.extend({
   page: async ({ page }, use) => {
@@ -23,7 +26,7 @@ export const test = base.extend({
     const pendingExpectedErrors = []
 
     // Runtime guard: detect API calls going to production
-    page.on('response', (resp) => {
+    page.on('response', resp => {
       const url = resp.url()
       const isProduction = PRODUCTION_DOMAINS.some(d => url.includes(d))
       if (isProduction) {
@@ -32,7 +35,7 @@ export const test = base.extend({
       }
     })
 
-    page.on('console', (msg) => {
+    page.on('console', msg => {
       const text = msg.text()
       const isFailedResource = text.includes('Failed to load resource')
       const isExpected = isFailedResource && pendingExpectedErrors.length > 0
@@ -54,12 +57,12 @@ export const test = base.extend({
       }
     })
 
-    page.on('pageerror', (err) => {
+    page.on('pageerror', err => {
       errors.push(err.message)
       console.log('[BROWSER UNCAUGHT]', err.message)
     })
 
-    page.on('response', (response) => {
+    page.on('response', response => {
       if (response.status() >= 400) {
         const url = response.url()
         if (EXPECTED_API_ERRORS.some(e => url.includes(e))) {

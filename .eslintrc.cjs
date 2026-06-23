@@ -74,7 +74,7 @@ module.exports = {
       }
     ],
 
-    'sonarjs/no-duplicate-string': ['warn', { threshold: 6 }],
+    'sonarjs/no-duplicate-string': ['warn', { threshold: 10 }],
     'sonarjs/cognitive-complexity': ['warn', 25],
 
     'security/detect-object-injection': 'off',

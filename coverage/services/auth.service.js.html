@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">54.16% </span>
+                <span class="strong">79.16% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>26/48</span>
+                <span class='fraction'>38/48</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>4/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">54.16% </span>
+                <span class="strong">79.16% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>26/48</span>
+                <span class='fraction'>38/48</span>
             </div>
         
             
@@ -115,11 +115,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -127,19 +123,23 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -162,32 +162,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import api from './api'
 &nbsp;
 export const authService = {
-<span class="fstat-no" title="function not covered" >  login(email, password) {</span>
-<span class="cstat-no" title="statement not covered" >    return api.post('/auth/login', { email, password })</span>
+  login(email, password) {
+    return api.post('/auth/login', { email, password })
   },
 &nbsp;
 <span class="fstat-no" title="function not covered" >  refresh(refreshToken) {</span>
 <span class="cstat-no" title="statement not covered" >    return api.post('/auth/refresh', { refresh_token: refreshToken })</span>
   },
 &nbsp;
-<span class="fstat-no" title="function not covered" >  logout(refreshToken) {</span>
-<span class="cstat-no" title="statement not covered" >    return api.post('/auth/logout', { refresh_token: refreshToken })</span>
+  logout(refreshToken) {
+    return api.post('/auth/logout', { refresh_token: refreshToken })
   },
 &nbsp;
-<span class="fstat-no" title="function not covered" >  getMe() {</span>
-<span class="cstat-no" title="statement not covered" >    return api.get('/users/me', {</span>
-<span class="cstat-no" title="statement not covered" >      params: {</span>
-<span class="cstat-no" title="statement not covered" >        fields: 'id,email,first_name,last_name,role,role.*'</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >    })</span>
+  getMe() {
+    return api.get('/users/me', {
+      params: {
+        fields: 'id,email,first_name,last_name,role,role.*'
+      }
+    })
   },
 &nbsp;
-<span class="fstat-no" title="function not covered" >  getRole(roleId) {</span>
-<span class="cstat-no" title="statement not covered" >    return api.get(`/roles/${roleId}`, {</span>
-<span class="cstat-no" title="statement not covered" >      params: {</span>
-<span class="cstat-no" title="statement not covered" >        fields: 'id,name'</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >    })</span>
+  getRole(roleId) {
+    return api.get(`/roles/${roleId}`, {
+      params: {
+        fields: 'id,name'
+      }
+    })
   },
 &nbsp;
 <span class="fstat-no" title="function not covered" >  requestPasswordReset(email, resetUrl) {</span>
@@ -214,7 +214,7 @@ export const authService = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-22T16:42:21.716Z
+                at 2026-06-22T19:06:42.515Z
             </div>
         <script src="../prettify.js"></script>
         <script>

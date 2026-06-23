@@ -7,7 +7,7 @@ const expectedHeaders = ['Nome e Cognome', 'Email', 'Cellulare', 'Tipo', 'Stato 
 
 async function expandFirstCardIfMobile(page) {
   const exp = page.locator('.q-expansion-item')
-  if (await exp.count() > 0 && await page.locator('.q-expansion-item--expanded').count() === 0) {
+  if ((await exp.count()) > 0 && (await page.locator('.q-expansion-item--expanded').count()) === 0) {
     await exp.first().click()
     await page.waitForTimeout(500)
   }
@@ -27,6 +27,13 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
     await expect(gp.searchInput).toBeVisible({ timeout: 5000 })
     const count = await gp.getRowCount()
     expect(count).toBeGreaterThanOrEqual(0)
+  })
+
+  test('CT-SS-01: ContattiTab screenshot con tabella @visual', async ({ page }) => {
+    const gp = new GestionePage(page)
+    await gp.waitForTable()
+    await page.waitForTimeout(500)
+    await expect(page).toHaveScreenshot('contatti-tab.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
   test('CT-02: Intestazioni colonne ordine corretto @smoke', async ({ page }) => {
@@ -69,7 +76,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     }
 
     let searchTerm
-    const hasDesktopRows = await gp.tableRows.count() > 0
+    const hasDesktopRows = (await gp.tableRows.count()) > 0
     if (hasDesktopRows) {
       const firstNameCell = await gp.tableRows.first().locator('td').nth(0).innerText()
       searchTerm = firstNameCell.trim().split(' ')[0]
@@ -122,7 +129,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     const rows = await gp.getRowCount()
     expect(rows).toBeGreaterThan(0)
 
-    const hasDesktopRows = await gp.tableRows.count() > 0
+    const hasDesktopRows = (await gp.tableRows.count()) > 0
     if (hasDesktopRows) {
       const headers = await gp.getTableHeaderTexts()
       const tipoIdx = headers.indexOf('Tipo')
@@ -153,7 +160,7 @@ test.describe('ContattiTab — Directus 11 deep field fix', () => {
       return
     }
 
-    const hasDesktopRows = await gp.tableRows.count() > 0
+    const hasDesktopRows = (await gp.tableRows.count()) > 0
     if (hasDesktopRows) {
       // The table rendered successfully with rows — the key fix is that
       // contatti with null user_id are NOT excluded by the query (no INNER JOIN).
@@ -278,7 +285,7 @@ test.describe('ContattiTab — CRUD', () => {
     await gp.search(nomeMod)
     await expandFirstCardIfMobile(page)
     const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
-    if (await editBtnAfter.count() > 0) {
+    if ((await editBtnAfter.count()) > 0) {
       await editBtnAfter.click()
       await expect(dialog).toBeVisible({ timeout: 5000 })
       await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
@@ -306,11 +313,15 @@ test.describe('ContattiTab — CRUD', () => {
     const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
     if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await addEmailBtn.click()
-      await dialog.locator('[data-testid^="contatto-email-"]').first().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
+      await dialog
+        .locator('[data-testid^="contatto-email-"]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 3000 })
+        .catch(() => {})
     }
 
     const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
-    if (await emailInput.count() === 0) {
+    if ((await emailInput.count()) === 0) {
       await dialog.locator('button:has-text("Annulla")').click()
       test.skip('Impossibile aggiungere email')
       return
@@ -345,7 +356,7 @@ test.describe('ContattiTab — CRUD', () => {
     }
 
     const deleteEmailBtn = editDialog.locator('[data-testid="btn-delete-email"]').first()
-    if (await deleteEmailBtn.count() === 0) {
+    if ((await deleteEmailBtn.count()) === 0) {
       await editDialog.locator('button:has-text("Annulla")').click()
       test.skip('Nessun pulsante elimina email')
       return
@@ -358,7 +369,9 @@ test.describe('ContattiTab — CRUD', () => {
     expect(emailCountAfter).toBeLessThan(emailCount)
 
     await editDialog.locator('button:has-text("Annulla")').click()
-    await expect(editDialog).not.toBeVisible({ timeout: 3000 }).catch(() => {})
+    await expect(editDialog)
+      .not.toBeVisible({ timeout: 3000 })
+      .catch(() => {})
   })
 
   test('CT-12: Aggiungi email a contatto @crud', async ({ page }) => {
@@ -387,7 +400,10 @@ test.describe('ContattiTab — CRUD', () => {
     const createdContatto = await postResp.json()
     const contattoId = createdContatto?.data?.[0]?.id_contatto || createdContatto?.data?.id_contatto
 
-    if (!contattoId) { test.skip('ID contatto non ottenuto'); return }
+    if (!contattoId) {
+      test.skip('ID contatto non ottenuto')
+      return
+    }
 
     // Modifica contatto per aggiungere email
     const gp = new GestionePage(page)
@@ -402,19 +418,24 @@ test.describe('ContattiTab — CRUD', () => {
     await expect(dialog).toBeVisible({ timeout: 5000 })
 
     const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
-    if (await addEmailBtn.count() > 0) {
+    if ((await addEmailBtn.count()) > 0) {
       await addEmailBtn.click()
-      await dialog.locator('[data-testid^="contatto-email-"]').last().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
+      await dialog
+        .locator('[data-testid^="contatto-email-"]')
+        .last()
+        .waitFor({ state: 'visible', timeout: 3000 })
+        .catch(() => {})
 
       const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
-      if (await emailInput.count() > 0) {
+      if ((await emailInput.count()) > 0) {
         await emailInput.fill(testEmail)
         // Trigger blur per far completare onEmailBlur prima del salvataggio
         await dialog.locator('[data-testid="contatto-nome"]').click()
-        await page.waitForResponse(
-          resp => resp.url().includes('/items/email') && resp.request().method() === 'POST',
-          { timeout: 5000 }
-        ).catch(() => {})
+        await page
+          .waitForResponse(resp => resp.url().includes('/items/email') && resp.request().method() === 'POST', {
+            timeout: 5000
+          })
+          .catch(() => {})
 
         const [patchResp] = await Promise.all([
           page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
@@ -431,4 +452,13 @@ test.describe('ContattiTab — CRUD', () => {
       test.skip('Nessun pulsante aggiungi email')
     }
   })
+})
+
+test('CT-SS-01: ContattiTab screenshot con tabella @visual', async ({ page }) => {
+  await loginAs(page, 'gestore', auth)
+  const gp = new GestionePage(page)
+  await gp.selectContattiTab()
+  await gp.waitForTable()
+  await page.waitForTimeout(500)
+  await expect(page).toHaveScreenshot('contatti-tab.png', { maxDiffPixels: 500, animations: 'disabled' })
 })

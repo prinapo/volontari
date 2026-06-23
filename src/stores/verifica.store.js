@@ -101,6 +101,70 @@ export const useVerificaStore = defineStore('verifica', {
   },
 
   actions: {
+    async _loadProjectRows(projects) {
+      if (projects.length === 0) {
+        this.rows = []
+        return
+      }
+
+      const famIds = [...new Set(projects.map(p => p.Famiglia).filter(Boolean))]
+      let famMap = new Map()
+      if (famIds.length > 0) {
+        const famRes = await famiglieService.getFamiglieBatch(famIds)
+        famMap = new Map((famRes.data.data || []).map(f => [String(f.id_famiglia), f]))
+      }
+
+      const progettoIds = projects.map(p => p.id_progetto)
+      let allGiustificativi = await this._fetchGiustificativi(progettoIds)
+
+      const rowsByProject = new Map()
+      projects.forEach(project => {
+        const fam = famMap.get(String(project.Famiglia)) || {}
+        const row = normalizeProject(project, fam)
+        rowsByProject.set(row.idProgetto, row)
+      })
+
+      allGiustificativi
+        .filter(item => !item.Invalidato)
+        .forEach(item => {
+          const projectId = typeof item.Progetto === 'object' ? item.Progetto?.id_progetto : item.Progetto
+          const row = rowsByProject.get(projectId)
+          if (!row) return
+          row.giustificativi.push(item)
+        })
+
+      this.rows = [...rowsByProject.values()]
+      this.rows.forEach(rec => recalculateRowTotals(rec))
+    },
+
+    async _fetchGiustificativi(progettoIds) {
+      try {
+        const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
+        return giustRes.data.data || []
+      } catch (error) {
+        if (error.response?.status === 403) {
+          const giustRes = await verificaService.getGiustificativiByProgettiLight(progettoIds)
+          const allGiustificativi = giustRes.data.data || []
+          const rendIds = [...new Set(allGiustificativi.map(g => g.Rendicontazione).filter(Boolean))]
+          if (rendIds.length > 0) {
+            try {
+              const rendRes = await verificaService.getRendicontazioniBatch(rendIds)
+              const rendMap = new Map((rendRes.data.data || []).map(r => [r.id, r]))
+              allGiustificativi.forEach(g => {
+                if (g.Rendicontazione && rendMap.has(g.Rendicontazione)) {
+                  g._rendicontazione = rendMap.get(g.Rendicontazione)
+                }
+              })
+            } catch {
+              /* silent */
+            }
+          }
+          return allGiustificativi
+        }
+        throw error
+      }
+    },
+
     async fetchPage({ page, limit, search, anno, rendicontazioneFilter } = {}) {
       if (page !== undefined) this.page = page
       if (limit !== undefined) this.limit = limit
@@ -123,64 +187,7 @@ export const useVerificaStore = defineStore('verifica', {
         const projects = progettiRes.data.data || []
         this.filterCount = progettiRes.data.meta?.filter_count || projects.length
 
-        if (projects.length === 0) {
-          this.rows = []
-          return
-        }
-
-        const famIds = [...new Set(projects.map(p => p.Famiglia).filter(Boolean))]
-        let famMap = new Map()
-        if (famIds.length > 0) {
-          const famRes = await famiglieService.getFamiglieBatch(famIds)
-          famMap = new Map((famRes.data.data || []).map(f => [String(f.id_famiglia), f]))
-        }
-
-        const progettoIds = projects.map(p => p.id_progetto)
-        let allGiustificativi = []
-        try {
-          const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
-          allGiustificativi = giustRes.data.data || []
-        } catch (error) {
-          if (error.response?.status === 403) {
-            const giustRes = await verificaService.getGiustificativiByProgettiLight(progettoIds)
-            allGiustificativi = giustRes.data.data || []
-            const rendIds = [...new Set(allGiustificativi.map(g => g.Rendicontazione).filter(Boolean))]
-            if (rendIds.length > 0) {
-              try {
-                const rendRes = await verificaService.getRendicontazioniBatch(rendIds)
-                const rendMap = new Map((rendRes.data.data || []).map(r => [r.id, r]))
-                allGiustificativi.forEach(g => {
-                  if (g.Rendicontazione && rendMap.has(g.Rendicontazione)) {
-                    g._rendicontazione = rendMap.get(g.Rendicontazione)
-                  }
-                })
-              } catch {
-                /* silent */
-              }
-            }
-          } else {
-            throw error
-          }
-        }
-
-        const rowsByProject = new Map()
-        projects.forEach(project => {
-          const fam = famMap.get(String(project.Famiglia)) || {}
-          const row = normalizeProject(project, fam)
-          rowsByProject.set(row.idProgetto, row)
-        })
-
-        allGiustificativi
-          .filter(item => !item.Invalidato)
-          .forEach(item => {
-            const projectId = typeof item.Progetto === 'object' ? item.Progetto?.id_progetto : item.Progetto
-            const row = rowsByProject.get(projectId)
-            if (!row) return
-            row.giustificativi.push(item)
-          })
-
-        this.rows = [...rowsByProject.values()]
-        this.rows.forEach(rec => recalculateRowTotals(rec))
+        await this._loadProjectRows(projects)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
       } finally {
@@ -216,64 +223,7 @@ export const useVerificaStore = defineStore('verifica', {
           page++
         }
 
-        if (allProjects.length === 0) {
-          this.rows = []
-          return
-        }
-
-        const famIds = [...new Set(allProjects.map(p => p.Famiglia).filter(Boolean))]
-        let famMap = new Map()
-        if (famIds.length > 0) {
-          const famRes = await famiglieService.getFamiglieBatch(famIds)
-          famMap = new Map((famRes.data.data || []).map(f => [String(f.id_famiglia), f]))
-        }
-
-        const progettoIds = allProjects.map(p => p.id_progetto)
-        let allGiustificativi = []
-        try {
-          const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
-          allGiustificativi = giustRes.data.data || []
-        } catch (error) {
-          if (error.response?.status === 403) {
-            const giustRes = await verificaService.getGiustificativiByProgettiLight(progettoIds)
-            allGiustificativi = giustRes.data.data || []
-            const rendIds = [...new Set(allGiustificativi.map(g => g.Rendicontazione).filter(Boolean))]
-            if (rendIds.length > 0) {
-              try {
-                const rendRes = await verificaService.getRendicontazioniBatch(rendIds)
-                const rendMap = new Map((rendRes.data.data || []).map(r => [r.id, r]))
-                allGiustificativi.forEach(g => {
-                  if (g.Rendicontazione && rendMap.has(g.Rendicontazione)) {
-                    g._rendicontazione = rendMap.get(g.Rendicontazione)
-                  }
-                })
-              } catch {
-                /* silent */
-              }
-            }
-          } else {
-            throw error
-          }
-        }
-
-        const rowsByProject = new Map()
-        allProjects.forEach(project => {
-          const fam = famMap.get(String(project.Famiglia)) || {}
-          const row = normalizeProject(project, fam)
-          rowsByProject.set(row.idProgetto, row)
-        })
-
-        allGiustificativi
-          .filter(item => !item.Invalidato)
-          .forEach(item => {
-            const projectId = typeof item.Progetto === 'object' ? item.Progetto?.id_progetto : item.Progetto
-            const row = rowsByProject.get(projectId)
-            if (!row) return
-            row.giustificativi.push(item)
-          })
-
-        this.rows = [...rowsByProject.values()]
-        this.rows.forEach(rec => recalculateRowTotals(rec))
+        await this._loadProjectRows(allProjects)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
       } finally {
@@ -381,6 +331,62 @@ export const useVerificaStore = defineStore('verifica', {
       }
     },
 
+    _buildContattiByEmail(allContatti) {
+      const map = {}
+      for (const c of allContatti) {
+        if (c.email && c.email.length > 0) {
+          for (const e of c.email) {
+            const key = (e.email_address || '').toLowerCase()
+            if (key) map[key] = c
+          }
+        }
+      }
+      return map
+    },
+
+    async _buildFamigliaLinkMap(contattoIds) {
+      const linkedMap = new Map()
+      if (contattoIds.length === 0) return linkedMap
+      try {
+        const fcRes = await gestioneService.queryFamiglieContatti(contattoIds)
+        for (const fc of fcRes.data.data || []) {
+          if (fc.Contatto) {
+            const cid = typeof fc.Contatto === 'object' ? fc.Contatto.id_contatto : fc.Contatto
+            const ru = String(fc.Ruolo_nella_Famiglia || '').toLowerCase()
+            const isPrioritario = ru === 'genitore' || ru === 'tutore'
+            if (!linkedMap.has(cid) || (isPrioritario && !linkedMap.get(cid).isPrioritario)) {
+              linkedMap.set(cid, {
+                famigliaId: fc.Famiglia?.id_famiglia,
+                famigliaNome: fc.Famiglia?.Nome_Famiglia,
+                isGenitore: isPrioritario,
+                isPrioritario
+              })
+            }
+          }
+        }
+      } catch {
+        /* silent */
+      }
+      return linkedMap
+    },
+
+    _setSubmissionDetectState(submission, contattiByEmail, linkedMap) {
+      const contatto = contattiByEmail[(submission.email || '').toLowerCase()]
+      if (!contatto) {
+        submission._detectState = 'not_found'
+        submission._foundContatto = null
+      } else if (linkedMap.has(contatto.id_contatto)) {
+        const famInfo = linkedMap.get(contatto.id_contatto)
+        submission._foundContatto = contatto
+        submission._famigliaId = famInfo.famigliaId
+        submission._famigliaNome = famInfo.famigliaNome
+        submission._detectState = famInfo.isGenitore ? 'linked' : 'not_parent'
+      } else {
+        submission._detectState = 'not_linked'
+        submission._foundContatto = contatto
+      }
+    },
+
     async _detectSubmissionStates(submissions) {
       const emails = [...new Set(submissions.map(s => s.email).filter(Boolean))]
       if (emails.length === 0) return
@@ -393,57 +399,50 @@ export const useVerificaStore = defineStore('verifica', {
         allContatti = []
       }
 
-      const contattiByEmail = {}
-      for (const c of allContatti) {
-        if (c.email && c.email.length > 0) {
-          for (const e of c.email) {
-            const key = (e.email_address || '').toLowerCase()
-            if (key) contattiByEmail[key] = c
-          }
-        }
-      }
-
+      const contattiByEmail = this._buildContattiByEmail(allContatti)
       const contattoIds = allContatti.map(c => c.id_contatto).filter(Boolean)
-      const linkedMap = new Map()
-      if (contattoIds.length > 0) {
-        try {
-          const fcRes = await gestioneService.queryFamiglieContatti(contattoIds)
-          for (const fc of fcRes.data.data || []) {
-            if (fc.Contatto) {
-              const cid = typeof fc.Contatto === 'object' ? fc.Contatto.id_contatto : fc.Contatto
-              const ru = String(fc.Ruolo_nella_Famiglia || '').toLowerCase()
-              const isPrioritario = ru === 'genitore' || ru === 'tutore'
-              if (!linkedMap.has(cid) || (isPrioritario && !linkedMap.get(cid).isPrioritario)) {
-                linkedMap.set(cid, {
-                  famigliaId: fc.Famiglia?.id_famiglia,
-                  famigliaNome: fc.Famiglia?.Nome_Famiglia,
-                  isGenitore: isPrioritario,
-                  isPrioritario
-                })
-              }
-            }
-          }
-        } catch {
-          /* silent */
-        }
-      }
+      const linkedMap = await this._buildFamigliaLinkMap(contattoIds)
 
       for (const submission of submissions) {
-        const contatto = contattiByEmail[(submission.email || '').toLowerCase()]
-        if (!contatto) {
-          submission._detectState = 'not_found'
-          submission._foundContatto = null
-        } else if (linkedMap.has(contatto.id_contatto)) {
-          const famInfo = linkedMap.get(contatto.id_contatto)
-          submission._foundContatto = contatto
-          submission._famigliaId = famInfo.famigliaId
-          submission._famigliaNome = famInfo.famigliaNome
-          submission._detectState = famInfo.isGenitore ? 'linked' : 'not_parent';
-        } else {
-          submission._detectState = 'not_linked'
-          submission._foundContatto = contatto
-        }
+        this._setSubmissionDetectState(submission, contattiByEmail, linkedMap)
       }
+    },
+
+    _patchContattoFromCopied(contattoId, copiedFields, rightValues) {
+      const contattoPatch = {}
+      if (copiedFields.includes('Nome')) contattoPatch.Nome = rightValues.Nome
+      if (copiedFields.includes('Cognome')) contattoPatch.Cognome = rightValues.Cognome
+      if (copiedFields.includes('Telefono')) contattoPatch.Numero_di_cellulare = rightValues.Telefono
+      return Object.keys(contattoPatch).length > 0
+        ? contattiService.update(contattoId, contattoPatch)
+        : Promise.resolve()
+    },
+
+    _patchFamigliaFromCopied(famigliaId, copiedFields, rightValues) {
+      const famPatch = {}
+      if (copiedFields.includes('IBAN')) famPatch.IBAN = rightValues.IBAN
+      if (copiedFields.includes('Intestatario')) famPatch.Intestatario_CC = rightValues.Intestatario
+      return Object.keys(famPatch).length > 0 ? famiglieService.update(famigliaId, famPatch) : Promise.resolve()
+    },
+
+    async _handleAllegatoRiconciliazione(allegato, famigliaId) {
+      if (!allegato) return
+      await filesService.updateFolder(allegato, FOLDERS.GIUSTIFICATIVI).catch(() => {})
+      const famRes = await famiglieService.getFamiglieBatch([famigliaId])
+      const nomeFamiglia = famRes.data.data?.[0]?.Nome_Famiglia || ''
+      if (!nomeFamiglia) return
+      const fileRes = await filesService.getFile(allegato)
+      const origName = fileRes.data.data?.filename_download || 'file'
+      await filesService.renameFile(allegato, `${nomeFamiglia}_${origName}`)
+    },
+
+    async _createGiustificativoDaRiconciliazione(giustData, famigliaId, progettoId) {
+      const progRes = await verificaService.findProgettoByFamiglia(famigliaId)
+      const progetti = progRes.data.data || []
+      const progetto = progetti.find(p => p.id_progetto === progettoId)
+      if (progetto?.AnnoBando) giustData.AnnoBando = progetto.AnnoBando
+      const createRes = await giustificativiService.create(giustData)
+      return createRes.data.data.id
     },
 
     async reconcileSubmission({
@@ -465,64 +464,33 @@ export const useVerificaStore = defineStore('verifica', {
         const submission = this.submissions.find(s => s.id === submissionId)
         if (!submission) throw new Error('Submission not found')
 
-        // 1. PATCH contatto if any contatto field was copied
-        if (contattoId && copiedFields && copiedFields.length > 0) {
-          const contattoPatch = {}
-          if (copiedFields.includes('Nome')) contattoPatch.Nome = rightValues.Nome
-          if (copiedFields.includes('Cognome')) contattoPatch.Cognome = rightValues.Cognome
-          if (copiedFields.includes('Telefono')) contattoPatch.Numero_di_cellulare = rightValues.Telefono
-          if (Object.keys(contattoPatch).length > 0) {
-            await contattiService.update(contattoId, contattoPatch)
-          }
-
-          // 2. PATCH email if Email was copied
+        if (contattoId && copiedFields?.length > 0) {
+          await this._patchContattoFromCopied(contattoId, copiedFields, rightValues)
           if (copiedFields.includes('Email') && emailRecordId) {
             await emailService.update(emailRecordId, { email_address: rightValues.Email })
           }
         }
 
-        // 3. PATCH famiglia if IBAN/Intestatario were copied
-        if (famigliaId && copiedFields && copiedFields.length > 0) {
-          const famPatch = {}
-          if (copiedFields.includes('IBAN')) famPatch.IBAN = rightValues.IBAN
-          if (copiedFields.includes('Intestatario')) famPatch.Intestatario_CC = rightValues.Intestatario
-          if (Object.keys(famPatch).length > 0) {
-            await famiglieService.update(famigliaId, famPatch)
-          }
+        if (famigliaId && copiedFields?.length > 0) {
+          await this._patchFamigliaFromCopied(famigliaId, copiedFields, rightValues)
         }
 
-        // 4. Move file from public uploads to GIUSTIFICATIVI folder
-        if (allegato) {
-          await filesService.updateFolder(allegato, FOLDERS.GIUSTIFICATIVI).catch(() => {})
-          const famRes = await famiglieService.getFamiglieBatch([famigliaId])
-          const nomeFamiglia = famRes.data.data?.[0]?.Nome_Famiglia || ''
-          if (nomeFamiglia) {
-            const fileRes = await filesService.getFile(allegato)
-            const origName = fileRes.data.data?.filename_download || 'file'
-            await filesService.renameFile(allegato, `${nomeFamiglia}_${origName}`)
-          }
-        }
+        await this._handleAllegatoRiconciliazione(allegato, famigliaId)
 
-        // 5. Create giustificativo
-        const giustData = {
-          Descrizione: descrizione ?? submission.descrizione,
-          Importo: importo ?? submission.importo,
-          Data: data ?? submission.data,
-          Allegato: allegato,
-          Progetto: progettoId,
-          Famiglia: famigliaId,
-          Stato: 'inviato'
-        }
+        const giustificativoId = await this._createGiustificativoDaRiconciliazione(
+          {
+            Descrizione: descrizione ?? submission.descrizione,
+            Importo: importo ?? submission.importo,
+            Data: data ?? submission.data,
+            Allegato: allegato,
+            Progetto: progettoId,
+            Famiglia: famigliaId,
+            Stato: 'inviato'
+          },
+          famigliaId,
+          progettoId
+        )
 
-        const progRes = await verificaService.findProgettoByFamiglia(famigliaId)
-        const progetti = progRes.data.data || []
-        const progetto = progetti.find(p => p.id_progetto === progettoId)
-        if (progetto?.AnnoBando) giustData.AnnoBando = progetto.AnnoBando
-
-        const createRes = await giustificativiService.create(giustData)
-        const giustificativoId = createRes.data.data.id
-
-        // 6. Update submission state
         await verificaService.updateSubmission(submissionId, {
           stato: 'riconciliato',
           famiglia_riconciliata: famigliaId,

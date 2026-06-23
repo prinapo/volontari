@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/832</span>
+                <span class='fraction'>0/843</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/832</span>
+                <span class='fraction'>0/843</span>
             </div>
         
             
@@ -895,7 +895,18 @@
 <a name='L830'></a><a href='#L830'>830</a>
 <a name='L831'></a><a href='#L831'>831</a>
 <a name='L832'></a><a href='#L832'>832</a>
-<a name='L833'></a><a href='#L833'>833</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L833'></a><a href='#L833'>833</a>
+<a name='L834'></a><a href='#L834'>834</a>
+<a name='L835'></a><a href='#L835'>835</a>
+<a name='L836'></a><a href='#L836'>836</a>
+<a name='L837'></a><a href='#L837'>837</a>
+<a name='L838'></a><a href='#L838'>838</a>
+<a name='L839'></a><a href='#L839'>839</a>
+<a name='L840'></a><a href='#L840'>840</a>
+<a name='L841'></a><a href='#L841'>841</a>
+<a name='L842'></a><a href='#L842'>842</a>
+<a name='L843'></a><a href='#L843'>843</a>
+<a name='L844'></a><a href='#L844'>844</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1727,7 +1738,18 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >&lt;template&gt;</span></span></span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >&lt;template&gt;<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 <span class="cstat-no" title="statement not covered" >  &lt;q-dialog v-model="model" persistent @show="initData"&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;q-card class="riconcilia-dialog-card" style="width: 100%; max-width: 600px; min-width: unset"&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;q-card-section class="row items-center q-pb-none"&gt;</span>
@@ -2129,12 +2151,22 @@
 <span class="cstat-no" title="statement not covered" >                  &lt;div class="col-12 col-sm-6"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;q-input</span>
 <span class="cstat-no" title="statement not covered" >                      v-model="giustData"</span>
+<span class="cstat-no" title="statement not covered" >                      class="cursor-pointer"</span>
 <span class="cstat-no" title="statement not covered" >                      label="Data"</span>
 <span class="cstat-no" title="statement not covered" >                      outlined</span>
 <span class="cstat-no" title="statement not covered" >                      dense</span>
-<span class="cstat-no" title="statement not covered" >                      type="date"</span>
+<span class="cstat-no" title="statement not covered" >                      readonly</span>
 <span class="cstat-no" title="statement not covered" >                      :rules="[val =&gt; !!val || 'Inserisci una data']"</span>
-<span class="cstat-no" title="statement not covered" >                    /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      @click="dateProxy?.show()"</span>
+<span class="cstat-no" title="statement not covered" >                    &gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;template #append&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;q-icon name="event" class="cursor-pointer"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                          &lt;q-popup-proxy ref="dateProxy" cover&gt;</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;q-date v-model="giustData" mask="YYYY-MM-DD" today-btn @update:model-value="dateProxy.hide()" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                          &lt;/q-popup-proxy&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;/q-icon&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;/template&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/q-input&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;q-separator v-if="submission?.allegato" class="q-my-sm" /&gt;</span>
@@ -2257,6 +2289,7 @@
 <span class="cstat-no" title="statement not covered" >const giustDescrizione = ref('')</span>
 <span class="cstat-no" title="statement not covered" >const giustImporto = ref(null)</span>
 <span class="cstat-no" title="statement not covered" >const giustData = ref('')</span>
+<span class="cstat-no" title="statement not covered" >const dateProxy = ref(null)</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >// Fields definition</span>
 <span class="cstat-no" title="statement not covered" >const FIELD_MAP = {</span>
@@ -2566,7 +2599,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-22T16:42:21.716Z
+                at 2026-06-22T19:06:42.515Z
             </div>
         <script src="../prettify.js"></script>
         <script>

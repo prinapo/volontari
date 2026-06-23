@@ -17,7 +17,7 @@ const today = new Date().toISOString().slice(0, 10)
 function makeGiustificativo(prefix = 'A') {
   return {
     descrizione: `Spesa ${prefix} - Acquisto materiale`,
-    importo: prefix === 'A' ? 50.00 : prefix === 'B' ? 75.50 : 120.00,
+    importo: prefix === 'A' ? 50.0 : prefix === 'B' ? 75.5 : 120.0,
     data: today
   }
 }
@@ -60,6 +60,16 @@ test.describe('SubmitPage', () => {
     await page.waitForTimeout(300)
     expect(await submitPage.giustificativoCount()).toBe(1)
     await expect(submitPage.getGiustificativoTitle(0)).toBeVisible()
+  })
+
+  test('SP-SS-01: SubmitPage screenshot con form compilato @visual', async ({ page }) => {
+    await submitPage.goto()
+    await submitPage.clickAddGiustificativo()
+    await page.waitForTimeout(300)
+    await submitPage.fillForm(formData)
+    await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
+    await page.waitForTimeout(500)
+    await expect(page).toHaveScreenshot('submit-page.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
   test('SP-05: Submit vuoto mostra errori validazione @regression', async ({ page }) => {

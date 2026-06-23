@@ -120,4 +120,43 @@ describe('admin store', () => {
     expect(ok).toBe(true)
     expect(store.saving).toBe(false)
   })
+
+  it('searchContatto returns early for empty email', async () => {
+    const store = useAdminStore()
+    await store.searchContatto('')
+    expect(mockSearchEmail).not.toHaveBeenCalled()
+  })
+
+  it('updateUserRole handles error', async () => {
+    mockUpdateUser.mockRejectedValue({ response: { data: { errors: [{ message: 'no access' }] } } })
+    const store = useAdminStore()
+    const ok = await store.updateUserRole('u-1', 'r-new')
+    expect(ok).toBe(false)
+    expect(store.error).toBe('no access')
+    expect(store.saving).toBe(false)
+  })
+
+  it('resetUserPassword handles error', async () => {
+    mockUpdateUser.mockRejectedValue({ response: { data: { errors: [{ message: 'fail' }] } } })
+    const store = useAdminStore()
+    const ok = await store.resetUserPassword('u-1', 'pwd')
+    expect(ok).toBe(false)
+    expect(store.error).toBe('fail')
+  })
+
+  it('sendCustomEmail handles error', async () => {
+    mockSendEmail.mockRejectedValue({ response: { data: { errors: [{ message: 'email fail' }] } } })
+    const store = useAdminStore()
+    const ok = await store.sendCustomEmail('test@r.it', 'Sub', 'body')
+    expect(ok).toBe(false)
+    expect(store.error).toBe('email fail')
+  })
+
+  it('fetchProgetti handles error', async () => {
+    mockGetProgetti.mockRejectedValue({ response: { data: { errors: [{ message: 'progetti fail' }] } } })
+    const store = useAdminStore()
+    await store.fetchProgetti()
+    expect(store.error).toBe('progetti fail')
+    expect(store.progettiLoading).toBe(false)
+  })
 })

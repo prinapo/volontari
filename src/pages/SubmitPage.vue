@@ -159,31 +159,60 @@
                     <div class="col-12 col-sm-6">
                       <q-input
                         v-model="g.data"
+                        class="cursor-pointer"
                         label="Data *"
-                        type="date"
                         outlined
+                        dense
+                        readonly
                         :rules="[val => !!val || 'Campo obbligatorio']"
                         lazy-rules
-                      />
+                        @click="g.dateProxy?.show()"
+                      >
+                        <template #append>
+                          <q-icon name="event" class="cursor-pointer">
+                            <q-popup-proxy :ref="el => { if (el) g.dateProxy = el }" cover>
+                              <q-date v-model="g.data" mask="YYYY-MM-DD" today-btn @update:model-value="g.dateProxy?.hide()" />
+                            </q-popup-proxy>
+                          </q-icon>
+                        </template>
+                      </q-input>
                     </div>
                   </div>
-                  <q-file
-                    v-model="g.file"
-                    label="Allega file *"
-                    :accept="FILE_ACCEPT"
-                    :max-file-size="FILE_MAX_SIZE"
-                    outlined
-                    clearable
-                    :rules="[val => !!val || 'Seleziona un file']"
-                    lazy-rules
-                  >
-                    <template #prepend>
-                      <q-icon name="attach_file" />
-                    </template>
-                    <template #hint>
-                      Formati: {{ FILE_ACCEPT }}
-                    </template>
-                  </q-file>
+                  <div class="row items-center q-gutter-sm">
+                    <input
+                      :ref="el => { if (el) g.fileInput = el }"
+                      type="file"
+                      :accept="FILE_ACCEPT"
+                      hidden
+                      @change="onFileChange(g, $event)"
+                    >
+                    <q-btn
+                      icon="attach_file"
+                      label="Allega file"
+                      :color="fileBtnColor(g)"
+                      :flat="!g.fileTouched || !g.file"
+                      :outline="!g.file"
+                      :class="{ 'bg-green-1': g.file }"
+                      @click="g.fileInput?.click()"
+                    />
+                    <q-btn
+                      v-if="g.file"
+                      flat
+                      dense
+                      icon="close"
+                      size="xs"
+                      color="negative"
+                      @click="removeFile(g)"
+                    >
+                      <q-tooltip>Rimuovi file</q-tooltip>
+                    </q-btn>
+                  </div>
+                  <div v-if="g.file" class="text-caption text-green q-mt-xs">
+                    {{ g.file.name }}
+                  </div>
+                  <div v-else-if="g.fileTouched && !g.file" class="text-caption text-negative q-mt-xs">
+                    Campo obbligatorio
+                  </div>
                 </q-card-section>
               </q-card>
             </template>
@@ -240,14 +269,44 @@ const form = reactive({
 const giustificativi = ref([])
 
 function addGiustificativo() {
-  giustificativi.value.push({ descrizione: '', importo: null, data: today, file: null })
+  giustificativi.value.push({
+    descrizione: '',
+    importo: null,
+    data: today,
+    file: null,
+    fileTouched: false,
+    dateProxy: null,
+    fileInput: null
+  })
 }
 
 function removeGiustificativo(index) {
   giustificativi.value.splice(index, 1)
 }
 
+function onFileChange(g, event) {
+  const file = event.target.files?.[0]
+  if (file) {
+    if (file.size > FILE_MAX_SIZE) return
+    g.file = file
+    g.fileTouched = true
+  }
+  event.target.value = ''
+}
+
+function removeFile(g) {
+  g.file = null
+  if (g.fileInput) g.fileInput.value = ''
+}
+
+function fileBtnColor(g) {
+  if (g.file) return 'green'
+  if (g.fileTouched) return 'negative'
+  return 'grey-7'
+}
+
 async function handleSubmit() {
+  for (const g of giustificativi.value) { g.fileTouched = true }
   const isValid = await formRef.value?.validate()
   if (!isValid) return
 
