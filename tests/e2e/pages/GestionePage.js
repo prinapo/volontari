@@ -14,17 +14,19 @@ export class GestionePage {
   }
 
   async _waitForContattiApi() {
-    await this.page.waitForResponse(
-      resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET',
-      { timeout: 10000 }
-    ).catch(() => {})
+    await this.page
+      .waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET', {
+        timeout: 10000
+      })
+      .catch(() => {})
   }
 
   async _waitForFamiglieApi() {
-    await this.page.waitForResponse(
-      resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET',
-      { timeout: 10000 }
-    ).catch(() => {})
+    await this.page
+      .waitForResponse(resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET', {
+        timeout: 10000
+      })
+      .catch(() => {})
   }
 
   /**
@@ -34,7 +36,7 @@ export class GestionePage {
     await this.contattiTab.click()
     await this._waitForContattiApi()
     await this.waitForTable()
-    const isMobile = await this.page.locator('.q-table__grid').count() > 0
+    const isMobile = (await this.page.locator('.q-table__grid').count()) > 0
     if (isMobile) {
       await this.waitForTableMobile()
     }
@@ -65,18 +67,27 @@ export class GestionePage {
   }
 
   async waitForTable() {
-    await this.page.waitForFunction((sel) => {
-      const panel = document.querySelector('.q-tab-panel:not([hidden])')
-      if (!panel) return false
-      const tr = panel.querySelector('.q-table tbody tr')
-      const exp = panel.querySelector('.q-expansion-item')
-      return !!(tr || exp)
-    }, { timeout: 20000 }).catch(() => {})
+    await this.page
+      .waitForFunction(
+        sel => {
+          const panel = document.querySelector('.q-tab-panel:not([hidden])')
+          if (!panel) return false
+          const tr = panel.querySelector('.q-table tbody tr')
+          const exp = panel.querySelector('.q-expansion-item')
+          return !!(tr || exp)
+        },
+        { timeout: 20000 }
+      )
+      .catch(() => {})
     await this.page.waitForTimeout(500)
   }
 
   async waitForTableMobile() {
-    await this.page.locator('.q-expansion-item').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {})
+    await this.page
+      .locator('.q-expansion-item')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .catch(() => {})
   }
 
   async getRowCount() {
@@ -102,7 +113,7 @@ export class GestionePage {
     await this.page.waitForTimeout(350)
     await this._waitForContattiApi()
     await this.waitForTable()
-    const isMobile = await this.page.locator('.q-table__grid').count() > 0
+    const isMobile = (await this.page.locator('.q-table__grid').count()) > 0
     if (isMobile) {
       await this.waitForTableMobile()
     }
@@ -152,17 +163,16 @@ export class GestionePage {
    * Supporta desktop (tbody tr) e mobile (espansione card).
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Prima prova desktop
+    // Desktop: cerca in tutte le righe della tabella
     const desktopRows = this.page.locator('.q-table tbody tr')
     const desktopCount = await desktopRows.count()
-    if (desktopCount > 0) {
-      const mainRowCount = Math.floor(desktopCount / 2)
-      for (let i = 0; i < mainRowCount; i++) {
-        const mainRow = desktopRows.nth(i * 2)
-        const cellText = await mainRow.locator('td').nth(1).innerText()
-        if (cellText.trim().includes(nomeFamiglia)) {
-          const actionCell = mainRow.locator('td').last()
-          await actionCell.locator('.q-btn').filter({ hasText: 'contacts' }).click()
+    for (let i = 0; i < desktopCount; i++) {
+      const cellText = await desktopRows.nth(i).locator('td').nth(1).innerText()
+      if (cellText.trim().includes(nomeFamiglia)) {
+        const actionCell = desktopRows.nth(i).locator('td').last()
+        const contactsBtn = actionCell.locator('.q-btn[aria-label="Gestisci contatti"]')
+        if ((await contactsBtn.count()) > 0) {
+          await contactsBtn.click()
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true
         }
@@ -173,15 +183,20 @@ export class GestionePage {
     const expItems = this.page.locator('.q-expansion-item')
     const expCount = await expItems.count()
     for (let i = 0; i < expCount; i++) {
-      const label = await expItems.nth(i).locator('.q-item__label').first().innerText().catch(() => '')
+      const label = await expItems
+        .nth(i)
+        .locator('.q-item__label')
+        .first()
+        .innerText()
+        .catch(() => '')
       if (label.includes(nomeFamiglia)) {
         // Espandi se non già espanso
-        if (await expItems.nth(i).locator('.q-expansion-item--expanded').count() === 0) {
+        if ((await expItems.nth(i).locator('.q-expansion-item--expanded').count()) === 0) {
           await expItems.nth(i).click()
           await this.page.waitForTimeout(500)
         }
-        const contactsBtn = expItems.nth(i).locator('.q-btn[icon="contacts"]')
-        if (await contactsBtn.count() > 0) {
+        const contactsBtn = expItems.nth(i).locator('[aria-label="Gestisci contatti"]')
+        if ((await contactsBtn.count()) > 0) {
           await contactsBtn.click()
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true

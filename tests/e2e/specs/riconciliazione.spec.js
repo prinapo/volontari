@@ -5,34 +5,100 @@ import { createTestSubmission } from '../helpers/submission.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { GestionePage } from '../pages/GestionePage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { apiLogin, apiGet, apiPatch, apiDelete } from '../helpers/api.js'
+import {
+  creaFamigliaVolontarioProgetto,
+  loginVolontarioConFamiglia,
+  pulisciIds,
+  loginGestore
+} from '../helpers/setup-atomico.js'
+import { deleteFamiglie, deleteContatti, invalidateGiustificativi } from '../helpers/cleanup.js'
+
+let _rcIds = { invii: [] }
+let ids = { famiglia: null, progetto: null, giustificativi: [] }
+
+test.beforeAll(async () => {
+  await apiLogin(auth.admin.email, auth.admin.password)
+})
 
 async function expandFirstCardIfMobile(page) {
   const exp = page.locator('.q-expansion-item')
-  if (await exp.count() > 0 && await page.locator('.q-expansion-item--expanded').count() === 0) {
+  if ((await exp.count()) > 0 && (await page.locator('.q-expansion-item--expanded').count()) === 0) {
     await exp.first().click()
     await page.waitForTimeout(500)
   }
 }
 
 test.describe('Riconciliazione', () => {
+  test.afterEach(async () => {
+    await pulisciIds(ids)
+    if (_rcIds.famigliaOrig) {
+      try {
+        await apiPatch('Famiglie', _rcIds.famigliaOrig.id, {
+          IBAN: _rcIds.famigliaOrig.IBAN,
+          Intestatario: _rcIds.famigliaOrig.Intestatario
+        })
+      } catch {
+        /* */
+      }
+      delete _rcIds.famigliaOrig
+    }
+    for (const id of _rcIds.invii) {
+      try {
+        await apiDelete('InviiGiustificativiNoLogin', id)
+      } catch {
+        /* */
+      }
+    }
+    _rcIds.invii = []
+    try {
+      const records = await apiGet('InviiGiustificativiNoLogin', {
+        filter: { email: { _ends_with: '@test.com' } },
+        fields: 'id'
+      })
+      for (const r of records.data || []) {
+        try {
+          await apiDelete('InviiGiustificativiNoLogin', r.id)
+        } catch {
+          /* */
+        }
+      }
+    } catch {
+      /* */
+    }
+  })
 
   // ── RC-SETUP-01: Aggiunge IBAN/Intestatario a famiglia via FamigliaDialog ──
   test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
     test.setTimeout(90000)
 
-    await loginAs(page, 'gestore', auth)
+    // Crea famiglia atomica per il test
+    await loginGestore(page)
+    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+    const famData = await apiGet('Famiglie', {
+      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+      limit: 1,
+      fields: 'id_famiglia,IBAN,Intestatario_CC'
+    })
+    const famiglia = famData.data?.[0]
+    if (famiglia) {
+      _rcIds.famigliaOrig = { id: famiglia.id_famiglia, IBAN: famiglia.IBAN, Intestatario: famiglia.Intestatario_CC }
+    }
 
     const gestione = new GestionePage(page)
     await gestione.famiglieTab.click()
     await gestione.waitForTable()
 
-    // Cerca la famiglia e usa la prima riga
-    await gestione.searchFamiglie('TEST_FAM')
+    // Cerca la famiglia appena creata
+    await gestione.searchFamiglie(nomeFam)
 
     // Clicca edit sulla prima riga trovata
-    const editBtn = page.locator('.q-table tbody tr').first().locator('[data-testid="btn-edit-famiglia"], button[aria-label="Modifica"]')
+    const editBtn = page
+      .locator('.q-table tbody tr')
+      .first()
+      .locator('[data-testid="btn-edit-famiglia"], button[aria-label="Modifica"]')
     const editBtnMobile = page.locator('[data-testid="btn-edit-famiglia"]').first()
-    if (await editBtn.count() > 0) {
+    if ((await editBtn.count()) > 0) {
       await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
     } else {
@@ -47,8 +113,14 @@ test.describe('Riconciliazione', () => {
     const dialog = page.locator('.q-dialog:has(.text-h6:has-text("Modifica Famiglia"))')
     await expect(dialog).toBeVisible({ timeout: 3000 })
 
-    const ibanInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:has-text("IBAN")') }).locator('input')
-    const intestInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:has-text("Intestatario")') }).locator('input')
+    const ibanInput = dialog
+      .locator('.q-field')
+      .filter({ has: page.locator('.q-field__label:has-text("IBAN")') })
+      .locator('input')
+    const intestInput = dialog
+      .locator('.q-field')
+      .filter({ has: page.locator('.q-field__label:has-text("Intestatario")') })
+      .locator('input')
 
     await ibanInput.fill('IT12X1234567890123456789012')
     await intestInput.fill('Famiglia Test Intestatario')
@@ -80,7 +152,7 @@ test.describe('Riconciliazione', () => {
     // Clicca edit sulla prima riga
     await expandFirstCardIfMobile(page)
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
-    if (await editBtn.count() === 0) {
+    if ((await editBtn.count()) === 0) {
       test.skip('Nessun contatto trovato con quella email')
       return
     }
@@ -90,8 +162,14 @@ test.describe('Riconciliazione', () => {
     const dialog = page.locator('.q-dialog').filter({ hasText: 'Modifica Contatto' })
     await expect(dialog).toBeVisible({ timeout: 3000 })
 
-    const nomeInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:text-is("Nome *")') }).locator('input')
-    const cognomeInput = dialog.locator('.q-field').filter({ has: page.locator('.q-field__label:text-is("Cognome *")') }).locator('input')
+    const nomeInput = dialog
+      .locator('.q-field')
+      .filter({ has: page.locator('.q-field__label:text-is("Nome *")') })
+      .locator('input')
+    const cognomeInput = dialog
+      .locator('.q-field')
+      .filter({ has: page.locator('.q-field__label:text-is("Cognome *")') })
+      .locator('input')
 
     await nomeInput.fill('Test Genitore Aggiornato')
     await cognomeInput.fill('Test Genitore Aggiornato')
@@ -103,12 +181,18 @@ test.describe('Riconciliazione', () => {
     await gestione.search(testEmail)
     await expandFirstCardIfMobile(page)
     const editBtnAfter = page.locator('[data-testid="btn-edit-contatto"]').first()
-    if (await editBtnAfter.count() > 0) {
+    if ((await editBtnAfter.count()) > 0) {
       await editBtnAfter.click()
       const dialogAfter = page.locator('.q-dialog').filter({ hasText: 'Modifica Contatto' })
       await expect(dialogAfter).toBeVisible({ timeout: 3000 })
-      const nomeInputAfter = dialogAfter.locator('.q-field').filter({ has: page.locator('.q-field__label:text-is("Nome *")') }).locator('input')
-      const cognomeInputAfter = dialogAfter.locator('.q-field').filter({ has: page.locator('.q-field__label:text-is("Cognome *")') }).locator('input')
+      const nomeInputAfter = dialogAfter
+        .locator('.q-field')
+        .filter({ has: page.locator('.q-field__label:text-is("Nome *")') })
+        .locator('input')
+      const cognomeInputAfter = dialogAfter
+        .locator('.q-field')
+        .filter({ has: page.locator('.q-field__label:text-is("Cognome *")') })
+        .locator('input')
       await nomeInputAfter.fill('Test SETUP02')
       await cognomeInputAfter.fill('AutoTest')
       await dialogAfter.locator('button:has-text("Salva")').click()
@@ -133,22 +217,51 @@ test.describe('Riconciliazione', () => {
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
     test.setTimeout(90000)
     const testEmail = `test_rc02_linked_${Date.now()}@test.com`
-    console.log(`[RC-02] === INIZIO TEST ===`)
-    console.log(`[RC-02] Email test: ${testEmail}`)
 
-    // Setup: crea contatto + assegna a famiglia come Genitore
-    await loginAs(page, 'gestore', auth)
-    const contatto = await createContatto(page, {
-      Nome: 'Test RC02',
-      Cognome: 'AutoTest',
+    // Setup atomico: crea famiglia + contatto genitore + progetto
+    await loginGestore(page)
+    const { createFamigliaViaUI, createContattoViaUI } = await import('../helpers/pagina-gestione.js')
+    const nomeFamRC2 = `__TEST_RC02_${Date.now()}`
+    const famRC2 = await createFamigliaViaUI(page, { nomeFamiglia: nomeFamRC2 })
+    ids.famiglia = famRC2.id_famiglia
+    if (!ids.contatti) ids.contatti = []
+
+    const contatto = await createContattoViaUI(page, {
+      nome: 'Test RC02',
+      cognome: 'AutoTest',
       email: testEmail
     })
-    await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Genitore')
+    if (contatto?.id_contatto) ids.contatti.push(contatto.id_contatto)
 
-    await createTestSubmission(page, {
-      email: testEmail,
-      descrizione: 'Test RC-02 linked'
+    await (
+      await import('../helpers/api.js')
+    ).apiPost('Famiglie_Contatti', {
+      id: Math.floor(Math.random() * 9000000) + 1000000,
+      Contatto: contatto.id_contatto,
+      Famiglia: famRC2.id_famiglia,
+      Ruolo_nella_Famiglia: 'Genitore',
+      Disattivo: false
     })
+    await (await import('../helpers/api.js')).apiPatch('contatti', contatto.id_contatto, { IsGenitore: true })
+
+    const progRC2 = await (
+      await import('../helpers/api.js')
+    ).apiPost('Progetti', {
+      id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
+      Cognome_Beneficiario: 'RC02',
+      Nome_Beneficiario: 'Test',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Famiglia: famRC2.id_famiglia,
+      StatoProgetto: 'aperto'
+    })
+    ids.progetto = progRC2.data.id_progetto
+
+    const rc02sub = await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: 'Test RC-02 riconciliazione'
+    })
+    if (rc02sub?.id) _rcIds.invii.push(rc02sub.id)
 
     await loginAs(page, 'gestore_verifica', auth)
 
@@ -165,9 +278,7 @@ test.describe('Riconciliazione', () => {
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i)
       const caption = row.locator('.q-item__label--caption')
-      const rowText = await caption.count() > 0
-        ? await caption.first().innerText()
-        : await row.innerText()
+      const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
         await riconcPage.expandRow(i)
         const btn = row.locator('[data-testid="btn-riconcilia"]').first()
@@ -194,29 +305,52 @@ test.describe('Riconciliazione', () => {
     test.setTimeout(90000)
     const testEmail = `test_rc03_${Date.now()}@test.com`
 
-    // Setup: crea contatto + assegna a famiglia come Genitore
-    await loginAs(page, 'gestore', auth)
-    const contatto = await createContatto(page, {
-      Nome: 'Test RC03',
-      Cognome: 'AutoTest',
+    // Setup atomico: crea famiglia + contatto genitore + progetto
+    await loginGestore(page)
+    const { createFamigliaViaUI, createContattoViaUI } = await import('../helpers/pagina-gestione.js')
+    const nomeFamRC3 = `__TEST_RC03_${Date.now()}`
+    const famRC3 = await createFamigliaViaUI(page, { nomeFamiglia: nomeFamRC3 })
+    if (!ids.contatti) ids.contatti = []
+    ids.famiglia = famRC3.id_famiglia
+
+    const contatto = await createContattoViaUI(page, {
+      nome: 'Test RC03',
+      cognome: 'AutoTest',
       email: testEmail
     })
-    await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Genitore')
+    if (contatto?.id_contatto) ids.contatti.push(contatto.id_contatto)
 
-    // Assegna a famiglia via UI (Gestione → Famiglie)
-    const gestione = new GestionePage(page)
-    await gestione.famiglieTab.click()
-    await gestione.waitForTable()
-    await gestione.searchFamiglie('TEST_FAM')
-    const clicked = await gestione.clickContactsOnFamiglia('Famiglia TEST_FAM_01')
-    if (!clicked) { test.skip('Famiglia TEST_FAM_01 non trovata'); return }
-    await gestione.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
-    await gestione.assignGenitore(testEmail)
-
-    await createTestSubmission(page, {
-      email: testEmail,
-      descrizione: 'Test RC-03 linked'
+    // Assegna come Genitore via API
+    await (
+      await import('../helpers/api.js')
+    ).apiPost('Famiglie_Contatti', {
+      id: Math.floor(Math.random() * 9000000) + 1000000,
+      Contatto: contatto.id_contatto,
+      Famiglia: famRC3.id_famiglia,
+      Ruolo_nella_Famiglia: 'Genitore',
+      Disattivo: false
     })
+    await (await import('../helpers/api.js')).apiPatch('contatti', contatto.id_contatto, { IsGenitore: true })
+
+    // Crea progetto per la famiglia
+    const progRC3 = await (
+      await import('../helpers/api.js')
+    ).apiPost('Progetti', {
+      id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
+      Cognome_Beneficiario: 'RC03',
+      Nome_Beneficiario: 'Test',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Famiglia: famRC3.id_famiglia,
+      StatoProgetto: 'aperto'
+    })
+    ids.progetto = progRC3.data.id_progetto
+
+    const rc03sub = await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: 'Test RC-03 riconciliazione'
+    })
+    if (rc03sub?.id) _rcIds.invii.push(rc03sub.id)
 
     await loginAs(page, 'gestore_verifica', auth)
 
@@ -233,9 +367,7 @@ test.describe('Riconciliazione', () => {
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i)
       const caption = row.locator('.q-item__label--caption')
-      const rowText = await caption.count() > 0
-        ? await caption.first().innerText()
-        : await row.innerText()
+      const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
         const btn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
@@ -251,7 +383,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.waitForDialog()
 
     const saveBtn = riconcPage.dialog.locator('[data-testid="btn-save-field"]').first()
-    if (await saveBtn.count() === 0 || await saveBtn.isDisabled()) {
+    if ((await saveBtn.count()) === 0 || (await saveBtn.isDisabled())) {
       await riconcPage.closeDialog()
       test.skip('Nessun campo da salvare (dati già aggiornati)')
       return
@@ -271,6 +403,7 @@ test.describe('Riconciliazione', () => {
       email: testEmail,
       descrizione: 'Test RC-04 submission'
     })
+    if (submission?.id) _rcIds.invii.push(submission.id)
 
     await loginAs(page, 'gestore_verifica', auth)
 
@@ -287,14 +420,12 @@ test.describe('Riconciliazione', () => {
       const row = rows.nth(i)
       const emailInput = row.locator('td').nth(2).locator('input')
       let emailMatch = false
-      if (await emailInput.count() > 0) {
+      if ((await emailInput.count()) > 0) {
         const value = await emailInput.inputValue()
         if (value === testEmail) emailMatch = true
       } else {
         const caption = row.locator('.q-item__label--caption')
-        const rowText = await caption.count() > 0
-          ? await caption.first().innerText()
-          : await row.innerText()
+        const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
@@ -331,7 +462,7 @@ test.describe('Riconciliazione', () => {
 
     // Attiva toggle "Mostra scartati"
     const toggle = page.locator('.q-toggle:has-text("Mostra scartati")')
-    if (await toggle.count() === 0) {
+    if ((await toggle.count()) === 0) {
       test.skip('Toggle non trovato')
       return
     }
@@ -343,7 +474,7 @@ test.describe('Riconciliazione', () => {
 
     // Verifica almeno un badge "Scartato" visibile (se ci sono scartati)
     const scartatoBadge = page.locator('.q-badge:has-text("Scartato")')
-    if (await scartatoBadge.count() > 0) {
+    if ((await scartatoBadge.count()) > 0) {
       await expect(scartatoBadge.first()).toBeVisible()
     }
   })
@@ -367,10 +498,11 @@ test.describe('Riconciliazione', () => {
   test('RC-PG-03: Pulsante refresh ricarica @smoke', async ({ page }) => {
     test.setTimeout(90000)
     const testEmail = `test_pg03_${Date.now()}@test.com`
-    await createTestSubmission(page, {
+    const rcp03sub = await createTestSubmission(page, {
       email: testEmail,
       descrizione: 'Test RC-PG-03 refresh'
     })
+    if (rcp03sub?.id) _rcIds.invii.push(rcp03sub.id)
 
     await loginAs(page, 'gestore_verifica', auth)
 
@@ -392,22 +524,45 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-05: Riconcilia submission completa @crud ──
   test('RC-05: Riconcilia submission completa @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(120000)
     const testEmail = `test_rc05_${Date.now()}@test.com`
 
-    // Setup: crea contatto + assegna a famiglia come Genitore
-    await loginAs(page, 'gestore', auth)
-    const contatto = await createContatto(page, {
-      Nome: 'Test RC05',
-      Cognome: 'AutoTest',
-      email: testEmail
+    // Setup: crea famiglia + contatto + progetto
+    await loginGestore(page)
+    const { createFamigliaViaUI, createContattoViaUI } = await import('../helpers/pagina-gestione.js')
+    const nomeFamRC5 = `__TEST_RC05_${Date.now()}`
+    const famRC5 = await createFamigliaViaUI(page, { nomeFamiglia: nomeFamRC5 })
+    ids.famiglia = famRC5.id_famiglia
+    const contatto = await createContattoViaUI(page, { nome: 'Test RC05', cognome: 'AutoTest', email: testEmail })
+    if (!ids.contatti) ids.contatti = []
+    ids.contatti.push(contatto.id_contatto)
+    await (
+      await import('../helpers/api.js')
+    ).apiPost('Famiglie_Contatti', {
+      id: Math.floor(Math.random() * 9000000) + 1000000,
+      Contatto: contatto.id_contatto,
+      Famiglia: famRC5.id_famiglia,
+      Ruolo_nella_Famiglia: 'Genitore',
+      Disattivo: false
     })
-    await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Genitore')
+    const progRC5 = await (
+      await import('../helpers/api.js')
+    ).apiPost('Progetti', {
+      id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
+      Cognome_Beneficiario: 'RC05',
+      Nome_Beneficiario: 'Test',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Famiglia: famRC5.id_famiglia,
+      StatoProgetto: 'aperto'
+    })
+    ids.progetto = progRC5.data.id_progetto
 
-    await createTestSubmission(page, {
+    const rc05sub = await createTestSubmission(page, {
       email: testEmail,
       descrizione: 'Test RC-05 riconciliazione'
     })
+    if (rc05sub?.id) _rcIds.invii.push(rc05sub.id)
 
     // Login come gestore_verifica e vai a riconciliazione
     await loginAs(page, 'gestore_verifica', auth)
@@ -423,9 +578,7 @@ test.describe('Riconciliazione', () => {
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i)
       const caption = row.locator('.q-item__label--caption')
-      const rowText = await caption.count() > 0
-        ? await caption.first().innerText()
-        : await row.innerText()
+      const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
         foundBtn = row.locator('[data-testid="btn-riconcilia"]').first()
         foundIdx = i
@@ -443,7 +596,10 @@ test.describe('Riconciliazione', () => {
     await progettoSelect.locator('input').click()
     await page.waitForTimeout(500)
     const firstItem = page.locator('.q-menu .q-item').first()
-    if (await firstItem.count() === 0) { test.skip('Nessun progetto disponibile'); return }
+    if ((await firstItem.count()) === 0) {
+      test.skip('Nessun progetto disponibile')
+      return
+    }
     await firstItem.click()
 
     // Compila giustificativo
@@ -480,6 +636,7 @@ test.describe('Riconciliazione', () => {
       email: testEmail,
       descrizione: 'Test RC-PG-04 submission'
     })
+    if (submission?.id) _rcIds.invii.push(submission.id)
 
     await loginAs(page, 'gestore_verifica', auth)
 
@@ -494,15 +651,13 @@ test.describe('Riconciliazione', () => {
     for (let i = 0; i < count; i++) {
       const emailInput = rows.nth(i).locator('td').nth(2).locator('input')
       let emailMatch = false
-      if (await emailInput.count() > 0) {
+      if ((await emailInput.count()) > 0) {
         const value = await emailInput.inputValue()
         if (value === testEmail) emailMatch = true
       } else {
         const row = rows.nth(i)
         const caption = row.locator('.q-item__label--caption')
-        const rowText = await caption.count() > 0
-          ? await caption.first().innerText()
-          : await row.innerText()
+        const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
@@ -516,14 +671,16 @@ test.describe('Riconciliazione', () => {
     await expect(scartaDialog).toBeVisible({ timeout: 3000 })
     await scartaDialog.locator('input[type="text"]').fill('Test scarto PG-04')
     await scartaDialog.locator('button:has-text("OK")').click()
-    await page.waitForResponse(
-      resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'GET',
-      { timeout: 10000 }
-    ).catch(() => {})
+    await page
+      .waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'GET',
+        { timeout: 10000 }
+      )
+      .catch(() => {})
 
     // Ora attiva toggle scartati e recupera
     const toggle = page.locator('.q-toggle:has-text("Mostra scartati")')
-    if (await toggle.count() === 0) {
+    if ((await toggle.count()) === 0) {
       test.skip('Toggle non trovato')
       return
     }
@@ -531,10 +688,15 @@ test.describe('Riconciliazione', () => {
     const isChecked = await toggleInput.isChecked()
     if (!isChecked) {
       await toggle.click()
-      await page.waitForResponse(
-        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.url().includes('includeScartati') && resp.request().method() === 'GET',
-        { timeout: 10000 }
-      ).catch(() => {})
+      await page
+        .waitForResponse(
+          resp =>
+            resp.url().includes('/items/InviiGiustificativiNoLogin') &&
+            resp.url().includes('includeScartati') &&
+            resp.request().method() === 'GET',
+          { timeout: 10000 }
+        )
+        .catch(() => {})
     }
 
     // Trova la riga scartata per email e clicca restore
@@ -544,15 +706,13 @@ test.describe('Riconciliazione', () => {
     for (let i = 0; i < countAfter; i++) {
       const emailInput = rowsAfter.nth(i).locator('td').nth(2).locator('input')
       let emailMatch = false
-      if (await emailInput.count() > 0) {
+      if ((await emailInput.count()) > 0) {
         const value = await emailInput.inputValue()
         if (value === testEmail) emailMatch = true
       } else {
         const row = rowsAfter.nth(i)
         const caption = row.locator('.q-item__label--caption')
-        const rowText = await caption.count() > 0
-          ? await caption.first().innerText()
-          : await row.innerText()
+        const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
@@ -587,7 +747,8 @@ test.describe('Riconciliazione', () => {
   test('RC-CARD-01: Card mobile mostra richiedente corretto @smoke', async ({ page }) => {
     test.setTimeout(60000)
     const testEmail = `test_card_${Date.now()}@test.com`
-    await createTestSubmission(page, { email: testEmail, descrizione: 'Test RC-CARD richiedente' })
+    const rccsub = await createTestSubmission(page, { email: testEmail, descrizione: 'Test RC-CARD richiedente' })
+    if (rccsub?.id) _rcIds.invii.push(rccsub.id)
     await loginAs(page, 'gestore_verifica', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -597,8 +758,8 @@ test.describe('Riconciliazione', () => {
     // Desktop: cerca nella tabella, Mobile: cerca nella card
     const tableLabel = page.locator('.q-table tbody tr td').filter({ hasText: 'Test Submission' }).first()
     const cardLabel = page.locator('.q-expansion-item .q-item__label').filter({ hasText: 'Test' }).first()
-    const isCard = await cardLabel.count() > 0
-    const isTable = await tableLabel.count() > 0
+    const isCard = (await cardLabel.count()) > 0
+    const isTable = (await tableLabel.count()) > 0
 
     if (isCard) {
       await expect(cardLabel).toBeVisible({ timeout: 5000 })
@@ -611,36 +772,88 @@ test.describe('Riconciliazione', () => {
     }
   })
 
-  test('RC-PRIORITY-01: Submission con contatto Volontario+Genitore assegna alla famiglia Genitore @regression', async ({ page }) => {
+  test('RC-PRIORITY-01: Submission con contatto Volontario+Genitore assegna alla famiglia Genitore @regression', async ({
+    page
+  }) => {
     test.setTimeout(120000)
     const testEmail = `test_priority_${Date.now()}@test.com`
 
-    // Setup: login come gestore per API
-    await loginAs(page, 'gestore', auth)
+    // Setup atomico: crea 2 famiglie + contatto
+    await loginGestore(page)
+    const { createFamigliaViaUI, createContattoViaUI } = await import('../helpers/pagina-gestione.js')
 
     // Crea contatto
-    const contatto = await createContatto(page, {
-      Nome: 'Priority Test',
-      Cognome: 'AutoTest',
+    const contatto = await createContattoViaUI(page, {
+      nome: 'Priority Test',
+      cognome: 'AutoTest',
       email: testEmail
     })
+    if (!ids.contatti) ids.contatti = []
+    if (contatto?.id_contatto) ids.contatti.push(contatto.id_contatto)
 
-    // Crea una seconda famiglia per testare il priority
-    const famigliaGenitore = await createFamiglia(page, {
-      Nome_Famiglia: `Famiglia Genitore ${Date.now()}`
+    // Crea famiglia Volontario (con progetto)
+    const famVol = await createFamigliaViaUI(page, { nomeFamiglia: `__TEST_PRIVOL_${Date.now()}` })
+    ids.famiglia = [famVol.id_famiglia]
+
+    // Crea famiglia Genitore (con progetto)
+    const famGen = await createFamigliaViaUI(page, { nomeFamiglia: `__TEST_PRIGEN_${Date.now()}` })
+    ids.famiglia.push(famGen.id_famiglia)
+
+    // Crea progetto per la famiglia Volontario (necessario per la riconciliazione)
+    const progVol = await (
+      await import('../helpers/api.js')
+    ).apiPost('Progetti', {
+      id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
+      Cognome_Beneficiario: 'PriVol',
+      Nome_Beneficiario: 'Test',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Famiglia: famVol.id_famiglia,
+      StatoProgetto: 'aperto'
     })
 
-    // Assegna contatto come Volontario a TEST_FAM_01 (dovrebbe essere ignorata)
-    await assignToFamiglia(page, contatto.id_contatto, 'TEST_FAM_01', 'Volontario')
+    // Assegna contatto come Volontario
+    await (
+      await import('../helpers/api.js')
+    ).apiPost('Famiglie_Contatti', {
+      id: Math.floor(Math.random() * 9000000) + 1000000,
+      Contatto: contatto.id_contatto,
+      Famiglia: famVol.id_famiglia,
+      Ruolo_nella_Famiglia: 'Volontario',
+      Disattivo: false
+    })
 
-    // Assegna contatto come Genitore alla nuova famiglia (dovrebbe essere preferita)
-    await assignToFamiglia(page, contatto.id_contatto, famigliaGenitore, 'Genitore')
+    // Assegna contatto come Genitore
+    const prodGen = await (
+      await import('../helpers/api.js')
+    ).apiPost('Progetti', {
+      id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
+      Cognome_Beneficiario: 'PriGen',
+      Nome_Beneficiario: 'Test',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Famiglia: famGen.id_famiglia,
+      StatoProgetto: 'aperto'
+    })
+    await (
+      await import('../helpers/api.js')
+    ).apiPost('Famiglie_Contatti', {
+      id: Math.floor(Math.random() * 9000000) + 1000000,
+      Contatto: contatto.id_contatto,
+      Famiglia: famGen.id_famiglia,
+      Ruolo_nella_Famiglia: 'Genitore',
+      Disattivo: false
+    })
+    await (
+      await import('../helpers/api.js')
+    ).apiPatch('contatti', contatto.id_contatto, { IsGenitore: true, IsVolontario: true })
 
     // Crea submission pubblica con la stessa email
-    await createTestSubmission(page, {
+    const rcpSub = await createTestSubmission(page, {
       email: testEmail,
       descrizione: 'Test priority Genitore su Volontario'
     })
+    if (rcpSub?.id) _rcIds.invii.push(rcpSub.id)
 
     // Login come gestore_verifica e vai a riconciliazione
     await loginAs(page, 'gestore_verifica', auth)
@@ -655,9 +868,7 @@ test.describe('Riconciliazione', () => {
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i)
       const caption = row.locator('.q-item__label--caption')
-      const rowText = await caption.count() > 0
-        ? await caption.first().innerText()
-        : await row.innerText()
+      const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
         // Verifica che lo stato sia 'linked' (contatto trovato e legato come genitore)
         const badges = row.locator('.q-badge')

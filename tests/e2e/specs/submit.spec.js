@@ -1,5 +1,8 @@
 import { test, expect } from '../helpers/console.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
+import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
+import { deleteFamiglie } from '../helpers/cleanup.js'
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 const formData = {
   nome_richiedente: 'Mario',
@@ -22,8 +25,36 @@ function makeGiustificativo(prefix = 'A') {
   }
 }
 
+let createdSubmissionIds = []
+
 test.describe('SubmitPage', () => {
   let submitPage
+
+  test.beforeAll(async () => {
+    await apiLogin(auth.admin.email, auth.admin.password)
+  })
+
+  test.afterEach(async () => {
+    for (const id of createdSubmissionIds) {
+      try {
+        await apiDelete('InviiGiustificativiNoLogin', id)
+      } catch {
+        /* best-effort */
+      }
+    }
+    createdSubmissionIds = []
+    const subs = await apiGet('InviiGiustificativiNoLogin', {
+      filter: { email: { _eq: formData.email } },
+      fields: 'id'
+    })
+    for (const s of subs.data || []) {
+      try {
+        await apiDelete('InviiGiustificativiNoLogin', s.id)
+      } catch {
+        /* */
+      }
+    }
+  })
 
   test.beforeEach(async ({ page }) => {
     submitPage = new SubmitPage(page)
@@ -72,11 +103,17 @@ test.describe('SubmitPage', () => {
     await expect(page).toHaveScreenshot('submit-page.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
-  test('SP-05: Submit vuoto mostra errori validazione @regression', async ({ page }) => {
+  test('SP-05: Submit vuoto Invia disabilitato mostra errori validazione @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
     await page.waitForTimeout(300)
-    await submitPage.clickSubmit()
+
+    // Compila tutto (compreso file per abilitare Invia), poi svuota Nome e blur
+    await submitPage.fillForm(formData)
+    await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
+
+    await submitPage.nomeRichiedente.fill('')
+    await submitPage.cognomeRichiedente.click()
     await page.waitForTimeout(500)
 
     const errorFields = page.locator('.q-field--error')
@@ -88,9 +125,12 @@ test.describe('SubmitPage', () => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
     await page.waitForTimeout(300)
+
+    // Compila tutto tranne email invalida
+    await submitPage.fillForm(formData)
+    await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
     await submitPage.emailInput.fill('not-an-email')
-    await page.locator('text=Chi sei').click()
-    await submitPage.clickSubmit()
+    await submitPage.cognomeRichiedente.click()
     await page.waitForTimeout(500)
 
     await expect(page.locator('.q-field--error').filter({ hasText: 'Email non valida' }).first()).toBeVisible()
@@ -103,9 +143,21 @@ test.describe('SubmitPage', () => {
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
-    await submitPage.clickSubmit()
+    const [postResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST'
+      ),
+      submitPage.clickSubmit()
+    ])
     await submitPage.waitForSuccess()
-
+    let subId = null
+    try {
+      const s = await postResp.json()
+      subId = s?.data?.id || s?.data?.[0]?.id
+    } catch {
+      /* */
+    }
+    if (subId) createdSubmissionIds.push(subId)
     await expect(submitPage.successNotification).toBeVisible()
     await submitPage.waitForFormReset()
     expect(await submitPage.giustificativoCount()).toBe(0)
@@ -124,8 +176,21 @@ test.describe('SubmitPage', () => {
     await submitPage.fillGiustificativo(1, makeGiustificativo('B'))
     await submitPage.fillGiustificativo(2, makeGiustificativo('C'))
 
-    await submitPage.clickSubmit()
+    const [postResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST'
+      ),
+      submitPage.clickSubmit()
+    ])
     await submitPage.waitForSuccess()
+    let subId = null
+    try {
+      const s = await postResp.json()
+      subId = s?.data?.id || s?.data?.[0]?.id
+    } catch {
+      /* */
+    }
+    if (subId) createdSubmissionIds.push(subId)
 
     await expect(submitPage.successNotification).toBeVisible()
     await submitPage.waitForFormReset()
@@ -139,9 +204,21 @@ test.describe('SubmitPage', () => {
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
-    await submitPage.clickSubmit()
+    const [postResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST'
+      ),
+      submitPage.clickSubmit()
+    ])
     await submitPage.waitForSuccess()
-
+    let subId = null
+    try {
+      const s = await postResp.json()
+      subId = s?.data?.id || s?.data?.[0]?.id
+    } catch {
+      /* */
+    }
+    if (subId) createdSubmissionIds.push(subId)
     await expect(submitPage.successNotification).toBeVisible()
     await submitPage.waitForFormReset()
     const vals = await submitPage.getFormValues()

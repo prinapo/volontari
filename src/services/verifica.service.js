@@ -40,9 +40,11 @@ export const verificaService = {
       ].join(',')
     }
     if (meta) params.meta = meta
-    if (search) params['filter[Famiglia][Nome_Famiglia][_icontains]'] = search
-    if (anno) params['filter[AnnoBando][_eq]'] = anno
-    if (rendicontazioneFilter) params['filter[StatoRendicontazione][_eq]'] = rendicontazioneFilter
+    const filter = {}
+    if (search) filter.Famiglia = { Nome_Famiglia: { _icontains: search } }
+    if (anno) filter.AnnoBando = { _eq: anno }
+    if (rendicontazioneFilter) filter.StatoRendicontazione = { _eq: rendicontazioneFilter }
+    if (Object.keys(filter).length) params.filter = JSON.stringify(filter)
     return api.get('/items/Progetti', { params })
   },
 

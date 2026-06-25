@@ -75,41 +75,7 @@
             class="q-mb-sm"
             rows="2"
           />
-          <div class="row items-center q-gutter-sm">
-            <input
-              ref="fileInput"
-              type="file"
-              :accept="FILE_ACCEPT"
-              hidden
-              @change="onFileChange"
-            >
-            <q-btn
-              icon="attach_file"
-              label="Allega file"
-              :color="fileBtnColor"
-              :flat="!fileTouched || !form.File"
-              :outline="!form.File"
-              :class="{ 'bg-green-1': form.File }"
-              @click="$refs.fileInput.click()"
-            />
-            <q-btn
-              v-if="form.File"
-              flat
-              dense
-              icon="close"
-              size="xs"
-              color="negative"
-              @click="removeFile"
-            >
-              <q-tooltip>Rimuovi file</q-tooltip>
-            </q-btn>
-          </div>
-          <div v-if="form.File" class="text-caption text-green q-mt-xs">
-            {{ form.File.name }}
-          </div>
-          <div v-else-if="fileTouched && !form.File" class="text-caption text-negative q-mt-xs">
-            Campo obbligatorio
-          </div>
+          <GiustificativoFilePicker ref="filePickerRef" v-model="form.File" />
         </q-form>
       </q-card-section>
       <q-card-actions align="right">
@@ -119,6 +85,7 @@
           label="Salva"
           data-testid="giustform-salva"
           :loading="saving"
+          :disable="!form.Descrizione || !form.Importo || !form.File || saving"
           @click="handleSave"
         />
       </q-card-actions>
@@ -127,8 +94,8 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
-import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
+import { computed, reactive, ref } from 'vue'
+import GiustificativoFilePicker from './GiustificativoFilePicker.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -147,7 +114,7 @@ const model = computed({
 
 const formRef = ref(null)
 const dateProxy = ref(null)
-const fileInput = ref(null)
+const filePickerRef = ref(null)
 
 const today = new Date().toISOString().slice(0, 10)
 const form = reactive({
@@ -157,31 +124,8 @@ const form = reactive({
   NotaVolontario: '',
   File: null
 })
-const fileTouched = ref(false)
-
-const fileBtnColor = computed(() => {
-  if (form.File) return 'green'
-  if (fileTouched.value) return 'negative'
-  return 'grey-7'
-})
-
-function onFileChange(event) {
-  const file = event.target.files?.[0]
-  if (file) {
-    if (file.size > FILE_MAX_SIZE) return
-    form.File = file
-    fileTouched.value = true
-  }
-  event.target.value = ''
-}
-
-function removeFile() {
-  form.File = null
-  if (fileInput.value) fileInput.value.value = ''
-}
-
 async function handleSave() {
-  fileTouched.value = true
+  filePickerRef.value?.touch()
   const isValid = await formRef.value?.validate()
   if (!isValid) return
   emit('save', {
@@ -201,7 +145,5 @@ function resetForm() {
   form.Data = today
   form.NotaVolontario = ''
   form.File = null
-  fileTouched.value = false
-  if (fileInput.value) fileInput.value.value = ''
 }
 </script>

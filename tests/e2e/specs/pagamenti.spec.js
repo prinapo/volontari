@@ -1,6 +1,40 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
+import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+
+let _pagCleanup = { progetti: [], pagamenti: [], batch: [] }
+
+test.beforeAll(async () => {
+  await apiLogin(auth.admin.email, auth.admin.password)
+})
+
+test.afterEach(async () => {
+  for (const id of _pagCleanup.pagamenti) {
+    try {
+      await apiDelete('Pagamenti', id)
+    } catch {
+      /* */
+    }
+  }
+  for (const id of _pagCleanup.batch) {
+    try {
+      await apiDelete('BatchPagamenti', id)
+    } catch {
+      /* */
+    }
+  }
+  // Pulisci batch e pagamenti creati dai test
+  try {
+    const batchRes = await apiGet('BatchPagamenti', { sort: '-created_at', limit: 10 })
+    for (const b of batchRes.data || []) {
+      await apiDelete('BatchPagamenti', b.id)
+    }
+  } catch {
+    /* */
+  }
+  _pagCleanup = { progetti: [], pagamenti: [], batch: [] }
+})
 
 test.describe('Gestione Pagamenti', () => {
   test('PAG-01: Login gestore e pagina gestione carica @smoke', async ({ page }) => {
@@ -46,11 +80,18 @@ test.describe('Gestione Pagamenti', () => {
   })
 
   test('PAG-17: Volontario vede pagina famiglie @smoke', async ({ page }) => {
-    test.setTimeout(30000)
-    await loginAs(page, 'volontario', auth)
-    const content = page.locator('.text-h6, .q-select:has(.q-field__label:has-text("Seleziona famiglia"))').first()
-    await expect(content).toBeVisible({ timeout: 10000 })
+    test.setTimeout(60000)
+    const { creaFamigliaVolontarioProgetto, loginVolontarioConFamiglia, loginGestore, pulisciIds } =
+      await import('../helpers/setup-atomico.js')
+    const { apiLogin } = await import('../helpers/api.js')
+    await apiLogin(auth.admin.email, auth.admin.password)
+    let ids = { famiglia: null, progetto: null, giustificativi: [] }
+    await loginGestore(page)
+    const r = await creaFamigliaVolontarioProgetto(page, ids)
+    await loginVolontarioConFamiglia(page, r.nomeFam)
+    await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
     console.log('[PAG-17] Pagina famiglie OK')
+    await pulisciIds(ids)
   })
 
   test('PAG-20: Tab Pagamenti mostra sottotab Bonifici da fare @crud', async ({ page }) => {

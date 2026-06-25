@@ -2,6 +2,14 @@ import { test, expect } from '../helpers/console.js'
 import { GestionePage } from '../pages/GestionePage.js'
 import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { apiLogin } from '../helpers/api.js'
+import {
+  creaFamigliaVolontarioProgetto,
+  loginVolontarioConFamiglia,
+  pulisciIds,
+  loginGestore
+} from '../helpers/setup-atomico.js'
+import { deleteContatti } from '../helpers/cleanup.js'
 
 const expectedHeaders = ['Nome e Cognome', 'Email', 'Cellulare', 'Tipo', 'Stato account', 'Famiglie', 'Azioni']
 
@@ -12,6 +20,21 @@ async function expandFirstCardIfMobile(page) {
     await page.waitForTimeout(500)
   }
 }
+
+let ids = { famiglia: null, progetto: null, giustificativi: [] }
+let createdContattoIds = []
+
+test.beforeAll(async () => {
+  await apiLogin(auth.admin.email, auth.admin.password)
+})
+
+test.afterEach(async () => {
+  await pulisciIds(ids)
+  if (createdContattoIds.length > 0) {
+    await deleteContatti(...createdContattoIds)
+    createdContattoIds = []
+  }
+})
 
 test.describe('ContattiTab — Caricamento e Layout', () => {
   test.beforeEach(async ({ page }) => {
@@ -218,6 +241,9 @@ test.describe('ContattiTab — CRUD', () => {
       dialog.locator('button:has-text("Salva")').click()
     ])
 
+    const contattoId = (await postResp.json())?.data?.id_contatto
+    if (contattoId) createdContattoIds.push(contattoId)
+
     expect(postResp.status()).toBe(200)
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
 
@@ -253,6 +279,8 @@ test.describe('ContattiTab — CRUD', () => {
       dialog.locator('button:has-text("Salva")').click()
     ])
     expect(postResp.status()).toBe(200)
+    const ct10ContattoId = (await postResp.json())?.data?.id_contatto
+    if (ct10ContattoId) createdContattoIds.push(ct10ContattoId)
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
 
     // Modifica contatto
@@ -334,6 +362,8 @@ test.describe('ContattiTab — CRUD', () => {
       dialog.locator('button:has-text("Salva")').click()
     ])
     expect(postResp.status()).toBe(200)
+    const ct11ContattoId = (await postResp.json())?.data?.id_contatto
+    if (ct11ContattoId) createdContattoIds.push(ct11ContattoId)
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
 
     await gp.search(nome)
@@ -399,6 +429,8 @@ test.describe('ContattiTab — CRUD', () => {
 
     const createdContatto = await postResp.json()
     const contattoId = createdContatto?.data?.[0]?.id_contatto || createdContatto?.data?.id_contatto
+
+    if (contattoId) createdContattoIds.push(contattoId)
 
     if (!contattoId) {
       test.skip('ID contatto non ottenuto')

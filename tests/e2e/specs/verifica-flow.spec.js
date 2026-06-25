@@ -3,38 +3,19 @@ import { VerificaPage } from '../pages/VerificaPage.js'
 import { loginAs } from '../helpers/login.js'
 import { monitorApi, waitForPatchStato, logApiCalls } from '../helpers/network.js'
 import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
+import { apiLogin, apiGet, apiPatch } from '../helpers/api.js'
+import {
+  creaFamigliaVolontarioProgetto,
+  loginVolontarioConFamiglia,
+  pulisciIds,
+  loginGestore
+} from '../helpers/setup-atomico.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import path from 'path'
 import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
-
-async function selectFirstProgetto(page) {
-  const select = page.locator('.q-select').first()
-  await select.click()
-  await page.waitForTimeout(2000)
-  const firstOption = page.locator('.q-menu .q-item').first()
-  if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await firstOption.click()
-    await page.waitForTimeout(1000)
-    return true
-  }
-  return false
-}
-
-async function createGiustificativoViaVolontario(page, descrizione, stato = 'draft') {
-  await loginAs(page, 'volontario', auth)
-  await selectFirstProgetto(page)
-
-  const result = await createGiustificativoViaDialog(page, {
-    descrizione,
-    importo: '75.00',
-    submitAfter: stato === 'inviato'
-  })
-
-  return result
-}
 
 async function createGiustificativoViaVerificatore(page) {
   await loginAs(page, 'verificatore', auth)
@@ -43,9 +24,9 @@ async function createGiustificativoViaVerificatore(page) {
   await page.waitForTimeout(2000)
 
   const addBtn = page.locator('[data-testid="btn-add-giust"], button[aria-label="Aggiungi giustificativo"]').first()
-  if (await addBtn.count() === 0) return null
+  if ((await addBtn.count()) === 0) return null
   // Su mobile espandi la riga prima di cliccare
-  const isMobile = await page.locator('.q-expansion-item').count() > 0
+  const isMobile = (await page.locator('.q-expansion-item').count()) > 0
   if (isMobile) {
     const expItem = page.locator('.q-expansion-item').first()
     await expItem.click()
@@ -69,23 +50,72 @@ async function createGiustificativoViaVerificatore(page) {
 }
 
 test.describe('Verifica StatoRendicontazione Flow', () => {
+  let ids = { famiglia: null, progetto: null, giustificativi: [] }
+
+  test.beforeAll(async () => {
+    await apiLogin(auth.admin.email, auth.admin.password)
+  })
+
+  test.afterEach(async () => {
+    await pulisciIds(ids)
+    ids = { famiglia: null, progetto: null, giustificativi: [] }
+  })
 
   test('VF-01: Verifica giustificativo — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90000)
     const testDesc = `VF_01_verify_${Date.now()}`
     const apiCalls = monitorApi(page)
 
-    await createGiustificativoViaVolontario(page, testDesc, 'inviato')
+    await loginGestore(page)
+    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+    await loginVolontarioConFamiglia(page, nomeFam)
+    const result1 = await createGiustificativoViaDialog(page, {
+      descrizione: testDesc,
+      importo: '75.00',
+      submitAfter: false
+    })
+    if (result1?.id) ids.giustificativi.push(result1.id)
+
+    // Invia il giustificativo esplicitamente
+    await page.waitForTimeout(500)
+    const inviaBtn = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
+    await inviaBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
+    if ((await inviaBtn.count()) > 0) {
+      await inviaBtn.click()
+      await page.waitForTimeout(2000)
+    }
 
     const vp = new VerificaPage(page)
     await loginAs(page, 'verificatore', auth)
+    await vp.goto()
     await vp.waitForTable()
-    await vp.searchFamiglia('TEST_FAM')
-    await vp.expandRow(0)
+    await page.waitForTimeout(3000)
+    await vp.searchFamiglia(nomeFam)
+    await page.waitForTimeout(1000)
+    const rowCount = await vp.getRowCount()
+    if (rowCount === 0) {
+      test.skip('No rows after search')
+      return
+    }
+    let foundRow = -1
+    for (let i = 0; i < rowCount; i++) {
+      const text = await vp.rows.nth(i).innerText()
+      if (text.includes(nomeFam)) {
+        foundRow = i
+        break
+      }
+    }
+    if (foundRow === -1) {
+      test.skip('No progetto row found')
+      return
+    }
+    await vp.expandRow(foundRow)
+    await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'verificato', async () => {
       const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
       if (!(await verifyBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+        console.log('[VF-01] btn-verify not visible after expand')
         test.skip('No verify button found')
         return
       }
@@ -103,13 +133,37 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const testDesc = `VF_02_reject_${Date.now()}`
     const apiCalls = monitorApi(page)
 
-    await createGiustificativoViaVolontario(page, testDesc, 'inviato')
+    await loginGestore(page)
+    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+    await loginVolontarioConFamiglia(page, nomeFam)
+    const result2 = await createGiustificativoViaDialog(page, {
+      descrizione: testDesc,
+      importo: '75.00',
+      submitAfter: false
+    })
+    if (result2?.id) ids.giustificativi.push(result2.id)
+
+    // Invia il giustificativo
+    await page.waitForTimeout(500)
+    const inviaBtn2 = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
+    await inviaBtn2.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
+    if ((await inviaBtn2.count()) > 0) {
+      await inviaBtn2.click()
+      await page.waitForTimeout(2000)
+    }
 
     const vp = new VerificaPage(page)
     await loginAs(page, 'verificatore', auth)
+    await vp.goto()
     await vp.waitForTable()
-    await vp.searchFamiglia('TEST_FAM')
+    await vp.searchFamiglia(nomeFam)
+    await page.waitForTimeout(1000)
+    if ((await vp.getRowCount()) === 0) {
+      test.skip('No progetto row found')
+      return
+    }
     await vp.expandRow(0)
+    await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'rifiutato', async () => {
       const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
@@ -124,7 +178,11 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
         const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
         if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Test rifiuto E2E')
-        await rejectDialog.locator('button').filter({ hasText: /rifiut|conferma/i }).last().click()
+        await rejectDialog
+          .locator('button')
+          .filter({ hasText: /rifiut|conferma/i })
+          .last()
+          .click()
         await page.waitForTimeout(3000)
       }
     })
@@ -139,13 +197,29 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const testDesc = `VF_03_send_${Date.now()}`
     const apiCalls = monitorApi(page)
 
-    await createGiustificativoViaVolontario(page, testDesc, 'draft')
+    await loginGestore(page)
+    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+    await loginVolontarioConFamiglia(page, nomeFam)
+    const result3 = await createGiustificativoViaDialog(page, {
+      descrizione: testDesc,
+      importo: '75.00',
+      submitAfter: false
+    })
+    if (result3?.id) ids.giustificativi.push(result3.id)
 
+    // Non invia ancora — il test verifica che da VerificaPage si possa inviare
     const vp = new VerificaPage(page)
     await loginAs(page, 'verificatore', auth)
+    await vp.goto()
     await vp.waitForTable()
-    await vp.searchFamiglia('TEST_FAM')
+    await vp.searchFamiglia(nomeFam)
+    await page.waitForTimeout(1000)
+    if ((await vp.getRowCount()) === 0) {
+      test.skip('No progetto row found')
+      return
+    }
     await vp.expandRow(0)
+    await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'inviato', async () => {
       const sendBtn = page.locator('[data-testid="btn-send"]').first()
@@ -164,9 +238,11 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-04: Aggiungi giustificativo da VerificaPage @crud', async ({ page }) => {
     test.setTimeout(90000)
-    await createGiustificativoViaVolontario(page, `VF_04_setup_${Date.now()}`, 'inviato')
+    await loginGestore(page)
+    await creaFamigliaVolontarioProgetto(page, ids)
 
     const result = await createGiustificativoViaVerificatore(page)
+    if (result?.id) ids.giustificativi.push(result.id)
     expect(result, 'VE-ADD: creazione giustificativo da VerificaPage fallita').not.toBeNull()
     expect(result.desc).toContain('VE_ADD_')
   })
@@ -175,26 +251,30 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     test.setTimeout(120000)
     const apiCalls = monitorApi(page)
 
-    // 1. Volontario crea e invia giustificativo
+    // 1. Atomic setup — crea famiglia + progetto
+    await loginGestore(page)
+    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+
+    // 2. Volontario crea e invia giustificativo
     const testDesc = `VF_05_full_${Date.now()}`
-    await loginAs(page, 'volontario', auth)
-    await selectFirstProgetto(page)
+    await loginVolontarioConFamiglia(page, nomeFam)
 
     const draft = await createGiustificativoViaDialog(page, {
       descrizione: testDesc,
       importo: '200.00',
       submitAfter: true
     })
+    if (draft?.id) ids.giustificativi.push(draft.id)
     expect(draft, 'Creazione giustificativo fallita').not.toBeNull()
 
-    // 2. Verificatore verifica e poi rifiuta
+    // 3. Verificatore verifica e poi rifiuta
     await loginAs(page, 'verificatore', auth)
     const vp = new VerificaPage(page)
     await vp.waitForTable()
 
     // Cerca il giustificativo appena creato
     const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-    await searchInput.fill('TEST_FAM')
+    await searchInput.fill(nomeFam)
     await page.waitForTimeout(4000)
 
     const expandBtn = page.locator('[data-testid="expand-row"]').first()
@@ -226,7 +306,11 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
         if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
           const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
           if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Rifiuto test VF-05')
-          await rejectDialog.locator('button').filter({ hasText: /rifiut|conferma/i }).last().click()
+          await rejectDialog
+            .locator('button')
+            .filter({ hasText: /rifiut|conferma/i })
+            .last()
+            .click()
           await page.waitForTimeout(3000)
         }
       }

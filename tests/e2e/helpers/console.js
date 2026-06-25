@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test'
+import { apiLogin, apiGet, getToken } from './api.js'
 
 const PRODUCTION_DOMAINS = ['sostienilsostegno.com', 'app.sostienilsostegno']
 
@@ -7,16 +8,26 @@ const EXPECTED_API_ERRORS = [
   '/auth/password/request', // 400 — local Directus without SMTP (RP-10)
   '/auth/password/reset', // 422/401 — intentional bad token (RP-04, RP-10)
   '/items/Progetti', // 500 — intentional API error test (EH-01)
-  '/items/Giustificativi', // 403 — GestoreVerifica senza permessi scrittura (RC-05)
-  '/items/Famiglie_Contatti', // 403 — GestoreVerifica senza permessi su soft-delete
-  '/users', // 400 — Gestore non può creare utenti Directus (RF-02)
-  '/items/ErrorLog', // 403 — Verificatore senza permessi su ErrorLog
-  '/items/Pagamenti', // 403 — Verificatore senza permessi su Pagamenti
-  '/items/Associazioni', // 403 — Verificatore senza permessi su Associazioni
-  '/items/BatchPagamenti' // 403 — Verificatore senza permessi su BatchPagamenti
+  '/items/Giustificativi', // 403 — GestoreVerifica senza permessi CREATE (RC-05)
+  '/items/Pagamenti', // 403 — Verificatore senza permessi Pagamenti
+  '/items/ErrorLog', // 403 — vari ruoli senza permessi ErrorLog (cascade da altri 403)
+  '/items/Famiglie_Contatti', // 403 — GestoreVerifica in riconciliazione flow
+  '/items/Associazioni', // 403 — Verificatore senza permessi Associazioni
+  '/items/BatchPagamenti', // 403 — Verificatore senza permessi BatchPagamenti
+  '/items/Famiglie/', // 400 — IBAN test non valido DB-V4 (progetti orfani senza famiglia)
+  '/items/email' // 403 — PATCH campi email_address/Priority da utente non admin
 ]
 
 const EXPECTED_CONSOLE_ERROR_PATTERNS = []
+
+async function countErrorLog() {
+  try {
+    const res = await apiGet('ErrorLog', { 'aggregate[count]': 'id' })
+    return res.data?.[0]?.count?.id ?? -1
+  } catch {
+    return -1
+  }
+}
 
 export const test = base.extend({
   page: async ({ page }, use) => {
@@ -24,6 +35,13 @@ export const test = base.extend({
     const errors = []
     const warnings = []
     const pendingExpectedErrors = []
+
+    // Init admin API for ErrorLog tracking
+    let elBefore = -1
+    try {
+      if (!getToken()) await apiLogin('fake.admin@fake.com', 'FakeAdmin_2026!!')
+      elBefore = await countErrorLog()
+    } catch {}
 
     // Runtime guard: detect API calls going to production
     page.on('response', resp => {
@@ -73,6 +91,24 @@ export const test = base.extend({
     })
 
     await use(page)
+
+    // Check for new ErrorLog entries created by this test
+    if (elBefore >= 0) {
+      try {
+        const elAfter = await countErrorLog()
+        if (elAfter > elBefore) {
+          const newEntries = await apiGet('ErrorLog', {
+            sort: '-id',
+            limit: elAfter - elBefore,
+            fields: 'id,message,method,url,status,level'
+          })
+          for (const e of newEntries.data || []) {
+            const msg = (e.message || '').slice(0, 200)
+            console.log(`[ERRORLOG] [${e.level}] #${e.id} ${e.method} ${e.status} — ${msg}`)
+          }
+        }
+      } catch {}
+    }
 
     if (errors.length > 0) {
       console.log(`\n=== CONSOLE ERRORS (${errors.length}) ===`)

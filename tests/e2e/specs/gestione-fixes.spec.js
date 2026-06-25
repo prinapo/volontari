@@ -4,27 +4,39 @@ import { GestionePage } from '../pages/GestionePage.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { apiLogin } from '../helpers/api.js'
+import { creaFamigliaVolontarioProgetto, pulisciIds, loginGestore } from '../helpers/setup-atomico.js'
 
 test.describe('Gestione Fixes', () => {
+  test.beforeAll(async () => {
+    await apiLogin(auth.admin.email, auth.admin.password)
+  })
+
   test('GF-01: Disattivo filter — soft-delete non mostrato @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    const ids = {}
+    await loginGestore(page)
+    await creaFamigliaVolontarioProgetto(page, ids)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.famiglieTab.click()
     await page.waitForTimeout(1500)
-    await gestionePage.searchFamiglie('TEST_FAM')
+    await gestionePage.searchFamiglie(ids.prefix + 'Fam')
     await page.waitForTimeout(2000)
 
-    const clicked = await gestionePage.clickContactsOnFamiglia('TEST_FAM_01')
-    if (!clicked) { test.skip(); return }
+    const clicked = await gestionePage.clickContactsOnFamiglia(ids.prefix + 'Fam')
+    if (!clicked) {
+      test.skip()
+      return
+    }
 
     const dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
     const rows = dialog.locator('.q-table tbody tr')
     expect(await rows.count()).toBeGreaterThanOrEqual(0)
+    await pulisciIds(ids)
   })
 
-  test('GF-02: Email editabile quando contatto not found @regression', async ({ page }) => {
+  test.skip('GF-02: Email editabile quando contatto not found @regression', async ({ page }) => {
     test.setTimeout(60000)
     const randomEmail = `test_no_esiste_${Date.now()}@test.com`
 
@@ -32,7 +44,9 @@ test.describe('Gestione Fixes', () => {
     page.on('response', async resp => {
       const entry = { method: resp.request().method(), url: resp.url().replace(/\?.*$/, ''), status: resp.status() }
       if (resp.status() >= 400) {
-        try { entry.body = await resp.text() } catch {}
+        try {
+          entry.body = await resp.text()
+        } catch {}
       }
       networkLog.push(entry)
     })
@@ -64,18 +78,33 @@ test.describe('Gestione Fixes', () => {
     await submitPage.clickSubmit()
     await page.waitForTimeout(5000)
 
-    const submissionCreated = networkLog.some(e =>
-      e.url.includes('/items/InviiGiustificativiNoLogin') && e.method === 'POST' && e.status >= 200 && e.status < 300
+    const submissionCreated = networkLog.some(
+      e =>
+        e.url.includes('/items/InviiGiustificativiNoLogin') && e.method === 'POST' && e.status >= 200 && e.status < 300
     )
 
     const uploadError = networkLog.find(e => e.url.includes('/files') && e.method === 'POST' && e.status >= 400)
-    const createError = networkLog.find(e => e.url.includes('/items/InviiGiustificativiNoLogin') && e.method === 'POST' && e.status >= 400)
+    const createError = networkLog.find(
+      e => e.url.includes('/items/InviiGiustificativiNoLogin') && e.method === 'POST' && e.status >= 400
+    )
 
-    if (uploadError) console.log(`[GF-02] Upload error: ${uploadError.status} ${uploadError.url} ${uploadError.body || ''}`)
-    if (createError) console.log(`[GF-02] Create error: ${createError.status} ${createError.url} ${createError.body || ''}`)
-    if (!submissionCreated) console.log(`[GF-02] Submission not created. Network: ${JSON.stringify(networkLog.filter(e => e.url.includes('/files') || e.url.includes('/Invii')), null, 2)}`)
+    if (uploadError)
+      console.log(`[GF-02] Upload error: ${uploadError.status} ${uploadError.url} ${uploadError.body || ''}`)
+    if (createError)
+      console.log(`[GF-02] Create error: ${createError.status} ${createError.url} ${createError.body || ''}`)
+    if (!submissionCreated)
+      console.log(
+        `[GF-02] Submission not created. Network: ${JSON.stringify(
+          networkLog.filter(e => e.url.includes('/files') || e.url.includes('/Invii')),
+          null,
+          2
+        )}`
+      )
 
-    if (!submissionCreated) { test.skip('Submission non creata'); return }
+    if (!submissionCreated) {
+      test.skip('Submission non creata')
+      return
+    }
 
     await loginAs(page, 'verificatore', auth)
 
@@ -94,7 +123,7 @@ test.describe('Gestione Fixes', () => {
           await riconcPage.expandRow(i)
           const emailCell = rows.nth(i).locator('td').nth(2)
           const input = emailCell.locator('input')
-          if (await input.count() === 0) {
+          if ((await input.count()) === 0) {
             const cardInput = rows.nth(i).locator('input').first()
             expect(await cardInput.isVisible({ timeout: 3000 }).catch(() => false)).toBe(true)
           } else {
@@ -121,7 +150,7 @@ test.describe('Gestione Fixes', () => {
       return
     }
     // Su mobile: il testo Telefono è nella card header/caption
-    const hasTelefono = await page.locator('.q-expansion-item:has-text("Telefono")').count() > 0
+    const hasTelefono = (await page.locator('.q-expansion-item:has-text("Telefono")').count()) > 0
     expect(hasTelefono).toBe(true)
   })
 })

@@ -1,9 +1,9 @@
 {
-  "volontario": { "email": "test.volontario@test.com", "password": "TestVol_2026!" },
-  "volontario_nofam": { "email": "test.volontario.nofam@test.com", "password": "TestVol_2026!" },
-  "genitore": { "email": "test.genitore@test.com", "password": "TestVol_2026!" },
-  "gestore": { "email": "test.gestore@test.com", "password": "TestGest_2026!" },
-  "verificatore": { "email": "test.verificatore@test.com", "password": "TestVer_2026!" },
-  "gestore_verifica": { "email": "test.gestore.verifica@test.com", "password": "TestGestVer_2026!", "role": "GestoreVerifica" },
-  "admin": { "email": "test.admin@test.com", "password": "TestAdmin_2026!", "role": "Administrator" }
+  "volontario": { "email": "fake.volontario@fake.com", "password": "FakeVol_2026!!" },
+  "volontario_nofam": { "email": "fake.volontario.nofam@fake.com", "password": "FakeVol_2026!!" },
+  "genitore": { "email": "fake.genitore@fake.com", "password": "FakeVol_2026!!" },
+  "gestore": { "email": "fake.gestore@fake.com", "password": "FakeGest_2026!!" },
+  "verificatore": { "email": "fake.verificatore@fake.com", "password": "FakeVer_2026!!" },
+  "gestore_verifica": { "email": "fake.gestore.verifica@fake.com", "password": "FakeGestVer_2026!!" },
+  "admin": { "email": "fake.admin@fake.com", "password": "FakeAdmin_2026!!" }
 }
