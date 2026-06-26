@@ -37,6 +37,9 @@
             outlined
             dense
             class="q-mb-md"
+            :rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']"
+            lazy-rules
+            @update:model-value="val => form.IBAN = val?.toUpperCase?.() || val"
           />
           <q-input
             v-model="form.Intestatario_CC"
@@ -55,7 +58,7 @@
           color="primary"
           label="Salva"
           :loading="store.saving"
-          :disable="!form.Nome_Famiglia"
+          :disable="!form.Nome_Famiglia || (!!form.IBAN && !/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(form.IBAN))"
           @click="handleSave"
         />
       </q-card-actions>

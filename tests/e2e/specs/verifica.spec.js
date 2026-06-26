@@ -375,6 +375,33 @@ test.describe('VerificaPage', () => {
           await page.locator('.q-dialog button:has-text("Annulla")').click()
         })
     })
+
+    test('DB-V5: IBAN non valido → Salva disabilitato @regression', async ({ page }) => {
+      const vp = new VerificaPage(page)
+      await loginAs(page, 'verificatore', auth)
+      await vp.goto()
+      await vp.waitForTable()
+      await page.waitForTimeout(3000)
+      const rowCount = await vp.getRowCount()
+      if (rowCount === 0) {
+        test.skip()
+        return
+      }
+      await vp.expandRow(0)
+      await page.waitForTimeout(500)
+      const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
+      if (!(await editBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await editBtn.click()
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
+      const dialog = page.locator('.q-dialog')
+      // Cancella il valore valido e scrivi uno corto
+      await dialog.locator('[data-testid="bancari-iban"]').fill('abc')
+      const salvaBtn = dialog.locator('button:has-text("Salva")')
+      await expect(salvaBtn).toBeDisabled()
+    })
   })
 
   test.describe('Stato riga', () => {

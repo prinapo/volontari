@@ -1,74 +1,87 @@
-# Test Report — 22 Giugno 2026
-
-## Vitest (Unit Test)
-
-**240 test · 27 file · 0 failure**
-
-| Layer      | File | Test | Coverage                           |
-| ---------- | ---- | ---- | ---------------------------------- |
-| Utils      | 5    | 47   | 100% statements                    |
-| Services   | 2    | 22   | 78% statements                     |
-| Stores     | 11   | 147  | 82% statements, 56% branches       |
-| Components | 8    | 33   | 82-100% per componente             |
-| Pages      | 3    | 13   | VerificaPage, AdminPage, LoginPage |
-
-**Eseguito:** `npm run test:unit` ✅
-
----
+# Test Report — v3.1.0
 
 ## Playwright (E2E)
 
-**324 test (2 progetti × 162 test) · 16 spec · ~6 minuti**
+**16 spec file · 2 progetti (desktop + mobile)**
 
-### Riepilogo
+### Desktop
 
-| Area                                       | Risultato           | Note                                         |
-| ------------------------------------------ | ------------------- | -------------------------------------------- |
-| **Auth** (login, logout, route guards)     | ✅ Tutti passano    | A-01..04, RG-01..05, SP-01                   |
-| **Layout/Sidebar** (navigazione per ruolo) | ✅ Tutti passano    | LB-01..05                                    |
-| **Contatti** (CRUD, ricerca, filtri)       | ✅ Tutti passano    | CT-01..12                                    |
-| **Submit** (invio pubblico giustificativi) | ✅ Tutti passano    | SP-01..09                                    |
-| **Email case** (case-insensitive matching) | ✅ Tutti passano    | EC-01..04                                    |
-| **Error log** (admin errori)               | ✅ Passa            | EL-01, EL-02                                 |
-| **Pagamenti** (tab visibility)             | ✅ Passa            | PAG-01/02/06/10/17                           |
-| **Referente** (assegna/rimuovi/filtra)     | ✅ Tutti passano    | RF-01..06                                    |
-| **Reset password** (UI + E2E reale IMAP)   | ✅ Tutti passano    | RP-01..05, RP-10                             |
-| **Riconciliazione** (setup, dialog)        | ✅ RC-01/02 passano | RC-03 fallisce (403 su ErrorLog)             |
-| **Famiglie**                               | ❌ Falliscono tutti | Dati seed mancanti in Directus locale        |
-| **Giustificativi**                         | ❌ Falliscono tutti | Dati seed mancanti (nessun progetto)         |
-| **Admin**                                  | ⏭ Skippati         | Utente admin non ha permessi                 |
-| **Screenshot @visual**                     | 6/8 passano         | famiglie/giustificativi richiedono dati seed |
+| File            | ✅  | ❌  | ⏭️  |
+| --------------- | --- | --- | --- |
+| auth            | 11  | 0   | 0   |
+| layout          | 5   | 0   | 0   |
+| error-log       | 2   | 0   | 0   |
+| helpers         | 5   | 0   | 0   |
+| famiglie        | 5   | 0   | 0   |
+| contatti        | 13  | 0   | 0   |
+| submit          | 10  | 0   | 0   |
+| referente       | 6   | 0   | 0   |
+| deduplica       | 2   | 0   | 0   |
+| email-case      | 3   | 0   | 1   |
+| giustificativi  | 31  | 0   | 0   |
+| pagamenti       | 9   | 0   | 0   |
+| verifica-flow   | 5   | 0   | 0   |
+| verifica        | 25  | 0   | 0   |
+| gestione-fixes  | 3   | 0   | 0   |
+| riconciliazione | 14  | 0   | 0   |
 
-### Screenshot baseline generati
+### Nuovi test in v3.1.0
 
-| File                       | Test     | Baseline     |
-| -------------------------- | -------- | ------------ |
-| `login-page-*.png`         | A-SS-01  | ✅           |
-| `sidebar-volontario-*.png` | LB-SS-01 | ✅           |
-| `contatti-tab-*.png`       | CT-SS-01 | ✅           |
-| `submit-page-*.png`        | SP-SS-01 | ✅           |
-| `verifica-page-*.png`      | VR-SS-01 | ✅           |
-| `famiglie-page-*.png`      | F-SS-01  | ⏳ seed dati |
-| `giustificativo-form.png`  | CG-SS-01 | ⏳ seed dati |
+| Test    | Componente         | Cosa verifica                               |
+| ------- | ------------------ | ------------------------------------------- |
+| CG-07   | GiustificativoForm | Importo negativo → Salva disabilitato       |
+| CG-08   | GiustificativoForm | Importo zero → Salva disabilitato           |
+| DB-V5   | BancariDialog      | IBAN non valido → Salva disabilitato        |
+| SP-10   | SubmitPage         | IBAN non valido → Invia disabilitato        |
+| F-GR-05 | FamigliaInfoCard   | IBAN non valido inline → errore validazione |
+| HF-04   | FamigliaDialog     | IBAN corto → Salva disabilitato             |
+| HF-05   | ContattoDialog     | Cellulare lettere → Salva disabilitato      |
+| HF-06   | FamigliaDialog     | IBAN minuscolo → auto-uppercase             |
 
-**10 file PNG generati** (auth, contatti, layout, submit, verifica — chromium + mobile)
+### Validazione Quasar in v3.1.0
+
+| Componente         | Campo   | Regola                                               |
+| ------------------ | ------- | ---------------------------------------------------- |
+| GiustificativoForm | Importo | `> 0`                                                |
+| GiustificativoForm | Data    | `YYYY-MM-DD` obbligatoria                            |
+| FamigliaDialog     | IBAN    | `/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i` + auto-uppercase |
+| BancariDialog      | IBAN    | stessa regex + auto-uppercase                        |
+| SubmitPage         | IBAN    | stessa regex + auto-uppercase + `canSubmit`          |
+| FamigliaInfoCard   | IBAN    | stessa regex (InlineEditableField)                   |
+| PagamentiTab       | IBAN    | stessa regex + auto-uppercase (2 input)              |
+
+### Cleanup Pattern
+
+`deleteByPattern` ora copre tutte le tabelle con questi step FK-safe:
+
+| Step | Tabella                    | Campi cercati                         |
+| ---- | -------------------------- | ------------------------------------- |
+| 0    | InviiGiustificativiNoLogin | `email`                               |
+| 1    | Giustificativi             | `Descrizione`                         |
+| 2    | email                      | `email_address`                       |
+| 3    | Progetti                   | `Cognome_Beneficiario`, `id_progetto` |
+| 4    | Famiglie + FC              | `Nome_Famiglia`, `id_famiglia`        |
+
+`SAFELIST_EMAILS` protegge: `giovanni.prinetti@gmail.com`, `fake.*@fake.com`.
+
+### ErrorLog tracking
+
+Il `page` fixture in `console.js` traccia automaticamente nuovi entry ErrorLog dopo ogni test (prefix `[ERRORLOG]`). Solo 3 errori attesi: EL-02 (400 intenzionale ×2) + RC-05 (Giustificativi 403).
 
 ---
 
-## Riepilogo Finale Qualità
+## Vitest (Unit Test)
 
-| Strumento              | Stato                       | Dettaglio                                                       |
-| ---------------------- | --------------------------- | --------------------------------------------------------------- |
-| ESLint                 | ✅ 0 errori, 0 warnings     | —                                                               |
-| Stylelint              | ✅ 0 errori                 | —                                                               |
-| Prettier               | ✅ Configurato              | —                                                               |
-| commitlint             | ✅ Attivo                   | Conventional commits                                            |
-| Husky + lint-staged    | ✅ Attivo                   | Pre-commit lint + format                                        |
-| knip                   | ✅ Configurato              | —                                                               |
-| npm audit              | ✅ Configurato              | 2 low vuln (esbuild Windows)                                    |
-| Vitest                 | ✅ **240 test**             | Utils 100%, Stores 82%, Services 78%                            |
-| Playwright             | ✅ **~324 test**            | 16 spec, screenshot, E2E, CRUD                                  |
-| CI/CD (GitHub Actions) | ✅ Configurato              | quality → e2e                                                   |
-| Dependabot             | ✅ Configurato              | Weekly npm + monthly GA                                         |
-| Bundle analysis        | ✅ rollup-plugin-visualizer | -300K dopo ottimizzazioni                                       |
-| Documentazione         | ✅                          | AGENTS.md, quality-toolchain.md, e2e-testing.md, test-report.md |
+240 test · 27 file · 0 failure
+
+---
+
+## Quality Toolchain
+
+| Tool                | Stato                   |
+| ------------------- | ----------------------- |
+| ESLint              | ✅ 0 errori             |
+| Stylelint           | ✅ 0 errori             |
+| Prettier            | ✅                      |
+| commitlint          | ✅ Conventional commits |
+| Husky + lint-staged | ✅ Pre-commit           |

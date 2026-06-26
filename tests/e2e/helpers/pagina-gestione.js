@@ -48,10 +48,14 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
   const dialog = page.locator('.q-dialog:visible')
   await dialog.waitFor({ state: 'visible', timeout: 5000 })
 
-  // Compila form
+  // Compila tutti i campi
   await dialog.locator('[data-testid="famiglia-nome"]').fill(nomeFamiglia)
-  if (iban) await dialog.locator('[data-testid="famiglia-iban"]').fill(iban)
-  if (intestatario) await dialog.locator('[data-testid="famiglia-intestatario"]').fill(intestatario)
+  // IBAN IT valido: 27 caratteri
+  const ts = String(Date.now()).slice(-5)
+  const rnd = String(Math.floor(Math.random() * 90000) + 10000)
+  const testIban = iban || `IT60X${ts}${rnd}0000123456`
+  await dialog.locator('[data-testid="famiglia-iban"]').fill(testIban)
+  await dialog.locator('[data-testid="famiglia-intestatario"]').fill(intestatario || nomeFamiglia.slice(0, 20) + ' Int')
 
   // Submit e attendi POST /items/Famiglie
   // Filtra per Nome_Famiglia per evitare di catturare POST di altri test
@@ -81,7 +85,7 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
 /**
  * Crea un contatto via UI (dialog ContattoDialog).
  */
-export async function createContattoViaUI(page, { nome, cognome, email, cellulare } = {}) {
+export async function createContattoViaUI(page, { nome, cognome, email, cellulare, telefono } = {}) {
   if (!nome || !cognome) throw new Error('createContattoViaUI: nome e cognome obbligatori')
 
   if (!page.url().includes('/gestione')) {
@@ -105,10 +109,13 @@ export async function createContattoViaUI(page, { nome, cognome, email, cellular
   const dialog = page.locator('.q-dialog:visible')
   await dialog.waitFor({ state: 'visible', timeout: 5000 })
 
-  // Compila form
+  // Compila tutti i campi
   await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
   await dialog.locator('[data-testid="contatto-cognome"]').fill(cognome)
-  if (cellulare) await dialog.locator('[data-testid="contatto-cellulare"]').fill(cellulare)
+  const cell = cellulare || `333${Math.floor(Math.random() * 9000000) + 1000000}`
+  await dialog.locator('[data-testid="contatto-cellulare"]').fill(cell)
+  const telo = telefono || `02${Math.floor(Math.random() * 90000000) + 10000000}`
+  await dialog.locator('[data-testid="contatto-telefono"]').fill(telo)
 
   // Aggiungi email se fornita
   if (email) {

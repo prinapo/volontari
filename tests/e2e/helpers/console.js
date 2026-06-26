@@ -1,7 +1,7 @@
 import { test as base, expect } from '@playwright/test'
 import { apiLogin, apiGet, getToken } from './api.js'
 
-const PRODUCTION_DOMAINS = ['sostienilsostegno.com', 'app.sostienilsostegno']
+const PRODUCTION_DOMAINS = ['app.sostienilsostegno.com', 'volontari.sostienilsostegno.com']
 
 const EXPECTED_API_ERRORS = [
   '/auth/login', // 401 — intentional wrong credentials (A-03)

@@ -40,7 +40,7 @@
               dense
               data-testid="giustform-importo"
               step="0.01"
-              :rules="[val => !!val || 'Campo obbligatorio']"
+              :rules="[val => !!val || 'Campo obbligatorio', val => Number.parseFloat(val) > 0 || 'Importo maggiore di 0']"
               lazy-rules
             />
             <q-input
@@ -51,7 +51,7 @@
               dense
               readonly
               data-testid="giustform-data"
-              :rules="[val => !!val || 'Campo obbligatorio']"
+              :rules="[val => !!val || 'Campo obbligatorio', val => /^\d{4}-\d{2}-\d{2}$/.test(val) || 'Formato data non valido']"
               lazy-rules
               @click="dateProxy?.show()"
             >
@@ -85,7 +85,7 @@
           label="Salva"
           data-testid="giustform-salva"
           :loading="saving"
-          :disable="!form.Descrizione || !form.Importo || !form.File || saving"
+          :disable="!form.Descrizione || !form.Importo || Number.parseFloat(form.Importo || 0) <= 0 || !form.File || !form.Data || saving"
           @click="handleSave"
         />
       </q-card-actions>

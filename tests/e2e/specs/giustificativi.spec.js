@@ -26,6 +26,8 @@ async function createBozzaViaUI(page, descPrefix) {
   const dialog = page.locator('.q-dialog')
   await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
   await dialog.locator('[data-testid="giustform-importo"]').fill('75.00')
+  await dialog.locator('[data-testid="giustform-data"]').fill('2026-01-15')
+  await dialog.locator('[data-testid="giustform-nota"]').fill(`Nota ${descPrefix}_${Date.now()}`)
   await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
   const [postResp] = await Promise.all([
     page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
@@ -226,6 +228,39 @@ test.describe('Giustificativi', () => {
         .catch(() => {})
       await page.waitForTimeout(500)
       await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 5000 })
+    })
+
+    test('CG-07: Importo negativo → Salva disabilitato @regression', async ({ page }) => {
+      const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
+      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await aggiungiBtn.click()
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
+      const dialog = page.locator('.q-dialog')
+      const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NegImp_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-importo"]').fill('-50')
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+      await expect(salvaBtn).toBeDisabled()
+    })
+
+    test('CG-08: Importo zero → Salva disabilitato @regression', async ({ page }) => {
+      test.setTimeout(60000)
+      const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
+      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
+        test.skip()
+        return
+      }
+      await aggiungiBtn.click()
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
+      const dialog = page.locator('.q-dialog')
+      const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_ZeroImp_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-importo"]').fill('0')
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+      await expect(salvaBtn).toBeDisabled()
     })
 
     test('CG-09: Form larghezza limitata non fullscreen @smoke', async ({ page }) => {
@@ -560,11 +595,22 @@ test.describe('Giustificativi', () => {
       const scaricaBtn = cardWithAttach.first().locator('a[aria-label="Scarica allegato"]')
       const href = await scaricaBtn.getAttribute('href')
 
-      // AL-03 saltato: Directus assets richiedono permessi specifici
-      // che potrebbero non essere configurati in ambiente locale
-      console.log('[AL-03] Skipping — Directus asset permission check')
-      test.skip('Directus asset permissions')
-      return
+      if (!href || !href.includes('/assets/')) {
+        console.log('[AL-03] No asset URL — skip')
+        test.skip()
+        return
+      }
+
+      // Scarica il file e verifica che sia un PDF valido
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: 5000 }).catch(() => null),
+        scaricaBtn.click({ force: true })
+      ])
+      if (!download) {
+        test.skip('Download non partito')
+        return
+      }
+      expect(typeof (await download.path())).toBe('string')
     })
 
     test('AL-04: Apri file si apre in nuova scheda con URL corretto @crud', async ({ page }) => {

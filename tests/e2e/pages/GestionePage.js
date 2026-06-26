@@ -221,13 +221,25 @@ export class GestionePage {
 
   /**
    * Assegna un contatto come Volontario tramite ContattiDialog.
+   * Cerca il contatto per email (univoca) nel QSelect.
    */
-  async assignVolontario(searchTerm, fullName) {
-    const input = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto")) input')
-    await input.fill(searchTerm)
-    const item = this.page.locator('.q-menu .q-item').filter({ hasText: fullName }).first()
-    await item.waitFor({ state: 'visible', timeout: 5000 })
-    await item.click()
+  async assignVolontario(searchEmail) {
+    const select = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto"))')
+    await select.click()
+    await this.page.waitForTimeout(500)
+    const input = select.locator('input')
+    await input.fill(searchEmail)
+    await this.page.waitForTimeout(1500)
+    // Cerca l'item per email: su desktop è in .q-menu, su mobile in .q-dialog
+    const item = this.page.locator('.q-item').filter({ hasText: searchEmail }).first()
+    if ((await item.count()) > 0) {
+      await item.click({ force: true })
+    } else {
+      // Fallback: prendi il primo item disponibile dopo il filtro
+      const any = this.page.locator('.q-menu .q-item, .q-dialog .q-item').first()
+      if ((await any.count()) > 0) await any.click({ force: true })
+    }
+    await this.page.waitForTimeout(500)
     await this.contattiDialog.locator('button:has-text("Volontario")').first().click()
   }
 

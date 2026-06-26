@@ -31,7 +31,7 @@ vi.mock('src/services/auth.service', () => ({
   authService: { requestPasswordReset: vi.fn() }
 }))
 
-vi.mock('../../package.json', () => ({ version: '3.0.0' }))
+vi.mock('../../package.json', () => ({ version: '3.1.0' }))
 
 describe('LoginPage', () => {
   beforeEach(() => {

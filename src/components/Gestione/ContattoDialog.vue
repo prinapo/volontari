@@ -193,7 +193,7 @@ watch(() => props.modelValue, async (val) => {
     form.value.Numero_di_cellulare = props.initialData.Numero_di_cellulare || ''
     form.value.Numero_di_telefono = props.initialData.Numero_di_telefono || ''
     emails.value = props.initialData.Email
-      ? [{ email_address: props.initialData.Email, Primary: true }]
+      ? [{ email_address: props.initialData.Email.toLowerCase(), Primary: true }]
       : []
   } else if (val) {
     form.value.Nome = ''
@@ -239,14 +239,14 @@ async function onEmailBlur(em, _idx) {
   if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
   if (em.id) {
     try {
-      await emailService.update(em.id, { email_address: em.email_address })
+      await emailService.update(em.id, { email_address: em.email_address.toLowerCase() })
     } catch (error) {
       notifyError($q, error, "Errore nell'aggiornamento dell'email")
     }
   } else {
     try {
       const res = await emailService.create({
-        email_address: em.email_address,
+        email_address: em.email_address.toLowerCase(),
         Contatto_Relation: props.editItem.id_contatto,
         Primary: em.Primary
       })
@@ -265,10 +265,10 @@ async function saveEmails(contattoId) {
   try {
     for (const em of emails.value) {
       if (em.id && em.email_address) {
-        await emailService.update(em.id, { email_address: em.email_address, Primary: em.Primary })
+        await emailService.update(em.id, { email_address: em.email_address.toLowerCase(), Primary: em.Primary })
       } else if (!em.id && em.email_address) {
         await emailService.create({
-          email_address: em.email_address,
+          email_address: em.email_address.toLowerCase(),
           Contatto_Relation: contattoId,
           Primary: em.Primary
         })

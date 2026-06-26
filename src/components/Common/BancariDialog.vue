@@ -18,7 +18,8 @@
           label="IBAN"
           data-testid="bancari-iban"
           class="q-mb-md"
-          :rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/i.test(val) || 'IBAN non valido']"
+          :rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']"
+          @update:model-value="val => localIban = val?.toUpperCase?.() || val"
         />
         <q-input
           v-model="localIntestatario"
@@ -36,7 +37,7 @@
           label="Salva"
           color="primary"
           :loading="saving"
-          :disable="!hasChanges"
+          :disable="!hasChanges || (!!localIban && !/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(localIban))"
           @click="handleSave"
         />
       </q-card-actions>

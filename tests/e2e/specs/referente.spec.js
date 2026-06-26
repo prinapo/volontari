@@ -157,10 +157,20 @@ test.describe('Referente Role', () => {
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
     await page.waitForTimeout(1000)
 
+    const rf02Email = `test.rf02.${timestamp}@test.com`
+
     // Aggiungi email al contatto (necessaria per poterlo associare come Volontario)
     await gestionePage.search(nome)
-    await expandFirstCardIfMobile(page)
     await page.waitForTimeout(1000)
+    // Trova e apri la card mobile corretta
+    const expsMobile = page.locator('.q-expansion-item')
+    const expCountMobile = await expsMobile.count()
+    if (expCountMobile > 0 && (await gestionePage.tableRows.count()) === 0) {
+      for (let k = 0; k < expCountMobile; k++) {
+        await expsMobile.nth(k).click()
+        await page.waitForTimeout(300)
+      }
+    }
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     if ((await editBtn.count()) > 0) {
       await editBtn.click()
@@ -169,7 +179,7 @@ test.describe('Referente Role', () => {
       await dialog.locator('button:has-text("Aggiungi email")').click()
       await page.waitForTimeout(300)
       const emailInput = dialog.locator('input[type="email"]').last()
-      await emailInput.fill(`test.rf02.${timestamp}@test.com`)
+      await emailInput.fill(rf02Email)
       const [patchResp] = await Promise.all([
         page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
         dialog.locator('button:has-text("Salva")').click()
@@ -193,7 +203,7 @@ test.describe('Referente Role', () => {
     if (clicked) {
       await page.waitForTimeout(2000)
       console.log('[RF-02] calling assignVolontario')
-      await gestionePage.assignVolontario(nome, `${nome} ${cognome}`)
+      await gestionePage.assignVolontario(rf02Email)
       console.log('[RF-02] assignVolontario done')
       await page.waitForTimeout(2000)
       await gestionePage.contattiDialog.locator('button:has-text("Chiudi")').click()
@@ -221,10 +231,16 @@ test.describe('Referente Role', () => {
     const isMobile =
       (await page.locator('.q-expansion-item').count()) > 0 && (await gestionePage.tableRows.count()) === 0
     if (isMobile) {
-      await expandFirstCardIfMobile(page)
-      const btn = page.locator('[data-testid="btn-assigna-referente"]').first()
-      if (await btn.isVisible({ timeout: 3000 }).catch(() => false)) {
-        targetRow = page.locator('.q-expansion-item--expanded')
+      const exps = page.locator('.q-expansion-item')
+      const expCount = await exps.count()
+      for (let i = 0; i < expCount; i++) {
+        await exps.nth(i).click()
+        await page.waitForTimeout(300)
+        const btn = exps.nth(i).locator('[data-testid="btn-assigna-referente"]')
+        if ((await btn.count()) > 0) {
+          targetRow = exps.nth(i)
+          break
+        }
       }
     } else {
       const rows = gestionePage.tableRows

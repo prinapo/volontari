@@ -233,7 +233,18 @@ test.describe('SubmitPage', () => {
     expect(await submitPage.giustificativoCount()).toBe(0)
   })
 
-  // SP-10 e SP-11: validazione file via q-file non testabile con setInputFiles
+  // SP-10: validazione IBAN
+  test('SP-10: IBAN non valido → Invia disabilitato @regression', async ({ page }) => {
+    await submitPage.goto()
+    await submitPage.clickAddGiustificativo()
+    await page.waitForTimeout(300)
+    await submitPage.fillForm({ ...formData, iban: 'abc' })
+    await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
+    const inviaBtn = page.locator('button[type="submit"]:has-text("Invia")')
+    await expect(inviaBtn).toBeDisabled()
+  })
+
+  // SP-11 e SP-12: validazione file via q-file non testabile con setInputFiles
   // perché Quasar usa l'evento nativo del file picker (non programmatico).
   // Testati manualmente: max-file-size = 5MB, accept = .jpg,.jpeg,.png,.gif,.heic,.pdf
 })

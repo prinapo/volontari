@@ -62,7 +62,9 @@ export async function creaFamigliaVolontarioProgetto(page, ids) {
     AnnoBando: new Date().getFullYear(),
     Allocato: 5000,
     Famiglia: fam.id_famiglia,
-    StatoProgetto: 'aperto'
+    StatoProgetto: 'aperto',
+    Data_Inizio_Progetto: '2026-01-01',
+    Data_Fine_Progetto: '2026-12-31'
   })
   ids.progetto = progRes.data.id_progetto
 
@@ -105,45 +107,47 @@ export async function loginGestore(page) {
  * indipendentemente dal test che li ha creati.
  */
 const GLOBAL_PATTERNS = [
-  '__TEST_ATOM_',
+  // Giustificativi
   '__TEST_CG_',
   '__TEST_IE_',
   '__TEST_AL_',
   '__TEST_EL_',
   '__TEST_SU_',
   '__TEST_RO_',
+  '__TEST_No', // CG-02/03/04: NoDesc, NoImp, NoFile
+  '__TEST_Creazione_',
+  '__TEST_Allegato_',
+  // Famiglie
   '__TEST_FP_',
   '__TEST_HELP_',
-  '__TEST_VF_',
-  '__TEST_AL_',
-  '__TEST_RC',
+  '__TEST_RF02_',
+  '__TEST_RC0',
+  '__TEST_RC5_',
+  '__TEST_RC03',
+  '__TEST_PRIVOL', // RC-PRIORITY-01
+  '__TEST_PRIGEN', // RC-PRIORITY-01
+  'TEST_FAM_AUTO', // vecchio setup.js
+  // Verifica
   'SR-02',
   'VF_0',
   'VF_1',
   'VF_2',
   'VF_3',
-  'VF_4',
   'VF_5',
   'VE_ADD_',
-  'EC-01 ',
-  'EC-02 ',
-  'EC-03 ',
-  'EC-04 ',
+  // InviiGiustificativiNoLogin / Email
   'test.rf02',
   'test_rc',
+  'test_rc02',
   'test_priority',
   'rc_setup',
-  'test_rc02',
-  'Test errore 400',
-  '__TEST_Creazione_',
-  '__TEST_RF02_',
-  '__TEST_RC0',
-  '__TEST_RC5_',
-  '__TEST_SR2',
-  '__TEST_RC03',
-  '__TEST_PAG',
-  'test_el02_',
-  '__TEST_No' // CG-02/03/04: NoDesc, NoImp, NoFile
+  'test_no_esiste', // GF-02
+  'ec01_', // EC-01
+  'ec03_', // EC-03
+  'sconosciuto.', // EC-04
+  // Contatti
+  '__TEST_RC', // catch-all nomi riconciliazione
+  'fake.referente' // referente beforeAll
 ]
 
 /**

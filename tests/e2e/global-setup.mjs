@@ -5,13 +5,18 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const PRODUCTION_PATTERNS = [
-  'sostienilsostegno.com',
-  'app.sostienilsostegno',
-  'sostienilsostegno'
+  'app.sostienilsostegno.com',
+  'volontari.sostienilsostegno.com'
+]
+
+const DEVELOPMENT_PATTERNS = [
+  'localhost',
+  '127.0.0.1',
+  'api-dev.sostienilsostegno.com'
 ]
 
 function getApiUrl() {
-  return 'http://localhost:8055'
+  return 'https://api-dev.sostienilsostegno.com'
 }
 
 async function directusLogin(baseUrl, email, password) {
@@ -169,22 +174,28 @@ export default async function () {
   }
 
   const isProduction = PRODUCTION_PATTERNS.some(p => url.includes(p))
-  const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1')
+  const isDevelopment = DEVELOPMENT_PATTERNS.some(p => url.includes(p))
 
-  if (isProduction || !isLocalhost) {
-    console.error(`\n❌ PERICOLO: VITE_API_URL punta a un ambiente NON locale!`)
+  if (isProduction) {
+    console.error(`\n❌ PERICOLO: VITE_API_URL punta a PRODUCTION!`)
     console.error(`   URL: ${url}`)
-    console.error('   I test E2E DEVONO essere eseguiti solo su ambiente locale.')
+    console.error('   I test E2E non devono MAI essere eseguiti su produzione.\n')
+    process.exit(1)
+  }
+
+  if (!isDevelopment) {
+    console.error(`\n❌ ERRORE: VITE_API_URL non riconosciuto.`)
+    console.error(`   URL: ${url}`)
     console.error('   Crea/aggiorna .env.local con:')
-    console.error('   VITE_API_URL=http://localhost:8055')
+    console.error('   VITE_API_URL=https://api-dev.sostienilsostegno.com')
     console.error('   VITE_ENV=local\n')
     process.exit(1)
   }
 
-  console.log(`\n✅ GUARD: API URL = ${url} — OK (locale)\n`)
+  console.log(`\n✅ GUARD: API URL = ${url} — OK (${isDevelopment ? 'development' : 'locale'})\n`)
 
   // Cleanup test data from previous runs
-  const token = await directusLogin(url, 'test.admin@test.com', 'TestAdmin_2026!')
+  const token = await directusLogin(url, 'fake.admin@fake.com', 'FakeAdmin_2026!!')
   if (token) {
     await cleanupTestData(url, token)
   } else {

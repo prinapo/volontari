@@ -467,7 +467,7 @@ export const useVerificaStore = defineStore('verifica', {
         if (contattoId && copiedFields?.length > 0) {
           await this._patchContattoFromCopied(contattoId, copiedFields, rightValues)
           if (copiedFields.includes('Email') && emailRecordId) {
-            await emailService.update(emailRecordId, { email_address: rightValues.Email })
+            await emailService.update(emailRecordId, { email_address: rightValues.Email.toLowerCase() })
           }
         }
 

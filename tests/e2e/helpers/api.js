@@ -5,7 +5,7 @@
  *   2. Pulire dati dopo i test (entities senza UI delete)
  */
 
-const API_URL = process.env.API_URL || 'http://localhost:8055'
+const API_URL = process.env.API_URL || 'https://api-dev.sostienilsostegno.com'
 
 let token = null
 
@@ -99,6 +99,23 @@ export async function apiDeleteSystem(path, id) {
   if (!res.ok) {
     throw new Error(`API DELETE system ${path}/${id} → ${res.status}`)
   }
+}
+
+export async function apiPatchSystem(path, id, body) {
+  const res = await fetch(`${API_URL}/${path}/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(body)
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`API PATCH system ${path}/${id} → ${res.status}: ${text}`)
+  }
+  const text = await res.text()
+  return text ? JSON.parse(text) : {}
 }
 
 export async function apiPatch(collection, id, body) {

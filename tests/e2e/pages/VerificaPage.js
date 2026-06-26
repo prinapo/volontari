@@ -8,7 +8,7 @@ export class VerificaPage {
   }
 
   get rows() {
-    return this.table.locator('tbody tr:has(td .q-btn)')
+    return this.table.locator('tbody tr:has(td .q-btn), .q-expansion-item')
   }
 
   get searchInput() {
@@ -33,29 +33,38 @@ export class VerificaPage {
 
     await input.fill(text)
 
-    await this.page.waitForResponse(
-      resp => resp.url().includes('/items/Progetti') && resp.request().method() === 'GET',
-      { timeout: 10000 }
-    ).catch(() => {})
+    await this.page
+      .waitForResponse(resp => resp.url().includes('/items/Progetti') && resp.request().method() === 'GET', {
+        timeout: 10000
+      })
+      .catch(() => {})
 
-    await this.table.locator('tbody tr').first().waitFor({ state: 'attached', timeout: 5000 }).catch(() => {})
+    await this.table
+      .locator('tbody tr')
+      .first()
+      .waitFor({ state: 'attached', timeout: 5000 })
+      .catch(() => {})
   }
 
   async expandRow(index = 0) {
     const expandBtn = this.page.locator('[data-testid="expand-row"]').nth(index)
-    if (await expandBtn.count() > 0) {
+    if ((await expandBtn.count()) > 0) {
       await expandBtn.click()
     } else {
       // Su mobile: click sull'expansion item
       const expItem = this.page.locator('.q-expansion-item').nth(index)
-      if (await expItem.count() > 0) {
+      if ((await expItem.count()) > 0) {
         await expItem.click()
       }
     }
 
-    await this.page.locator('.expandable-content').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {
-      console.log('[VerificaPage] expandable-content not found within timeout')
-    })
+    await this.page
+      .locator('.expandable-content')
+      .first()
+      .waitFor({ state: 'visible', timeout: 5000 })
+      .catch(() => {
+        console.log('[VerificaPage] expandable-content not found within timeout')
+      })
   }
 
   async getGiustificativiInRow(index = 0) {
@@ -64,7 +73,7 @@ export class VerificaPage {
 
   async getStatoRiga(index = 0) {
     const badge = this.rows.nth(index).locator('.q-badge').first()
-    if (await badge.count() > 0) {
+    if ((await badge.count()) > 0) {
       return await badge.innerText()
     }
     return null
@@ -84,9 +93,12 @@ export class VerificaPage {
 
   async openBancariDialog(index = 0) {
     const editBtn = this.page.locator('[data-testid="btn-edit-bancari"]').nth(index)
-    if (await editBtn.count() > 0) {
+    if ((await editBtn.count()) > 0) {
       await editBtn.click()
-      await this.page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
+      await this.page
+        .locator('.q-dialog')
+        .waitFor({ state: 'visible', timeout: 3000 })
+        .catch(() => {})
       return true
     }
     return false
@@ -94,7 +106,7 @@ export class VerificaPage {
 
   async copyRow(index = 0) {
     const copyBtn = this.page.locator('[data-testid="btn-copy-aspi"]').nth(index)
-    if (await copyBtn.count() > 0) {
+    if ((await copyBtn.count()) > 0) {
       await copyBtn.click()
       return true
     }

@@ -76,7 +76,7 @@ export const useAdminStore = defineStore('admin', {
           })
           const contattoId = contattoRes.data.data?.id_contatto
           await adminService.createEmail({
-            email_address: email,
+            email_address: email.toLowerCase(),
             Contatto_Relation: contattoId,
             Primary: true
           })

@@ -7,23 +7,26 @@
  * non al setup dei dati necessari al test stesso.
  */
 
-const API_URL = 'http://localhost:8055'
+const API_URL = 'https://api-dev.sostienilsostegno.com'
 
 async function api(page, method, path, body) {
-  return page.evaluate(async ({ method, path, body, API_URL }) => {
-    const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_URL}${path}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: body ? JSON.stringify(body) : undefined
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(`API ${method} ${path} → ${res.status}: ${JSON.stringify(data)}`)
-    return data
-  }, { method, path, body, API_URL })
+  return page.evaluate(
+    async ({ method, path, body, API_URL }) => {
+      const token = localStorage.getItem('access_token')
+      const res = await fetch(`${API_URL}${path}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: body ? JSON.stringify(body) : undefined
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(`API ${method} ${path} → ${res.status}: ${JSON.stringify(data)}`)
+      return data
+    },
+    { method, path, body, API_URL }
+  )
 }
 
 /**

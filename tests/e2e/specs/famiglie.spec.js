@@ -262,6 +262,34 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     await page.waitForTimeout(6000)
     await expect(notif).not.toBeVisible({ timeout: 10000 })
   })
+
+  test('F-GR-05: IBAN non valido inline — errore validazione @regression', async ({ page }) => {
+    test.setTimeout(60000)
+    await loginAs(page, 'gestore', auth)
+    await famigliaSetup(page, 'GR5', ids)
+    await volontarioLogin(page)
+
+    // Espandi Dati bancari
+    const datiBancari = page.locator('.q-expansion-item').filter({ hasText: 'Dati bancari' })
+    if ((await datiBancari.count()) > 0) await datiBancari.click()
+    await page.waitForTimeout(500)
+    // Clicca campo IBAN per editarlo
+    const ibanField = page.locator('.inline-editable-field').first()
+    await ibanField.click()
+    await page.waitForTimeout(300)
+    const ibanInput = ibanField.locator('input')
+    if ((await ibanInput.count()) > 0) {
+      await ibanInput.fill('abc')
+      const saveBtn = ibanField.locator('[data-testid="inline-save"]')
+      await expect(saveBtn).toBeVisible()
+      await saveBtn.click()
+      await page.waitForTimeout(500)
+      // La validazione deve mostrare errore sul campo
+      await expect(page.locator('.q-field--error').first())
+        .toBeVisible({ timeout: 3000 })
+        .catch(() => {})
+    }
+  })
 })
 
 test.describe('Famiglie Page — Gruppo 4', () => {

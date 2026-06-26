@@ -2,9 +2,10 @@
  * Cleanup functions — eliminano dati di test via API.
  * Ordine: figli prima dei padri (FK constraints).
  */
-import { apiDelete, apiGet, apiPatch, apiGetSystem, apiDeleteSystem } from './api.js'
+import { apiDelete, apiGet, apiPatch, apiGetSystem, apiDeleteSystem, apiPatchSystem } from './api.js'
 
 const SAFELIST_EMAILS = [
+  'giovanni.prinetti@gmail.com',
   'fake.admin@fake.com',
   'fake.volontario@fake.com',
   'fake.volontario.nofam@fake.com',
@@ -13,7 +14,32 @@ const SAFELIST_EMAILS = [
   'fake.verificatore@fake.com',
   'fake.gestore.verifica@fake.com'
 ]
-const MIN_PATTERN_LENGTH = 3
+const MIN_PATTERN_LENGTH = 1
+
+/**
+ * Sgancia i file Directus che referenziano un utente (modified_by / uploaded_by).
+ * Previene FK violation quando si cancella un user.
+ */
+async function unlinkUserFiles(userId) {
+  try {
+    const files = await apiGetSystem('files', {
+      filter: JSON.stringify({
+        _or: [{ modified_by: { _eq: userId } }, { uploaded_by: { _eq: userId } }]
+      }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const f of files.data || []) {
+      try {
+        await apiPatchSystem('files', f.id, { modified_by: null, uploaded_by: null })
+      } catch {
+        /* */
+      }
+    }
+  } catch {
+    /* */
+  }
+}
 
 async function deleteEmailByContatto(contattoId) {
   const records = await apiGet('email', {
@@ -34,6 +60,11 @@ async function deleteDirectusUser(contattoId) {
     const res = await apiGet('contatti/' + contattoId, { fields: 'user_id' })
     const userId = res.data?.user_id
     if (userId) {
+      try {
+        await unlinkUserFiles(userId)
+      } catch {
+        /* */
+      }
       try {
         await apiDeleteSystem('users', userId)
       } catch {
@@ -132,6 +163,25 @@ export async function deleteByPattern(patterns) {
   const list = (Array.isArray(patterns) ? patterns : [patterns]).filter(p => p.length >= MIN_PATTERN_LENGTH)
   if (list.length === 0) return
 
+  // 0. InviiGiustificativiNoLogin (submission pubbliche)
+  for (const p of list) {
+    try {
+      const res = await apiGet('InviiGiustificativiNoLogin', {
+        filter: JSON.stringify({ email: { _icontains: p } }),
+        fields: 'id'
+      })
+      for (const r of res.data || []) {
+        try {
+          await apiDelete('InviiGiustificativiNoLogin', r.id)
+        } catch {
+          /* */
+        }
+      }
+    } catch {
+      /* */
+    }
+  }
+
   // 1. Giustificativi (hard delete)
   for (const p of list) {
     try {
@@ -170,12 +220,13 @@ export async function deleteByPattern(patterns) {
     }
   }
 
-  // 3. Progetti (per pattern o orfani senza famiglia)
+  // 3. Progetti (per pattern su Cognome_Beneficiario o id_progetto, orfani senza famiglia)
   for (const p of list) {
     try {
-      // Cerca per pattern su Cognome_Beneficiario
       const res = await apiGet('Progetti', {
-        filter: JSON.stringify({ Cognome_Beneficiario: { _icontains: p } }),
+        filter: JSON.stringify({
+          _or: [{ Cognome_Beneficiario: { _icontains: p } }, { id_progetto: { _icontains: p } }]
+        }),
         fields: 'id_progetto'
       })
       for (const r of res.data || []) {
@@ -210,7 +261,9 @@ export async function deleteByPattern(patterns) {
   for (const p of list) {
     try {
       const res = await apiGet('Famiglie', {
-        filter: JSON.stringify({ Nome_Famiglia: { _icontains: p } }),
+        filter: JSON.stringify({
+          _or: [{ Nome_Famiglia: { _icontains: p } }, { id_famiglia: { _icontains: p } }]
+        }),
         fields: 'id_famiglia'
       })
       for (const r of res.data || []) {
@@ -241,68 +294,7 @@ export async function deleteByPattern(patterns) {
     }
   }
 
-  // 5. Users diretti (per pattern su email) — prima dei contatti
-  for (const p of list) {
-    try {
-      const res = await apiGetSystem('users', {
-        filter: JSON.stringify({ email: { _icontains: p } }),
-        fields: 'id,email'
-      })
-      for (const u of res.data || []) {
-        if (SAFELIST_EMAILS.includes(u.email)) continue
-        try {
-          await apiDeleteSystem('users', u.id)
-        } catch {
-          /* */
-        }
-      }
-    } catch {
-      /* */
-    }
-  }
-
-  // Pre-fetch safelist user IDs (per proteggere contatti safelistati)
-  const safelistUserIds = new Set()
-  for (const email of SAFELIST_EMAILS) {
-    try {
-      const res = await apiGetSystem('users', {
-        filter: JSON.stringify({ email: { _eq: email } }),
-        fields: 'id'
-      })
-      for (const u of res.data || []) safelistUserIds.add(u.id)
-    } catch {
-      /* */
-    }
-  }
-
-  // 6. Contatti (+ users via FK)
-  for (const p of list) {
-    try {
-      const res = await apiGet('contatti', {
-        filter: JSON.stringify({ _or: [{ Nome: { _icontains: p } }, { Cognome: { _icontains: p } }] }),
-        fields: 'id_contatto,user_id'
-      })
-      for (const r of res.data || []) {
-        if (r.user_id && !safelistUserIds.has(r.user_id)) {
-          try {
-            await apiDeleteSystem('users', r.user_id)
-          } catch {
-            /* */
-          }
-        }
-        if (!safelistUserIds.has(r.user_id)) {
-          try {
-            await apiDelete('contatti', r.id_contatto)
-          } catch {
-            /* */
-          }
-        }
-      }
-    } catch {
-      /* */
-    }
-  }
-
-  // Pulisci set per memory
-  safelistUserIds.clear()
+  // Step 5 e 6 rimossi: la pulizia di contatti e directus_users per pattern
+  // è troppo pericolosa. Contatti e users vengono puliti SOLO tramite
+  // deleteContatti() esplicito (chiamato da pulisciIds quando ids.contatti è popolato).
 }

@@ -366,9 +366,11 @@ test.describe('Riconciliazione', () => {
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i)
-      const caption = row.locator('.q-item__label--caption')
-      const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await row.innerText()
+      const rowText = await row.innerText()
       if (rowText.toLowerCase().includes(testEmail)) {
+        // Su mobile le righe sono expansion-item: espandi per vedere i pulsanti
+        await riconcPage.expandRow(i).catch(() => {})
+        await page.waitForTimeout(300)
         const btn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
           foundBtn = btn
@@ -661,6 +663,7 @@ test.describe('Riconciliazione', () => {
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
+        await riconcPage.expandRow(i)
         targetScarta = rows.nth(i).locator('[data-testid="btn-scarta"]').first()
         break
       }
@@ -716,6 +719,7 @@ test.describe('Riconciliazione', () => {
         if (rowText.toLowerCase().includes(testEmail)) emailMatch = true
       }
       if (emailMatch) {
+        await riconcPage.expandRow(i)
         targetRestore = rowsAfter.nth(i).locator('[data-testid="btn-restore"]').first()
         break
       }
