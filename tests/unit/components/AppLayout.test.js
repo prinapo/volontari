@@ -33,7 +33,7 @@ vi.mock('src/utils/notify', () => ({
   notifySuccess: vi.fn()
 }))
 
-vi.mock('../../package.json', () => ({ version: '3.1.0' }))
+vi.mock('../../package.json', () => ({ version: '3.1.1' }))
 
 describe('AppLayout', () => {
   beforeEach(() => {

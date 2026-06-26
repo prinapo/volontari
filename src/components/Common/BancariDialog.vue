@@ -18,8 +18,8 @@
           label="IBAN"
           data-testid="bancari-iban"
           class="q-mb-md"
-          :rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']"
-          @update:model-value="val => localIban = val?.toUpperCase?.() || val"
+          :rules="IBAN_RULES"
+          @update:model-value="val => localIban = sanitizeIBAN(val)"
         />
         <q-input
           v-model="localIntestatario"
@@ -37,7 +37,7 @@
           label="Salva"
           color="primary"
           :loading="saving"
-          :disable="!hasChanges || (!!localIban && !/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(localIban))"
+          :disable="!hasChanges || (!!localIban && !IBAN_REGEX.test(localIban))"
           @click="handleSave"
         />
       </q-card-actions>
@@ -47,6 +47,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

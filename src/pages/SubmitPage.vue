@@ -72,9 +72,9 @@
                   v-model="form.iban"
                   label="IBAN *"
                   outlined
-                  :rules="[val => !!val || 'Campo obbligatorio', val => /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']"
+                  :rules="[...IBAN_RULES, val => !!val || 'Campo obbligatorio']"
                   lazy-rules
-                  @update:model-value="val => form.iban = val?.toUpperCase?.() || val"
+                  @update:model-value="val => form.iban = sanitizeIBAN(val)"
                 />
                 <q-input
                   v-model="form.intestatario"
@@ -216,6 +216,7 @@ import { computed, reactive, ref } from 'vue'
 import GiustificativoFilePicker from 'components/Giustificativi/GiustificativoFilePicker.vue'
 import { submitService } from 'src/services/submit.service'
 import { FOLDERS } from 'src/utils/constants'
+import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
@@ -259,7 +260,7 @@ function removeGiustificativo(index) {
 
 const canSubmit = computed(() => {
   if (giustificativi.value.length === 0) return false
-  if (!form.value?.iban || !/^[a-z]{2}\d{2}[\da-z]{11,30}$/i.test(form.value.iban)) return false
+  if (!form.value?.iban || !IBAN_REGEX.test(form.value.iban)) return false
   return giustificativi.value.every(g => g.descrizione && g.importo && g.file)
 })
 

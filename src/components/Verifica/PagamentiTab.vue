@@ -204,7 +204,7 @@ flat
       >
         <template #body-cell-iban="props">
           <q-td :props="props">
-            <q-input :model-value="props.row.IBAN" dense outlined :rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']" @update:model-value="val => editFallito(props.row, 'IBAN', val?.toUpperCase?.() || val)" />
+            <q-input :model-value="props.row.IBAN" dense outlined :rules="IBAN_RULES" @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))" />
           </q-td>
         </template>
         <template #body-cell-intestatario="props">
@@ -225,8 +225,8 @@ label="IBAN"
 dense
 outlined
 class="q-mb-sm"
-:rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']"
-@update:model-value="val => editFallito(props.row, 'IBAN', val?.toUpperCase?.() || val)" />
+:rules="IBAN_RULES"
+@update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))" />
                 <q-input :model-value="props.row.Intestatario" label="Intestatario" dense outlined @update:model-value="val => editFallito(props.row, 'Intestatario', val)" />
               </q-card-section>
             </q-card>
@@ -279,6 +279,7 @@ map-options />
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
 import { formatDate } from 'src/utils/formatters'
+import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { usePagamentiStore } from 'stores/pagamenti.store'
 

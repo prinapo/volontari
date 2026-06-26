@@ -76,8 +76,8 @@
             :model-value="famiglieStore.iban"
             label="IBAN"
             :readonly="props.saving"
-            :rules="[val => !val || /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(val) || 'IBAN non valido']"
-            @save="handleIBANSave"
+            :rules="IBAN_RULES"
+            @save="newIBAN => handleIBANSave(sanitizeIBAN(newIBAN))"
           />
           <InlineEditableField
             :model-value="famiglieStore.intestatarioCC"
@@ -95,6 +95,7 @@
 import { useQuasar } from 'quasar'
 import { computed } from 'vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useFamiglieStore } from 'stores/famiglie.store'
 

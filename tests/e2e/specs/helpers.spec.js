@@ -130,4 +130,24 @@ test.describe('Helpers — base', () => {
     const salvaBtn = dialog.locator('button:has-text("Salva")')
     await expect(salvaBtn).not.toBeDisabled()
   })
+
+  test('HF-07: IBAN con spazi → auto-strip e valido @regression', async ({ page }) => {
+    await loginAs(page, 'gestore', auth)
+    const gp = new (await import('../pages/GestionePage.js')).GestionePage(page)
+    await gp.goto()
+    await page.waitForTimeout(500)
+    const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
+    await famiglieTab.click()
+    await page.waitForTimeout(300)
+    await page.locator('button:has-text("Aggiungi Famiglia")').click()
+    await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
+    const dialog = page.locator('.q-dialog:visible')
+    await dialog.locator('[data-testid="famiglia-nome"]').fill('Test HF07')
+    // Incolla IBAN con spazi
+    await dialog.locator('[data-testid="famiglia-iban"]').fill('IT60 X054 2811 1010 0000 0123 456')
+    await page.waitForTimeout(500)
+    // Deve essere stato strippato e reso valido → Salva abilitato
+    const salvaBtn = dialog.locator('button:has-text("Salva")')
+    await expect(salvaBtn).not.toBeDisabled()
+  })
 })
