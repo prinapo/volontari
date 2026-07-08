@@ -929,7 +929,12 @@ async function creaUtenteVolontario(v) {
   try {
     const rolesRes = await usersService.getRoleByName('Volontario')
     const ruoloId = rolesRes.data.data?.[0]?.id
-    const email = v.email?.find(e => e.Primary)?.email_address || v.email?.[0]?.email_address
+    let email = ''
+    if (Array.isArray(v.email)) {
+      email = v.email.find(e => e.Primary)?.email_address || v.email[0]?.email_address || ''
+    } else {
+      email = v.email || ''
+    }
     if (!email) { notifyError($q, null, 'Email mancante'); return }
 
     const userRes = await usersService.searchByEmail(email)
@@ -946,7 +951,6 @@ async function creaUtenteVolontario(v) {
       })
       if (newUserRes.data.data?.id) {
         await contattiService.update(v.id_contatto, { user_id: newUserRes.data.data.id })
-        await usersService.sendInvite(email, import.meta.env.VITE_RESET_URL)
       }
     }
     notifySuccess($q, 'Account creato per ' + (v.Nome || '') + ' ' + (v.Cognome || ''))
@@ -1102,7 +1106,6 @@ async function setVolontarioFlag(c) {
 onMounted(() => {
   store.fetchAll()
   fetchAssociazioni()
-  fetchVolontariSenzaUtente()
   errorLogStore.fetchAll()
 })
 </script>
