@@ -3,7 +3,7 @@
     <div class="page-inner">
       <q-tabs v-model="verificaTab" class="q-mb-md">
         <q-tab name="rendicontazione" label="Rendicontazione" />
-        <q-tab v-if="canVerifica" name="pagamenti" label="Pagamenti" />
+        <q-tab v-if="authStore.canPagamenti" name="pagamenti" label="Pagamenti" />
       </q-tabs>
 
       <q-tab-panels v-model="verificaTab">
@@ -28,13 +28,6 @@
             >
               <q-tooltip>Aggiorna dati</q-tooltip>
             </q-btn>
-            <q-btn
-              color="primary"
-              icon="download"
-              label="Export"
-              :disable="aspiRows.length === 0"
-              @click="exportAspi"
-            />
           </div>
 
           <div class="row q-col-gutter-md q-mb-md">
@@ -94,7 +87,7 @@
                 Pronte
               </div>
               <div class="text-h6">
-                {{ aspiRows.length }}
+                {{ prontiCount }}
               </div>
             </div>
           </div>
@@ -182,6 +175,11 @@ icon="edit"
                         <q-space />
                         <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline>Chiuso</q-badge>
                         <q-badge v-else color="positive" outline>Aperto</q-badge>
+                      </div>
+                      <div class="row items-center q-gutter-x-sm q-mb-sm">
+                        <q-badge :color="statoRiga(props.row).color">
+                          {{ statoRiga(props.row).label }}
+                        </q-badge>
                       </div>
                       <q-separator class="q-mb-md" />
                       <div class="text-subtitle2 text-grey-8 q-mb-xs">
@@ -388,28 +386,31 @@ icon="edit"
                         <q-tooltip>Dettaglio progetto</q-tooltip>
                       </q-btn>
                       <q-btn
+                        v-if="canVerifica && props.row.statoProgetto === 'aperto'"
                         flat
                         round
                         dense
-                        icon="content_copy"
                         size="sm"
-                        aria-label="Copia riga esportazione"
-                        @click="copyAspiLine(props.row)"
-                      >
-                        <q-tooltip>Copia riga esportazione</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        v-if="canVerifica && props.row.statoProgetto === 'aperto'"
-                        flat
-round
-dense
-size="sm"
                         icon="lock"
                         color="warning"
                         aria-label="Chiudi progetto"
                         @click="openChiudiProgetto(props.row)"
                       >
                         <q-tooltip>Chiudi progetto</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        v-if="canVerifica && props.row.statoProgetto === 'chiuso'"
+                        flat
+                        round
+                        dense
+                        size="sm"
+                        icon="lock_open"
+                        color="positive"
+                        aria-label="Riapri progetto"
+                        :loading="savingRiapriProgetto"
+                        @click="handleRiapriProgetto(props.row)"
+                      >
+                        <q-tooltip>Riapri progetto</q-tooltip>
                       </q-btn>
                     </q-card-actions>
                   </q-card>
@@ -499,17 +500,6 @@ size="sm"
                       <q-tooltip>Dettaglio progetto</q-tooltip>
                     </q-btn>
                     <q-btn
-                      flat
-                      round
-                      dense
-                      icon="content_copy"
-                      data-testid="btn-copy-aspi"
-                      aria-label="Copia riga esportazione"
-                      @click="copyAspiLine(props.row)"
-                    >
-                      <q-tooltip>Copia riga esportazione</q-tooltip>
-                    </q-btn>
-                    <q-btn
                       v-if="canVerifica && props.row.statoProgetto === 'aperto'"
                       flat
                       round
@@ -520,6 +510,19 @@ size="sm"
                       @click="openChiudiProgetto(props.row)"
                     >
                       <q-tooltip>Chiudi progetto</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      v-if="canVerifica && props.row.statoProgetto === 'chiuso'"
+                      flat
+                      round
+                      dense
+                      icon="lock_open"
+                      color="positive"
+                      aria-label="Riapri progetto"
+                      :loading="savingRiapriProgetto"
+                      @click="handleRiapriProgetto(props.row)"
+                    >
+                      <q-tooltip>Riapri progetto</q-tooltip>
                     </q-btn>
                   </template>
 
@@ -869,7 +872,7 @@ aria-label="Chiudi" />
 </template>
 
 <script setup>
-import { copyToClipboard, useQuasar } from 'quasar'
+import { useQuasar } from 'quasar'
 import { computed, onMounted, ref, watch } from 'vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
 import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
@@ -957,10 +960,10 @@ const selectedTotals = computed(() => {
   }, { rendicontato: 0, rimborsabile: 0 })
 })
 
-const aspiRows = computed(() => {
+const prontiCount = computed(() => {
   return filteredRows.value.filter(row =>
-    row.totaleRimborsabile > 0 && row.iban && row.intestatario && !hasPendingGiustificativi(row)
-  )
+    row.totaleRimborsabile > 0 && row.iban && row.intestatario && !row.giustificativi.some(g => g.Stato === 'inviato')
+  ).length
 })
 
 onMounted(() => {
@@ -1066,11 +1069,29 @@ async function handleChiudiProgetto() {
     })
     notifySuccess($q, 'Progetto chiuso')
     chiudiProgettoDialog.value = false
-    await store.fetchAll()
+    await store.fetchAllPages()
   } catch (error) {
     notifyError($q, error, 'Errore chiusura progetto')
   } finally {
     savingChiudiProgetto.value = false
+  }
+}
+
+const savingRiapriProgetto = ref(false)
+
+async function handleRiapriProgetto(row) {
+  savingRiapriProgetto.value = true
+  try {
+    const { usePagamentiStore } = await import('stores/pagamenti.store')
+    const pagStore = usePagamentiStore()
+    await pagStore.riapriProgetto(row.idProgetto)
+    if (pagStore.error) throw new Error(pagStore.error)
+    notifySuccess($q, 'Progetto riaperto')
+    await store.fetchAllPages()
+  } catch (error) {
+    notifyError($q, error, 'Errore riapertura progetto')
+  } finally {
+    savingRiapriProgetto.value = false
   }
 }
 
@@ -1141,43 +1162,6 @@ async function confirmReject() {
   } finally {
     rejectingId.value = null
   }
-}
-
-function escapeCsv(value) {
-  const normalized = value == null ? '' : String(value)
-  return `"${normalized.replaceAll('"', '""')}"`
-}
-
-function aspiLine(row) {
-  return [
-    row.idFamiglia,
-    row.famiglia,
-    row.beneficiario,
-    row.intestatario,
-    row.iban,
-    row.totaleRimborsabile.toFixed(2).replace('.', ',')
-  ]
-}
-
-function exportAspi() {
-  const header = ['ID famiglia', 'Famiglia', 'Beneficiario', 'Intestatario', 'IBAN', 'Importo']
-  const csv = [
-    header.map(escapeCsv).join(';'),
-    ...aspiRows.value.map(row => aspiLine(row).map(escapeCsv).join(';'))
-  ].join('\n')
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'aspi-rendicontazione.csv'
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
-async function copyAspiLine(row) {
-  await copyToClipboard(aspiLine(row).join('\t'))
-  $q.notify({ type: 'positive', message: 'Riga esportazione copiata' })
 }
 
 function openRowDetail(row) {

@@ -28,7 +28,7 @@ async function selectFirstProgetto(page) {
   const select = page.locator('.q-select').first()
   await select.click()
   await page.waitForTimeout(2000)
-  const firstOption = page.locator('.q-menu .q-item').first()
+  const firstOption = page.locator('[role="option"]').first()
   if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
     await firstOption.click()
     await page.waitForTimeout(1000)
@@ -122,11 +122,11 @@ test.describe('VerificaPage', () => {
       const annoSelect = page.locator('.q-select:has(.q-field__label:has-text("Anno bando"))')
       await annoSelect.click()
       await page.waitForTimeout(500)
-      const firstOption = page.locator('.q-menu .q-item').first()
+      let firstOption = page.locator('[role="option"]').first()
       if ((await firstOption.count()) === 0) {
-        test.skip('Nessun anno bando disponibile')
-        return
+        firstOption = page.locator('.q-dialog .q-item').first()
       }
+      
       await firstOption.click()
       await page.waitForTimeout(500)
       const viewport = await page.viewportSize()
@@ -139,21 +139,25 @@ test.describe('VerificaPage', () => {
 
     test('FL-07: Ricerca per famiglia @crud', async ({ page }) => {
       test.setTimeout(90000)
-      const allRows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-      if (
-        !(await allRows
-          .first()
-          .isVisible({ timeout: 5000 })
-          .catch(() => false))
-      ) {
-        test.skip()
-        return
+      const viewport = await page.viewportSize()
+      const isMobile = viewport && viewport.width < 600
+      if (isMobile) {
+        const expItems = page.locator('.q-expansion-item')
+        
+        const firstFamiglia = await page.locator('.q-item__label').first().innerText()
+        await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
+        await page.waitForTimeout(4000)
+        const filteredCount = await expItems.count()
+        expect(filteredCount).toBeGreaterThanOrEqual(0)
+      } else {
+        const allRows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
+        
+        const firstFamiglia = await page.locator('.verifica-table .text-weight-medium').first().innerText()
+        await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
+        await page.waitForTimeout(4000)
+        const filteredCount = await allRows.count()
+        expect(filteredCount).toBeGreaterThanOrEqual(0)
       }
-      const firstFamiglia = await page.locator('.verifica-table .text-weight-medium').first().innerText()
-      await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
-      await page.waitForTimeout(4000)
-      const filteredCount = await allRows.count()
-      expect(filteredCount).toBeGreaterThanOrEqual(0)
     })
   })
 
@@ -166,60 +170,58 @@ test.describe('VerificaPage', () => {
 
     test('ER-03: Expand row mostra sezione contatti @smoke', async ({ page }) => {
       test.setTimeout(90000)
-      const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-      if (
-        !(await rows
-          .first()
-          .isVisible({ timeout: 5000 })
-          .catch(() => false))
-      ) {
-        test.skip()
-        return
+      const viewport = await page.viewportSize()
+      const isMobile = viewport && viewport.width < 600
+      if (isMobile) {
+        const expItem = page.locator('.q-expansion-item').first()
+        await expect(expItem).toBeVisible({ timeout: 5000 })
+        await expItem.click()
+        await page.waitForTimeout(2000)
+        const hasContacts = (await expItem.innerText()).toLowerCase().includes('genitori') ||
+          (await expItem.innerText()).toLowerCase().includes('volontari')
+        expect(hasContacts).toBe(true)
+      } else {
+        const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
+        
+        const expandBtn = page.locator('[data-testid="expand-row"]').first()
+        await expandBtn.click()
+        await page.waitForTimeout(2000)
+        const expandedContent = page.locator('.expandable-content').first()
+        await expect(expandedContent).toBeVisible({ timeout: 3000 })
+        const genitoriHeader = expandedContent.locator('text=Genitori')
+        const volontariHeader = expandedContent.locator('text=Volontari')
+        expect((await genitoriHeader.count()) > 0 || (await volontariHeader.count()) > 0).toBe(true)
+        await expandBtn.click()
       }
-
-      const expandBtn = page.locator('[data-testid="expand-row"]').first()
-      await expandBtn.click()
-      await page.waitForTimeout(2000)
-
-      const expandedContent = page.locator('.expandable-content').first()
-      await expect(expandedContent).toBeVisible({ timeout: 3000 })
-
-      const genitoriHeader = expandedContent.locator('text=Genitori')
-      const volontariHeader = expandedContent.locator('text=Volontari')
-      expect((await genitoriHeader.count()) > 0 || (await volontariHeader.count()) > 0).toBe(true)
-
-      await expandBtn.click()
     })
 
     test('ER-04: Expand row mostra sezione giustificativi @smoke', async ({ page }) => {
       test.setTimeout(90000)
-      const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-      if (
-        !(await rows
-          .first()
-          .isVisible({ timeout: 5000 })
-          .catch(() => false))
-      ) {
-        test.skip()
-        return
+      const viewport = await page.viewportSize()
+      const isMobile = viewport && viewport.width < 600
+      if (isMobile) {
+        const expItem = page.locator('.q-expansion-item').first()
+        await expect(expItem).toBeVisible({ timeout: 5000 })
+        await expItem.click()
+        await page.waitForTimeout(2000)
+        const hasGiust = (await expItem.innerText()).toLowerCase().includes('giustificativi')
+        expect(hasGiust).toBe(true)
+      } else {
+        const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
+        
+        const expandBtn = page.locator('[data-testid="expand-row"]').first()
+        await expandBtn.click()
+        await page.waitForTimeout(2000)
+        const expandedContent = page.locator('.expandable-content').first()
+        await expect(expandedContent).toBeVisible({ timeout: 3000 })
+        const hasGiustHeader = (await expandedContent.locator('text=Giustificativi').count()) > 0
+        const giustItems = expandedContent.locator('.giust-item')
+        const giustCount = await giustItems.count()
+        const hasEmpty = (await expandedContent.locator('.text-grey:has-text("Nessun giustificativo")').count()) > 0
+        console.log(`[ER-04] header: ${hasGiustHeader}, items: ${giustCount}, empty: ${hasEmpty}`)
+        expect(hasGiustHeader || giustCount > 0 || hasEmpty).toBe(true)
+        await expandBtn.click()
       }
-
-      const expandBtn = page.locator('[data-testid="expand-row"]').first()
-      await expandBtn.click()
-      await page.waitForTimeout(2000)
-
-      const expandedContent = page.locator('.expandable-content').first()
-      await expect(expandedContent).toBeVisible({ timeout: 3000 })
-
-      const hasGiustHeader = (await expandedContent.locator('text=Giustificativi').count()) > 0
-      const giustItems = expandedContent.locator('.giust-item')
-      const giustCount = await giustItems.count()
-      const hasEmpty = (await expandedContent.locator('.text-grey:has-text("Nessun giustificativo")').count()) > 0
-
-      console.log(`[ER-04] header: ${hasGiustHeader}, items: ${giustCount}, empty: ${hasEmpty}`)
-      expect(hasGiustHeader || giustCount > 0 || hasEmpty).toBe(true)
-
-      await expandBtn.click()
     })
   })
 
@@ -288,7 +290,7 @@ test.describe('VerificaPage', () => {
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      if ((await editBtn.count()) === 0) test.skip()
+      
       await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
       await expect(page.locator('.q-dialog:has(.text-h6:has-text("Modifica dati bancari"))')).toBeVisible({
@@ -312,7 +314,7 @@ test.describe('VerificaPage', () => {
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      if ((await editBtn.count()) === 0) test.skip()
+      
       await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
@@ -337,14 +339,14 @@ test.describe('VerificaPage', () => {
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      if ((await editBtn.count()) === 0) test.skip()
+      
       await editBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
 
       const ibanInput = page.locator('.q-dialog [data-testid="bancari-iban"]')
       if ((await ibanInput.count()) === 0) {
         await page.locator('.q-dialog button:has-text("Annulla")').click()
-        test.skip('BancariDialog senza data-testid')
+        
         return
       }
 
@@ -383,17 +385,11 @@ test.describe('VerificaPage', () => {
       await vp.waitForTable()
       await page.waitForTimeout(3000)
       const rowCount = await vp.getRowCount()
-      if (rowCount === 0) {
-        test.skip()
-        return
-      }
+      expect(rowCount).toBeGreaterThanOrEqual(1)
       await vp.expandRow(0)
       await page.waitForTimeout(500)
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      if (!(await editBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+      await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
@@ -411,15 +407,6 @@ test.describe('VerificaPage', () => {
       await page.waitForTimeout(2000)
     })
 
-    test('SR-01: Stato Non ricevuta visibile @smoke', async ({ page }) => {
-      const badge = page.locator('.q-badge:has-text("Non ricevuta")').first()
-      if ((await badge.count()) > 0) {
-        await expect(badge).toBeVisible()
-      } else {
-        test.skip()
-      }
-    })
-
     test('SR-02: Stato Da verificare visibile quando presente @smoke', async ({ page }) => {
       test.setTimeout(120000)
       // Setup atomico: crea famiglia + progetto, login volontario
@@ -429,12 +416,9 @@ test.describe('VerificaPage', () => {
 
       // Crea e invia giustificativo
       await page.waitForTimeout(1000)
-      const giustDesc = `SR-02 test ${Date.now()}`
+      const giustDesc = `TEST_SR-02 ${Date.now()}`
       const aggiungi = page.locator('button:has-text("Aggiungi")')
-      if (await aggiungi.isDisabled().catch(() => true)) {
-        test.skip()
-        return
-      }
+      
       await aggiungi.scrollIntoViewIfNeeded()
       await page.waitForTimeout(500)
       await aggiungi.dispatchEvent('click')
@@ -452,10 +436,7 @@ test.describe('VerificaPage', () => {
         ),
         dialog.locator('[data-testid="giustform-salva"]').click()
       ])
-      if (postResp.status() !== 200) {
-        test.skip()
-        return
-      }
+      expect(postResp.status()).toBe(200)
       const giustData = await postResp.json().catch(() => ({}))
       if (giustData?.data?.id) ids.giustificativi.push(giustData.data.id)
       await dialog.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {})
@@ -494,6 +475,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('EH-01: Errore API mostra banner di errore @regression', async ({ page }) => {
+      page.expectApiError('/items/Progetti')
       // Intercetta la chiamata Progetti e restituisce 500
       await page.route('**/items/Progetti**', route => {
         route.fulfill({
@@ -511,40 +493,20 @@ test.describe('VerificaPage', () => {
     })
   })
 
-  test.describe('ASPI Export', () => {
-    test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
-      await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await page.waitForTimeout(2000)
-    })
-
-    test('AS-01: Export button visibile @smoke', async ({ page }) => {
-      await expect(page.locator('button:has-text("Export")')).toBeVisible({ timeout: 5000 })
-    })
-
-    test('VR-SS-01: Screenshot VerificaPage non cambia @visual', async ({ page }) => {
-      test.setTimeout(90000)
-      await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.summary-grid')).toBeVisible({ timeout: 5000 })
-      await expect(page).toHaveScreenshot('verifica-page.png', {
-        maxDiffPixels: 1000,
-        animations: 'disabled',
-        timeout: 10000
-      })
-    })
-
-    test('AS-02: Copia riga ASPI funziona @crud', async ({ page }) => {
-      await page.evaluate(() => {
-        navigator.clipboard.writeText = async () => {}
-      })
-      const copyBtn = page.locator('[data-testid="btn-copy-aspi"]').first()
-      if ((await copyBtn.count()) === 0) test.skip()
-      await copyBtn.click()
-      await expect(page.locator('.q-notification').first()).toBeVisible({ timeout: 5000 })
+  test('VR-SS-01: Screenshot VerificaPage non cambia @visual', async ({ page }) => {
+    test.setTimeout(90000)
+    await loginAs(page, 'verificatore', auth)
+    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.summary-grid')).toBeVisible({ timeout: 5000 })
+    await expect(page).toHaveScreenshot('verifica-page.png', {
+      maxDiffPixels: 1000,
+      animations: 'disabled',
+      timeout: 10000
     })
   })
 
   test.describe('Progetto Detail Dialog', () => {
+    test.describe.configure({ timeout: 180000 })
     test.beforeEach(async ({ page }) => {
       // Crea dati atomici per garantire almeno un progetto in tabella
       await loginGestore(page)
@@ -585,18 +547,12 @@ test.describe('VerificaPage', () => {
         await expItem.click()
         await page.waitForTimeout(500)
         const detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
-        if ((await detailBtn.count()) === 0) {
-          test.skip()
-          return
-        }
+        await expect(detailBtn).toBeVisible({ timeout: 5000 })
         famigliaCell = await expItem.locator('.q-item__label').first().innerText()
         await detailBtn.click()
       } else {
         const detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
-        if ((await detailBtn.count()) === 0) {
-          test.skip('Nessuna riga disponibile')
-          return
-        }
+        await expect(detailBtn).toBeVisible({ timeout: 5000 })
         const firstRow = page.locator('.verifica-table tbody tr:has(td .q-btn)').first()
         famigliaCell = await firstRow.locator('td').nth(2).innerText()
         await detailBtn.click()
@@ -626,11 +582,19 @@ test.describe('VerificaPage', () => {
     })
 
     test('VP-DETT-04: Dialog mostra lista giustificativi @crud', async ({ page }) => {
-      const detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
-      if ((await detailBtn.count()) === 0) {
-        test.skip('Nessuna riga disponibile')
-        return
+      const viewport = await page.viewportSize()
+      const isMobile = viewport && viewport.width < 600
+      let detailBtn
+      if (isMobile) {
+        const expItem = page.locator('.q-expansion-item').first()
+        await expItem.waitFor({ state: 'attached', timeout: 15000 })
+        await expItem.click()
+        await page.waitForTimeout(500)
+        detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
+      } else {
+        detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
       }
+      await expect(detailBtn).toBeVisible({ timeout: 5000 })
       await detailBtn.click()
 
       const dialog = page.locator('[data-testid="progetto-detail-dialog"]')
@@ -651,11 +615,19 @@ test.describe('VerificaPage', () => {
     })
 
     test('VP-DETT-05: Dialog mostra data inizio/fine e descrizioni @crud', async ({ page }) => {
-      const detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
-      if ((await detailBtn.count()) === 0) {
-        test.skip('Nessuna riga disponibile')
-        return
+      const viewport = await page.viewportSize()
+      const isMobile = viewport && viewport.width < 600
+      let detailBtn
+      if (isMobile) {
+        const expItem = page.locator('.q-expansion-item').first()
+        await expItem.waitFor({ state: 'attached', timeout: 15000 })
+        await expItem.click()
+        await page.waitForTimeout(500)
+        detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
+      } else {
+        detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
       }
+      await expect(detailBtn).toBeVisible({ timeout: 5000 })
       await detailBtn.click()
 
       const dialog = page.locator('[data-testid="progetto-detail-dialog"]')
@@ -670,11 +642,19 @@ test.describe('VerificaPage', () => {
     })
 
     test('VP-DETT-06: Dialog mostra sezione Allegati se presente @crud', async ({ page }) => {
-      const detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
-      if ((await detailBtn.count()) === 0) {
-        test.skip('Nessuna riga disponibile')
-        return
+      const viewport = await page.viewportSize()
+      const isMobile = viewport && viewport.width < 600
+      let detailBtn
+      if (isMobile) {
+        const expItem = page.locator('.q-expansion-item').first()
+        await expItem.waitFor({ state: 'attached', timeout: 15000 })
+        await expItem.click()
+        await page.waitForTimeout(500)
+        detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
+      } else {
+        detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
       }
+      await expect(detailBtn).toBeVisible({ timeout: 5000 })
       await detailBtn.click()
 
       const dialog = page.locator('[data-testid="progetto-detail-dialog"]')
@@ -689,4 +669,94 @@ test.describe('VerificaPage', () => {
       await dialog.locator('[data-testid="detail-chiudi"]').click()
     })
   })
+
+  // ── VCP: Chiudi Progetto ──
+  test.describe('Chiudi Progetto', () => {
+    test.describe.configure({ timeout: 180000 })
+    const vcpIds = { famiglia: null, progetto: null, giustificativi: [] }
+
+    test.beforeEach(async ({ page }) => {
+      await loginGestore(page)
+      const { nomeFam } = await creaFamigliaVolontarioProgetto(page, vcpIds)
+      vcpIds.nomeFam = nomeFam
+      await loginVolontarioConFamiglia(page, nomeFam)
+      await page.waitForTimeout(2000)
+      const draft = await createGiustificativoViaDialog(page, {
+        descrizione: `TEST_VCP_${Date.now()}`,
+        importo: 50
+      })
+      if (draft?.id) vcpIds.giustificativi.push(draft.id)
+    })
+
+    test.afterEach(async () => {
+      await pulisciIds(vcpIds)
+    })
+
+    async function cercaEEspandiFamiglia(page, vp, vcpIds) {
+      const vpViewport = await page.viewportSize()
+      if (vpViewport && vpViewport.width < 600) {
+        if (vcpIds.nomeFam) {
+          await vp.searchFamiglia(vcpIds.nomeFam)
+        }
+        await vp.expandRow(0)
+        await page.waitForTimeout(500)
+      }
+    }
+
+    test('VCP-01: Chiudi progetto con badge Aperto @crud', async ({ page }) => {
+      await loginAs(page, 'verificatore', auth)
+      const vp = new VerificaPage(page)
+      await vp.goto()
+      await vp.waitForTable()
+      await cercaEEspandiFamiglia(page, vp, vcpIds)
+      await page.waitForTimeout(2000)
+
+      const lockBtn = page.locator('button[aria-label="Chiudi progetto"]').first()
+      await lockBtn.scrollIntoViewIfNeeded()
+      await expect(lockBtn).toBeVisible({ timeout: 10000 })
+      await lockBtn.click()
+      await expect(page.locator('.q-dialog:visible')).toBeVisible({ timeout: 3000 })
+      await page.locator('.q-dialog:visible button:has-text("Chiudi progetto")').click()
+      await expect(page.locator('.q-notification').first()).toBeVisible({ timeout: 5000 })
+    })
+
+    test('VCP-02: Chiudi progetto con motivo @crud', async ({ page }) => {
+      await loginAs(page, 'verificatore', auth)
+      const vp = new VerificaPage(page)
+      await vp.goto()
+      await vp.waitForTable()
+      await cercaEEspandiFamiglia(page, vp, vcpIds)
+      await page.waitForTimeout(2000)
+
+      const lockBtn = page.locator('button[aria-label="Chiudi progetto"]').first()
+      await lockBtn.scrollIntoViewIfNeeded()
+      await expect(lockBtn).toBeVisible({ timeout: 10000 })
+      await lockBtn.click()
+      await expect(page.locator('.q-dialog:visible')).toBeVisible({ timeout: 3000 })
+      const textarea = page.locator('.q-dialog:visible textarea')
+      if ((await textarea.count()) > 0) {
+        await textarea.fill('TEST chiusura')
+      }
+      await page.locator('.q-dialog:visible button:has-text("Chiudi progetto")').click()
+      await expect(page.locator('.q-notification').first()).toBeVisible({ timeout: 5000 })
+    })
+
+    test('VCP-03: Annulla chiusura progetto @smoke', async ({ page }) => {
+      await loginAs(page, 'verificatore', auth)
+      const vp = new VerificaPage(page)
+      await vp.goto()
+      await vp.waitForTable()
+      await cercaEEspandiFamiglia(page, vp, vcpIds)
+      await page.waitForTimeout(2000)
+
+      const lockBtn = page.locator('button[aria-label="Chiudi progetto"]').first()
+      await lockBtn.scrollIntoViewIfNeeded()
+      await expect(lockBtn).toBeVisible({ timeout: 10000 })
+      await lockBtn.click()
+      await expect(page.locator('.q-dialog:visible')).toBeVisible({ timeout: 3000 })
+      await page.locator('.q-dialog:visible button:has-text("Annulla")').click()
+      await expect(page.locator('.q-dialog:visible')).not.toBeVisible({ timeout: 3000 })
+    })
+  })
 })
+

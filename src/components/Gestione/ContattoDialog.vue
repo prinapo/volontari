@@ -48,6 +48,7 @@
               class="col-12 col-sm-6"
               label="Numero di cellulare"
               data-testid="contatto-cellulare"
+              :rules="[val => !val || /[\d+]/.test(val) || 'Inserire un numero di telefono valido']"
               outlined
               dense
             />
@@ -131,7 +132,7 @@
           color="primary"
           label="Salva"
           :loading="store.saving"
-          :disable="!form.Nome || !form.Cognome"
+          :disable="!form.Nome || !form.Cognome || (!!form.Numero_di_cellulare && !/[\d+]/.test(form.Numero_di_cellulare))"
           @click="handleSave"
         />
       </q-card-actions>
@@ -306,7 +307,7 @@ async function handleSaveCreate() {
     id_contatto: generateContattoId(),
     Nome: form.value.Nome,
     Cognome: form.value.Cognome,
-    Email: emails.value[0]?.email_address || '',
+    Email: (emails.value[0]?.email_address || '').toLowerCase(),
     Numero_di_cellulare: form.value.Numero_di_cellulare,
     Numero_di_telefono: form.value.Numero_di_telefono,
     IsReferente: form.value.IsReferente

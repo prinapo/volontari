@@ -260,7 +260,7 @@ function removeGiustificativo(index) {
 
 const canSubmit = computed(() => {
   if (giustificativi.value.length === 0) return false
-  if (!form.value?.iban || !IBAN_REGEX.test(form.value.iban)) return false
+  if (!form.iban || !IBAN_REGEX.test(form.iban)) return false
   return giustificativi.value.every(g => g.descrizione && g.importo && g.file)
 })
 
@@ -277,6 +277,7 @@ async function handleSubmit() {
 
       await submitService.createSubmission({
         ...form,
+        email: (form.email || '').toLowerCase(),
         descrizione: g.descrizione,
         importo: Number.parseFloat(g.importo),
         data: g.data,

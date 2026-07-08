@@ -15,7 +15,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
 
   getters: {
     draftItems: state => state.items.filter(i => i.Stato === 'draft'),
-    inviatoItems: state => state.items.filter(i => i.Stato === 'inviato' || i.Stato === 'approvato'),
+    inviatoItems: state => state.items.filter(i => i.Stato === 'inviato'),
     canEdit: state => itemId => {
       const item = state.items.find(i => i.id === itemId)
       return item && item.Stato === 'draft'

@@ -6,11 +6,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   globalSetup: resolve(__dirname, 'global-setup.mjs'),
+  globalTeardown: resolve(__dirname, 'global-teardown.mjs'),
   testDir: './specs',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 4 : 4,
+  workers: process.env.CI ? 2 : 1,
   reporter: [['list'], [resolve(__dirname, 'helpers/results-reporter.cjs')]],
   use: {
     baseURL: 'http://localhost:9000',

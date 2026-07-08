@@ -22,6 +22,8 @@
     "test:e2e": "npx playwright test --config tests/e2e/playwright.config.js",
     "test:e2e:ui": "npx playwright test --config tests/e2e/playwright.config.js --ui",
     "deploy": "node scripts/deploy-ftp.mjs",
+    "deploy:init": "node scripts/deploy-init.mjs",
+    "rollback": "node scripts/rollback.mjs",
     "release": "quasar build && node scripts/deploy-ftp.mjs",
     "prepare": "husky"
   },

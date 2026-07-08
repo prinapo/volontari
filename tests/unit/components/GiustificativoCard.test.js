@@ -1,6 +1,23 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { quasarMount } from '../quasar-mount'
 import GiustificativoCard from 'src/components/Giustificativi/GiustificativoCard.vue'
+
+const mockDialogOnOk = vi.fn()
+const mockDialog = vi.fn(() => ({
+  onOk: callback => {
+    mockDialogOnOk(callback)
+    callback()
+    return {}
+  }
+}))
+
+vi.mock('quasar', async () => {
+  const actual = await vi.importActual('quasar')
+  return {
+    ...actual,
+    useQuasar: () => ({ dialog: mockDialog })
+  }
+})
 
 describe('GiustificativoCard', () => {
   const draftItem = {
@@ -44,5 +61,27 @@ describe('GiustificativoCard', () => {
       await sendBtn.trigger('click')
       expect(wrapper.emitted('submit')).toBeTruthy()
     }
+  })
+
+  it('opens delete confirmation and emits invalida', async () => {
+    const wrapper = quasarMount(GiustificativoCard, {
+      props: { item: draftItem, canEdit: true }
+    })
+    const deleteBtn = wrapper.findAllComponents({ name: 'QBtn' }).find(b => b.text().includes('Elimina'))
+    if (deleteBtn) {
+      await deleteBtn.trigger('click')
+      expect(mockDialog).toHaveBeenCalled()
+      expect(wrapper.emitted('invalida')).toBeTruthy()
+      expect(wrapper.emitted('invalida')[0]).toEqual([1])
+    }
+  })
+
+  it('shows attachment actions when file exists', () => {
+    const wrapper = quasarMount(GiustificativoCard, {
+      props: { item: { ...draftItem, Allegato: 'file-1' }, canEdit: true }
+    })
+    const buttons = wrapper.findAllComponents({ name: 'QBtn' })
+    expect(buttons.length).toBeGreaterThanOrEqual(4)
+    expect(wrapper.text()).not.toContain('Nessun allegato')
   })
 })

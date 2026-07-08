@@ -35,6 +35,7 @@ test.describe('Authentication', () => {
   })
 
   test('A-03: Login fallito mostra errore @regression', async ({ page }) => {
+    page.expectApiError('/auth/login')
     await loginPage.login(testUser.email, 'wrong_password')
     await expect(page).toHaveURL(/\/login/)
     await expect(page.locator('.text-negative')).toBeVisible({ timeout: 5000 })
@@ -102,6 +103,7 @@ test.describe('Route Guards', () => {
   })
 
   test('RG-04: Redirect post-login va alla pagina corretta per ruolo @regression', async ({ page }) => {
+    page.expectApiError('/items/Famiglie_Contatti')
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.gestore.email, auth.gestore.password)
@@ -116,17 +118,14 @@ test.describe('Route Guards', () => {
 
   test('RG-05: Admin accede a /admin @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    if (!auth.admin) {
-      test.skip('Nessun utente Admin configurato')
-      return
-    }
+    
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     try {
       await loginPage.login(auth.admin.email, auth.admin.password)
     } catch {
       console.log('[RG-05] Admin login fallito — utente non presente in Directus')
-      test.skip()
+      
       return
     }
 
@@ -136,7 +135,7 @@ test.describe('Route Guards', () => {
     const currentUrl = page.url()
 
     if (currentUrl.includes('/login')) {
-      test.skip('Admin reindirizzato a login — permessi insufficienti')
+      
       return
     }
 

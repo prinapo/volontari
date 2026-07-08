@@ -2,8 +2,10 @@ import { test, expect } from '../helpers/console.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { loginAs } from '../helpers/login.js'
 import { createTestSubmission } from '../helpers/submission.js'
-import { apiLogin, apiGet, apiPost, apiPatch, apiDelete } from '../helpers/api.js'
+import { apiLogin, apiDelete } from '../helpers/api.js'
 import { deleteFamiglie, deleteContatti, deleteProgetti } from '../helpers/cleanup.js'
+import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
+import { createContattoViaUI, createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from '../helpers/pagina-gestione.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 let _ecIds = { contatti: [], famiglie: [], progetti: [], invii: [] }
@@ -44,43 +46,48 @@ test.afterEach(async () => {
   _ecIds = { contatti: [], famiglie: [], progetti: [], invii: [] }
 })
 
-async function creaContattoGenitore(email, nome = 'EmailTest', cognome = 'Genitore') {
-  const id = Math.floor(Math.random() * 9000000) + 1000000
-  await apiPost('contatti', { id_contatto: id, Nome: nome, Cognome: cognome, IsGenitore: true })
-  const emailRes = await apiPost('email', { email_address: email, Contatto_Relation: id, Primary: true })
-  _ecIds.contatti.push(id)
-  // Crea anche una famiglia con questo genitore per la riconciliazione
-  const famId = `FAM_EC_${Date.now()}_${Math.floor(Math.random() * 1000)}`
-  const famRes = await apiPost('Famiglie', { id_famiglia: famId, Nome_Famiglia: `Test Famiglia ${Date.now()}` })
-  _ecIds.famiglie.push(famId)
-  await apiPost('Famiglie_Contatti', {
-    id: Math.floor(Math.random() * 9000000) + 2000000,
-    Contatto: id,
-    Famiglia: famId,
-    Ruolo_nella_Famiglia: 'Genitore',
-    Disattivo: false
+async function creaContattoGenitore(page, email, nome = 'TEST_EmailCon', cognome = 'TEST_Genitore') {
+  await loginAs(page, 'gestore', auth)
+
+  const contatto = await createContattoViaUI(page, { nome, cognome, email: email.toLowerCase() })
+  _ecIds.contatti.push(contatto.id_contatto)
+
+  const ts = Date.now()
+  const prefix = `TEST_EC_${ts}_${Math.floor(Math.random() * 1000)}`
+  const fam = await createFamigliaViaUI(page, { nomeFamiglia: prefix })
+  _ecIds.famiglie.push(fam.id_famiglia)
+
+  await assegnaContattoAFamigliaViaUI(page, {
+    famigliaNome: prefix,
+    searchTerm: email.toLowerCase(),
+    fullName: contatto.displayName,
+    ruolo: 'Genitore'
   })
-  // Crea progetto per la famiglia
-  const progRes = await apiPost('Progetti', {
-    id_progetto: Math.floor(Math.random() * 9000000) + 3000000,
-    Cognome_Beneficiario: cognome,
-    Nome_Beneficiario: nome,
-    AnnoBando: new Date().getFullYear(),
-    Allocato: 5000,
-    Famiglia: famId,
-    StatoProgetto: 'aperto'
-  })
-  _ecIds.progetti.push(progRes.data.id_progetto)
-  return { contattoId: id, famigliaId: famId }
+
+  const progettoId = await createProgettoViaUI(
+    page,
+    {
+      famigliaNome: prefix,
+      Cognome_Beneficiario: prefix,
+      Nome_Beneficiario: prefix,
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Data_Inizio_Progetto: '2026-01-01',
+      Data_Fine_Progetto: '2026-12-31'
+    },
+    auth
+  )
+  _ecIds.progetti.push(progettoId)
+  return { contattoId: contatto.id_contatto, famigliaId: fam.id_famiglia }
 }
 
 test.describe('Email Case-Insensitive Matching', () => {
   test('EC-01: Submission con email uppercase matcha contatto lowercase @regression', async ({ page }) => {
     test.setTimeout(120000)
-    const baseEmail = `ec01_${Date.now()}@test.com`
-    await creaContattoGenitore(baseEmail)
+    const baseEmail = `TEST_EC01_${Date.now()}@test.com`
+    await creaContattoGenitore(page, baseEmail)
     const testEmail = baseEmail.toUpperCase()
-    const testDesc = `EC-01 upper ${Date.now()}`
+    const testDesc = `TEST_EC01_upper_${Date.now()}`
 
     const subData = await createTestSubmission(page, {
       email: testEmail,
@@ -119,17 +126,52 @@ test.describe('Email Case-Insensitive Matching', () => {
 
   test('EC-02: Submission con email lowercase matcha contatto uppercase @regression', async ({ page }) => {
     test.setTimeout(120000)
-    // Skip: il matching riconciliazione ha un edge case
-    // con contatto uppercase + submission lowercase (bug riconosciuto)
-    test.skip('Edge case riconciliazione case-sensitivity')
+    const baseEmail = `TEST_EC02_${Date.now()}@test.com`
+    await creaContattoGenitore(page, baseEmail.toUpperCase())
+    const testEmail = baseEmail.toLowerCase()
+    const testDesc = `TEST_EC02_lower_${Date.now()}`
+
+    const subData = await createTestSubmission(page, {
+      email: testEmail,
+      descrizione: testDesc
+    })
+    if (subData?.id) _ecIds.invii.push(subData.id)
+
+    await loginAs(page, 'gestore_verifica', auth)
+
+    const riconcPage = new RiconciliazionePage(page)
+    await riconcPage.goto()
+    await riconcPage.waitForTable()
+
+    const rows = riconcPage.rowLocator
+    const count = await rows.count()
+    let found = false
+    for (let i = 0; i < count; i++) {
+      const rowText = await rows.nth(i).innerText()
+      if (rowText.toLowerCase().includes(testEmail.toLowerCase())) {
+        await riconcPage.expandRow(i)
+        const badges = rows.nth(i).locator('.q-badge')
+        const badgeCount = await badges.count()
+        for (let j = 0; j < badgeCount; j++) {
+          const text = await badges.nth(j).innerText()
+          if (text.includes('Contatto verificato') || text.includes('Non è genitore')) {
+            found = true
+            break
+          }
+        }
+        if (found) break
+      }
+    }
+
+    expect(found).toBe(true)
   })
 
   test('EC-03: Submission con email mixed-case matcha contatto lowercase @regression', async ({ page }) => {
     test.setTimeout(120000)
-    const baseEmail = `ec03_${Date.now()}@test.com`
-    await creaContattoGenitore(baseEmail.toLowerCase())
-    const testEmail = baseEmail.replace('ec03_', 'Ec03_')
-    const testDesc = `EC-03 mixed ${Date.now()}`
+    const baseEmail = `TEST_EC03_${Date.now()}@test.com`
+    await creaContattoGenitore(page, baseEmail.toLowerCase())
+    const testEmail = baseEmail.replace('TEST_EC03_', 'Test_Ec03_')
+    const testDesc = `TEST_EC03_mixed_${Date.now()}`
 
     const subData = await createTestSubmission(page, {
       email: testEmail,
@@ -168,8 +210,8 @@ test.describe('Email Case-Insensitive Matching', () => {
 
   test('EC-04: Email sconosciuta mostra contatto da creare @regression', async ({ page }) => {
     test.setTimeout(120000)
-    const unknownEmail = `sconosciuto.${Date.now()}@test.com`
-    const testDesc = `EC-04 unknown ${Date.now()}`
+    const unknownEmail = `test_ec04_${Date.now()}@test.com`
+    const testDesc = `TEST_EC04_unknown_${Date.now()}`
 
     const subData = await createTestSubmission(page, {
       email: unknownEmail,

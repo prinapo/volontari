@@ -6,7 +6,7 @@ import { deleteFamiglie, deleteContatti, deleteProgetti } from '../helpers/clean
 import { createFamigliaViaUI, createContattoViaUI } from '../helpers/pagina-gestione.js'
 
 function uid(label) {
-  return `__TEST_HELP_${label}_${Date.now()}`
+  return `TEST_HELP_${label}_${Date.now()}`
 }
 
 let createdIds = { famiglie: [], contatti: [], progetti: [] }
@@ -71,7 +71,7 @@ test.describe('Helpers — base', () => {
       // Il volontario ha altre famiglie, apri e controlla che la nuova non ci sia
       await famSelect.click()
       await page.waitForTimeout(500)
-      const items = page.locator('.q-menu .q-item')
+      const items = page.locator('[role="option"]')
       const names = await items.allInnerTexts()
       expect(names.some(n => n.includes(nomeFam))).toBe(false)
       await page.keyboard.press('Escape')

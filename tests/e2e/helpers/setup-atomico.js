@@ -1,25 +1,30 @@
 /**
- * Setup atomico per test — crea famiglia + assegna volontario + progetto.
- * Ogni creazione pusha subito l'ID in ids per garantire cleanup anche in caso di fallimento.
- * Chiamare apiLogin UNA volta nel beforeAll del describe prima di usare queste funzioni.
+ * Setup atomico per test.
+ * Ogni creazione pusha SUBITO l'ID in ids per garantire cleanup anche in caso di fallimento.
+ * Per contatti ESISTENTI modificati, salva pre-state per ripristino invece di cancellazione.
+ *
+ * TUTTI i campi testuali (Nome, Cognome, Descrizione, email, ecc.) iniziano con "TEST_".
  */
 import { apiGet, apiPost, apiPatch, apiDelete } from './api.js'
-import { deleteFamiglie, deleteProgetti, deleteContatti, deleteByPattern } from './cleanup.js'
-import { createFamigliaViaUI } from './pagina-gestione.js'
+import { deleteFamiglie, deleteProgetti, deleteContatti, deleteEmailByContatto, deleteDirectusUser } from './cleanup.js'
+import { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from './pagina-gestione.js'
+import { loginConFamigliaViaUI } from './pagina-famiglie.js'
+import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
 import { loginAs } from './login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 /**
  * Crea famiglia + assegna volontario di test + progetto.
- * TUTTI i dati usano un prefisso timestamp unico per cleanup via pattern.
+ * TUTTI i dati usano prefisso TEST_ per tracciabilita'.
  * ids viene popolato SUBITO dopo ogni creazione.
  *
  * @param {import('@playwright/test').Page} page
- * @param {Object} ids — oggetto per tracciamento IDs
+ * @param {Object} ids — oggetto per tracciamento IDs (mutato inline)
  * @returns {Promise<{nomeFam: string, prefix: string}>}
  */
 export async function creaFamigliaVolontarioProgetto(page, ids) {
-  const prefix = `T${Date.now()}_`
+  const ts = Date.now()
+  const prefix = `TEST_${ts}_`
   ids.prefix = prefix
 
   const nomeFam = `${prefix}Fam`
@@ -32,67 +37,50 @@ export async function creaFamigliaVolontarioProgetto(page, ids) {
   })
   const contattoId = emailRes.data?.[0]?.Contatto_Relation
 
-  // Pre-clean: elimina FC link orfani (da cleanup falliti)
-  // Garantisce che il test parta pulito anche se la pulizia precedente non è riuscita
-  const existingFc = await apiGet('Famiglie_Contatti', {
-    filter: JSON.stringify({ Contatto: { _eq: contattoId } }),
-    fields: 'id'
+  // Pre-state del contatto per ripristino (NON cancelliamo nulla)
+  const contattoRes = await apiGet('contatti/' + contattoId, {
+    fields: 'IsVolontario,user_id'
   })
-  for (const fc of existingFc.data || []) {
-    try {
-      await apiDelete('Famiglie_Contatti', fc.id)
-    } catch {
-      /* */
-    }
+  const preState = {
+    IsVolontario: contattoRes.data?.IsVolontario,
+    user_id: contattoRes.data?.user_id
   }
 
-  await apiPost('Famiglie_Contatti', {
-    id: Math.floor(Math.random() * 9000000) + 1000000,
-    Contatto: contattoId,
-    Famiglia: fam.id_famiglia,
-    Ruolo_nella_Famiglia: 'Volontario',
-    Disattivo: false
-  })
-  await apiPatch('contatti', contattoId, { IsVolontario: true })
+  if (!ids.contattiModificati) ids.contattiModificati = []
+  ids.contattiModificati.push({ id: contattoId, preState })
 
-  const progRes = await apiPost('Progetti', {
-    id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
-    Cognome_Beneficiario: prefix,
-    Nome_Beneficiario: 'Test',
-    AnnoBando: new Date().getFullYear(),
-    Allocato: 5000,
-    Famiglia: fam.id_famiglia,
-    StatoProgetto: 'aperto',
-    Data_Inizio_Progetto: '2026-01-01',
-    Data_Fine_Progetto: '2026-12-31'
+  await assegnaContattoAFamigliaViaUI(page, {
+    famigliaNome: nomeFam,
+    searchTerm: auth.volontario.email,
+    fullName: auth.volontario.email,
+    ruolo: 'Volontario'
   })
-  ids.progetto = progRes.data.id_progetto
+
+  ids.progetto = await createProgettoViaUI(
+    page,
+    {
+      famigliaNome: nomeFam,
+      Cognome_Beneficiario: prefix,
+      Nome_Beneficiario: prefix + 'Test',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000
+    },
+    auth,
+    'gestore'
+  )
 
   return { nomeFam, prefix }
 }
 
 /**
  * Login volontario e attende caricamento famiglia.
- * Se multi-famiglia (impossibile con setup atomico, ma per sicurezza), seleziona la prima.
  */
-export async function loginVolontarioConFamiglia(page, nomeFam) {
-  await loginAs(page, 'volontario', auth)
-  await page.goto('/famiglie', { timeout: 15000 }).catch(() => {})
-  await page.waitForTimeout(1000)
-  const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-  if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await famSelector.click()
-    await page.waitForTimeout(500)
-    await page.locator('.q-menu .q-item').first().click()
-    await page.waitForTimeout(1000)
-    await page.keyboard.press('Escape')
-    await page.waitForTimeout(300)
-  }
-  await page
-    .locator('.text-h6')
-    .first()
-    .waitFor({ state: 'visible', timeout: 15000 })
-    .catch(() => {})
+export async function loginVolontarioConFamiglia(page, nomeFam, role = 'volontario') {
+  await loginConFamigliaViaUI(page, {
+    role,
+    auth,
+    nomeFamiglia: nomeFam
+  })
 }
 
 /**
@@ -103,118 +91,168 @@ export async function loginGestore(page) {
 }
 
 /**
- * Patterns universali che coprono TUTTI i dati di test,
- * indipendentemente dal test che li ha creati.
- */
-const GLOBAL_PATTERNS = [
-  // Giustificativi
-  '__TEST_CG_',
-  '__TEST_IE_',
-  '__TEST_AL_',
-  '__TEST_EL_',
-  '__TEST_SU_',
-  '__TEST_RO_',
-  '__TEST_No', // CG-02/03/04: NoDesc, NoImp, NoFile
-  '__TEST_Creazione_',
-  '__TEST_Allegato_',
-  // Famiglie
-  '__TEST_FP_',
-  '__TEST_HELP_',
-  '__TEST_RF02_',
-  '__TEST_RC0',
-  '__TEST_RC5_',
-  '__TEST_RC03',
-  '__TEST_PRIVOL', // RC-PRIORITY-01
-  '__TEST_PRIGEN', // RC-PRIORITY-01
-  'TEST_FAM_AUTO', // vecchio setup.js
-  // Verifica
-  'SR-02',
-  'VF_0',
-  'VF_1',
-  'VF_2',
-  'VF_3',
-  'VF_5',
-  'VE_ADD_',
-  // InviiGiustificativiNoLogin / Email
-  'test.rf02',
-  'test_rc',
-  'test_rc02',
-  'test_priority',
-  'rc_setup',
-  'test_no_esiste', // GF-02
-  'ec01_', // EC-01
-  'ec03_', // EC-03
-  'sconosciuto.', // EC-04
-  // Contatti
-  '__TEST_RC', // catch-all nomi riconciliazione
-  'fake.referente' // referente beforeAll
-]
-
-/**
- * Pulizia universale: cancella per ID (tracciati) + per pattern (prefix).
- * Se ids.prefix è impostato, lo usa come pattern. Altrimenti usa GLOBAL_PATTERNS.
+ * Pulizia universale: cancella SOLO per ID tracciato.
+ * Ordine FK: figli prima dei padri.
  */
 export async function pulisciIds(ids) {
-  // Costruisce patterns: prefix del test + globali
-  const patterns = [ids.prefix, ...GLOBAL_PATTERNS].filter(Boolean)
-
-  // Hard-delete giustificativi
+  // Giustificativi
   if (ids.giustificativi?.length) {
     for (const gid of ids.giustificativi) {
       try {
         await apiDelete('Giustificativi', gid)
       } catch {
-        /* */
+        console.warn('[CLEANUP] Failed to delete Giustificativi', gid)
       }
     }
     ids.giustificativi = []
   }
-  // Per sicurezza, cancella anche per pattern
-  try {
-    const res = await apiGet('Giustificativi', {
-      filter: JSON.stringify({
-        _or: patterns.map(p => ({ Descrizione: { _icontains: p } }))
-      }),
-      fields: 'id'
-    })
-    for (const r of res.data || []) {
+
+  // Pagamenti
+  if (ids.pagamenti?.length) {
+    for (const pid of ids.pagamenti) {
       try {
-        await apiDelete('Giustificativi', r.id)
+        await apiDelete('Pagamenti', pid)
       } catch {
-        /* */
+        console.warn('[CLEANUP] Failed to delete Pagamenti', pid)
+      }
+    }
+    ids.pagamenti = []
+  }
+
+  // Rendicontazioni
+  if (ids.rendicontazioni?.length) {
+    for (const rid of ids.rendicontazioni) {
+      try {
+        await apiDelete('Rendicontazioni', rid)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete Rendicontazioni', rid)
+      }
+    }
+    ids.rendicontazioni = []
+  }
+
+  // Email create dal test
+  if (ids.email?.length) {
+    for (const eid of ids.email) {
+      try {
+        await apiDelete('email', eid)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete email', eid)
+      }
+    }
+    ids.email = []
+  }
+
+  // FC links creati dal test
+  if (ids.fcLinks?.length) {
+    for (const fid of ids.fcLinks) {
+      try {
+        await apiDelete('Famiglie_Contatti', fid)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete Famiglie_Contatti', fid)
+      }
+    }
+    ids.fcLinks = []
+  }
+
+  // Batch pagamenti
+  if (ids.batch?.length) {
+    for (const bid of ids.batch) {
+      try {
+        await apiDelete('BatchPagamenti', bid)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete BatchPagamenti', bid)
+      }
+    }
+    ids.batch = []
+  }
+
+  // InviiGiustificativiNoLogin
+  if (ids.inviiNoLogin?.length) {
+    for (const iid of ids.inviiNoLogin) {
+      try {
+        await apiDelete('InviiGiustificativiNoLogin', iid)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete InviiGiustificativiNoLogin', iid)
+      }
+    }
+    ids.inviiNoLogin = []
+  }
+
+  // Progetti
+  if (ids.progetto) {
+    const progettoIds = Array.isArray(ids.progetto) ? ids.progetto : [ids.progetto]
+    try {
+      await deleteProgetti(...progettoIds)
+    } catch {
+      console.warn('[CLEANUP] Failed to delete progetti', progettoIds)
+    }
+    ids.progetto = Array.isArray(ids.progetto) ? [] : null
+  }
+
+  // Famiglie (include FC figli)
+  if (ids.famiglia) {
+    const famigliaIds = Array.isArray(ids.famiglia) ? ids.famiglia : [ids.famiglia]
+    try {
+      await deleteFamiglie(...famigliaIds)
+    } catch {
+      console.warn('[CLEANUP] Failed to delete famiglie', famigliaIds)
+    }
+    ids.famiglia = Array.isArray(ids.famiglia) ? [] : null
+  }
+
+  // Contatti NUOVI (creati dal test) — deleteContatti gestisce user/email/FC
+  const contattiDaEliminare = []
+  if (ids.contattiCreati?.length) contattiDaEliminare.push(...ids.contattiCreati)
+  if (ids.contatti?.length) contattiDaEliminare.push(...ids.contatti)
+  if (contattiDaEliminare.length > 0) {
+    try {
+      await deleteContatti(...contattiDaEliminare)
+    } catch {
+      console.warn('[CLEANUP] Failed to delete contatti', contattiDaEliminare)
+    }
+    ids.contattiCreati = []
+    ids.contatti = []
+  }
+
+  // Orphaned Famiglie_Contatti cleanup (FK SET NULL can leave dangling rows)
+  try {
+    const orphanFC = await apiGet('Famiglie_Contatti', {
+      filter: JSON.stringify({
+        _or: [
+          { Famiglia: { _null: true } },
+          { Contatto: { _null: true } }
+        ]
+      }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const row of orphanFC.data || []) {
+      try {
+        await apiDelete('Famiglie_Contatti', row.id)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete orphan Famiglie_Contatti', row.id)
       }
     }
   } catch {
-    /* */
+    // silent — best-effort
   }
 
-  if (ids.progetto) {
-    try {
-      await deleteProgetti(ids.progetto)
-    } catch {
-      /* */
+  // Contatti MODIFICATI: ripristino pre-state
+  if (ids.contattiModificati?.length) {
+    for (const mod of ids.contattiModificati) {
+      const patch = {}
+      if (mod.preState.IsVolontario !== undefined) {
+        patch.IsVolontario = mod.preState.IsVolontario
+      }
+      if (Object.keys(patch).length > 0) {
+        try {
+          await apiPatch('contatti', mod.id, patch)
+        } catch {
+          console.warn('[CLEANUP] Failed to restore contatto', mod.id)
+        }
+      }
     }
-  }
-  if (ids.famiglia) {
-    try {
-      await deleteFamiglie(ids.famiglia)
-    } catch {
-      /* */
-    }
-  }
-  if (ids.contatti?.length) {
-    try {
-      await deleteContatti(...ids.contatti)
-    } catch {
-      /* */
-    }
-  }
-
-  // Pulizia per pattern (catch-all) — include prefix del test
-  const allPatterns = [...new Set([...patterns, ids.prefix].filter(Boolean))]
-  try {
-    await deleteByPattern(allPatterns)
-  } catch {
-    /* */
+    ids.contattiModificati = []
   }
 }

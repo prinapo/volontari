@@ -21,8 +21,7 @@ export function statoLabel(stato) {
     draft: 'Bozza',
     inviato: 'Inviato',
     verificato: 'Verificato',
-    rifiutato: 'Rifiutato',
-    approvato: 'Approvato'
+    rifiutato: 'Rifiutato'
   }
   return labels[stato] || stato
 }
@@ -32,8 +31,7 @@ export function statoColor(stato) {
     draft: 'warning',
     inviato: 'primary',
     verificato: 'positive',
-    rifiutato: 'negative',
-    approvato: 'positive'
+    rifiutato: 'negative'
   }
   return colors[stato] || 'grey'
 }

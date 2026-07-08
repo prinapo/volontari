@@ -1,15 +1,29 @@
+/**
+ * deploy-ftp.mjs — Deploy per nginx.
+ * Carica la build in root (sito live) e in releases/{version}/ (backup).
+ * Le release precedenti NON vengono cancellate.
+ *
+ * Uso: npm run release (build + deploy)
+ *      node scripts/deploy-ftp.mjs (solo deploy, build già fatto)
+ */
+
 import ftp from 'basic-ftp'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const ROOT = resolve(__dirname, '..')
+
+const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'))
+const VERSION = pkg.version
+const RELEASE_DIR = `releases/v${VERSION}`
 
 function loadEnv() {
   const envFiles = ['.env.local', '.env']
   const vars = {}
   for (const file of envFiles) {
-    const fullPath = resolve(__dirname, '..', file)
+    const fullPath = resolve(ROOT, file)
     if (!existsSync(fullPath)) continue
     const content = readFileSync(fullPath, 'utf-8')
     for (const line of content.split('\n')) {
@@ -31,7 +45,7 @@ const config = {
   user: env.FTP_USER || process.env.FTP_USER,
   password: env.FTP_PASSWORD || process.env.FTP_PASSWORD,
   remoteDir: env.FTP_REMOTE_DIR || process.env.FTP_REMOTE_DIR || '/public_html',
-  localDir: resolve(__dirname, '..', 'dist', 'spa')
+  localDir: resolve(ROOT, 'dist', 'spa')
 }
 
 const missing = []
@@ -40,7 +54,6 @@ if (!config.user) missing.push('FTP_USER')
 if (!config.password) missing.push('FTP_PASSWORD')
 if (missing.length > 0) {
   console.error(`❌ FTP configuration incomplete. Missing: ${missing.join(', ')}`)
-  console.error('   Add them to .env or .env.local')
   process.exit(1)
 }
 
@@ -50,10 +63,9 @@ if (!existsSync(config.localDir)) {
   process.exit(1)
 }
 
-console.log(`\n🚀 Deploying to ${config.host}:${config.port}`)
+console.log(`\n🚀 Deploy v${VERSION} → ${config.host}`)
 console.log(`   Local:  ${config.localDir}`)
-console.log(`   Remote: ${config.remoteDir}`)
-console.log('')
+console.log(`   Remote: ${config.remoteDir}/ (root) + ${config.remoteDir}/${RELEASE_DIR}/ (backup)`)
 
 const client = new ftp.Client()
 client.ftp.verbose = true
@@ -69,21 +81,32 @@ try {
     secureOptions: { rejectUnauthorized: false }
   })
 
-  console.log('📂 Uploading dist/spa/...')
-  await client.ensureDir(config.remoteDir)
-  await client.clearWorkingDir()
-  await client.uploadFromDir(config.localDir)
+  // 1. Upload build in root (live)
+  console.log('⬆️ Uploading build to root...')
+  await client.uploadFromDir(config.localDir, config.remoteDir)
 
-  // Upload .htaccess per SPA routing
-  const htaccessPath = resolve(__dirname, '..', '.htaccess')
-  if (existsSync(htaccessPath)) {
-    await client.uploadFrom(htaccessPath, '.htaccess')
-    console.log('   .htaccess uploaded')
+  // 2. Crea directory della release
+  console.log(`📂 Creating ${RELEASE_DIR}/...`)
+  await client.ensureDir(`${config.remoteDir}/${RELEASE_DIR}`)
+
+  // 3. Upload build in releases/{version} (backup)
+  console.log(`⬆️ Uploading build to ${RELEASE_DIR}/...`)
+  await client.uploadFromDir(config.localDir, `${config.remoteDir}/${RELEASE_DIR}`)
+
+  // 4. Salva stato localmente
+  const stateDir = resolve(ROOT, '.deploy-cache')
+  if (!existsSync(stateDir)) {
+    mkdirSync(stateDir, { recursive: true })
   }
+  writeFileSync(resolve(stateDir, 'last-version'), `v${VERSION}`)
 
-  console.log(`\n✅ Deploy complete!`)
+  console.log(`\n✅ Deploy v${VERSION} completato!`)
+  console.log(`   Build caricata in root (sito live)`)
+  console.log(`   Backup salvato in ${config.remoteDir}/${RELEASE_DIR}/`)
+  console.log(`   Releases precedenti non sono state cancellate.`)
+  console.log(`   Per rollback: node scripts/rollback.mjs v{version}`)
 } catch (err) {
-  console.error(`\n❌ Deploy failed: ${err.message}`)
+  console.error(`\n❌ Deploy fallito: ${err.message}`)
   process.exit(1)
 } finally {
   client.close()

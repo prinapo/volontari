@@ -9,6 +9,8 @@ import {
   loginGestore
 } from '../helpers/setup-atomico.js'
 import { deleteContatti } from '../helpers/cleanup.js'
+import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
+import { assegnaContattoAFamigliaViaUI } from '../helpers/pagina-gestione.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 async function expandFirstCardIfMobile(page) {
@@ -23,21 +25,9 @@ let ids = { famiglia: null, progetto: null, giustificativi: [] }
 let createdContattoIds = []
 let originalContattiState = {}
 
-let _refEmail = ''
-let _refContattoId = null
-
 test.describe('Referente Role', () => {
   test.beforeAll(async () => {
     await apiLogin(auth.admin.email, auth.admin.password)
-    // Crea un contatto referente per i test che ne hanno bisogno (RF-04)
-    _refContattoId = String(Math.floor(Math.random() * 9000000) + 1000000)
-    _refEmail = `fake.referente_${Date.now()}@fake.com`
-    await apiPost('contatti', { id_contatto: _refContattoId, Nome: 'Fake', Cognome: 'Referente', IsReferente: true })
-    await apiPost('email', { email_address: _refEmail, Contatto_Relation: _refContattoId, Primary: true })
-  })
-
-  test.afterAll(async () => {
-    if (_refContattoId) await deleteContatti(_refContattoId)
   })
 
   test.afterEach(async () => {
@@ -66,10 +56,7 @@ test.describe('Referente Role', () => {
     await page.waitForTimeout(2000)
 
     const rowCount = await gestionePage.getRowCount()
-    if (rowCount === 0) {
-      test.skip()
-      return
-    }
+    expect(rowCount).toBeGreaterThanOrEqual(1)
 
     const firstRow = gestionePage.tableRows.first()
     const badges = firstRow.locator('.q-badge')
@@ -95,44 +82,38 @@ test.describe('Referente Role', () => {
 
   test('RF-02: Assegna Referente a Volontario @crud', async ({ page }) => {
     test.setTimeout(180000)
+    page.expectApiError('/items/email')
     await loginAs(page, 'gestore', auth)
 
     // Setup atomico: crea famiglia + assegna volontario + progetto
     const label = `RF02_${Date.now()}`
     const { createFamigliaViaUI } = await import('../helpers/pagina-gestione.js')
-    const nomeFam = `__TEST_RF02_${Date.now()}`
+    const nomeFam = `TEST_RF02_${Date.now()}`
     const fam = await createFamigliaViaUI(page, { nomeFamiglia: nomeFam })
     ids.famiglia = fam.id_famiglia
-    const emailRes = await apiGet('email', {
-      filter: JSON.stringify({ email_address: { _eq: auth.volontario.email } }),
-      fields: 'Contatto_Relation'
+    await assegnaContattoAFamigliaViaUI(page, {
+      famigliaNome: nomeFam,
+      searchTerm: auth.volontario.email,
+      fullName: auth.volontario.email,
+      ruolo: 'Volontario'
     })
-    const contattoIdVol = emailRes.data?.[0]?.Contatto_Relation
-    await (
-      await import('../helpers/api.js')
-    ).apiPost('Famiglie_Contatti', {
-      id: Math.floor(Math.random() * 9000000) + 1000000,
-      Contatto: contattoIdVol,
-      Famiglia: fam.id_famiglia,
-      Ruolo_nella_Famiglia: 'Volontario',
-      Disattivo: false
-    })
-    await (await import('../helpers/api.js')).apiPatch('contatti', contattoIdVol, { IsVolontario: true })
-    const progRes = await (
-      await import('../helpers/api.js')
-    ).apiPost('Progetti', {
-      id_progetto: Math.floor(Math.random() * 9000000) + 1000000,
-      Cognome_Beneficiario: 'Test',
-      Nome_Beneficiario: 'Benef',
-      AnnoBando: new Date().getFullYear(),
-      Allocato: 5000,
-      Famiglia: fam.id_famiglia,
-      StatoProgetto: 'aperto'
-    })
-    ids.progetto = progRes.data.id_progetto
+    ids.progetto = await createProgettoViaUI(
+      page,
+      {
+        famigliaNome: nomeFam,
+        Cognome_Beneficiario: nomeFam,
+        Nome_Beneficiario: nomeFam + 'Benef',
+        AnnoBando: new Date().getFullYear(),
+        Allocato: 5000,
+        Data_Inizio_Progetto: '2026-01-01',
+        Data_Fine_Progetto: '2026-12-31'
+      },
+      auth,
+      'gestore'
+    )
 
     const timestamp = Date.now()
-    const nome = `Test RF02 ${timestamp}`
+    const nome = `TEST_RF02_${timestamp}`
     const cognome = 'AutoTest'
 
     const gestionePage = new GestionePage(page)
@@ -157,7 +138,7 @@ test.describe('Referente Role', () => {
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
     await page.waitForTimeout(1000)
 
-    const rf02Email = `test.rf02.${timestamp}@test.com`
+    const rf02Email = `TEST_rf02_${timestamp}@test.com`
 
     // Aggiungi email al contatto (necessaria per poterlo associare come Volontario)
     await gestionePage.search(nome)
@@ -205,27 +186,34 @@ test.describe('Referente Role', () => {
       console.log('[RF-02] calling assignVolontario')
       await gestionePage.assignVolontario(rf02Email)
       console.log('[RF-02] assignVolontario done')
-      await page.waitForTimeout(2000)
-      await gestionePage.contattiDialog.locator('button:has-text("Chiudi")').click()
+      await page.waitForTimeout(7000) // attende che la notifica Quasar si chiuda
+      // Chiudi dialog: prima prova click, poi force:click, poi evaluate
+      const chiudi = gestionePage.contattiDialog.locator('button:has-text("Chiudi")')
+      try {
+        await chiudi.click({ timeout: 3000 })
+      } catch {
+        await chiudi.click({ force: true })
+      }
+      await page.waitForTimeout(500)
+      if (await gestionePage.contattiDialog.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await page.evaluate(() => {
+          document.querySelectorAll('.q-dialog').forEach(d => { d.style.display = 'none' })
+        }).catch(() => {})
+      }
       await expect(gestionePage.contattiDialog).not.toBeVisible({ timeout: 5000 })
       console.log('[RF-02] contatti dialog closed')
     } else {
-      test.skip('Famiglia creata non trovata')
+      throw new Error('Famiglia creata non trovata')
       return
     }
 
-    // Torna a Contatti, cerca il contatto, clicca bottone referente
+    // Cerca il contatto, clicca bottone referente
     await gestionePage.contattiTab.click()
     await gestionePage.waitForTable()
     await page.waitForTimeout(2000)
     await gestionePage.search(nome)
     await page.waitForTimeout(2000)
     console.log('[RF-02] search done, looking for referente button')
-
-    // Torna a Contatti, cerca il contatto, clicca bottone referente
-    await gestionePage.contattiTab.click()
-    await gestionePage.waitForTable()
-    await page.waitForTimeout(2000)
 
     let targetRow = null
     const isMobile =
@@ -235,9 +223,9 @@ test.describe('Referente Role', () => {
       const expCount = await exps.count()
       for (let i = 0; i < expCount; i++) {
         await exps.nth(i).click()
-        await page.waitForTimeout(300)
+        await page.waitForTimeout(500)
         const btn = exps.nth(i).locator('[data-testid="btn-assigna-referente"]')
-        if ((await btn.count()) > 0) {
+        if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
           targetRow = exps.nth(i)
           break
         }
@@ -260,13 +248,13 @@ test.describe('Referente Role', () => {
 
     if (!targetRow) {
       console.log('[RF-02] no target row found')
-      test.skip('Bottone referente non visibile dopo creazione volontario')
+      throw new Error('Bottone referente non visibile')
       return
     }
     console.log('[RF-02] target row found, clicking referente button')
 
     if (isMobile) {
-      await page.locator('[data-testid="btn-assigna-referente"]').first().click()
+      await targetRow.locator('[data-testid="btn-assigna-referente"]').click()
     } else {
       const actionCell = targetRow.locator('td').last()
       await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
@@ -296,78 +284,132 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-04: Rimuovi Referente da Volontario @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(120000)
+    const prefix = `TEST_RF04_${Date.now()}`
+    const rf04Ids = { famiglia: null, progetto: null, giustificativi: [], contatti: [], contattiCreati: [] }
 
-    await loginAs(page, 'gestore', auth)
+    // Setup: volontario via UI + trova un referente esistente via API
+    await loginGestore(page)
+    const { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } =
+      await import('../helpers/pagina-gestione.js')
+    const fam = await createFamigliaViaUI(page, { nomeFamiglia: prefix })
+    rf04Ids.famiglia = fam.id_famiglia
+    // Trova il primo referente disponibile nel DB
+    const refRes = await apiGet('contatti', {
+      filter: { IsReferente: { _eq: true } },
+      fields: 'id_contatto,Nome,Cognome',
+      limit: 1
+    })
+    const existingRef = refRes.data?.[0]
+    expect(existingRef).toBeTruthy()
+    const refName = existingRef.Nome
+    console.log(`[RF-04] using referente: ${existingRef.Nome} ${existingRef.Cognome}`)
 
+    // Crea un contatto volontario con email e assegna alla famiglia
+    const volEmail = `${prefix}_vol@test.com`
+    const { createContattoViaUI } = await import('../helpers/pagina-gestione.js')
+    const vol = await createContattoViaUI(page, { nome: prefix + '_Vol', cognome: 'Vol', email: volEmail })
+    rf04Ids.contattiCreati.push(vol.id_contatto)
+    await assegnaContattoAFamigliaViaUI(page, {
+      famigliaNome: prefix,
+      searchTerm: volEmail,
+      fullName: vol.displayName || `${prefix}_Vol Vol`,
+      ruolo: 'Volontario'
+    })
+
+    // Vai a Contatti, apri dialog referente
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
     await page.waitForTimeout(2000)
 
-    await gestionePage.tipoFilter.click()
-    await page.waitForTimeout(500)
-    await page.locator('.q-item:has-text("Volontario")').click()
-    await page.waitForTimeout(2000)
-
-    const rowCount = await gestionePage.getRowCount()
-    if (rowCount === 0) {
-      test.skip('Nessun volontario trovato')
-      return
+    // Trova volontario e clicca btn-assigna-referente
+    const viewport = await page.viewportSize()
+    const isMobile = viewport && viewport.width < 600
+    let targetRow = null
+    if (isMobile) {
+      const exps = page.locator('.q-expansion-item')
+      const expCount = await exps.count()
+      for (let i = 0; i < expCount; i++) {
+        await exps.nth(i).click()
+        await page.waitForTimeout(300)
+        const btn = exps.nth(i).locator('[data-testid="btn-assigna-referente"]')
+        if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          targetRow = exps.nth(i)
+          break
+        }
+      }
+    } else {
+      const rows = gestionePage.tableRows
+      const count = await rows.count()
+      for (let i = 0; i < count; i++) {
+        const actionCell = rows.nth(i).locator('td').last()
+        const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
+        if ((await btn.count()) > 0) {
+          targetRow = rows.nth(i)
+          break
+        }
+      }
     }
 
-    const targetRow = gestionePage.tableRows.first()
-    const actionCell = targetRow.locator('td').last()
-    const personBtn = actionCell.locator('[data-testid="btn-assigna-referente"]')
-    if ((await personBtn.count()) === 0) {
-      test.skip('Volontario non ha bottone Assegna Referente')
-      return
-    }
+    if (!targetRow) throw new Error("Nessuna riga trovata")
 
-    await personBtn.click()
+    // Apri dialog Assegna Referente
+    if (isMobile) {
+      await targetRow.locator('[data-testid="btn-assigna-referente"]').click()
+    } else {
+      await targetRow.locator('td').last().locator('[data-testid="btn-assigna-referente"]').click()
+    }
     await page.waitForTimeout(1500)
 
     const refDialog = page.locator('.q-dialog:visible')
     await expect(refDialog).toBeVisible({ timeout: 5000 })
 
-    const searchInput = refDialog.locator('input[aria-label="Cerca referente..."]')
-    await searchInput.click()
+    // Dismiss notifications
+    await page.keyboard.press('Escape').catch(() => {})
     await page.waitForTimeout(300)
-    await page.keyboard.type('fake.referente', { delay: 30 })
+
+    // Cerca il referente esistente per nome (primi 3 caratteri)
+    const searchInput = refDialog.locator('input[aria-label="Cerca referente..."]')
+    try { await searchInput.click({ timeout: 3000 }) } catch { await searchInput.click({ force: true }) }
+    await page.waitForTimeout(300)
+    await searchInput.fill(refName.slice(0, 3))
     await page.waitForTimeout(2000)
 
-    const qMenuItems = page.locator('.q-menu .q-item')
-    const menuCount = await qMenuItems.count()
-    console.log(`[RF-04] menu items: ${menuCount}`)
-
-    if (menuCount === 0) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
-      await refDialog.locator('button:has-text("Chiudi")').click()
-      test.skip('Referente non trovato nella ricerca')
-      return
+    // Seleziona dal menu o dialog mobile
+    let option = page.locator('[role="option"], .q-dialog .q-item').first()
+    if ((await option.count()) === 0) {
+      option = page.locator('.q-dialog .q-item').first()
     }
-
-    await qMenuItems.first().click()
+    await option.waitFor({ state: 'attached', timeout: 5000 }).catch(() => {})
+    const menuCount = await option.count()
+    console.log(`[RF-04] referente options: ${menuCount}`)
+    
+    await option.click({ force: true }).catch(() => option.click())
     await page.waitForTimeout(500)
 
     const addRefBtn = refDialog.locator('[data-testid="btn-add-referente"]')
-    await addRefBtn.click()
+    try {
+      await addRefBtn.click({ timeout: 3000 })
+    } catch {
+      await addRefBtn.click({ force: true })
+    }
     await page.waitForTimeout(2000)
 
     const referenteItems = refDialog.locator('.row.items-center .text-body2')
     const afterAddCount = await referenteItems.count()
     console.log(`[RF-04] afterAddCount: ${afterAddCount}`)
 
-    if (afterAddCount === 0) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
-      await refDialog.locator('button:has-text("Chiudi")').click()
-      test.skip('Referente non assegnato dopo add')
-      return
-    }
+    
 
+    // Rimuovi il referente
+    await page.keyboard.press('Escape').catch(() => {})
+    await page.waitForTimeout(300)
     const removeBtn = refDialog.locator('[data-testid="btn-remove-referente"]').first()
-    await removeBtn.click()
+    try {
+      await removeBtn.click({ timeout: 3000 })
+    } catch {
+      await removeBtn.click({ force: true })
+    }
     await page.waitForTimeout(1500)
 
     const afterRemoveCount = await referenteItems.count()
@@ -376,6 +418,9 @@ test.describe('Referente Role', () => {
     await page.keyboard.press('Escape')
     await page.waitForTimeout(300)
     await refDialog.locator('button:has-text("Chiudi")').click()
+
+    // Cleanup
+    await pulisciIds(rf04Ids)
   })
 
   test('RF-05: Bottone non visibile per non-Volontari @regression', async ({ page }) => {
@@ -390,10 +435,7 @@ test.describe('Referente Role', () => {
     await page.waitForTimeout(3000)
 
     const rowCount = await gestionePage.getRowCount()
-    if (rowCount === 0) {
-      test.skip()
-      return
-    }
+    expect(rowCount).toBeGreaterThanOrEqual(1)
 
     const firstRow = gestionePage.tableRows.first()
     const actionCell = firstRow.locator('td').last()
@@ -409,31 +451,43 @@ test.describe('Referente Role', () => {
     await gestionePage.selectContattiTab()
     await page.waitForTimeout(2000)
 
-    const rowCount = await gestionePage.getRowCount()
-    if (rowCount === 0) {
-      test.skip('No contatti')
-      return
-    }
+    const viewport = await page.viewportSize()
+    const isMobile = viewport && viewport.width < 600
 
     let targetRow = null
-    const rows = gestionePage.tableRows
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      const actionCell = rows.nth(i).locator('td').last()
-      const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
-      if ((await btn.count()) > 0) {
-        targetRow = rows.nth(i)
-        break
+    if (isMobile) {
+      const exps = page.locator('.q-expansion-item')
+      const expCount = await exps.count()
+      for (let i = 0; i < expCount; i++) {
+        await exps.nth(i).click()
+        await page.waitForTimeout(300)
+        const btn = exps.nth(i).locator('[data-testid="btn-assigna-referente"]')
+        if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          targetRow = exps.nth(i)
+          break
+        }
+      }
+    } else {
+      const rows = gestionePage.tableRows
+      const count = await rows.count()
+      for (let i = 0; i < count; i++) {
+        const actionCell = rows.nth(i).locator('td').last()
+        const btn = actionCell.locator('[data-testid="btn-assigna-referente"]')
+        if ((await btn.count()) > 0) {
+          targetRow = rows.nth(i)
+          break
+        }
       }
     }
 
-    if (!targetRow) {
-      test.skip('Nessun contatto con bottone Assegna Referente')
-      return
-    }
+    if (!targetRow) throw new Error("Nessuna riga trovata")
 
-    const actionCell = targetRow.locator('td').last()
-    await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
+    if (isMobile) {
+      await targetRow.locator('[data-testid="btn-assigna-referente"]').click()
+    } else {
+      const actionCell = targetRow.locator('td').last()
+      await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
+    }
     await page.waitForTimeout(1500)
 
     const dialog = page.locator('.q-dialog:visible')

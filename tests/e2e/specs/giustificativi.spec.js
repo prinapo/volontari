@@ -9,6 +9,7 @@ import {
   loginGestore,
   pulisciIds
 } from '../helpers/setup-atomico.js'
+import { apriFamiglieESelezionaFamiglia } from '../helpers/pagina-famiglie.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -16,27 +17,25 @@ const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf
 
 async function createBozzaViaUI(page, descPrefix) {
   const testDesc = `${descPrefix}_${Date.now()}`
-  if (await page.locator('button:has-text("Aggiungi")').isDisabled()) {
-    console.log(`createBozzaViaUI: Aggiungi button disabled for ${descPrefix} — skipping`)
-    return null
-  }
+  await expect(page.locator('button:has-text("Aggiungi")')).toBeEnabled({ timeout: 15000 })
   await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
   await page.locator('button:has-text("Aggiungi")').click()
   await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
   const dialog = page.locator('.q-dialog')
   await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
   await dialog.locator('[data-testid="giustform-importo"]').fill('75.00')
-  await dialog.locator('[data-testid="giustform-data"]').fill('2026-01-15')
+  await dialog.locator('[data-testid="giustform-data"]').evaluate((el) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+    setter.call(el, '2026-01-15')
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
   await dialog.locator('[data-testid="giustform-nota"]').fill(`Nota ${descPrefix}_${Date.now()}`)
   await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
   const [postResp] = await Promise.all([
     page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
     dialog.locator('button:has-text("Salva")').click()
   ])
-  if (postResp.status() !== 200) {
-    console.log('createBozzaViaUI: failed', postResp.status())
-    return null
-  }
+  expect(postResp.status()).toBe(200)
   await expect(dialog).not.toBeVisible({ timeout: 10000 })
   const created = await postResp.json()
   const rawProgetto = created.data?.Progetto
@@ -58,6 +57,7 @@ test.describe('Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginGestore(page)
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       // Aspetta che il progetto sia selezionato (chip bg-green-1 col formato progetto)
       await page
@@ -74,10 +74,7 @@ test.describe('Giustificativi', () => {
 
     test('CG-01: Dialog si apre con Aggiungi @smoke', async ({ page }) => {
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+      await expect(aggiungiBtn).toBeVisible({ timeout: 10000 })
       await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       await expect(page.locator('.q-dialog').locator('text=Nuovo giustificativo')).toBeVisible()
@@ -85,10 +82,7 @@ test.describe('Giustificativi', () => {
 
     test('CG-02: Salva disabilitato senza Descrizione @regression', async ({ page }) => {
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+      await expect(aggiungiBtn).toBeVisible({ timeout: 10000 })
       await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
@@ -99,22 +93,19 @@ test.describe('Giustificativi', () => {
 
       await expect(salvaBtn).toBeDisabled()
 
-      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NoDesc_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`TEST_NoDesc_${Date.now()}`)
       await expect(salvaBtn).toBeEnabled()
     })
 
     test('CG-03: Salva disabilitato senza Importo @regression', async ({ page }) => {
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+
       await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
       const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
 
-      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NoImp_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`TEST_NoImp_${Date.now()}`)
       await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
 
       await expect(salvaBtn).toBeDisabled()
@@ -125,16 +116,13 @@ test.describe('Giustificativi', () => {
 
     test('CG-04: Salva disabilitato senza file, abilitato dopo allegato @regression', async ({ page }) => {
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+
       await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
       const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
 
-      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NoFile_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`TEST_NoFile_${Date.now()}`)
       await dialog.locator('[data-testid="giustform-importo"]').fill('50.00')
 
       await expect(salvaBtn).toBeDisabled()
@@ -151,15 +139,6 @@ test.describe('Giustificativi', () => {
     })
 
     test('CG-05: Annulla chiude dialog senza creare @regression', async ({ page }) => {
-      if (
-        !(await page
-          .locator('button:has-text("Aggiungi")')
-          .isVisible({ timeout: 3000 })
-          .catch(() => false))
-      ) {
-        test.skip()
-        return
-      }
       const countBefore = await page.locator('.q-card').count()
 
       await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
@@ -173,16 +152,7 @@ test.describe('Giustificativi', () => {
     })
 
     test('CG-06: Crea con tutti i campi persiste dopo reload @crud', async ({ page }) => {
-      if (
-        !(await page
-          .locator('button:has-text("Aggiungi")')
-          .isVisible({ timeout: 3000 })
-          .catch(() => false))
-      ) {
-        test.skip()
-        return
-      }
-      const testDesc = `__TEST_Creazione_${Date.now()}`
+      const testDesc = `TEST_Creazione_${Date.now()}`
       const testImporto = '42.50'
 
       await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
@@ -208,39 +178,19 @@ test.describe('Giustificativi', () => {
       await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 5000 })
 
       await page.reload()
-      await page.waitForURL(/\/famiglie/, { timeout: 15000 }).catch(() => {})
-      const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-      if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await famSelector.click()
-        await page.waitForTimeout(500)
-        await page.locator('.q-menu .q-item').first().click()
-        await page.waitForTimeout(500)
-      }
-      await page
-        .locator('.text-h6')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {})
-      await page
-        .locator('.bg-green-1')
-        .first()
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
+      await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForTimeout(500)
-      await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 5000 })
+      await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 10000 })
     })
 
     test('CG-07: Importo negativo → Salva disabilitato @regression', async ({ page }) => {
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+
       await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
       const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
-      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_NegImp_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`TEST_NegImp_${Date.now()}`)
       await dialog.locator('[data-testid="giustform-importo"]').fill('-50')
       await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       await expect(salvaBtn).toBeDisabled()
@@ -249,30 +199,18 @@ test.describe('Giustificativi', () => {
     test('CG-08: Importo zero → Salva disabilitato @regression', async ({ page }) => {
       test.setTimeout(60000)
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-      if (!(await aggiungiBtn.isVisible({ timeout: 3000 }).catch(() => false))) {
-        test.skip()
-        return
-      }
+
       await aggiungiBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
       const dialog = page.locator('.q-dialog')
       const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
-      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`__TEST_ZeroImp_${Date.now()}`)
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(`TEST_ZeroImp_${Date.now()}`)
       await dialog.locator('[data-testid="giustform-importo"]').fill('0')
       await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       await expect(salvaBtn).toBeDisabled()
     })
 
     test('CG-09: Form larghezza limitata non fullscreen @smoke', async ({ page }) => {
-      if (
-        !(await page
-          .locator('button:has-text("Aggiungi")')
-          .isVisible({ timeout: 3000 })
-          .catch(() => false))
-      ) {
-        test.skip()
-        return
-      }
       await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
       await page.locator('button:has-text("Aggiungi")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
@@ -298,9 +236,10 @@ test.describe('Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginGestore(page)
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForTimeout(2000)
-      const draft = await createBozzaViaUI(page, '__TEST_IE')
+      const draft = await createBozzaViaUI(page, 'TEST_IE')
       if (draft) ids.giustificativi.push(draft.id)
     })
 
@@ -310,19 +249,18 @@ test.describe('Giustificativi', () => {
 
     async function findDraftCard(page) {
       const draftCards = page.locator('.q-card').filter({ has: page.locator('.q-badge:has-text("Bozza")') })
-      if ((await draftCards.count()) === 0) return null
+      await expect(draftCards.first()).toBeVisible({ timeout: 10000 })
       return draftCards.first()
     }
 
     test('IE-01: Descrizione modifica con ✓ salva e persiste dopo reload @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const fields = card.locator('.inline-editable-field')
       const descField = fields.first()
       await expect(descField.locator('.text-body1')).toBeVisible({ timeout: 5000 })
 
-      const newDesc = `__TEST_IE_Desc_${Date.now()}`
+      const newDesc = `TEST_IE_Desc_${Date.now()}`
 
       const [patchResp] = await Promise.all([
         page.waitForResponse(
@@ -341,31 +279,13 @@ test.describe('Giustificativi', () => {
       await expect(descField.locator('.text-body1')).toContainText(newDesc, { timeout: 5000 })
 
       await page.reload()
-      await page.waitForURL(/\/famiglie/, { timeout: 15000 }).catch(() => {})
-      const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-      if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await famSelector.click()
-        await page.waitForTimeout(500)
-        await page.locator('.q-menu .q-item').first().click()
-        await page.waitForTimeout(500)
-      }
-      await page
-        .locator('.text-h6')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {})
-      await page
-        .locator('.bg-green-1')
-        .first()
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
+      await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForTimeout(500)
       await expect(page.locator(`text=${newDesc}`)).toBeVisible({ timeout: 10000 })
     })
 
     test('IE-02: Descrizione modifica con X annulla valore originale @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const descField = card.locator('.inline-editable-field').first()
       const originalText = (await descField.locator('.text-body1').innerText()).trim()
@@ -373,7 +293,7 @@ test.describe('Giustificativi', () => {
       await descField.click()
       const input = descField.locator('input')
       await expect(input).toBeVisible({ timeout: 3000 })
-      await input.fill(`__TEST_CANCEL_${Date.now()}`)
+      await input.fill(`TEST_CANCEL_${Date.now()}`)
       await descField.locator('[data-testid="inline-cancel"]').click()
       await page.waitForTimeout(300)
 
@@ -383,7 +303,6 @@ test.describe('Giustificativi', () => {
 
     test('IE-03: Descrizione click senza modificare ✓ torna a display @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const descField = card.locator('.inline-editable-field').first()
       await descField.click()
@@ -394,7 +313,6 @@ test.describe('Giustificativi', () => {
 
     test('IE-04: Importo modifica con ✓ salva e persiste dopo reload @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const importoField = card.locator('.inline-editable-field').nth(1)
       await expect(importoField.locator('.text-body1')).toBeVisible({ timeout: 5000 })
@@ -421,31 +339,13 @@ test.describe('Giustificativi', () => {
 
       const commaImporto = savedImporto.replace('.', ',')
       await page.reload()
-      await page.waitForURL(/\/famiglie/, { timeout: 15000 }).catch(() => {})
-      const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-      if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await famSelector.click()
-        await page.waitForTimeout(500)
-        await page.locator('.q-menu .q-item').first().click()
-        await page.waitForTimeout(500)
-      }
-      await page
-        .locator('.text-h6')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {})
-      await page
-        .locator('.bg-green-1')
-        .first()
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
+      await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForTimeout(500)
       await expect(page.getByText(commaImporto).first()).toBeVisible({ timeout: 10000 })
     })
 
     test('IE-05: Importo modifica con X annulla valore originale @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const importoField = card.locator('.inline-editable-field').nth(1)
       const originalText = (await importoField.locator('.text-body1').innerText()).trim()
@@ -463,7 +363,6 @@ test.describe('Giustificativi', () => {
 
     test('IE-06: Data modifica con ✓ salva e persiste dopo reload @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const dataField = card.locator('.inline-editable-field').nth(2)
       await expect(dataField.locator('.text-body1')).toBeVisible({ timeout: 5000 })
@@ -495,31 +394,13 @@ test.describe('Giustificativi', () => {
       await expect(dataFieldById).toContainText('15/06/2025', { timeout: 5000 })
 
       await page.reload()
-      await page.waitForURL(/\/famiglie/, { timeout: 15000 }).catch(() => {})
-      const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-      if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await famSelector.click()
-        await page.waitForTimeout(500)
-        await page.locator('.q-menu .q-item').first().click()
-        await page.waitForTimeout(500)
-      }
-      await page
-        .locator('.text-h6')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {})
-      await page
-        .locator('.bg-green-1')
-        .first()
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
+      await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForTimeout(500)
       await expect(dataFieldById).toContainText('15/06/2025', { timeout: 10000 })
     })
 
     test('IE-07: Data modifica con X annulla valore originale @crud', async ({ page }) => {
       const card = await findDraftCard(page)
-      if (!card) test.skip()
 
       const dataField = card.locator('.inline-editable-field').nth(2)
       const originalText = (await dataField.locator('.text-body1').innerText()).trim()
@@ -550,9 +431,10 @@ test.describe('Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginGestore(page)
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForTimeout(2000)
-      const draft = await createBozzaViaUI(page, '__TEST_AL')
+      const draft = await createBozzaViaUI(page, 'TEST_AL')
       if (draft) ids.giustificativi.push(draft.id)
     })
 
@@ -562,11 +444,6 @@ test.describe('Giustificativi', () => {
 
     test('AL-01: Card con allegato ha pulsanti Apri e Scarica con label @smoke', async ({ page }) => {
       const cardWithAttach = page.locator('.q-card').filter({ has: page.locator('a[href*="/assets/"]') })
-      if ((await cardWithAttach.count()) === 0) {
-        console.log('AL-01: no card con allegato trovata — skip')
-        test.skip()
-        return
-      }
 
       const card = cardWithAttach.first()
       const apriBtn = card.locator('a[aria-label="Apri allegato"]')
@@ -586,40 +463,21 @@ test.describe('Giustificativi', () => {
 
     test('AL-03: Scarica file è un PDF valido @crud', async ({ page }) => {
       const cardWithAttach = page.locator('.q-card').filter({ has: page.locator('a[href*="/assets/"]') })
-      if ((await cardWithAttach.count()) === 0) {
-        console.log('AL-03: no card con allegato — skip')
-        test.skip()
-        return
-      }
 
       const scaricaBtn = cardWithAttach.first().locator('a[aria-label="Scarica allegato"]')
       const href = await scaricaBtn.getAttribute('href')
 
-      if (!href || !href.includes('/assets/')) {
-        console.log('[AL-03] No asset URL — skip')
-        test.skip()
-        return
-      }
 
       // Scarica il file e verifica che sia un PDF valido
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 5000 }).catch(() => null),
         scaricaBtn.click({ force: true })
       ])
-      if (!download) {
-        test.skip('Download non partito')
-        return
-      }
       expect(typeof (await download.path())).toBe('string')
     })
 
     test('AL-04: Apri file si apre in nuova scheda con URL corretto @crud', async ({ page }) => {
       const cardWithAttach = page.locator('.q-card').filter({ has: page.locator('a[href*="/assets/"]') })
-      if ((await cardWithAttach.count()) === 0) {
-        console.log('AL-04: no card con allegato — skip')
-        test.skip()
-        return
-      }
 
       const apriBtn = cardWithAttach.first().locator('a[aria-label="Apri allegato"]')
       const href = await apriBtn.getAttribute('href')
@@ -676,12 +534,7 @@ test.describe('Giustificativi', () => {
 
       if (!targetCard) {
         console.log('AL-06: nessuna bozza con allegato, ne creo una')
-        testDesc = `__TEST_Allegato_${Date.now()}`
-        if (await page.locator('button:has-text("Aggiungi")').isDisabled()) {
-          console.log('AL-06: Aggiungi disabled — no progetto, skipping')
-          test.skip()
-          return
-        }
+        testDesc = `TEST_Allegato_${Date.now()}`
         await expect(page.locator('button:has-text("Aggiungi")')).toBeVisible({ timeout: 10000 })
         await page.locator('button:has-text("Aggiungi")').click()
         await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
@@ -717,24 +570,7 @@ test.describe('Giustificativi', () => {
       expect(newHref).not.toBe(oldHref)
 
       await page.reload()
-      await page.waitForURL(/\/famiglie/, { timeout: 15000 }).catch(() => {})
-      const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-      if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await famSelector.click()
-        await page.waitForTimeout(500)
-        await page.locator('.q-menu .q-item').first().click()
-        await page.waitForTimeout(500)
-      }
-      await page
-        .locator('.text-h6')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {})
-      await page
-        .locator('.bg-green-1')
-        .first()
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
+      await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForTimeout(500)
       const cardAfter = page.locator('.q-card').filter({ hasText: testDesc })
       await expect(cardAfter).toBeVisible({ timeout: 5000 })
@@ -752,9 +588,10 @@ test.describe('Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginGestore(page)
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForTimeout(2000)
-      const draft = await createBozzaViaUI(page, '__TEST_EL')
+      const draft = await createBozzaViaUI(page, 'TEST_EL')
       if (draft) ids.giustificativi.push(draft.id)
     })
 
@@ -779,7 +616,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
-      if ((await card.count()) === 0) test.skip()
 
       const descBefore = await card.locator('.inline-editable-field').first().locator('.text-body1').innerText()
 
@@ -797,7 +633,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
-      if ((await draftCard.count()) === 0) test.skip()
 
       const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
 
@@ -821,7 +656,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
-      if ((await draftCard.count()) === 0) test.skip()
 
       const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
 
@@ -834,24 +668,7 @@ test.describe('Giustificativi', () => {
         })
         .catch(() => {})
       await page.reload()
-      await page.waitForURL(/\/famiglie/, { timeout: 15000 }).catch(() => {})
-      const famSelector = page.locator('.q-select:has(.q-field__label:has-text("Seleziona famiglia"))')
-      if (await famSelector.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await famSelector.click()
-        await page.waitForTimeout(500)
-        await page.locator('.q-menu .q-item').first().click()
-        await page.waitForTimeout(500)
-      }
-      await page
-        .locator('.text-h6')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {})
-      await page
-        .locator('.bg-green-1')
-        .first()
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
+      await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForTimeout(500)
       await expect(page.locator(`text=${descText}`)).not.toBeVisible({ timeout: 5000 })
     })
@@ -872,7 +689,7 @@ test.describe('Giustificativi', () => {
       nomeFam = r.nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForTimeout(2000)
-      const draft = await createBozzaViaUI(page, '__TEST_SU')
+      const draft = await createBozzaViaUI(page, 'TEST_SU')
       if (draft) ids.giustificativi.push(draft.id)
     })
 
@@ -885,7 +702,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
-      if ((await draftCard.count()) === 0) test.skip()
 
       const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
       const cleanDesc = descText.replace(/\s*edit\s*$/, '')
@@ -906,7 +722,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
-      if ((await draftCard.count()) === 0) test.skip()
 
       const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
       const cleanDesc = descText.replace(/\s*edit\s*$/, '')
@@ -930,7 +745,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
-      if ((await draftCard.count()) === 0) test.skip()
 
       const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
       const cleanDesc = descText.replace(/\s*edit\s*$/, '')
@@ -969,7 +783,7 @@ test.describe('Giustificativi', () => {
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForTimeout(2000)
-      const draft = await createBozzaViaUI(page, '__TEST_RO')
+      const draft = await createBozzaViaUI(page, 'TEST_RO')
       if (draft) {
         ids.giustificativi.push(draft.id)
         const draftCard = page
@@ -997,7 +811,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Inviato")') })
         .first()
-      if ((await inviatoCard.count()) === 0) test.skip()
 
       const descField = inviatoCard.locator('.inline-editable-field').first()
       await descField.click()
@@ -1009,7 +822,6 @@ test.describe('Giustificativi', () => {
         .locator('.q-card')
         .filter({ has: page.locator('.q-badge:has-text("Inviato")') })
         .first()
-      if ((await inviatoCard.count()) === 0) test.skip()
 
       if ((await inviatoCard.locator('a[href*="/assets/"]').count()) > 0) {
         await expect(inviatoCard.locator('a[aria-label="Apri allegato"]')).toBeVisible()
@@ -1021,6 +833,7 @@ test.describe('Giustificativi', () => {
 
 // ── CG-SS-01: Screenshot ──
 test.describe('GiustificativoForm — Screenshot', () => {
+  test.describe.configure({ timeout: 180000 })
   const ids = { famiglia: null, progetto: null, giustificativi: [] }
 
   test.beforeAll(async () => {
@@ -1028,9 +841,10 @@ test.describe('GiustificativoForm — Screenshot', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await loginGestore(page)
-    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
-    await loginVolontarioConFamiglia(page, nomeFam)
+      await loginGestore(page)
+      const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      ids.nomeFam = nomeFam
+      await loginVolontarioConFamiglia(page, nomeFam)
     await page
       .locator('.bg-green-1')
       .first()
@@ -1044,6 +858,7 @@ test.describe('GiustificativoForm — Screenshot', () => {
   })
 
   test('CG-SS-01: GiustificativoForm dialog screenshot @visual', async ({ page }) => {
+    test.setTimeout(180000)
     const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
     await expect(aggiungiBtn).toBeVisible({ timeout: 10000 })
     await aggiungiBtn.click()

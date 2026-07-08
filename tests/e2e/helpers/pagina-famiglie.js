@@ -1,6 +1,7 @@
 /**
  * UI helpers per FamigliePage — selezione famiglia e progetto.
  */
+import { loginAs } from './login.js'
 
 /**
  * Seleziona una famiglia dal dropdown (se visibile — multi-famiglia).
@@ -18,13 +19,13 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
     return false
   }
 
-  // Click selettore per aprire menu
+  // Click selettore per aprire menu/dialog
   await famSelector.click()
   await page.waitForTimeout(500)
 
-  // Trova le opzioni famiglia
-  const menu = page.locator('.q-menu')
-  const options = menu.locator('.q-item')
+  // Cerca le opzioni nel menu (desktop) o nel dialog (mobile)
+  const options = page.locator('[role="option"]')
+  await options.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
   const count = await options.count()
   let found = false
   for (let i = 0; i < count; i++) {
@@ -36,10 +37,8 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
     }
   }
 
-  if (!found) {
-    if (count > 0) {
-      await options.first().click()
-    }
+  if (!found && count > 0) {
+    await options.first().click()
   }
 
   // Aspetta che la card famiglia sia caricata
@@ -52,6 +51,34 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
     })
 
   return true
+}
+
+export async function apriFamiglieESelezionaFamiglia(page, nomeFamiglia) {
+  await page.goto('/famiglie', { timeout: 15000 }).catch(() => {})
+  await page.waitForTimeout(1000)
+
+  if (nomeFamiglia) {
+    await selezionaFamiglia(page, nomeFamiglia)
+    await page.keyboard.press('Escape').catch(() => {})
+    await page.waitForTimeout(300)
+  }
+
+  await page
+    .locator('.text-h6')
+    .first()
+    .waitFor({ state: 'visible', timeout: 15000 })
+    .catch(() => {})
+
+  await page
+    .locator('.bg-green-1')
+    .first()
+    .waitFor({ state: 'visible', timeout: 10000 })
+    .catch(() => {})
+}
+
+export async function loginConFamigliaViaUI(page, { role = 'volontario', auth, nomeFamiglia } = {}) {
+  await loginAs(page, role, auth)
+  await apriFamiglieESelezionaFamiglia(page, nomeFamiglia)
 }
 
 /**
@@ -67,7 +94,7 @@ export async function selezionaProgetto(page, index = 0) {
   await progettoSelect.click()
   await page.waitForTimeout(300)
 
-  const items = page.locator('.q-menu .q-item')
+  const items = page.locator('[role="option"]')
   if ((await items.count()) <= index) {
     console.log(`[selezionaProgetto] indice ${index} fuori range (${await items.count()} disponibili)`)
     return

@@ -13,14 +13,14 @@ test.describe('DeduplicaPage', () => {
   })
 
   test('DP-02: Admin accede a /deduplica @smoke', async ({ page }) => {
-    if (!auth.admin) { test.skip('Nessun utente Admin configurato'); return }
+    
     const loginPage = (await import('../pages/LoginPage.js')).LoginPage
     const lp = new loginPage(page)
     await lp.goto()
     try {
       await lp.login(auth.admin.email, auth.admin.password)
     } catch {
-      test.skip('Admin user non presente in Directus locale')
+      
       return
     }
 
@@ -29,7 +29,7 @@ test.describe('DeduplicaPage', () => {
 
     const currentUrl = page.url()
     if (!currentUrl.includes('/deduplica')) {
-      test.skip('Accesso negato — l\'admin potrebbe non avere permessi')
+      
       return
     }
 

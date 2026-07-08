@@ -56,7 +56,8 @@ export class RiconciliazionePage {
 
   async expandRow(index) {
     const row = this.rowLocator.nth(index)
-    if (await row.locator('.q-expansion-item--expanded').count() === 0) {
+    const isExpanded = await row.evaluate(el => el.classList.contains('q-expansion-item--expanded'))
+    if (!isExpanded) {
       await row.click()
       await this.page.waitForTimeout(500)
     }
@@ -66,5 +67,28 @@ export class RiconciliazionePage {
     const text = await this.page.locator('.q-table__bottom').innerText()
     const match = text.match(/di\s+(\d+)/)
     return match ? parseInt(match[1], 10) : 0
+  }
+
+  async goToNextPage() {
+    const nextBtn = this.page.locator('button[aria-label="Pagina successiva"]')
+    if (await nextBtn.isEnabled().catch(() => false)) {
+      await nextBtn.click()
+      await this.page.waitForTimeout(1000)
+      return true
+    }
+    return false
+  }
+
+  async rowsPerPage(count) {
+    const btn = this.page.locator('.q-table__bottom-item:has(.q-select)')
+    if (await btn.isVisible().catch(() => false)) {
+      await btn.click()
+      await this.page.waitForTimeout(300)
+      const option = this.page.locator('[role="option"]').filter({ hasText: String(count) })
+      if ((await option.count()) > 0) {
+        await option.click()
+        await this.page.waitForTimeout(500)
+      }
+    }
   }
 }

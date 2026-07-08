@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ADMIN_ROLE_IDS, GESTIONE_ROLE_IDS } from 'src/utils/constants'
 import { useAuthStore } from 'src/stores/auth.store'
 
 const mockLogin = vi.fn()
@@ -109,6 +110,13 @@ describe('auth store', () => {
       store.user = { role: { name: 'Gestione' } }
       expect(store.canGestione).toBe(true)
     })
+
+    it('matches gestione using configured role ids when present', () => {
+      const store = useAuthStore()
+      const roleId = GESTIONE_ROLE_IDS[0] || 'non-configured-role-id'
+      store.user = { role: { id: roleId, name: '' } }
+      expect(store.canGestione).toBe(GESTIONE_ROLE_IDS.length > 0)
+    })
   })
 
   describe('canAdmin getter', () => {
@@ -116,6 +124,36 @@ describe('auth store', () => {
       const store = useAuthStore()
       store.user = { role: { name: 'administrator' } }
       expect(store.canAdmin).toBe(true)
+    })
+
+    it('matches admin using configured role ids when present', () => {
+      const store = useAuthStore()
+      const roleId = ADMIN_ROLE_IDS[0] || 'non-configured-role-id'
+      store.user = { role: { id: roleId, name: '' } }
+      expect(store.canAdmin).toBe(ADMIN_ROLE_IDS.length > 0)
+    })
+  })
+
+  describe('user and role getters', () => {
+    it('matches hasRole case-insensitively', () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'Verificatore' } }
+      expect(store.hasRole('verificatore')).toBe(true)
+      expect(store.hasRole('admin')).toBe(false)
+    })
+
+    it('returns userId and contattoId getters', () => {
+      const store = useAuthStore()
+      store.user = { id: 'user-1' }
+      store.contatto = { id_contatto: 'cont-1' }
+      expect(store.userId).toBe('user-1')
+      expect(store.contattoId).toBe('cont-1')
+    })
+
+    it('falls back to user email in userName', () => {
+      const store = useAuthStore()
+      store.user = { email: 'mail@test.it' }
+      expect(store.userName).toBe('mail@test.it')
     })
   })
 
@@ -187,6 +225,46 @@ describe('auth store', () => {
     })
   })
 
+  describe('fetchUserData and resolveFamiglieAccess', () => {
+    it('clears session when getMe fails', async () => {
+      mockGetMe.mockRejectedValue(new Error('boom'))
+      localStorage.setItem('access_token', 'tok')
+      localStorage.setItem('refresh_token', 'ref')
+
+      const store = useAuthStore()
+      store.token = 'tok'
+      store.refreshToken = 'ref'
+      await store.fetchUserData()
+
+      expect(store.token).toBeNull()
+      expect(store.refreshToken).toBeNull()
+      expect(store.user).toBeNull()
+      expect(store.contatto).toBeNull()
+    })
+
+    it('sets contatto null when contatto lookup fails', async () => {
+      mockGetMe.mockResolvedValue({ data: { data: { id: 'user-1', role: { name: 'volontario' } } } })
+      mockGetByUserId.mockRejectedValue(new Error('forbidden'))
+
+      const store = useAuthStore()
+      await store.fetchUserData()
+
+      expect(store.contatto).toBeNull()
+      expect(store.hasFamiglieAccess).toBe(false)
+    })
+
+    it('resolveFamiglieAccess returns false without contatto and on API error', async () => {
+      const store = useAuthStore()
+      await store.resolveFamiglieAccess()
+      expect(store.hasFamiglieAccess).toBe(false)
+
+      store.contatto = { id_contatto: 'cont-1' }
+      mockGetFamiglieByVolontario.mockRejectedValue(new Error('boom'))
+      await store.resolveFamiglieAccess()
+      expect(store.hasFamiglieAccess).toBe(false)
+    })
+  })
+
   describe('logout', () => {
     it('clears tokens and user data', async () => {
       mockLogout.mockResolvedValue({})
@@ -209,6 +287,17 @@ describe('auth store', () => {
       const store = useAuthStore()
       await store.logout()
       expect(store.token).toBeNull()
+    })
+
+    it('clears local data even when logout API fails', async () => {
+      mockLogout.mockRejectedValue(new Error('boom'))
+      const store = useAuthStore()
+      store.refreshToken = 'ref'
+      store.token = 'tok'
+      store.user = { id: 'u1' }
+      await store.logout()
+      expect(store.token).toBeNull()
+      expect(store.user).toBeNull()
     })
   })
 
@@ -266,6 +355,137 @@ describe('auth store', () => {
       store.user = { id: 'user-1', role: '' }
       await store.resolveUserRole()
       expect(store.user.role).toBe('')
+    })
+
+    it('keeps role id when role lookup fails', async () => {
+      const store = useAuthStore()
+      store.token = createTokenPayload('role-id-2')
+      store.user = { id: 'user-1', role: 'role-id-2' }
+      mockGetRole.mockRejectedValue(new Error('forbidden'))
+
+      await store.resolveUserRole()
+      expect(store.user.role).toBe('role-id-2')
+    })
+  })
+
+  describe('rendicontazione consistency helpers', () => {
+    it('returns null when project is consistent', () => {
+      const store = useAuthStore()
+      const result = store._compareProject(
+        {
+          id_progetto: 'p1',
+          StatoRendicontazione: 'in_attesa',
+          TotaleGiustificativi: 1,
+          TotaleImporto: 10,
+          Cognome_Beneficiario: 'Rossi',
+          Nome_Beneficiario: 'Mario'
+        },
+        'p1',
+        [{ id: 'g1', Stato: 'inviato', Importo: 10 }]
+      )
+      expect(result).toBeNull()
+    })
+
+    it('builds discrepancy payloads for inconsistent projects', () => {
+      const store = useAuthStore()
+      const discrepancy = store._compareProject(
+        {
+          id_progetto: 'p2',
+          StatoRendicontazione: 'nessuno',
+          TotaleGiustificativi: 0,
+          TotaleImporto: 0,
+          Cognome_Beneficiario: 'Verdi',
+          Nome_Beneficiario: 'Anna',
+          AnnoBando: 2026
+        },
+        'p2',
+        [{ id: 'g2', Descrizione: 'Spesa', Stato: 'verificato', Importo: '25.50' }]
+      )
+
+      expect(discrepancy).toEqual(
+        expect.objectContaining({
+          progettoId: 'p2',
+          beneficiario: 'Verdi Anna',
+          annoBando: 2026,
+          statoDB: 'nessuno',
+          statoCalcolato: 'verificato',
+          countDB: 0,
+          countCalcolato: 1,
+          importoDB: 0,
+          importoCalcolato: 25.5
+        })
+      )
+      expect(discrepancy.giustificativi).toEqual([
+        { id: 'g2', descrizione: 'Spesa', stato: 'verificato', importo: 25.5 }
+      ])
+    })
+
+    it('checkRendicontazioneConsistency exits when not admin', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'volontario' } }
+      await store.checkRendicontazioneConsistency()
+      expect(mockGetProgetti).not.toHaveBeenCalled()
+    })
+
+    it('checkRendicontazioneConsistency handles empty projects', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'administrator' } }
+      mockGetProgetti.mockResolvedValue({ data: { data: [] } })
+
+      await store.checkRendicontazioneConsistency()
+      expect(store.rendicontazioneCheck.ok).toBe(true)
+      expect(store.rendicontazioneCheck.discrepancies).toEqual([])
+    })
+
+    it('checkRendicontazioneConsistency stores discrepancies from computed totals', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'administrator' } }
+      mockGetProgetti.mockResolvedValue({
+        data: {
+          data: [
+            {
+              id_progetto: 'p3',
+              StatoRendicontazione: 'nessuno',
+              TotaleGiustificativi: 0,
+              TotaleImporto: 0,
+              Cognome_Beneficiario: 'Neri',
+              Nome_Beneficiario: 'Luca',
+              AnnoBando: 2026
+            }
+          ]
+        }
+      })
+      mockGetGiustificativiByProgetti.mockResolvedValue({
+        data: {
+          data: [
+            { id: 'g1', Progetto: { id_progetto: 'p3' }, Stato: 'verificato', Importo: '30' },
+            { id: 'g2', Progetto: { id_progetto: 'p3' }, Stato: 'draft', Importo: '99', Invalidato: true }
+          ]
+        }
+      })
+
+      await store.checkRendicontazioneConsistency()
+      expect(store.rendicontazioneCheck.checked).toBe(true)
+      expect(store.rendicontazioneCheck.ok).toBe(false)
+      expect(store.rendicontazioneCheck.discrepancies).toHaveLength(1)
+      expect(store.rendicontazioneCheck.discrepancies[0]).toEqual(
+        expect.objectContaining({
+          progettoId: 'p3',
+          statoCalcolato: 'verificato',
+          countCalcolato: 1,
+          importoCalcolato: 30
+        })
+      )
+    })
+
+    it('checkRendicontazioneConsistency stores service errors', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'administrator' } }
+      mockGetProgetti.mockRejectedValue(new Error('service down'))
+
+      await store.checkRendicontazioneConsistency()
+      expect(store.rendicontazioneCheck.ok).toBe(false)
+      expect(store.rendicontazioneCheck.discrepancies[0]).toEqual({ errore: true, messaggio: 'service down' })
     })
   })
 })

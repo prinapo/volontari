@@ -90,10 +90,7 @@ describe('famiglie store', () => {
     it('does not load famiglia when multiple famiglie', async () => {
       mockGetFamiglieByVolontario.mockResolvedValue({
         data: {
-          data: [
-            { Famiglia: { id_famiglia: 1 } },
-            { Famiglia: { id_famiglia: 2 } }
-          ]
+          data: [{ Famiglia: { id_famiglia: 1 } }, { Famiglia: { id_famiglia: 2 } }]
         }
       })
 
@@ -140,6 +137,36 @@ describe('famiglie store', () => {
     })
   })
 
+  describe('getters and selection helpers', () => {
+    it('exposes famiglia-related getters', () => {
+      const store = useFamiglieStore()
+      store.famiglieContatti = [
+        { Famiglia: { id_famiglia: 1, Nome_Famiglia: 'Famiglia Uno' } },
+        { Famiglia: { id_famiglia: 2, Nome_Famiglia: 'Famiglia Due' } }
+      ]
+      store.famiglia = {
+        Nome_Famiglia: 'Famiglia Uno',
+        IBAN: 'IT00X',
+        Intestatario_CC: 'Mario Rossi',
+        Progetti: [{ id_progetto: 10 }, { id_progetto: 20 }]
+      }
+      store.selectedProgettoId = 20
+
+      expect(store.famigliaOptions).toEqual([
+        { label: 'Famiglia Uno', value: 1 },
+        { label: 'Famiglia Due', value: 2 }
+      ])
+      expect(store.progetti).toHaveLength(2)
+      expect(store.selectedProgetto).toEqual({ id_progetto: 20 })
+      expect(store.famigliaName).toBe('Famiglia Uno')
+      expect(store.iban).toBe('IT00X')
+      expect(store.intestatarioCC).toBe('Mario Rossi')
+
+      store.selectProgetto(10)
+      expect(store.selectedProgettoId).toBe(10)
+    })
+  })
+
   describe('hasMultipleFamiglie getter', () => {
     it('returns true when multiple families exist', () => {
       const store = useFamiglieStore()
@@ -151,6 +178,94 @@ describe('famiglie store', () => {
       const store = useFamiglieStore()
       store.famiglieContatti = [{ id: 1 }]
       expect(store.hasMultipleFamiglie).toBe(false)
+    })
+  })
+
+  describe('checkAccess and contacts loading', () => {
+    it('checkAccess returns true when at least one family exists', async () => {
+      mockGetFamiglieByVolontario.mockResolvedValue({ data: { data: [{ Famiglia: { id_famiglia: 1 } }] } })
+      const store = useFamiglieStore()
+      const ok = await store.checkAccess('cont-1')
+      expect(ok).toBe(true)
+      expect(store.famiglieContatti).toHaveLength(1)
+    })
+
+    it('checkAccess returns false on missing contatto or service error', async () => {
+      const store = useFamiglieStore()
+      expect(await store.checkAccess(null)).toBe(false)
+
+      mockGetFamiglieByVolontario.mockRejectedValue(new Error('boom'))
+      expect(await store.checkAccess('cont-1')).toBe(false)
+      expect(store.famiglieContatti).toEqual([])
+    })
+
+    it('loadGenitori enriches emails and handles enrichment/service failure', async () => {
+      mockGetGenitoriByFamiglia.mockResolvedValue({
+        data: {
+          data: [{ Contatto: { id_contatto: 'g1', Nome: 'Anna', Cognome: 'Verdi' } }]
+        }
+      })
+      mockGetByContatto.mockResolvedValueOnce({
+        data: { data: [{ Contatto_Relation: 'g1', email_address: 'anna@test.it', Primary: true }] }
+      })
+
+      const store = useFamiglieStore()
+      await store.loadGenitori('fam-1')
+      expect(store.genitori[0]._emails[0].email_address).toBe('anna@test.it')
+
+      mockGetByContatto.mockRejectedValueOnce(new Error('boom'))
+      await store.loadGenitori('fam-1')
+      expect(store.genitori[0]._emails).toEqual([])
+
+      mockGetGenitoriByFamiglia.mockRejectedValueOnce(new Error('service down'))
+      await store.loadGenitori('fam-1')
+      expect(store.genitori).toEqual([])
+    })
+
+    it('loadVolontari filters current user, enriches emails/referenti, and handles failures', async () => {
+      mockGetVolontariByFamiglia.mockResolvedValue({
+        data: {
+          data: [
+            { Contatto: { id_contatto: 'current-contatto', Nome: 'Io', Cognome: 'Corrente' } },
+            { Contatto: { id_contatto: 'v2', Nome: 'Luca', Cognome: 'Bianchi' } }
+          ]
+        }
+      })
+      mockGetByContatto.mockResolvedValueOnce({
+        data: { data: [{ Contatto_Relation: 'v2', email_address: 'luca@test.it', Primary: true }] }
+      })
+      mockGetByVolontari.mockResolvedValueOnce({
+        data: {
+          data: [{ id: 'rel-1', Volontario: 'v2', Referente: { id_contatto: 'r1', Nome: 'Ref', Cognome: 'Uno' } }]
+        }
+      })
+
+      const store = useFamiglieStore()
+      await store.loadVolontari('fam-1')
+      expect(store.altriVolontari).toHaveLength(1)
+      expect(store.altriVolontari[0]._emails[0].email_address).toBe('luca@test.it')
+      expect(store.altriVolontari[0]._referenti[0].id_contatto).toBe('r1')
+
+      mockGetVolontariByFamiglia.mockResolvedValueOnce({
+        data: { data: [{ Contatto: { id_contatto: 'v3', Nome: 'Sara', Cognome: 'Blu' } }] }
+      })
+      mockGetByContatto.mockRejectedValueOnce(new Error('no emails'))
+      mockGetByVolontari.mockRejectedValueOnce(new Error('no referenti'))
+      await store.loadVolontari('fam-1')
+      expect(store.altriVolontari).toEqual([
+        expect.objectContaining({ id_contatto: 'v3', _emails: [], _referenti: [] })
+      ])
+
+      mockGetVolontariByFamiglia.mockRejectedValueOnce(new Error('boom'))
+      await store.loadVolontari('fam-2')
+      expect(store.altriVolontari).toEqual([])
+    })
+
+    it('loadFamiglia stores service error when family load fails', async () => {
+      mockGetById.mockRejectedValue({ response: { data: { errors: [{ message: 'No famiglia' }] } } })
+      const store = useFamiglieStore()
+      await store.loadFamiglia('fam-x')
+      expect(store.error).toBe('No famiglia')
     })
   })
 

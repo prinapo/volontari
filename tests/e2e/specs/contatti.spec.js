@@ -10,6 +10,7 @@ import {
   loginGestore
 } from '../helpers/setup-atomico.js'
 import { deleteContatti } from '../helpers/cleanup.js'
+import { createContattoViaUI } from '../helpers/pagina-gestione.js'
 
 const expectedHeaders = ['Nome e Cognome', 'Email', 'Cellulare', 'Tipo', 'Stato account', 'Famiglie', 'Azioni']
 
@@ -54,7 +55,14 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
 
   test('CT-SS-01: ContattiTab screenshot con tabella @visual', async ({ page }) => {
     const gp = new GestionePage(page)
-    await gp.waitForTable()
+    const cont = await createContattoViaUI(page, {
+      nome: 'TEST_CT_SS_FixedName',
+      cognome: 'TEST_CT_SS_FixedCognome',
+      cellulare: '3331234567',
+      telefono: '0212345678'
+    })
+    if (cont?.id_contatto) createdContattoIds.push(cont.id_contatto)
+    await gp.search('TEST_CT_SS_FixedName')
     await page.waitForTimeout(500)
     await expect(page).toHaveScreenshot('contatti-tab.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
@@ -94,9 +102,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     await gp.waitForTable()
     const rowsBefore = await gp.getRowCount()
     if (rowsBefore < 2) {
-      test.skip()
-      return
-    }
+      }
 
     let searchTerm
     const hasDesktopRows = (await gp.tableRows.count()) > 0
@@ -109,9 +115,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     }
 
     if (!searchTerm || searchTerm === '—') {
-      test.skip()
-      return
-    }
+      }
 
     await gp.search(searchTerm)
     const rowsAfter = await gp.getRowCount()
@@ -126,9 +130,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     await gp.waitForTable()
     const rowsAll = await gp.getRowCount()
     if (rowsAll === 0) {
-      test.skip()
-      return
-    }
+      }
 
     // Filter to Volontario — check it doesn't crash and returns <= total
     await gp.setTipoFilter('Volontario')
@@ -179,9 +181,7 @@ test.describe('ContattiTab — Directus 11 deep field fix', () => {
     await gp.waitForTable()
     const rows = await gp.getRowCount()
     if (rows === 0) {
-      test.skip()
-      return
-    }
+      }
 
     const hasDesktopRows = (await gp.tableRows.count()) > 0
     if (hasDesktopRows) {
@@ -225,8 +225,8 @@ test.describe('ContattiTab — CRUD', () => {
   test('CT-09: Crea contatto nuovo @crud', async ({ page }) => {
     test.setTimeout(60000)
     const timestamp = Date.now()
-    const nome = `Test CT ${timestamp}`
-    const cognome = 'AutoTest'
+    const nome = `TEST_CT ${timestamp}`
+    const cognome = 'TEST_AutoTest'
 
     await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
     await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
@@ -263,8 +263,8 @@ test.describe('ContattiTab — CRUD', () => {
   test('CT-10: Modifica contatto esistente @crud', async ({ page }) => {
     test.setTimeout(90000)
     const timestamp = Date.now()
-    const nome = `Test CT10 ${timestamp}`
-    const cognome = 'AutoTest'
+    const nome = `TEST_CT10 ${timestamp}`
+    const cognome = 'TEST_AutoTest'
     const nomeMod = `${nome} mod`
 
     // Crea contatto (atomico)
@@ -325,7 +325,7 @@ test.describe('ContattiTab — CRUD', () => {
   test('CT-11: Elimina email da contatto @crud', async ({ page }) => {
     test.setTimeout(60000)
     const timestamp = Date.now()
-    const nome = `Del Email ${timestamp}`
+    const nome = `TEST_DelEmail_${timestamp}`
 
     const gp = new GestionePage(page)
     await gp.waitForTable()
@@ -351,11 +351,9 @@ test.describe('ContattiTab — CRUD', () => {
     const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
     if ((await emailInput.count()) === 0) {
       await dialog.locator('button:has-text("Annulla")').click()
-      test.skip('Impossibile aggiungere email')
-      return
-    }
+      }
 
-    await emailInput.fill(`test_email_${timestamp}@test.com`)
+    await emailInput.fill(`TEST_email_${timestamp}@test.com`)
 
     const [postResp] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
@@ -381,16 +379,12 @@ test.describe('ContattiTab — CRUD', () => {
     console.log(`[CT-11] email count prima: ${emailCount}`)
     if (emailCount === 0) {
       await editDialog.locator('button:has-text("Annulla")').click()
-      test.skip('Nessuna email da eliminare')
-      return
-    }
+      }
 
     const deleteEmailBtn = editDialog.locator('[data-testid="btn-delete-email"]').first()
     if ((await deleteEmailBtn.count()) === 0) {
       await editDialog.locator('button:has-text("Annulla")').click()
-      test.skip('Nessun pulsante elimina email')
-      return
-    }
+      }
 
     await deleteEmailBtn.click()
 
@@ -406,9 +400,9 @@ test.describe('ContattiTab — CRUD', () => {
 
   test('CT-12: Aggiungi email a contatto @crud', async ({ page }) => {
     const timestamp = Date.now()
-    const nome = `CT12 ${timestamp}`
-    const cognome = 'TestEmail'
-    const testEmail = `ct12_email_${timestamp}@test.com`
+    const nome = `TEST_CT12_${timestamp}`
+    const cognome = 'TEST_TestEmail'
+    const testEmail = `TEST_ct12_email_${timestamp}@test.com`
 
     // Crea contatto dedicato
     await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
@@ -432,10 +426,7 @@ test.describe('ContattiTab — CRUD', () => {
 
     if (contattoId) createdContattoIds.push(contattoId)
 
-    if (!contattoId) {
-      test.skip('ID contatto non ottenuto')
-      return
-    }
+    
 
     // Modifica contatto per aggiungere email
     const gp = new GestionePage(page)
@@ -477,20 +468,13 @@ test.describe('ContattiTab — CRUD', () => {
         await expect(dialog).not.toBeVisible({ timeout: 10000 })
       } else {
         await dialog.locator('button:has-text("Annulla")').click()
-        test.skip('Input email non trovato')
+        throw new Error('Input email non trovato')
       }
     } else {
       await dialog.locator('button:has-text("Annulla")').click()
-      test.skip('Nessun pulsante aggiungi email')
+      throw new Error('Nessun pulsante aggiungi email')
     }
   })
 })
 
-test('CT-SS-01: ContattiTab screenshot con tabella @visual', async ({ page }) => {
-  await loginAs(page, 'gestore', auth)
-  const gp = new GestionePage(page)
-  await gp.selectContattiTab()
-  await gp.waitForTable()
-  await page.waitForTimeout(500)
-  await expect(page).toHaveScreenshot('contatti-tab.png', { maxDiffPixels: 500, animations: 'disabled' })
-})
+

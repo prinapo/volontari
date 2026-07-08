@@ -38,8 +38,7 @@ export const STATI_GIUSTIFICATIVO = {
   DRAFT: 'draft',
   INVIATO: 'inviato',
   VERIFICATO: 'verificato',
-  RIFIUTATO: 'rifiutato',
-  APPROVATO: 'approvato'
+  RIFIUTATO: 'rifiutato'
 }
 
 export const RUOLI_FAMIGLIA = {
@@ -66,5 +65,6 @@ export const FILE_ACCEPT = '.jpg,.jpeg,.png,.gif,.heic,.pdf'
 export const FILE_MAX_SIZE = 5 * 1024 * 1024
 
 export const FOLDERS = {
-  INVII_PUBBLICI: import.meta.env.VITE_INVII_PUBBLICI_FOLDER
+  INVII_PUBBLICI: import.meta.env.VITE_INVII_PUBBLICI_FOLDER,
+  LISTE_PAGAMENTI: import.meta.env.VITE_LISTE_PAGAMENTI_FOLDER
 }

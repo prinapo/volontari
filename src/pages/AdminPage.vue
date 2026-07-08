@@ -17,13 +17,13 @@
           align="left"
         >
           <q-tab name="utenti" icon="people" label="Utenti" />
-          <q-tab name="progetti" icon="account_balance" label="Progetti" />
           <q-tab name="associazioni" icon="business" label="Associazioni" />
           <q-tab name="errori" icon="bug_report" label="Errori">
             <q-badge v-if="errorLogStore.unreadCount > 0" color="negative" floating>
               {{ errorLogStore.unreadCount }}
             </q-badge>
           </q-tab>
+          <q-tab name="email" icon="email" label="Email" />
         </q-tabs>
       </div>
 
@@ -113,6 +113,134 @@ size="sm"
             </q-list>
           </q-banner>
 
+          <!-- Verifica consistenza Volontari -->
+          <q-banner v-if="store.volontariCheck" class="bg-grey-2 text-dark q-mb-md rounded-borders" rounded>
+            <template #avatar>
+              <q-icon name="fact_check" color="primary" />
+            </template>
+            <div class="text-weight-medium q-mb-xs">Verifica consistenza Volontari</div>
+            <div class="text-body2 q-mb-sm text-grey-7">
+              Risultati: {{ store.volontariCheck.senzaUtente.length }} senza utente,
+              {{ store.volontariCheck.utenteCancellato.length }} con utente cancellato,
+              {{ store.volontariCheck.flagOrfano.length }} flag orfani,
+              {{ store.volontariCheck.linkSenzaFlag.length }} link senza flag.
+            </div>
+
+            <template v-if="store.volontariCheck.senzaUtente.length > 0">
+              <q-separator class="q-mb-sm" />
+              <div class="text-caption text-weight-medium q-mb-xs">Senza utente Directus</div>
+              <q-list dense>
+                <q-item v-for="c in store.volontariCheck.senzaUtente" :key="c.id_contatto" dense class="q-px-none">
+                  <q-item-section><q-item-label>{{ c.Nome }} {{ c.Cognome }}</q-item-label></q-item-section>
+                  <q-item-section side>
+                    <q-btn
+flat
+dense
+icon="person_add"
+color="primary"
+size="sm"
+@click="creaUtenteVolontario(c)">
+                      <q-tooltip>Crea account Directus</q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+
+            <template v-if="store.volontariCheck.utenteCancellato.length > 0">
+              <q-separator class="q-mb-sm" />
+              <div class="text-caption text-weight-medium q-mb-xs">Utente Directus cancellato</div>
+              <q-list dense>
+                <q-item v-for="c in store.volontariCheck.utenteCancellato" :key="c.id_contatto" dense class="q-px-none">
+                  <q-item-section><q-item-label>{{ c.Nome }} {{ c.Cognome }}</q-item-label></q-item-section>
+                  <q-item-section side class="q-gutter-xs">
+                    <q-btn
+flat
+dense
+icon="clear"
+color="negative"
+size="sm"
+@click="clearUserRef(c)">
+                      <q-tooltip>Rimuovi user_id rotto</q-tooltip>
+                    </q-btn>
+                    <q-btn
+flat
+dense
+icon="person_add"
+color="primary"
+size="sm"
+@click="creaUtenteVolontario(c)">
+                      <q-tooltip>Crea nuovo account</q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+
+            <template v-if="store.volontariCheck.flagOrfano.length > 0">
+              <q-separator class="q-mb-sm" />
+              <div class="text-caption text-weight-medium q-mb-xs">Flag IsVolontario orfano (nessun link famiglia attivo)</div>
+              <q-list dense>
+                <q-item v-for="c in store.volontariCheck.flagOrfano" :key="c.id_contatto" dense class="q-px-none">
+                  <q-item-section><q-item-label>{{ c.Nome }} {{ c.Cognome }}</q-item-label></q-item-section>
+                  <q-item-section side>
+                    <q-btn
+flat
+dense
+icon="flag_off"
+color="warning"
+size="sm"
+@click="clearIsVolontario(c)">
+                      <q-tooltip>Resetta IsVolontario</q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+
+            <template v-if="store.volontariCheck.linkSenzaFlag.length > 0">
+              <q-separator class="q-mb-sm" />
+              <div class="text-caption text-weight-medium q-mb-xs">Link Volontario attivo ma IsVolontario mancante</div>
+              <q-list dense>
+                <q-item v-for="c in store.volontariCheck.linkSenzaFlag" :key="c.id_contatto" dense class="q-px-none">
+                  <q-item-section><q-item-label>{{ c.Nome }} {{ c.Cognome }}</q-item-label></q-item-section>
+                  <q-item-section side>
+                    <q-btn
+flat
+dense
+icon="check_circle"
+color="positive"
+size="sm"
+@click="setVolontarioFlag(c)">
+                      <q-tooltip>Imposta IsVolontario</q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+
+            <template #action>
+              <q-btn flat dense icon="refresh" :loading="store.volontariCheckLoading" @click="runConsistencyCheck">
+                <q-tooltip>Riesegui verifica</q-tooltip>
+              </q-btn>
+            </template>
+          </q-banner>
+
+          <q-btn
+            v-else
+            flat
+            dense
+            icon="fact_check"
+            color="primary"
+            size="sm"
+            class="q-mb-md"
+            :loading="store.volontariCheckLoading"
+            @click="runConsistencyCheck"
+          >
+            Verifica consistenza Volontari
+          </q-btn>
+
+          <!-- User table -->
           <q-table
             :rows="filteredUsers"
             :columns="userColumns"
@@ -251,155 +379,6 @@ size="sm"
           </q-table>
         </q-tab-panel>
 
-        <q-tab-panel name="progetti">
-          <div class="row items-center q-gutter-sm q-mb-md">
-            <div>
-              <div class="text-h5 text-weight-medium">
-                Progetti
-              </div>
-              <div class="text-body2 text-grey-7">
-                Gestisci i nominativi (cognome e nome) dei beneficiari.
-              </div>
-            </div>
-            <q-space />
-            <q-input
-              v-model="store.searchProgetti"
-              dense
-              outlined
-              placeholder="Cerca per cognome o nome..."
-              clearable
-              class="col"
-              style="max-width: 320px"
-              debounce="300"
-              @update:model-value="store.fetchProgetti"
-            >
-              <template #prepend>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-            <q-btn
-              flat
-              round
-              icon="refresh"
-              :loading="store.progettiLoading"
-              aria-label="Aggiorna"
-              @click="refreshProgetti"
-            >
-              <q-tooltip>Aggiorna</q-tooltip>
-            </q-btn>
-            <q-btn
-              color="positive"
-              icon="save"
-              label="Salva tutto"
-              :disable="!hasModified"
-              :loading="store.saving"
-              @click="saveAll"
-            />
-          </div>
-
-          <q-banner v-if="store.error" class="bg-red-1 text-negative q-mb-md" rounded>
-            {{ store.error }}
-          </q-banner>
-
-          <q-table
-            :rows="store.progetti"
-            :columns="progettiColumns"
-            row-key="id_progetto"
-            flat
-            bordered
-            :loading="store.progettiLoading"
-            :pagination="{ rowsPerPage: 0 }"
-            hide-pagination
-            :grid="$q.screen.lt.sm"
-          >
-            <template #body-cell-cognome="props">
-              <q-td :props="props">
-                <q-input
-                  :model-value="getBuffer(props.row).cognome"
-                  outlined
-                  dense
-                  class="inline-edit-input"
-                  @update:model-value="val => setCognome(props.row, val)"
-                />
-              </q-td>
-            </template>
-            <template #body-cell-nome="props">
-              <q-td :props="props">
-                <q-input
-                  :model-value="getBuffer(props.row).nome"
-                  outlined
-                  dense
-                  class="inline-edit-input"
-                  @update:model-value="val => setNome(props.row, val)"
-                />
-              </q-td>
-            </template>
-            <template #body-cell-actions="props">
-              <q-td :props="props">
-                <q-btn
-                  v-if="isModified(props.row)"
-                  icon="save"
-                  color="positive"
-                  round
-                  flat
-                  size="sm"
-                  :loading="store.saving"
-                  aria-label="Salva beneficiario"
-                  @click="saveBeneficiario(props.row)"
-                >
-                  <q-tooltip>Salva</q-tooltip>
-                </q-btn>
-              </q-td>
-            </template>
-            <template #item="props">
-              <div class="q-pa-xs col-12">
-                <q-card flat bordered>
-                  <q-card-section>
-                    <div class="text-weight-medium q-mb-xs">
-                      {{ [props.row.Cognome_Beneficiario, props.row.Nome_Beneficiario].filter(Boolean).join(' ') }}
-                    </div>
-                    <div class="row q-col-gutter-sm">
-                      <div class="col-6">
-                        <q-input
-                          :model-value="getBuffer(props.row).cognome"
-                          label="Cognome"
-                          outlined
-                          dense
-                          @update:model-value="val => setCognome(props.row, val)"
-                        />
-                      </div>
-                      <div class="col-6">
-                        <q-input
-                          :model-value="getBuffer(props.row).nome"
-                          label="Nome"
-                          outlined
-                          dense
-                          @update:model-value="val => setNome(props.row, val)"
-                        />
-                      </div>
-                    </div>
-                    <div class="text-center q-mt-sm">
-                      <q-btn
-                        v-if="isModified(props.row)"
-                        icon="save"
-                        color="positive"
-                        round
-                        flat
-                        size="sm"
-                        :loading="store.saving"
-                        aria-label="Salva beneficiario"
-                        @click="saveBeneficiario(props.row)"
-                      >
-                        <q-tooltip>Salva</q-tooltip>
-                      </q-btn>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-            </template>
-          </q-table>
-        </q-tab-panel>
-
         <q-tab-panel name="associazioni">
           <div class="row items-center q-gutter-sm q-mb-md">
             <div>
@@ -411,6 +390,7 @@ size="sm"
               </div>
             </div>
             <q-space />
+            <q-btn color="primary" icon="add" label="Nuova associazione" @click="openNewAssociazioneDialog" />
             <q-btn flat round icon="refresh" aria-label="Aggiorna" @click="fetchAssociazioni">
               <q-tooltip>Aggiorna</q-tooltip>
             </q-btn>
@@ -562,8 +542,44 @@ size="sm"
             </template>
           </q-table>
         </q-tab-panel>
-      </q-tab-panels>
 
+        <q-tab-panel name="email">
+          <EmailCleanupTab />
+        </q-tab-panel>
+
+      </q-tab-panels>
+      <!-- Nuova Associazione Dialog -->
+      <q-dialog v-model="showNewAssociazioneDialog" persistent>
+        <q-card style="width: 100%; max-width: 400px; min-width: unset">
+          <q-card-section class="row items-center">
+            <div class="text-h6">Nuova associazione</div>
+            <q-space />
+            <q-btn v-close-popup icon="close" flat round dense />
+          </q-card-section>
+          <q-card-section>
+            <q-input v-model="newAssociazioneNome" label="Nome *" outlined dense class="q-mb-md" />
+            <q-input
+              v-model="newAssociazioneBudget"
+              label="Budget (€)"
+              outlined
+              dense
+              type="number"
+              min="0"
+              step="0.01"
+            />
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn v-close-popup flat label="Annulla" />
+            <q-btn
+              color="primary"
+              label="Crea"
+              :disable="!newAssociazioneNome"
+              :loading="savingAssociazione"
+              @click="createAssociazione"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
       <!-- Create User Dialog -->
       <q-dialog v-model="showCreateDialog" persistent maximized>
         <q-card>
@@ -778,12 +794,16 @@ size="sm"
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted, reactive } from 'vue'
+import EmailCleanupTab from 'components/Admin/EmailCleanupTab.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
 import { useErrorLogStore } from 'stores/error-log.store'
+
+
+
 
 const $q = useQuasar()
 const errorDetail = ref({ visible: false, text: '' })
@@ -815,15 +835,6 @@ const userColumns = [
   { name: 'actions', label: 'Azioni', align: 'center', style: 'width: 220px' }
 ]
 
-const progettiColumns = [
-  { name: 'beneficiario', label: 'Beneficiario', align: 'left', field: row => [row.Cognome_Beneficiario, row.Nome_Beneficiario].filter(Boolean).join(' ') },
-  { name: 'cognome', label: 'Cognome', align: 'left' },
-  { name: 'nome', label: 'Nome', align: 'left' },
-  { name: 'actions', label: '', align: 'center' }
-]
-
-const editCache = reactive({})
-
 const erroriColumns = [
   { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left', style: 'width: 160px' },
   { name: 'level', label: 'Livello', field: 'level', align: 'center', style: 'width: 80px' },
@@ -833,72 +844,6 @@ const erroriColumns = [
   { name: 'read', label: 'Letto', field: 'read', align: 'center', style: 'width: 70px' },
   { name: 'actions', label: '', align: 'center', style: 'width: 50px' }
 ]
-
-function getBuffer(progetto) {
-  const id = progetto.id_progetto
-  if (!editCache[id]) {
-    editCache[id] = {
-      cognome: progetto.Cognome_Beneficiario || '',
-      nome: progetto.Nome_Beneficiario || '',
-      origCognome: progetto.Cognome_Beneficiario || '',
-      origNome: progetto.Nome_Beneficiario || ''
-    }
-  }
-  return editCache[id]
-}
-
-function setCognome(progetto, val) {
-  const buf = getBuffer(progetto)
-  buf.cognome = val
-}
-
-function setNome(progetto, val) {
-  const buf = getBuffer(progetto)
-  buf.nome = val
-}
-
-function isModified(progetto) {
-  const buf = editCache[progetto.id_progetto]
-  if (!buf) return false
-  return buf.cognome !== buf.origCognome || buf.nome !== buf.origNome
-}
-
-const hasModified = computed(() =>
-  store.progetti.some(p => isModified(p))
-)
-
-async function saveAll() {
-  const modified = store.progetti.filter(p => isModified(p))
-  for (const p of modified) {
-    const ok = await store.updateProgettoBeneficiario(p.id_progetto, editCache[p.id_progetto].cognome, editCache[p.id_progetto].nome)
-    const name = [p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ')
-    if (!ok) {
-      notifyError($q, store.error, `Errore aggiornamento ${name}`)
-      return
-    }
-  }
-  notifySuccess($q, 'Tutti i beneficiari aggiornati')
-  refreshProgetti()
-}
-
-async function saveBeneficiario(progetto) {
-  const buf = editCache[progetto.id_progetto]
-  if (!buf) return
-  const ok = await store.updateProgettoBeneficiario(progetto.id_progetto, buf.cognome, buf.nome)
-  if (ok) {
-    notifySuccess($q, 'Beneficiario aggiornato')
-    buf.origCognome = buf.cognome
-    buf.origNome = buf.nome
-    await store.fetchProgetti()
-  } else if (store.error) {
-    notifyError($q, store.error, 'Errore aggiornamento beneficiario')
-  }
-}
-
-function refreshProgetti() {
-  Object.keys(editCache).forEach(k => delete editCache[k])
-  store.fetchProgetti()
-}
 
 // Associazioni
 const associazioni = ref([])
@@ -935,6 +880,35 @@ async function saveAssocBudget(row) {
   } catch (error) {
     notifyError($q, error, 'Errore aggiornamento budget')
   } finally { savingAssoc.value = false }
+}
+
+const showNewAssociazioneDialog = ref(false)
+const newAssociazioneNome = ref('')
+const newAssociazioneBudget = ref(0)
+const savingAssociazione = ref(false)
+
+function openNewAssociazioneDialog() {
+  newAssociazioneNome.value = ''
+  newAssociazioneBudget.value = 0
+  showNewAssociazioneDialog.value = true
+}
+
+async function createAssociazione() {
+  if (!newAssociazioneNome.value) return
+  savingAssociazione.value = true
+  try {
+    const { associazioniService } = await import('src/services/associazioni.service')
+    const data = { Nome: newAssociazioneNome.value }
+    if (newAssociazioneBudget.value > 0) {
+      data.Budget = newAssociazioneBudget.value
+    }
+    await associazioniService.create(data)
+    notifySuccess($q, 'Associazione creata')
+    showNewAssociazioneDialog.value = false
+    await fetchAssociazioni()
+  } catch (error) {
+    notifyError($q, error, "Errore creazione associazione")
+  } finally { savingAssociazione.value = false }
 }
 
 // Volontari senza account Directus
@@ -1087,9 +1061,46 @@ async function handleRoleChange(userId, roleId) {
   }
 }
 
+// Verifica consistenza Volontari
+async function runConsistencyCheck() {
+  await store.fetchVolontariConsistency()
+  if (store.volontariCheck) {
+    notifySuccess($q, 'Verifica completata')
+  }
+}
+
+async function clearUserRef(c) {
+  const ok = await store.clearUserReference(c.id_contatto, c.user_id)
+  if (ok) {
+    notifySuccess($q, `${c.Nome} ${c.Cognome}: user_id rimosso`)
+    await runConsistencyCheck()
+  } else {
+    notifyError($q, store.error, "Errore nella rimozione user_id")
+  }
+}
+
+async function clearIsVolontario(c) {
+  const ok = await store.clearIsVolontarioFlag(c.id_contatto)
+  if (ok) {
+    notifySuccess($q, `${c.Nome} ${c.Cognome}: IsVolontario resettato`)
+    await runConsistencyCheck()
+  } else {
+    notifyError($q, store.error, "Errore nel reset IsVolontario")
+  }
+}
+
+async function setVolontarioFlag(c) {
+  const ok = await store.setVolontarioFlag(c.id_contatto)
+  if (ok) {
+    notifySuccess($q, `${c.Nome} ${c.Cognome}: IsVolontario impostato`)
+    await runConsistencyCheck()
+  } else {
+    notifyError($q, store.error, "Errore nell'impostazione IsVolontario")
+  }
+}
+
 onMounted(() => {
   store.fetchAll()
-  store.fetchProgetti()
   fetchAssociazioni()
   fetchVolontariSenzaUtente()
   errorLogStore.fetchAll()

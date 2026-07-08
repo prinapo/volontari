@@ -25,14 +25,6 @@ test.afterEach(async () => {
     }
   }
   // Pulisci batch e pagamenti creati dai test
-  try {
-    const batchRes = await apiGet('BatchPagamenti', { sort: '-created_at', limit: 10 })
-    for (const b of batchRes.data || []) {
-      await apiDelete('BatchPagamenti', b.id)
-    }
-  } catch {
-    /* */
-  }
   _pagCleanup = { progetti: [], pagamenti: [], batch: [] }
 })
 

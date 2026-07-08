@@ -4,15 +4,28 @@ import { GestionePage } from '../pages/GestionePage.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin } from '../helpers/api.js'
+import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
 import { creaFamigliaVolontarioProgetto, pulisciIds, loginGestore } from '../helpers/setup-atomico.js'
+
+const _gfSubmittedIds = []
 
 test.describe('Gestione Fixes', () => {
   test.beforeAll(async () => {
     await apiLogin(auth.admin.email, auth.admin.password)
   })
 
+  test.afterEach(async () => {
+    // Cleanup GF-02 submissions if any were created
+    for (const id of _gfSubmittedIds) {
+      try {
+        await apiDelete('InviiGiustificativiNoLogin', id)
+      } catch { /* */ }
+    }
+    _gfSubmittedIds.length = 0
+  })
+
   test('GF-01: Disattivo filter — soft-delete non mostrato @regression', async ({ page }) => {
+    test.setTimeout(180000)
     const ids = {}
     await loginGestore(page)
     await creaFamigliaVolontarioProgetto(page, ids)
@@ -24,10 +37,7 @@ test.describe('Gestione Fixes', () => {
     await page.waitForTimeout(2000)
 
     const clicked = await gestionePage.clickContactsOnFamiglia(ids.prefix + 'Fam')
-    if (!clicked) {
-      test.skip()
-      return
-    }
+    if (!clicked) throw new Error("clickContactsOnFamiglia fallito")
 
     const dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -38,11 +48,17 @@ test.describe('Gestione Fixes', () => {
 
   test('GF-02: Email editabile quando contatto not found @regression', async ({ page }) => {
     test.setTimeout(60000)
-    const randomEmail = `test_no_esiste_${Date.now()}@test.com`
+    const randomEmail = `TEST_no_esiste_${Date.now()}@test.com`
 
     const networkLog = []
     page.on('response', async resp => {
       const entry = { method: resp.request().method(), url: resp.url().replace(/\?.*$/, ''), status: resp.status() }
+      if (resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST' && resp.status() < 400) {
+        try {
+          const body = await resp.json()
+          if (body?.data?.id) _gfSubmittedIds.push(body.data.id)
+        } catch {}
+      }
       if (resp.status() >= 400) {
         try {
           entry.body = await resp.text()
@@ -56,21 +72,21 @@ test.describe('Gestione Fixes', () => {
     await page.waitForTimeout(2000)
 
     await submitPage.fillForm({
-      nome_richiedente: 'Test No Esiste',
-      cognome_richiedente: 'Test',
+      nome_richiedente: 'TEST_NoEsiste',
+      cognome_richiedente: 'TEST_Submitter',
       email: randomEmail,
       telefono: '3331234567',
       iban: 'IT60X0000000000000000000',
-      intestatario: 'Test intestatario',
-      nome_beneficiario: 'Luigi',
-      cognome_beneficiario: 'Rossi'
+      intestatario: 'TEST_Intestatario',
+      nome_beneficiario: 'TEST_Luigi',
+      cognome_beneficiario: 'TEST_Rossi'
     })
 
     await submitPage.clickAddGiustificativo()
     await page.waitForTimeout(500)
 
     await submitPage.fillGiustificativo(0, {
-      descrizione: 'Test giustificativo',
+      descrizione: 'TEST_Giustificativo',
       importo: 100,
       data: '2026-01-15'
     })
@@ -101,10 +117,7 @@ test.describe('Gestione Fixes', () => {
         )}`
       )
 
-    if (!submissionCreated) {
-      test.skip('Submission non creata')
-      return
-    }
+    if (!submissionCreated) throw new Error("Submissions non creata")
 
     await loginAs(page, 'verificatore', auth)
 
@@ -141,7 +154,7 @@ test.describe('Gestione Fixes', () => {
         }
       }
     }
-    test.skip('Nessuna submission not_found trovata')
+    throw new Error('Nessuna submission not_found trovata')
   })
 
   test('GF-03: Telefono visibile nella lista submission @smoke', async ({ page }) => {

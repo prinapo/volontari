@@ -163,29 +163,19 @@ export async function assegnaContattoAFamigliaViaUI(
     await gp.goto()
   }
 
-  // Cerca la famiglia nel tab Famiglie
+  // Usa gp.clickContactsOnFamiglia che gestisce sia desktop che mobile
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
   await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
   await famiglieTab.click()
   await page.waitForTimeout(300)
 
-  // Cerca la famiglia per nome
   await gp.famiglieSearch.fill(famigliaNome)
-
-  // Aspetta che il tavolo si aggiorni con i risultati della ricerca
   await page.waitForTimeout(1500)
 
-  // Trova la riga con la famiglia e clicca Gestisci contatti
-  const famTable = page.locator('.q-table')
-  const famRow = famTable.locator('td').filter({ hasText: famigliaNome }).first()
-  await famRow.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
-  const contactsBtn = famRow.locator('..').locator('[aria-label="Gestisci contatti"]')
-  await contactsBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-  if (!((await contactsBtn.count()) > 0)) {
+  const found = await gp.clickContactsOnFamiglia(famigliaNome)
+  if (!found) {
     throw new Error(`Famiglia "${famigliaNome}" non trovata per assegnazione contatto`)
   }
-  await contactsBtn.click()
-  await gp.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
 
   // Assegna contatto tramite ContattiDialog
   if (ruolo === 'Volontario') {

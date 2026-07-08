@@ -1,6 +1,8 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
-import { apiLogin, apiGet, apiPost, apiDelete } from '../helpers/api.js'
+import { apiLogin } from '../helpers/api.js'
+import { deleteFamiglie } from '../helpers/cleanup.js'
+import { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from '../helpers/pagina-gestione.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 let createdFamiglia = null
@@ -8,43 +10,25 @@ let createdFamiglia = null
 test.describe('AppLayout — Sidebar Navigation', () => {
   test.beforeAll(async () => {
     await apiLogin(auth.admin.email, auth.admin.password)
-    const emailRes = await apiGet('email', {
-      filter: JSON.stringify({ email_address: { _eq: auth.volontario.email } }),
-      fields: 'Contatto_Relation'
-    })
-    const contattoId = emailRes.data?.[0]?.Contatto_Relation
-    if (!contattoId) return
+  })
 
-    const famId = 'LAYOUT_' + Date.now()
-    await apiPost('Famiglie', { id_famiglia: famId, Nome_Famiglia: famId })
-    createdFamiglia = famId
-    await apiPost('Famiglie_Contatti', {
-      id: Math.floor(Math.random() * 9000000) + 1000000,
-      Contatto: contattoId,
-      Famiglia: famId,
-      Ruolo_nella_Famiglia: 'Volontario',
-      Disattivo: false
+  test.beforeEach(async ({ page }) => {
+    const nomeFamiglia = 'TEST_LAYOUT_' + Date.now()
+    await loginAs(page, 'gestore', auth)
+    const fam = await createFamigliaViaUI(page, { nomeFamiglia })
+    createdFamiglia = fam.id_famiglia
+    await assegnaContattoAFamigliaViaUI(page, {
+      famigliaNome: nomeFamiglia,
+      searchTerm: auth.volontario.email,
+      fullName: auth.volontario.email,
+      ruolo: 'Volontario'
     })
   })
 
-  test.afterAll(async () => {
+  test.afterEach(async () => {
     if (createdFamiglia) {
-      const fcRes = await apiGet('Famiglie_Contatti', {
-        filter: JSON.stringify({ Famiglia: { _eq: createdFamiglia } }),
-        fields: 'id'
-      })
-      for (const r of fcRes.data || []) {
-        try {
-          await apiDelete('Famiglie_Contatti', r.id)
-        } catch {
-          /* */
-        }
-      }
-      try {
-        await apiDelete('Famiglie', createdFamiglia)
-      } catch {
-        /* */
-      }
+      await deleteFamiglie(createdFamiglia).catch(() => {})
+      createdFamiglia = null
     }
   })
 
@@ -134,8 +118,4 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 5000 })
   })
 
-  test.skip('LB-05: Genitore loggato arriva a /famiglie @smoke', async ({ page }) => {
-    await loginAs(page, 'genitore', auth)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
-  })
 })

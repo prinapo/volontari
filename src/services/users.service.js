@@ -15,7 +15,7 @@ export const usersService = {
   searchByEmail(email) {
     return api.get('/users', {
       params: {
-        'filter[email][_eq]': email,
+        'filter[email][_eq]': email.toLowerCase(),
         fields: 'id,email',
         limit: 1
       }

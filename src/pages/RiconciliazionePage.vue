@@ -138,7 +138,7 @@
 
                   <div v-if="props.row._detectState === 'not_found'" class="q-mb-sm">
                     <div class="row items-center q-gutter-xs">
-                      <q-input :model-value="props.row.email" outlined dense class="col" @update:model-value="(val) => props.row.email = val" />
+                      <q-input :model-value="props.row.email" outlined dense class="col" @update:model-value="(val) => props.row.email = (val || '').toLowerCase()" />
                       <q-btn
                         flat
                         round
@@ -626,6 +626,7 @@ async function handleAssociaGenitore(submission) {
 
 async function handleEmailEdit(submission) {
   if (!submission.email) return
+  submission.email = submission.email.toLowerCase()
   try {
     await verificaService.updateSubmission(submission.id, { email: submission.email })
   } catch (error) {

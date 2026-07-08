@@ -16,6 +16,7 @@ export class LoginPage {
         sessionStorage.clear()
       })
       await this.page.goto('/login', { timeout: 20000 })
+      await this.page.waitForTimeout(2000)
     }
   }
 
@@ -28,6 +29,7 @@ export class LoginPage {
         sessionStorage.clear()
       })
       await this.page.goto('/login', { timeout: 20000 })
+      await this.page.waitForTimeout(2000)
     }
 
     // Navigate through fallback strategies

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { adminService } from 'src/services/admin.service'
 import { associazioniService } from 'src/services/associazioni.service'
 import { famiglieService } from 'src/services/famiglie.service'
+import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
@@ -16,7 +17,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
     associazioni: [],
     budgetMap: {},
     loading: false,
-    error: null
+    error: null,
+    liste: []
   }),
 
   getters: {
@@ -45,8 +47,99 @@ export const usePagamentiStore = defineStore('pagamenti', {
         this.fetchProposti(),
         this.fetchInCorso(),
         this.fetchFalliti(),
-        this.fetchBatches()
+        this.fetchBatches(),
+        this.fetchListe()
       ])
+    },
+
+    async ricalcolaPropostiDaProgetti(progetti) {
+      if (!progetti?.length) return
+      const aperti = progetti.filter(r => r.statoProgetto !== 'chiuso')
+      if (!aperti.length) return
+      const ids = aperti.map(r => r.idProgetto)
+
+      try {
+        const [giustRes, pagRes] = await Promise.all([
+          verificaService.getGiustificativiByProgetti(ids),
+          pagamentiService.getPagamenti({
+            'filter[Progetto][_in]': ids.join(','),
+            limit: -1
+          })
+        ])
+        const allGiust = giustRes.data.data || []
+        const allPag = pagRes.data.data || []
+
+        const giustByProgetto = {}
+        for (const g of allGiust) {
+          const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
+          if (!giustByProgetto[pid]) giustByProgetto[pid] = []
+          giustByProgetto[pid].push(g)
+        }
+
+        const pagByProgetto = {}
+        for (const p of allPag) {
+          const pid = typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto
+          if (!pagByProgetto[pid]) pagByProgetto[pid] = []
+          pagByProgetto[pid].push(p)
+        }
+
+        const writeOps = []
+        const ricalcolaSet = new Set()
+
+        for (const row of aperti) {
+          const pid = row.idProgetto
+          const allocato = Number.parseFloat(row.allocato) || 0
+          const giustificativi = giustByProgetto[pid] || []
+          const pagamenti = pagByProgetto[pid] || []
+
+          const totaleVerificato = giustificativi
+            .filter(g => g.Stato === 'verificato')
+            .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
+
+          const totaleStorico = pagamenti
+            .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
+            .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
+
+          const erogabile = Math.min(totaleVerificato, allocato)
+          const nuovoProposto = erogabile - totaleStorico
+          const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
+
+          if (nuovoProposto > 0) {
+            if (esistente) {
+              if (Number.parseFloat(esistente.Importo) !== nuovoProposto) {
+                writeOps.push(pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }))
+                ricalcolaSet.add(pid)
+              }
+            } else {
+              writeOps.push(pagamentiService.createPagamento({
+                Progetto: pid,
+                Famiglia: row.idFamiglia,
+                Importo: nuovoProposto,
+                Stato: STATO_PAGAMENTO.PROPOSTO,
+                IBAN: row.iban || '',
+                Intestatario: row.intestatario || '',
+                DataProposta: new Date().toISOString()
+              }))
+              ricalcolaSet.add(pid)
+            }
+          } else if (esistente) {
+            writeOps.push(pagamentiService.deletePagamento(esistente.id))
+            ricalcolaSet.add(pid)
+          }
+        }
+
+        if (writeOps.length > 0) await Promise.all(writeOps)
+
+        if (ricalcolaSet.size > 0) {
+          await Promise.all(
+            [...ricalcolaSet].map(id => this.ricalcolaTotaliProgetto(id))
+          )
+        }
+
+        await this.fetchProposti()
+      } catch (error) {
+        this.error = error.message
+      }
     },
 
     async fetchAssociazioni() {
@@ -118,7 +211,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async ricalcolaProposta(progettoId) {
+    async ricalcolaProposta(progettoId, { iban, intestatario } = {}) {
       try {
         const progRes = await progettiService.getById(progettoId)
         const progetto = progRes.data.data
@@ -160,8 +253,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
                 Famiglia: progetto.Famiglia,
                 Importo: nuovoProposto,
                 Stato: STATO_PAGAMENTO.PROPOSTO,
-                IBAN: progetto.IBAN || '',
-                Intestatario: progetto.Intestatario_CC || '',
+                IBAN: iban || progetto.IBAN || '',
+                Intestatario: intestatario || progetto.Intestatario_CC || '',
                 DataProposta: new Date().toISOString()
               }))
         } else if (esistente) {
@@ -220,12 +313,91 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
+    async _aggiornaListaBatch(batchId) {
+      try {
+        const pagamentiRes = await pagamentiService.getPagamenti({
+          'filter[Batch][_eq]': batchId,
+          'filter[_or][0][Stato][_eq]': STATO_PAGAMENTO.IN_PAGAMENTO,
+          'filter[_or][1][Stato][_eq]': STATO_PAGAMENTO.PAGATO,
+           fields: 'id,Stato,Importo,IBAN,Intestatario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
+          limit: -1
+        })
+        const pagamenti = pagamentiRes.data.data || []
+
+        const batch = this.batches.find(b => b.id === batchId)
+        if (!batch) return
+        const nome = batch.Nome
+
+        const allListe = await listePagamentiService.getAll()
+        const existingLista = allListe.find(l => l.Nome === `${nome} (batch)`)
+
+        if (pagamenti.length === 0) {
+          if (existingLista) {
+            if (existingLista.File) await listePagamentiService.deleteFile(existingLista.File)
+            await listePagamentiService.delete(existingLista.id)
+          }
+          await this.fetchListe()
+          return
+        }
+
+        const csvHeader = 'Famiglia,Importo,IBAN,Intestatario'
+        const csvRows = pagamenti.map(p => {
+          const importo = (Number.parseFloat(p.Importo) || 0).toFixed(2).replace('.', ',')
+          return `"${p.Famiglia?.Nome_Famiglia || ''}","${importo}","${p.IBAN || ''}","${p.Intestatario || ''}"`
+        })
+        const csv = [csvHeader, ...csvRows].join('\n')
+        const totale = pagamenti.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
+
+        const fileId = await listePagamentiService.uploadCsv(csv, nome)
+
+        if (existingLista) {
+          if (existingLista.File) await listePagamentiService.deleteFile(existingLista.File)
+          await listePagamentiService.update(existingLista.id, {
+            File: fileId,
+            Totale: totale,
+            ConteggioRighe: pagamenti.length
+          })
+        } else {
+          await listePagamentiService.create({
+            Nome: `${nome} (batch)`,
+            File: fileId,
+            Totale: totale,
+            ConteggioRighe: pagamenti.length,
+            DataCreazione: new Date().toISOString()
+          })
+        }
+        await this.fetchListe()
+      } catch {
+        // best effort
+      }
+    },
+
+    async ripristinaProposto(pagamentoId) {
+      this.loading = true
+      try {
+        const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
+          .data?.[0]
+        if (!pagamento) throw new Error('Pagamento non trovato')
+        await pagamentiService.updatePagamento(pagamentoId, {
+          Stato: STATO_PAGAMENTO.PROPOSTO,
+          Batch: null
+        })
+        await this.ricalcolaTotaliProgetto(pagamento.Progetto)
+        await this.fetchProposti()
+      } catch (error) {
+        this.error = error.message
+      } finally {
+        this.loading = false
+      }
+    },
+
     async creaBatch({ nome, associazione, pagamentoIds }) {
       this.loading = true
       this.error = null
       try {
         const pagamentiRes = await pagamentiService.getPagamenti({
           'filter[id][_in]': pagamentoIds.join(','),
+          fields: 'id,Stato,Importo,IBAN,Intestatario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Progetto.id_progetto',
           limit: -1
         })
         const pagamenti = pagamentiRes.data.data || []
@@ -258,6 +430,26 @@ export const usePagamentiStore = defineStore('pagamenti', {
             Batch: batchId
           })
           await this.ricalcolaTotaliProgetto(p.Progetto)
+        }
+
+        // Genera CSV del batch e salva in Liste esportazione
+        const csvHeader = 'Famiglia,Importo,IBAN,Intestatario'
+        const csvRows = pagamenti.map(p => {
+          const importo = (Number.parseFloat(p.Importo) || 0).toFixed(2).replace('.', ',')
+          return `"${p.Famiglia?.Nome_Famiglia || ''}","${importo}","${p.IBAN || ''}","${p.Intestatario || ''}"`
+        })
+        const csv = [csvHeader, ...csvRows].join('\n')
+        try {
+          const fileId = await listePagamentiService.uploadCsv(csv, nome)
+          await listePagamentiService.create({
+            Nome: `${nome} (batch)`,
+            File: fileId,
+            Totale: totale,
+            ConteggioRighe: pagamenti.length,
+            DataCreazione: new Date().toISOString()
+          })
+        } catch {
+          // Se fallisce la generazione CSV, il batch è comunque creato
         }
 
         await this.init()
@@ -305,6 +497,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           NoteEsito: note
         })
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
+        if (pagamento.Batch) await this._aggiornaListaBatch(pagamento.Batch)
         await this.init()
       } catch (error) {
         this.error = error.message
@@ -313,20 +506,26 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async segnaAnnullato(pagamentoId, motivo) {
+    async segnaAnnullato(pagamentoId) {
       this.loading = true
       try {
         const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
           .data?.[0]
         if (!pagamento || !['in_pagamento', 'fallito'].includes(pagamento.Stato)) {
-          throw new Error('Solo pagamenti in_pagamento o falliti possono essere annullati')
+          throw new Error('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
         }
+        const batchId = pagamento.Batch
         await pagamentiService.updatePagamento(pagamentoId, {
           Stato: STATO_PAGAMENTO.ANNULLATO,
-          NoteEsito: motivo
+          Batch: null,
+          NoteEsito: 'Rimosso dal gruppo'
         })
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
-        await this.ricalcolaProposta(pagamento.Progetto)
+        if (batchId) await this._aggiornaListaBatch(batchId)
+        await this.ricalcolaProposta(pagamento.Progetto, {
+          iban: pagamento.IBAN,
+          intestatario: pagamento.Intestatario
+        })
         await this.init()
       } catch (error) {
         this.error = error.message
@@ -361,6 +560,18 @@ export const usePagamentiStore = defineStore('pagamenti', {
           StatoProgetto: STATO_PROGETTO.CHIUSO,
           DataChiusura: new Date().toISOString(),
           MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
+        })
+      } catch (error) {
+        this.error = error.message
+      }
+    },
+
+    async riapriProgetto(progettoId) {
+      try {
+        await progettiService.updateStats(progettoId, {
+          StatoProgetto: STATO_PROGETTO.APERTO,
+          DataChiusura: null,
+          MotivoChiusura: null
         })
       } catch (error) {
         this.error = error.message
@@ -406,6 +617,86 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
       } catch (error) {
         console.error('[Pagamento] Errore invio notifica:', error.message)
+      }
+    },
+
+    async fetchListe() {
+      try {
+        this.liste = await listePagamentiService.getAll()
+      } catch {
+        this.liste = []
+      }
+    },
+
+    async generaLista(nome) {
+      this.loading = true
+      this.error = null
+      try {
+        const { useVerificaStore } = await import('stores/verifica.store')
+        const verificaStore = useVerificaStore()
+
+        const aspiRows = verificaStore.filteredRows.filter(
+          row => row.totaleRimborsabile > 0 && row.iban && row.intestatario && !row.giustificativi.some(g => g.Stato === 'inviato')
+        )
+
+        if (aspiRows.length === 0) {
+          throw new Error('Nessuna riga esportabile trovata')
+        }
+
+        const escapeCsv = (value) => {
+          const normalized = value == null ? '' : String(value)
+          return `"${normalized.replaceAll('"', '""')}"`
+        }
+
+        const header = ['ID famiglia', 'Famiglia', 'Beneficiario', 'Intestatario', 'IBAN', 'Importo']
+        const csv = [
+          header.map(escapeCsv).join(';'),
+          ...aspiRows.map(row => {
+            const line = [
+              row.idFamiglia,
+              row.famiglia,
+              row.beneficiario,
+              row.intestatario,
+              row.iban,
+              row.totaleRimborsabile.toFixed(2).replace('.', ',')
+            ]
+            return line.map(escapeCsv).join(';')
+          })
+        ].join('\n')
+
+        const totale = aspiRows.reduce((s, r) => s + (Number.parseFloat(r.totaleRimborsabile) || 0), 0)
+
+        const fileId = await listePagamentiService.uploadCsv(csv, nome)
+
+        await listePagamentiService.create({
+          Nome: nome,
+          File: fileId,
+          Totale: totale,
+          ConteggioRighe: aspiRows.length,
+          DataCreazione: new Date().toISOString()
+        })
+
+        await this.fetchListe()
+      } catch (error) {
+        this.error = error.message || 'Errore generazione lista'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async eliminaLista(id, fileId) {
+      this.loading = true
+      try {
+        if (fileId) {
+          await listePagamentiService.deleteFile(fileId)
+        }
+        await listePagamentiService.delete(id)
+        await this.fetchListe()
+      } catch (error) {
+        this.error = error.message || 'Errore eliminazione lista'
+      } finally {
+        this.loading = false
       }
     }
   }

@@ -12,6 +12,7 @@ import {
   ADMIN_ROLE_IDS,
   ADMIN_ROLE_NAMES
 } from 'src/utils/constants'
+import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 
 function normalizeRoleName(role) {
   if (!role) return ''
@@ -85,6 +86,13 @@ export const useAuthStore = defineStore('auth', {
       const roleName = normalizeRoleName(state.user?.role)
       const roleId = getRoleId(state.user?.role)
       return ADMIN_ROLE_NAMES.includes(roleName) || ADMIN_ROLE_IDS.includes(roleId)
+    },
+    canPagamenti: state => {
+      const roleName = normalizeRoleName(state.user?.role)
+      const roleId = getRoleId(state.user?.role)
+      const roleNames = ['verificatore', 'verifica', 'validatore', 'validator', 'administrator', 'admin']
+      const roleIds = (import.meta.env.VITE_PAGAMENTI_ROLE_IDS || '').split(',').map(id => id.trim()).filter(Boolean)
+      return roleNames.includes(roleName) || roleIds.includes(roleId)
     },
     userName: state => {
       if (state.contatto) {
@@ -215,7 +223,7 @@ export const useAuthStore = defineStore('auth', {
     _compareProject(project, projId, giustificativi) {
       const count = giustificativi.length
       const totaleImporto = giustificativi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
-      const statoCalcolato = this._calcolaStatoRendicontazione(giustificativi)
+      const statoCalcolato = calcolaStatoRendicontazione(giustificativi)
 
       const statoDB = project.StatoRendicontazione || 'nessuno'
       const countDB = project.TotaleGiustificativi || 0
@@ -241,15 +249,6 @@ export const useAuthStore = defineStore('auth', {
         }
       }
       return null
-    },
-
-    _calcolaStatoRendicontazione(giustificativi) {
-      if (giustificativi.length === 0) return 'nessuno'
-      const stati = giustificativi.map(g => (g.Stato || '').toLowerCase())
-      if (stati.every(s => s === 'verificato' || s === 'approvato')) return 'verificato'
-      if (stati.includes('inviato')) return 'in_attesa'
-      if (stati.every(s => s === 'bozza' || s === '')) return 'bozza'
-      return 'parziale'
     },
 
     async checkRendicontazioneConsistency() {

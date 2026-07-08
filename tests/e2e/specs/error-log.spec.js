@@ -71,6 +71,7 @@ test.describe('Error Log', () => {
 
   test('EL-02: Errore 400 registrato in ErrorLog e visibile in Admin @regression', async ({ page }) => {
     test.setTimeout(60000)
+    page.expectApiError('/items/Progetti')
 
     // Intercetta le chiamate Progetti dell'AdminPage per generare un 400
     // Questo triggera l'interceptor Axios che logga su ErrorLog

@@ -21,6 +21,15 @@ export class VerificaPage {
 
   async waitForTable() {
     await this.table.waitFor({ state: 'visible', timeout: 15000 })
+    // Wait for actual data rows to load (desktop: tbody tr, mobile: .q-expansion-item)
+    await this.page.waitForFunction(() => {
+      const table = document.querySelector('.verifica-table')
+      if (!table) return false
+      if (table.classList.contains('q-table--grid')) {
+        return table.querySelectorAll('.q-expansion-item').length > 0
+      }
+      return table.querySelectorAll('tbody tr').length > 0
+    }, { timeout: 15000 }).catch(() => {})
   }
 
   async getRowCount() {
@@ -29,21 +38,53 @@ export class VerificaPage {
 
   async searchFamiglia(text) {
     const input = this.searchInput
-    if (!(await input.isVisible({ timeout: 3000 }).catch(() => false))) return
+    const count = await input.count()
+    if (count > 0) {
+      try {
+        await input.fill(text, { timeout: 3000 })
+      } catch {
+        try {
+          await input.fill(text, { force: true, timeout: 3000 })
+        } catch {
+          // fallback: set value via evaluate
+          await this.page.evaluate(t => {
+            const inp = document.querySelector('input[aria-label="Cerca famiglia"]')
+            if (!inp) return
+            const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+            nativeSetter.call(inp, t)
+            inp.dispatchEvent(new Event('input', { bubbles: true }))
+            inp.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }))
+          }, text)
+        }
+      }
+    } else {
+      // No input found at all — set via evaluate
+      await this.page.evaluate(t => {
+        const inp = document.querySelector('input[aria-label="Cerca famiglia"]')
+        if (!inp) return
+        const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+        nativeSetter.call(inp, t)
+        inp.dispatchEvent(new Event('input', { bubbles: true }))
+        inp.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }))
+      }, text)
+    }
 
-    await input.fill(text)
-
-    await this.page
-      .waitForResponse(resp => resp.url().includes('/items/Progetti') && resp.request().method() === 'GET', {
-        timeout: 10000
-      })
-      .catch(() => {})
-
-    await this.table
-      .locator('tbody tr')
-      .first()
-      .waitFor({ state: 'attached', timeout: 5000 })
-      .catch(() => {})
+    // Wait for Quasar debounce and search API call(s) to complete
+    await this.page.waitForTimeout(1500)
+    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await this.page.waitForFunction(searchText => {
+      const table = document.querySelector('.verifica-table')
+      if (!table) return true
+      const isGrid = table.classList.contains('q-table--grid')
+      if (isGrid && table.querySelectorAll('.q-expansion-item').length > 0) {
+        const items = table.querySelectorAll('.q-expansion-item')
+        for (const item of items) {
+          if (item.textContent.includes(searchText)) return true
+        }
+      }
+      if (!isGrid && table.querySelectorAll('tbody tr').length > 0) return true
+      return document.body.innerText.includes('Nessun dato disponibile')
+    }, text, { timeout: 10000 }).catch(() => {})
   }
 
   async expandRow(index = 0) {
@@ -58,13 +99,18 @@ export class VerificaPage {
       }
     }
 
-    await this.page
-      .locator('.expandable-content')
-      .first()
-      .waitFor({ state: 'visible', timeout: 5000 })
-      .catch(() => {
-        console.log('[VerificaPage] expandable-content not found within timeout')
-      })
+    const isGrid = await this.page.locator('.q-table--grid').count() > 0
+    if (!isGrid) {
+      await this.page
+        .locator('.expandable-content')
+        .first()
+        .waitFor({ state: 'visible', timeout: 5000 })
+        .catch(() => {
+          console.log('[VerificaPage] expandable-content not found within timeout')
+        })
+    } else {
+      await this.page.waitForTimeout(1000)
+    }
   }
 
   async getGiustificativiInRow(index = 0) {
@@ -72,9 +118,13 @@ export class VerificaPage {
   }
 
   async getStatoRiga(index = 0) {
-    const badge = this.rows.nth(index).locator('.q-badge').first()
-    if ((await badge.count()) > 0) {
-      return await badge.innerText()
+    const badges = this.rows.nth(index).locator('.q-badge')
+    const count = await badges.count()
+    for (let i = 0; i < count; i++) {
+      const text = await badges.nth(i).innerText()
+      if (['Non ricevuta', 'Pronto', 'Da verificare', 'Da completare', 'Dati bancari mancanti'].includes(text)) {
+        return text
+      }
     }
     return null
   }

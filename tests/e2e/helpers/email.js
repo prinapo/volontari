@@ -51,13 +51,14 @@ async function fetchRecentMessages(client, count = 5) {
   }
 }
 
-function extractResetLink(messages) {
+function extractResetLink(messages, since = new Date(0)) {
   for (const msg of messages) {
+    if (msg.date < since) continue
     const subjectLower = msg.subject.toLowerCase()
     const isResetEmail = SUBJECT_KEYWORDS.some(kw => subjectLower.includes(kw))
     if (!isResetEmail) continue
 
-    const pattern = /https?:\/\/[^"'\s]*\/reset-password\?token=[^"'\s&]+/
+    const pattern = /https?:\/\/[^"'\s]+\/(?:admin\/)?(?:#\/)?reset-password\?token=[^"'\s&]+/
     const htmlMatch = msg.html.match(pattern)
     if (htmlMatch) return htmlMatch[0]
     const textMatch = msg.text?.match(pattern)
@@ -66,7 +67,7 @@ function extractResetLink(messages) {
   return null
 }
 
-export async function waitForResetLink(timeoutMs = 20000) {
+export async function waitForResetLink(timeoutMs = 20000, since = new Date(0)) {
   const config = getConfig()
   const client = new ImapFlow(config)
   await client.connect()
@@ -74,8 +75,8 @@ export async function waitForResetLink(timeoutMs = 20000) {
   const deadline = Date.now() + timeoutMs
   try {
     while (Date.now() < deadline) {
-      const messages = await fetchRecentMessages(client, 5)
-      const link = extractResetLink(messages)
+      const messages = await fetchRecentMessages(client, 10)
+      const link = extractResetLink(messages, since)
       if (link) return link
       await new Promise(r => setTimeout(r, 2000))
     }

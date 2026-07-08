@@ -163,7 +163,7 @@ const resetEmail = ref('')
 const sendingReset = ref(false)
 
 async function handleLogin() {
-  const ok = await authStore.login(email.value, password.value)
+  const ok = await authStore.login(email.value.toLowerCase(), password.value)
   if (ok) {
     if (authStore.canGestione) return router.push('/gestione')
     if (authStore.canVerifica) return router.push('/verifica')

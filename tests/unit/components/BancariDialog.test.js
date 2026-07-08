@@ -54,8 +54,29 @@ describe('BancariDialog', () => {
       initialIban: 'IT00X',
       initialIntestatario: 'Mario'
     })
-    // Internal state should be initialized from props
     expect(wrapper.vm.localIban).toBe('IT00X')
     expect(wrapper.vm.localIntestatario).toBe('Mario')
+  })
+
+  it('emits update:modelValue through computed model setter', async () => {
+    const wrapper = createWrapper()
+
+    wrapper.vm.model = false
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
+  })
+
+  it('computes hasChanges based on edited fields', async () => {
+    const wrapper = createWrapper({
+      initialIban: 'IT60X0542811101000000123456',
+      initialIntestatario: 'Mario Rossi'
+    })
+
+    expect(wrapper.vm.hasChanges).toBe(false)
+
+    wrapper.vm.localIban = 'IT60X0542811101000000123457'
+    await wrapper.vm.$nextTick()
+    expect(wrapper.vm.hasChanges).toBe(true)
   })
 })

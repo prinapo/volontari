@@ -49,6 +49,21 @@ function isInvalidTokenError(error) {
   )
 }
 
+function logErrorSilently(entry) {
+  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+  if (!token) return
+  try {
+    const body = JSON.stringify(entry)
+    fetch(`${API_URL}/items/ErrorLog`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body
+    })
+  } catch {
+    /* silent */
+  }
+}
+
 api.interceptors.request.use(config => {
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
   if (token) {
@@ -96,23 +111,22 @@ api.interceptors.response.use(
       clearSessionAndRedirectToLogin()
     }
 
-    // Log error to ErrorLog collection (fire & forget)
+    // Log error to ErrorLog collection (fire & forget — usa fetch per evitare warning browser)
     if (error?.response && error?.config && !isAuthRequest) {
       const status = error.response.status
       if (status >= 400 && status < 500) {
-        try {
-          const { errorLogService } = await import('./error-log.service')
-          errorLogService.log({
-            level: status >= 500 ? 'error' : 'warning',
-            message: getErrorMessage(error).slice(0, 1000),
-            method: error.config.method?.toUpperCase() || '',
-            url: (error.config.baseURL || '') + (error.config.url || ''),
-            status,
-            responseBody: JSON.stringify(error.response.data).slice(0, 5000),
-            userAgent: navigator.userAgent?.slice(0, 255) || ''
-          })
-        } catch {
-          // silent — non deve mai bloccare il flusso
+        const entry = {
+          level: status >= 500 ? 'error' : 'warning',
+          message: getErrorMessage(error).slice(0, 1000),
+          method: error.config.method?.toUpperCase() || '',
+          url: (error.config.baseURL || '') + (error.config.url || ''),
+          status,
+          responseBody: JSON.stringify(error.response.data).slice(0, 5000),
+          userAgent: navigator.userAgent?.slice(0, 255) || ''
+        }
+        const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+        if (token) {
+          logErrorSilently(entry)
         }
       }
     }

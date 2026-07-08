@@ -208,14 +208,26 @@ export class GestionePage {
 
   /**
    * Assegna un contatto come Genitore tramite ContattiDialog.
+   * Attende il filtro async del QSelect (input-debounce 300ms + API call)
+   * e seleziona l'item che contiene il searchTerm nel label (email tra parentesi).
    */
   async assignGenitore(searchTerm) {
     const select = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto"))')
+    await select.click()
+    await this.page.waitForTimeout(500)
     const input = select.locator('input')
-    await input.click()
     await input.fill(searchTerm)
-    await this.page.locator('.q-menu .q-item').first().waitFor({ state: 'visible', timeout: 5000 })
-    await this.page.locator('.q-menu .q-item').first().click()
+    // QSelect ha input-debounce="300" + API call async in filterContatti
+    await this.page.waitForTimeout(1500)
+    const item = this.page.locator('.q-item').filter({ hasText: searchTerm }).first()
+    if ((await item.count()) > 0) {
+      await item.click({ force: true })
+    } else {
+      // Fallback: primo item del menu
+      const any = this.page.locator('.q-menu .q-item, .q-dialog .q-item').first()
+      if ((await any.count()) > 0) await any.click({ force: true })
+    }
+    await this.page.waitForTimeout(300)
     await this.contattiDialog.locator('button:has-text("Genitore")').last().click()
   }
 

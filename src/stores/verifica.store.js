@@ -9,6 +9,8 @@ import { verificaService } from 'src/services/verifica.service'
 import { FOLDERS } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
+import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
+import { useAuthStore } from './auth.store'
 import { usePagamentiStore } from './pagamenti.store'
 
 function toNumber(value) {
@@ -18,16 +20,7 @@ function toNumber(value) {
 
 function isCountedInTotals(item) {
   const stato = String(item.Stato || '').toLowerCase()
-  return stato === 'inviato' || stato === 'verificato' || stato === 'approvato'
-}
-
-function calcolaStatoRendicontazione(giustificativi) {
-  const stati = giustificativi.filter(g => !g.Invalidato).map(g => String(g.Stato || '').toLowerCase())
-  if (stati.length === 0) return 'nessuno'
-  if (stati.every(s => s === 'bozza' || s === '')) return 'bozza'
-  if (stati.every(s => s === 'verificato' || s === 'approvato')) return 'verificato'
-  if (stati.includes('inviato')) return 'in_attesa'
-  return 'parziale'
+  return stato === 'inviato' || stato === 'verificato'
 }
 
 function normalizeProject(project, famiglia = {}) {
@@ -252,7 +245,9 @@ export const useVerificaStore = defineStore('verifica', {
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
-        await pagStore.ricalcolaProposta(progettoId)
+        if (useAuthStore().canPagamenti) {
+          await pagStore.ricalcolaProposta(progettoId)
+        }
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella verifica del giustificativo'
         throw error
@@ -270,7 +265,9 @@ export const useVerificaStore = defineStore('verifica', {
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
-        await pagStore.ricalcolaProposta(progettoId)
+        if (useAuthStore().canPagamenti) {
+          await pagStore.ricalcolaProposta(progettoId)
+        }
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || `Errore nell'aggiornamento del campo ${field}`
         throw error
@@ -551,7 +548,9 @@ export const useVerificaStore = defineStore('verifica', {
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
-        await pagStore.ricalcolaProposta(progettoId)
+        if (useAuthStore().canPagamenti) {
+          await pagStore.ricalcolaProposta(progettoId)
+        }
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel rifiuto del giustificativo'
         throw error

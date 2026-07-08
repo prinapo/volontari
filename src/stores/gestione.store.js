@@ -6,8 +6,6 @@ import { referentiService } from 'src/services/referenti.service'
 import { usersService } from 'src/services/users.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 
-const RESET_URL = import.meta.env.VITE_RESET_URL
-
 export const useGestioneStore = defineStore('gestione', {
   state: () => ({
     famiglie: [],
@@ -51,7 +49,6 @@ export const useGestioneStore = defineStore('gestione', {
       const newUserId = newUserRes.data.data?.id
       if (newUserId) {
         await contattiService.update(contattoId, { user_id: newUserId })
-        await usersService.sendInvite(email, RESET_URL)
       }
       return { success: true, contatto }
     },
@@ -287,16 +284,6 @@ export const useGestioneStore = defineStore('gestione', {
         return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella rimozione'
-        return false
-      }
-    },
-
-    async sendInvite(email) {
-      try {
-        await usersService.sendInvite(email, RESET_URL)
-        return true
-      } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'invito"
         return false
       }
     },

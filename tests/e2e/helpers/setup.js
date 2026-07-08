@@ -36,7 +36,7 @@ export async function createContatto(page, { Nome, Cognome, email, IsReferente }
   const id_contatto = Math.floor(Math.random() * 900000) + 1000000
   await api(page, 'POST', '/items/contatti', {
     id_contatto,
-    Nome: Nome || 'Test',
+    Nome: Nome || 'TEST_Setup',
     Cognome: Cognome || 'Setup',
     Numero_di_cellulare: null,
     Numero_di_telefono: null,

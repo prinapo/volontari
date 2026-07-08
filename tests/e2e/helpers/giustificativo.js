@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -20,10 +21,10 @@ const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf
  * @returns {Promise<{id: string, desc: string}|null>}
  */
 export async function createGiustificativoViaDialog(page, data = {}) {
-  const testDesc = data.descrizione || `Test giust ${Date.now()}`
+  const testDesc = data.descrizione || `TEST_Giust_${Date.now()}`
 
   const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-  if (await aggiungiBtn.isDisabled().catch(() => true)) return null
+  await expect(aggiungiBtn).toBeEnabled({ timeout: 15000 })
 
   await aggiungiBtn.scrollIntoViewIfNeeded()
   await page.waitForTimeout(300)
@@ -36,7 +37,12 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   await dialog.locator('[data-testid="giustform-importo"]').fill(String(data.importo || '50.00'))
 
   if (data.data) {
-    await dialog.locator('[data-testid="giustform-data"]').fill(data.data)
+    // Il campo data è readonly (q-date): usa evaluate per forzare il valore
+    await dialog.locator('[data-testid="giustform-data"]').evaluate((el, val) => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+      setter.call(el, val)
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    }, data.data)
   }
 
   if (data.nota) {
@@ -51,19 +57,22 @@ export async function createGiustificativoViaDialog(page, data = {}) {
     dialog.locator('[data-testid="giustform-salva"]').click()
   ])
 
-  if (postResp.status() !== 200) return null
+  expect(postResp.status()).toBe(200)
   await dialog.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {})
 
   const created = await postResp.json()
   const giustId = created?.data?.id
 
   if (data.submitAfter && giustId) {
-    await page.waitForTimeout(1000)
-    const sendBtn = page.locator('.giust-item button:has-text("Invia")').first()
-    if (await sendBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await sendBtn.click()
-      await page.waitForTimeout(2000)
+    await page.waitForTimeout(1500)
+    const sendBtn = page.locator('[data-testid="giustificativo-card-' + giustId + '"] button:has-text("Invia")')
+    if (await sendBtn.count().then(c => c > 0)) {
+      const [patchResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/Giustificativi/' + giustId) && resp.request().method() === 'PATCH').catch(() => null),
+        sendBtn.click()
+      ])
     }
+    await page.waitForTimeout(1000)
   }
 
   return { id: giustId, desc: testDesc }

@@ -36,7 +36,10 @@ async function apiGet(baseUrl, token, path, params = {}) {
   const res = await fetch(url, {
     headers: { 'Authorization': `Bearer ${token}` }
   })
-  if (!res.ok) return { data: [] }
+  if (!res.ok) {
+    console.warn(`[CLEANUP] GET ${path} → ${res.status} (skipping)`)
+    return { data: [] }
+  }
   return res.json()
 }
 
@@ -51,9 +54,9 @@ async function apiDelete(baseUrl, token, path) {
 async function cleanupTestData(baseUrl, token) {
   console.log('[CLEANUP] Removing test data from previous runs...')
 
-  // 1. Delete submissions from test runs (InviiGiustificativiNoLogin with test emails)
+  // 1. Delete Test submissions (InviiGiustificativiNoLogin with test emails)
   const submissions = await apiGet(baseUrl, token, '/items/InviiGiustificativiNoLogin', {
-    filter: JSON.stringify({ email: { _contains: '@test.com' } }),
+    filter: JSON.stringify({ email: { _icontains: '@test.com' } }),
     fields: 'id',
     limit: -1
   })
@@ -64,20 +67,9 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[CLEANUP] Deleted ${submissions.data.length} test submissions`)
   }
 
-  // 2. Delete giustificativi with test descriptions (all test patterns)
-  const giustDescPatterns = [
-    { Descrizione: { _startswith: 'Test VF_' } },
-    { Descrizione: { _startswith: 'Test SR_' } },
-    { Descrizione: { _startswith: 'Test VE_' } },
-    { Descrizione: { _startswith: 'VF_' } },
-    { Descrizione: { _startswith: 'VE_ADD_' } },
-    { Descrizione: { _startswith: 'EC-' } },
-    { Descrizione: { _startswith: 'SR-02' } },
-    { Descrizione: { _startswith: 'Test priority' } },
-    { Descrizione: { _contains: 'Riconciliazione di test' } }
-  ]
+  // 2. Delete giustificativi with TEST_ prefix (unica convenzione)
   const giustificativi = await apiGet(baseUrl, token, '/items/Giustificativi', {
-    filter: JSON.stringify({ _or: giustDescPatterns }),
+    filter: JSON.stringify({ Descrizione: { _starts_with: 'TEST_' } }),
     fields: 'id',
     limit: -1
   })
@@ -88,51 +80,53 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[CLEANUP] Deleted ${giustificativi.data.length} test giustificativi`)
   }
 
-  // 3. Delete test famiglie (TEST_FAM_AUTO_ and FAM_ prefixes)
-  for (const prefix of ['TEST_FAM_AUTO_', 'FAM_']) {
-    const famiglie = await apiGet(baseUrl, token, '/items/Famiglie', {
-      filter: JSON.stringify({ id_famiglia: { _startswith: prefix } }),
-      fields: 'id_famiglia',
-      limit: -1
-    })
-    for (const f of (famiglie.data || [])) {
-      const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
-        filter: JSON.stringify({ Famiglia: { _eq: f.id_famiglia } }),
-        fields: 'id',
-        limit: -1
-      })
-      for (const r of (fc.data || [])) {
-        await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${r.id}`)
-      }
-      await apiDelete(baseUrl, token, `/items/Famiglie/${f.id_famiglia}`)
-    }
-    if ((famiglie.data || []).length > 0) {
-      console.log(`[CLEANUP] Deleted ${famiglie.data.length} test famiglie (${prefix}*)`)
-    }
+  // 3. Delete progetti created by tests (Cognome_Beneficiario starts with TEST_)
+  const progetti = await apiGet(baseUrl, token, '/items/Progetti', {
+    filter: JSON.stringify({ Cognome_Beneficiario: { _starts_with: 'TEST_' } }),
+    fields: 'id_progetto',
+    limit: -1
+  })
+  for (const p of (progetti.data || [])) {
+    await apiDelete(baseUrl, token, `/items/Progetti/${p.id_progetto}`)
+  }
+  if ((progetti.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${progetti.data.length} test progetti`)
   }
 
-  // 4. Delete contatti created by tests (all known patterns)
-  const contattoPatterns = [
-    { Cognome: { _eq: 'AutoTest' } },
-    { Cognome: { _eq: 'TestEmail' } },
-    { Cognome: { _eq: 'AutoTest' } },
-    { Nome: { _startswith: 'Test CT ' } },
-    { Nome: { _startswith: 'CT12 ' } },
-    { Nome: { _startswith: 'Del Email ' } },
-    { Nome: { _startswith: 'Test RC02' } },
-    { Nome: { _startswith: 'Test RC03' } },
-    { Nome: { _startswith: 'Test RC04' } },
-    { Nome: { _startswith: 'Test RC05' } },
-    { Nome: { _startswith: 'Test RF02' } },
-    { Nome: { _startswith: 'Test RF' } },
-    { Nome: { _startswith: 'Test SETUP02' } },
-    { Nome: { _startswith: 'Test No Esiste' } },
-    { Nome: { _startswith: 'Priority Test' } },
-    { Nome: { _startswith: 'PAG' } },
-    { Nome: { _startswith: 'GF-' } }
-  ]
+  // 4. Delete test famiglie (Nome_Famiglia starts with TEST_ or id_famiglia starts with TEST_)
+  const famiglie = await apiGet(baseUrl, token, '/items/Famiglie', {
+    filter: JSON.stringify({
+      _or: [
+        { Nome_Famiglia: { _starts_with: 'TEST_' } },
+        { id_famiglia: { _starts_with: 'TEST_' } }
+      ]
+    }),
+    fields: 'id_famiglia',
+    limit: -1
+  })
+  for (const f of (famiglie.data || [])) {
+    const fc = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
+      filter: JSON.stringify({ Famiglia: { _eq: f.id_famiglia } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const r of (fc.data || [])) {
+      await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${r.id}`)
+    }
+    await apiDelete(baseUrl, token, `/items/Famiglie/${f.id_famiglia}`)
+  }
+  if ((famiglie.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${famiglie.data.length} test famiglie`)
+  }
+
+  // 5. Delete contatti (Nome OR Cognome starts with TEST_)
   const contatti = await apiGet(baseUrl, token, '/items/contatti', {
-    filter: JSON.stringify({ _or: contattoPatterns }),
+    filter: JSON.stringify({
+      _or: [
+        { Nome: { _starts_with: 'TEST_' } },
+        { Cognome: { _starts_with: 'TEST_' } }
+      ]
+    }),
     fields: 'id_contatto',
     limit: -1
   })
@@ -157,6 +151,105 @@ async function cleanupTestData(baseUrl, token) {
   }
   if ((contatti.data || []).length > 0) {
     console.log(`[CLEANUP] Deleted ${contatti.data.length} test contatti (with emails and famiglia links)`)
+  }
+
+  // 6. Delete orphan email records with test addresses (FK is SET NULL, not CASCADE)
+  const orphanEmails = await apiGet(baseUrl, token, '/items/email', {
+    filter: JSON.stringify({
+      _or: [
+        { email_address: { _iends_with: '@test.com' } },
+        { email_address: { _iends_with: '@test.example.com' } },
+        { email_address: { _istarts_with: 'TEST_' } }
+      ]
+    }),
+    fields: 'id,email_address',
+    limit: -1
+  })
+  for (const e of (orphanEmails.data || [])) {
+    await apiDelete(baseUrl, token, `/items/email/${e.id}`)
+  }
+  if ((orphanEmails.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${orphanEmails.data.length} orphan test email records`)
+  }
+
+  // 7. Delete orphan Directus users with @test.com email
+  const testUsers = await apiGet(baseUrl, token, '/users', {
+    filter: JSON.stringify({ email: { _iends_with: '@test.com' } }),
+    fields: 'id,email',
+    limit: -1
+  })
+  for (const u of (testUsers.data || [])) {
+    await apiDelete(baseUrl, token, `/users/${u.id}`)
+  }
+  if ((testUsers.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${testUsers.data.length} test users with @test.com email`)
+  }
+
+  // 8. Cleanup orphaned Famiglie_Contatti rows (FK SET NULL can leave dangling rows)
+  const orphanFC = await apiGet(baseUrl, token, '/items/Famiglie_Contatti', {
+    filter: JSON.stringify({
+      _or: [
+        { Famiglia: { _null: true } },
+        { Contatto: { _null: true } }
+      ]
+    }),
+    fields: 'id',
+    limit: -1
+  })
+  for (const r of (orphanFC.data || [])) {
+    await apiDelete(baseUrl, token, `/items/Famiglie_Contatti/${r.id}`)
+  }
+  if ((orphanFC.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${orphanFC.data.length} orphaned Famiglie_Contatti rows`)
+  }
+
+  // 9. Delete test pagamenti
+  const pagamenti = await apiGet(baseUrl, token, '/items/Pagamenti', {
+    fields: 'id',
+    limit: -1
+  })
+  for (const p of (pagamenti.data || [])) {
+    await apiDelete(baseUrl, token, `/items/Pagamenti/${p.id}`)
+  }
+  if ((pagamenti.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${pagamenti.data.length} orphan pagamenti`)
+  }
+
+  // 10. Delete test Associazioni (TEST_ prefix)
+  const associazioni = await apiGet(baseUrl, token, '/items/Associazioni', {
+    filter: JSON.stringify({ Nome: { _starts_with: 'TEST_' } }),
+    fields: 'id',
+    limit: -1
+  })
+  for (const a of (associazioni.data || [])) {
+    await apiDelete(baseUrl, token, `/items/Associazioni/${a.id}`)
+  }
+  if ((associazioni.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${associazioni.data.length} test associazioni`)
+  }
+
+  // 11. Delete test BatchPagamenti
+  const batch = await apiGet(baseUrl, token, '/items/BatchPagamenti', {
+    fields: 'id',
+    limit: -1
+  })
+  for (const b of (batch.data || [])) {
+    await apiDelete(baseUrl, token, `/items/BatchPagamenti/${b.id}`)
+  }
+  if ((batch.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${batch.data.length} batch pagamenti`)
+  }
+
+  // 12. Delete test ListePagamenti
+  const liste = await apiGet(baseUrl, token, '/items/ListePagamenti', {
+    fields: 'id',
+    limit: -1
+  })
+  for (const l of (liste.data || [])) {
+    await apiDelete(baseUrl, token, `/items/ListePagamenti/${l.id}`)
+  }
+  if ((liste.data || []).length > 0) {
+    console.log(`[CLEANUP] Deleted ${liste.data.length} liste pagamenti`)
   }
 
   console.log('[CLEANUP] Done')

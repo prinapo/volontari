@@ -62,6 +62,29 @@ Use `type(scope): message` where type is one of: feat, fix, chore, docs, refacto
 - `.json`, `.md` → Prettier --write
 - Commit messages validated with conventional-changelog
 
+## Visibilità contenuti per ruolo
+
+Tabella basata sulle permissions Directus verificate sulle collections (giu 2026).  
+Regola: **se il ruolo non ha permessi di lettura su una collection, l'app non deve mostrare l'interfaccia che chiama quella collection**.
+
+| Collection / Feature | Administrator | Gestore Volontari | GestoreVerifica | Verificatore | Volontario |
+|---|---|---|---|---|---|
+| Pagamenti | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
+| Associazioni | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
+| BatchPagamenti | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
+| ListePagamenti | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
+| ErrorLog | ✅ 200 | ✅ 200 | ✅ 200 | ❌ 403 | ❌ 403 |
+| Famiglie_Contatti | ✅ 200 | ✅ 200 | ✅ 200 | ✅ 200 | ✅ 200 |
+| Progetti | ✅ 200 | ✅ 200 | ✅ 200 | — | — |
+| Famiglie | ✅ 200 | ✅ 200 | ✅ 200 | ✅ 200 | — |
+| Contatti | ❌ 403 | — | — | — | — |
+
+**Permessi Directus attuali** (giu 2026):
+- **Verificatore**: lettura + modifica su `Pagamenti`; lettura su `Associazioni`; lettura + creazione su `BatchPagamenti` + `ListePagamenti`
+- **Administrator**: full su tutte
+- **ErrorLog**: admin + gestori hanno accesso; verificatore **no** — l'interceptor Axios che logga errori 4xx tenta POST ma fallisce con 403 silenziato nel catch; browser mostra console.error ma non blocca il flusso
+- **Contatti**: admin non ha read su `/items/Contatti` (usa `/users` invece)
+
 ## Unit testing (Vitest)
 
 - Run: `npm run test:unit` (240 tests, no backend needed)
@@ -79,3 +102,33 @@ Use `type(scope): message` where type is one of: feat, fix, chore, docs, refacto
 - Screenshot tests: update baseline with `PLAYWRIGHT_UPDATE_SNAPSHOTS=1 npm run test:e2e`
 - Visual tests (`@visual`) verify UI consistency across commits
 - CI/CD: `.github/workflows/ci.yml` — quality (lint+build) → e2e (playwright)
+
+## Processo feature
+
+1. **Aprire GitHub Issue** con label: `feature`, `bug`, `security`, `chore`
+2. **Discutere requisiti** nella issue (chi fa cosa, perché, quando)
+3. **Scrivere piano** in `.opencode/plans/{nome-feature}.md` con:
+   - Obiettivo e contesto
+   - Modifiche necessarie (file per file)
+   - Rischi e mitigazioni
+   - Test da creare/modificare
+4. **Implementare** seguendo il piano
+5. **Testare** — unitari + E2E
+6. **Aggiornare CHANGELOG.md** con descrizione della modifica
+7. **Commit** con messaggio convenzionale: `feat(area): descrizione`
+8. **Pull Request** su GitHub (se applicabile)
+
+### .env e ambienti
+
+- `.env` → sviluppo locale + test (MAI in produzione)
+- `.env.production` → solo per `quasar build`
+- `.env.development` → solo per `quasar dev` (sovrascrive .env)
+- Le variabili `VITE_*` sono caricate nell'app. Quelle senza prefisso `VITE_` sono usate solo da script (deploy, test)
+- **Non mettere MAI URL di produzione in `.env`** — usare `.env.production`
+
+### Password utenti
+
+- Alla creazione di un utente Directus, NON viene inviata email di invito
+- Il volontario riceve password gestita manualmente dall'admin
+- Il cambio password è disponibile dal menu utente (AppLayout)
+- Il reset password via email funziona dalla pagina di login

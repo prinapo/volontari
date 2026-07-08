@@ -3,23 +3,6 @@ import { apiLogin, apiGet, getToken } from './api.js'
 
 const PRODUCTION_DOMAINS = ['app.sostienilsostegno.com', 'volontari.sostienilsostegno.com']
 
-const EXPECTED_API_ERRORS = [
-  '/auth/login', // 401 — intentional wrong credentials (A-03)
-  '/auth/password/request', // 400 — local Directus without SMTP (RP-10)
-  '/auth/password/reset', // 422/401 — intentional bad token (RP-04, RP-10)
-  '/items/Progetti', // 500 — intentional API error test (EH-01)
-  '/items/Giustificativi', // 403 — GestoreVerifica senza permessi CREATE (RC-05)
-  '/items/Pagamenti', // 403 — Verificatore senza permessi Pagamenti
-  '/items/ErrorLog', // 403 — vari ruoli senza permessi ErrorLog (cascade da altri 403)
-  '/items/Famiglie_Contatti', // 403 — GestoreVerifica in riconciliazione flow
-  '/items/Associazioni', // 403 — Verificatore senza permessi Associazioni
-  '/items/BatchPagamenti', // 403 — Verificatore senza permessi BatchPagamenti
-  '/items/Famiglie/', // 400 — IBAN test non valido DB-V4 (progetti orfani senza famiglia)
-  '/items/email' // 403 — PATCH campi email_address/Priority da utente non admin
-]
-
-const EXPECTED_CONSOLE_ERROR_PATTERNS = []
-
 async function countErrorLog() {
   try {
     const res = await apiGet('ErrorLog', { 'aggregate[count]': 'id' })
@@ -31,10 +14,14 @@ async function countErrorLog() {
 
 export const test = base.extend({
   page: async ({ page }, use) => {
-    const logs = []
     const errors = []
     const warnings = []
-    const pendingExpectedErrors = []
+    const expectedApiErrors = []
+
+    // Permette ai test di dichiarare errori API attesi
+    page.expectApiError = (urlPattern) => {
+      expectedApiErrors.push(urlPattern)
+    }
 
     // Init admin API for ErrorLog tracking
     let elBefore = -1
@@ -51,27 +38,30 @@ export const test = base.extend({
         errors.push(`[PRODUCTION GUARD] API call to production domain: ${url}`)
         console.error(`\n❌ RUNTIME GUARD: API call to PRODUCTION detected!\n   URL: ${url}\n`)
       }
+      // Track 4xx/5xx responses
+      if (resp.status() >= 400) {
+        const isExpected = expectedApiErrors.some(pattern => url.includes(pattern))
+        if (isExpected) {
+          console.log('[API EXPECTED]', resp.status(), url.slice(0, 120))
+        } else if (!url.includes('/ErrorLog')) {
+          errors.push(`[API ${resp.status()}] ${url}`)
+          console.log('[API ERROR]', resp.status(), url.slice(0, 120))
+        }
+      }
     })
 
     page.on('console', msg => {
       const text = msg.text()
-      const isFailedResource = text.includes('Failed to load resource')
-      const isExpected = isFailedResource && pendingExpectedErrors.length > 0
-      if (isExpected) {
-        pendingExpectedErrors.pop()
-      }
-      const isExpectedError = EXPECTED_CONSOLE_ERROR_PATTERNS.some(p => p.test(text))
-      if (msg.type() === 'error' && !isExpected && !isExpectedError) {
+      if (msg.type() === 'error' && text.includes('Failed to load resource')) {
+        // Skip "Failed to load resource" — already tracked via response handler with URL
+      } else if (msg.type() === 'error') {
         errors.push(text)
         console.log('[BROWSER ERROR]', text)
-      } else if (msg.type() === 'warning' && !isExpected) {
+      } else if (msg.type() === 'warning') {
         warnings.push(text)
         console.log('[BROWSER WARN]', text)
       } else if (msg.type() === 'log') {
-        logs.push(text)
         console.log('[BROWSER LOG]', text)
-      } else {
-        logs.push(text)
       }
     })
 
@@ -80,17 +70,10 @@ export const test = base.extend({
       console.log('[BROWSER UNCAUGHT]', err.message)
     })
 
-    page.on('response', response => {
-      if (response.status() >= 400) {
-        const url = response.url()
-        if (EXPECTED_API_ERRORS.some(e => url.includes(e))) {
-          pendingExpectedErrors.push(response.status())
-        }
-        console.log(`[API ${response.status()}] ${url}`)
-      }
-    })
-
     await use(page)
+
+    // A fine test, filtro via gli errori attesi
+    const filtered = errors.filter(e => !expectedApiErrors.some(pattern => e.includes(pattern)))
 
     // Check for new ErrorLog entries created by this test
     if (elBefore >= 0) {
@@ -110,10 +93,10 @@ export const test = base.extend({
       } catch {}
     }
 
-    if (errors.length > 0) {
-      console.log(`\n=== CONSOLE ERRORS (${errors.length}) ===`)
-      errors.forEach((e, i) => console.log(`  ${i + 1}. ${e}`))
-      expect(errors).toHaveLength(0)
+    if (filtered.length > 0) {
+      console.log(`\n=== CONSOLE ERRORS (${filtered.length}/${errors.length} after filtering) ===`)
+      filtered.forEach((e, i) => console.log(`  ${i + 1}. ${e}`))
+      expect(filtered).toHaveLength(0)
     }
   }
 })

@@ -64,6 +64,12 @@ const routes = [
         name: 'Admin',
         component: () => import('pages/AdminPage.vue'),
         meta: { requiredRole: 'Admin' }
+      },
+      {
+        path: 'progetti/crea',
+        name: 'CreaProgetto',
+        component: () => import('pages/CreaProgettoPage.vue'),
+        meta: { requiredRole: 'Admin' }
       }
     ]
   },

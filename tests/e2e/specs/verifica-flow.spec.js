@@ -35,7 +35,7 @@ async function createGiustificativoViaVerificatore(page) {
   await addBtn.click()
   await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
 
-  const testDesc = `VE_ADD_${Date.now()}`
+  const testDesc = `TEST_VE_ADD_${Date.now()}`
   await page.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
   await page.locator('[data-testid="giustform-importo"]').fill('120.00')
   await page.locator('.q-dialog input[type="file"]').first().setInputFiles(FIXTURE_PDF)
@@ -63,7 +63,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-01: Verifica giustificativo — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90000)
-    const testDesc = `VF_01_verify_${Date.now()}`
+    const testDesc = `TEST_VF_01_verify_${Date.now()}`
     const apiCalls = monitorApi(page)
 
     await loginGestore(page)
@@ -94,9 +94,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await page.waitForTimeout(1000)
     const rowCount = await vp.getRowCount()
     if (rowCount === 0) {
-      test.skip('No rows after search')
-      return
-    }
+      }
     let foundRow = -1
     for (let i = 0; i < rowCount; i++) {
       const text = await vp.rows.nth(i).innerText()
@@ -106,9 +104,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       }
     }
     if (foundRow === -1) {
-      test.skip('No progetto row found')
-      return
-    }
+      }
     await vp.expandRow(foundRow)
     await page.waitForTimeout(1000)
 
@@ -116,9 +112,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
       if (!(await verifyBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
         console.log('[VF-01] btn-verify not visible after expand')
-        test.skip('No verify button found')
-        return
-      }
+        }
       await verifyBtn.click()
       await page.waitForTimeout(3000)
     })
@@ -130,7 +124,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-02: Rifiuta giustificativo — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90000)
-    const testDesc = `VF_02_reject_${Date.now()}`
+    const testDesc = `TEST_VF_02_reject_${Date.now()}`
     const apiCalls = monitorApi(page)
 
     await loginGestore(page)
@@ -159,18 +153,14 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.searchFamiglia(nomeFam)
     await page.waitForTimeout(1000)
     if ((await vp.getRowCount()) === 0) {
-      test.skip('No progetto row found')
-      return
-    }
+      }
     await vp.expandRow(0)
     await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'rifiutato', async () => {
       const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
       if (!(await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-        test.skip('No reject button found')
-        return
-      }
+        }
       await rejectBtn.click()
       await page.waitForTimeout(1500)
 
@@ -194,7 +184,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-03: Draft→Inviato — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90000)
-    const testDesc = `VF_03_send_${Date.now()}`
+    const testDesc = `TEST_VF_03_send_${Date.now()}`
     const apiCalls = monitorApi(page)
 
     await loginGestore(page)
@@ -215,18 +205,14 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.searchFamiglia(nomeFam)
     await page.waitForTimeout(1000)
     if ((await vp.getRowCount()) === 0) {
-      test.skip('No progetto row found')
-      return
-    }
+      }
     await vp.expandRow(0)
     await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'inviato', async () => {
       const sendBtn = page.locator('[data-testid="btn-send"]').first()
       if (!(await sendBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-        test.skip('No send button found')
-        return
-      }
+        }
       await sendBtn.click()
       await page.waitForTimeout(3000)
     })
@@ -244,7 +230,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const result = await createGiustificativoViaVerificatore(page)
     if (result?.id) ids.giustificativi.push(result.id)
     expect(result, 'VE-ADD: creazione giustificativo da VerificaPage fallita').not.toBeNull()
-    expect(result.desc).toContain('VE_ADD_')
+    expect(result.desc).toContain('TEST_VE_ADD_')
   })
 
   test('VF-05: Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e', async ({ page }) => {
@@ -256,7 +242,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
 
     // 2. Volontario crea e invia giustificativo
-    const testDesc = `VF_05_full_${Date.now()}`
+    const testDesc = `TEST_VF_05_full_${Date.now()}`
     await loginVolontarioConFamiglia(page, nomeFam)
 
     const draft = await createGiustificativoViaDialog(page, {

@@ -1,6 +1,10 @@
 /**
- * Cleanup functions — eliminano dati di test via API.
- * Ordine: figli prima dei padri (FK constraints).
+ * Cleanup functions — eliminano dati di test via API per ID tracciato.
+ * Non usa piu' pattern matching per cancellare: ogni test traccia
+ * i propri ID e pulisciIds() cancella solo quelli.
+ *
+ * findByPattern() esiste SOLO in modalita' read-only per verificare
+ * che il tracking-by-ID funzioni (dry-run).
  */
 import { apiDelete, apiGet, apiPatch, apiGetSystem, apiDeleteSystem, apiPatchSystem } from './api.js'
 
@@ -12,14 +16,10 @@ const SAFELIST_EMAILS = [
   'fake.genitore@fake.com',
   'fake.gestore@fake.com',
   'fake.verificatore@fake.com',
-  'fake.gestore.verifica@fake.com'
+  'fake.gestore.verifica@fake.com',
+  'test.validatore.sis@gmail.com'
 ]
-const MIN_PATTERN_LENGTH = 1
 
-/**
- * Sgancia i file Directus che referenziano un utente (modified_by / uploaded_by).
- * Previene FK violation quando si cancella un user.
- */
 async function unlinkUserFiles(userId) {
   try {
     const files = await apiGetSystem('files', {
@@ -33,15 +33,15 @@ async function unlinkUserFiles(userId) {
       try {
         await apiPatchSystem('files', f.id, { modified_by: null, uploaded_by: null })
       } catch {
-        /* */
+        console.warn('[CLEANUP] Failed to unlink file', f.id, 'from user', userId)
       }
     }
   } catch {
-    /* */
+    console.warn('[CLEANUP] Failed to query files for user', userId)
   }
 }
 
-async function deleteEmailByContatto(contattoId) {
+export async function deleteEmailByContatto(contattoId) {
   const records = await apiGet('email', {
     filter: JSON.stringify({ Contatto_Relation: { _eq: contattoId } }),
     fields: 'id'
@@ -50,12 +50,12 @@ async function deleteEmailByContatto(contattoId) {
     try {
       await apiDelete('email', row.id)
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to delete email', row.id)
     }
   }
 }
 
-async function deleteDirectusUser(contattoId) {
+export async function deleteDirectusUser(contattoId) {
   try {
     const res = await apiGet('contatti/' + contattoId, { fields: 'user_id' })
     const userId = res.data?.user_id
@@ -63,26 +63,55 @@ async function deleteDirectusUser(contattoId) {
       try {
         await unlinkUserFiles(userId)
       } catch {
-        /* */
+        console.warn('[CLEANUP] Failed to unlink files for user', userId)
       }
       try {
         await apiDeleteSystem('users', userId)
       } catch {
-        /* */
+        console.warn('[CLEANUP] Failed to delete Directus user', userId)
       }
     }
   } catch {
-    /* */
+    console.warn('[CLEANUP] Failed to get contatto user_id for', contattoId)
+  }
+}
+
+async function deleteProjectAttachments(junctionCollection, progettoId) {
+  try {
+    const links = await apiGet(junctionCollection, {
+      filter: JSON.stringify({ Progetti_id_progetto: { _eq: progettoId } }),
+      fields: 'id,directus_files_id'
+    })
+
+    for (const row of links.data || []) {
+      try {
+        await apiDelete(junctionCollection, row.id)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete attachment', row.id)
+      }
+      if (row.directus_files_id) {
+        try {
+          await apiDeleteSystem('files', row.directus_files_id)
+        } catch {
+          console.warn('[CLEANUP] Failed to delete system file', row.directus_files_id)
+        }
+      }
+    }
+  } catch {
+    console.warn('[CLEANUP] Failed to query attachments for', junctionCollection, progettoId)
   }
 }
 
 export async function deleteProgetti(...ids) {
   for (const id of ids) {
     if (!id) continue
+    await deleteProjectAttachments('Progetti_files', id)
+    await deleteProjectAttachments('Progetti_files_1', id)
+    await deleteProjectAttachments('Progetti_files_2', id)
     try {
       await apiDelete('Progetti', id)
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to delete Progetti', id)
     }
   }
 }
@@ -93,7 +122,7 @@ export async function invalidateGiustificativi(...ids) {
     try {
       await apiPatch('Giustificativi', id, { Invalidato: true })
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to invalidate Giustificativi', id)
     }
   }
 }
@@ -110,17 +139,34 @@ export async function deleteFamiglie(...ids) {
         try {
           await apiDelete('Famiglie_Contatti', row.id)
         } catch {
-          /* */
+          console.warn('[CLEANUP] Failed to delete Famiglie_Contatti', row.id)
         }
       }
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to query Famiglie_Contatti for Famiglia', id)
     }
     try {
       await apiDelete('Famiglie', id)
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to delete Famiglia', id)
     }
+  }
+  // Safety: cleanup orphan FC rows for deleted famiglie
+  try {
+    const orphanFC = await apiGet('Famiglie_Contatti', {
+      filter: JSON.stringify({ Famiglia: { _null: true } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const row of orphanFC.data || []) {
+      try {
+        await apiDelete('Famiglie_Contatti', row.id)
+      } catch {
+        /* */
+      }
+    }
+  } catch {
+    /* */
   }
 }
 
@@ -138,117 +184,28 @@ export async function deleteContatti(...ids) {
         try {
           await apiDelete('Famiglie_Contatti', row.id)
         } catch {
-          /* */
+          console.warn('[CLEANUP] Failed to delete Famiglie_Contatti', row.id)
         }
       }
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to query Famiglie_Contatti for Contatto', id)
     }
     try {
       await apiDelete('contatti', id)
     } catch {
-      /* */
+      console.warn('[CLEANUP] Failed to delete contatto', id)
     }
   }
-}
-
-/**
- * Cancella TUTTI i record che contengono `pattern` in campi specifici.
- * Ordine FK: giustificativi → email → progetti → famiglie (+ FC link) → contatti → users
- * Ogni operazione ignora errori (best-effort).
- *
- * @param {string|string[]} patterns — Stringa o array di stringhe da cercare
- */
-export async function deleteByPattern(patterns) {
-  const list = (Array.isArray(patterns) ? patterns : [patterns]).filter(p => p.length >= MIN_PATTERN_LENGTH)
-  if (list.length === 0) return
-
-  // 0. InviiGiustificativiNoLogin (submission pubbliche)
-  for (const p of list) {
-    try {
-      const res = await apiGet('InviiGiustificativiNoLogin', {
-        filter: JSON.stringify({ email: { _icontains: p } }),
-        fields: 'id'
-      })
-      for (const r of res.data || []) {
-        try {
-          await apiDelete('InviiGiustificativiNoLogin', r.id)
-        } catch {
-          /* */
-        }
-      }
-    } catch {
-      /* */
-    }
-  }
-
-  // 1. Giustificativi (hard delete)
-  for (const p of list) {
-    try {
-      const res = await apiGet('Giustificativi', {
-        filter: JSON.stringify({ Descrizione: { _icontains: p } }),
-        fields: 'id'
-      })
-      for (const r of res.data || []) {
-        try {
-          await apiDelete('Giustificativi', r.id)
-        } catch {
-          /* */
-        }
-      }
-    } catch {
-      /* */
-    }
-  }
-
-  // 2. Email
-  for (const p of list) {
-    try {
-      const res = await apiGet('email', {
-        filter: JSON.stringify({ email_address: { _icontains: p } }),
-        fields: 'id'
-      })
-      for (const r of res.data || []) {
-        try {
-          await apiDelete('email', r.id)
-        } catch {
-          /* */
-        }
-      }
-    } catch {
-      /* */
-    }
-  }
-
-  // 3. Progetti (per pattern su Cognome_Beneficiario o id_progetto, orfani senza famiglia)
-  for (const p of list) {
-    try {
-      const res = await apiGet('Progetti', {
-        filter: JSON.stringify({
-          _or: [{ Cognome_Beneficiario: { _icontains: p } }, { id_progetto: { _icontains: p } }]
-        }),
-        fields: 'id_progetto'
-      })
-      for (const r of res.data || []) {
-        try {
-          await apiDelete('Progetti', r.id_progetto)
-        } catch {
-          /* */
-        }
-      }
-    } catch {
-      /* */
-    }
-  }
-  // Progetti orfani (famiglia null) — se nessun pattern specifico li ha presi
+  // Safety: cleanup orphan FC rows for deleted contatti
   try {
-    const res = await apiGet('Progetti', {
-      filter: JSON.stringify({ Famiglia: { _null: true } }),
-      fields: 'id_progetto'
+    const orphanFC = await apiGet('Famiglie_Contatti', {
+      filter: JSON.stringify({ Contatto: { _null: true } }),
+      fields: 'id',
+      limit: -1
     })
-    for (const r of res.data || []) {
+    for (const row of orphanFC.data || []) {
       try {
-        await apiDelete('Progetti', r.id_progetto)
+        await apiDelete('Famiglie_Contatti', row.id)
       } catch {
         /* */
       }
@@ -256,45 +213,97 @@ export async function deleteByPattern(patterns) {
   } catch {
     /* */
   }
+}
 
-  // 4. Famiglie (+ FC link figli)
+/**
+ * findByPattern — MODALITA' SOLO LETTURA (dry-run).
+ *
+ * Cerca record con _icontains pattern su tutte le tabelle di test,
+ * restituisce un report di cio' che troverebbe deleteByPattern.
+ * Usato per verificare che il tracking-by-ID abbia funzionato.
+ *
+ * @param {string|string[]} patterns — Stringa o array di stringhe da cercare
+ * @returns {Promise<Array<{table: string, id: string|number, field: string, value: string}>>}
+ */
+export async function findByPattern(patterns) {
+  const list = (Array.isArray(patterns) ? patterns : [patterns]).filter(p => p.length >= 1)
+  if (list.length === 0) return []
+
+  const report = []
+
   for (const p of list) {
+    try {
+      const res = await apiGet('InviiGiustificativiNoLogin', {
+        filter: JSON.stringify({ email: { _icontains: p } }),
+        fields: 'id,email'
+      })
+      for (const r of res.data || []) {
+        report.push({ table: 'InviiGiustificativiNoLogin', id: r.id, field: 'email', value: r.email })
+      }
+    } catch {
+      console.warn('[CLEANUP] findByPattern query failed: InviiGiustificativiNoLogin')
+    }
+
+    try {
+      const res = await apiGet('Giustificativi', {
+        filter: JSON.stringify({ Descrizione: { _icontains: p } }),
+        fields: 'id,Descrizione'
+      })
+      for (const r of res.data || []) {
+        report.push({ table: 'Giustificativi', id: r.id, field: 'Descrizione', value: r.Descrizione })
+      }
+    } catch {
+      console.warn('[CLEANUP] findByPattern query failed: Giustificativi')
+    }
+
+    try {
+      const res = await apiGet('email', {
+        filter: JSON.stringify({ email_address: { _icontains: p } }),
+        fields: 'id,email_address'
+      })
+      for (const r of res.data || []) {
+        report.push({ table: 'email', id: r.id, field: 'email_address', value: r.email_address })
+      }
+    } catch {
+      console.warn('[CLEANUP] findByPattern query failed: email')
+    }
+
+    try {
+      const res = await apiGet('Progetti', {
+        filter: JSON.stringify({ Cognome_Beneficiario: { _icontains: p } }),
+        fields: 'id_progetto,Cognome_Beneficiario'
+      })
+      for (const r of res.data || []) {
+        report.push({
+          table: 'Progetti',
+          id: r.id_progetto,
+          field: 'Cognome_Beneficiario',
+          value: r.Cognome_Beneficiario
+        })
+      }
+    } catch {
+      console.warn('[CLEANUP] findByPattern query failed: Progetti')
+    }
+
     try {
       const res = await apiGet('Famiglie', {
         filter: JSON.stringify({
           _or: [{ Nome_Famiglia: { _icontains: p } }, { id_famiglia: { _icontains: p } }]
         }),
-        fields: 'id_famiglia'
+        fields: 'id_famiglia,Nome_Famiglia,id_famiglia'
       })
       for (const r of res.data || []) {
-        // Cancella FC link figli
-        try {
-          const fc = await apiGet('Famiglie_Contatti', {
-            filter: JSON.stringify({ Famiglia: { _eq: r.id_famiglia } }),
-            fields: 'id'
-          })
-          for (const fcRow of fc.data || []) {
-            try {
-              await apiDelete('Famiglie_Contatti', fcRow.id)
-            } catch {
-              /* */
-            }
-          }
-        } catch {
-          /* */
-        }
-        try {
-          await apiDelete('Famiglie', r.id_famiglia)
-        } catch {
-          /* */
-        }
+        report.push({
+          table: 'Famiglie',
+          id: r.id_famiglia,
+          field: r.Nome_Famiglia?.includes(p) ? 'Nome_Famiglia' : 'id_famiglia',
+          value: r.Nome_Famiglia || r.id_famiglia
+        })
       }
     } catch {
-      /* */
+      console.warn('[CLEANUP] findByPattern query failed: Famiglie')
     }
   }
 
-  // Step 5 e 6 rimossi: la pulizia di contatti e directus_users per pattern
-  // è troppo pericolosa. Contatti e users vengono puliti SOLO tramite
-  // deleteContatti() esplicito (chiamato da pulisciIds quando ids.contatti è popolato).
+  return report
 }

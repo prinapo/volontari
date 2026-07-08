@@ -51,7 +51,6 @@ describe('statoLabel', () => {
     expect(statoLabel('inviato')).toBe('Inviato')
     expect(statoLabel('verificato')).toBe('Verificato')
     expect(statoLabel('rifiutato')).toBe('Rifiutato')
-    expect(statoLabel('approvato')).toBe('Approvato')
   })
 
   it('returns the input as fallback for unknown states', () => {
@@ -65,7 +64,6 @@ describe('statoColor', () => {
     expect(statoColor('inviato')).toBe('primary')
     expect(statoColor('verificato')).toBe('positive')
     expect(statoColor('rifiutato')).toBe('negative')
-    expect(statoColor('approvato')).toBe('positive')
   })
 
   it('returns grey for unknown states', () => {

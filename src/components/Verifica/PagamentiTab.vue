@@ -12,14 +12,43 @@
         <q-tab name="proposti" label="Bonifici da fare" />
         <q-tab name="incorso" label="Da riscontrare" />
         <q-tab name="falliti" label="Falliti" />
+        <q-tab name="liste" label="Liste esportazione" />
       </q-tabs>
       <q-space />
 
       <!-- Indicatori capienza -->
       <template v-if="subTab === 'proposti'">
-        <div v-for="a in store.associazioni" :key="a.Nome" class="text-caption q-mr-md">
-          <strong>{{ a.Nome }}</strong>: €{{ formatNumber(residuo(a.Nome)) }} disponibili
+        <q-select
+          v-model="batchAssociazione"
+          :options="assocOptions"
+          label="Associazione"
+          dense
+          outlined
+          class="col-auto"
+          style="min-width: 200px"
+          emit-value
+          map-options
+        />
+        <div v-if="batchAssociazione" class="text-caption q-mr-md">
+          €{{ formatNumber(residuo(batchAssociazione)) }} disponibili
         </div>
+        <q-btn
+          color="primary"
+          icon="playlist_add"
+          label="Crea gruppo di pagamento"
+          :disable="selected.length === 0 || !batchAssociazione"
+          @click="openCreaBatch"
+        />
+        <q-btn
+          flat
+          dense
+          icon="refresh"
+          size="sm"
+          color="primary"
+          label="Ricalcola proposte"
+          :loading="store.loading"
+          @click="ricalcolaProposte"
+        />
       </template>
     </div>
 
@@ -56,25 +85,8 @@ flat
         </template>
       </q-table>
 
-      <div class="row items-center q-gutter-sm q-mt-md">
-        <q-select
-          v-model="batchAssociazione"
-          :options="assocOptions"
-          label="Associazione"
-          dense
-outlined
-          class="col-auto"
-          style="min-width: 200px"
-          emit-value
-map-options
-        />
-        <q-btn
-          color="primary"
-          icon="playlist_add"
-          label="Crea gruppo di pagamento"
-          :disable="selected.length === 0 || !batchAssociazione"
-          @click="openCreaBatch"
-        />
+      <div v-if="selected.length > 0" class="q-mt-md q-mb-sm text-weight-medium text-right text-primary text-h6">
+        Selezionato: €{{ formatNumber(selectedTotal) }}
       </div>
     </template>
 
@@ -93,7 +105,6 @@ outlined
           emit-value
 map-options
         />
-        <q-btn flat icon="download" label="Esporta CSV" :disable="!batchFilter" @click="exportCsv" />
       </div>
 
       <q-table
@@ -142,9 +153,9 @@ dense
 icon="block"
 color="grey"
 size="sm"
-aria-label="Annulla"
+aria-label="Rimuovi dal gruppo"
 @click="handleAnnullato(props.row)">
-                <q-tooltip>Annullato</q-tooltip>
+                <q-tooltip>Rimuovi dal gruppo</q-tooltip>
               </q-btn>
               <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
             </div>
@@ -178,7 +189,7 @@ dense
 icon="block"
 color="grey"
 size="sm"
-@click="handleAnnullato(props.row)"><q-tooltip>Annullato</q-tooltip></q-btn>
+@click="handleAnnullato(props.row)"><q-tooltip>Rimuovi dal gruppo</q-tooltip></q-btn>
                 </div>
               </q-card-section>
             </q-card>
@@ -236,18 +247,60 @@ class="q-mb-sm"
 
       <div v-if="selectedFalliti.length > 0" class="row items-center q-gutter-sm q-mt-md">
         <span class="text-caption">{{ selectedFalliti.length }} selezionati</span>
-        <q-select
-v-model="batchAssociazioneFalliti"
-:options="assocOptions"
-label="Associazione"
-dense
-outlined
-class="col-auto"
-style="min-width: 200px"
-emit-value
-map-options />
-        <q-btn color="primary" icon="playlist_add" label="Includi in nuovo batch" :disable="!batchAssociazioneFalliti" @click="creaBatchDaFalliti" />
+        <q-btn color="primary" icon="restore" label="Ripristina a Bonifici" @click="handleRipristinaProposti" />
       </div>
+    </template>
+
+    <!-- Sotto-vista: Liste esportazione -->
+    <template v-if="subTab === 'liste'">
+      <div class="text-caption text-grey-7 q-mb-md">
+        Le liste vengono generate automaticamente alla creazione di un gruppo di pagamento.
+      </div>
+
+      <q-table
+        :rows="store.liste"
+        :columns="listeColumns"
+        row-key="id"
+        flat
+        bordered
+        :loading="store.loading"
+        :pagination="{ rowsPerPage: 0 }"
+        hide-pagination
+      >
+        <template #body-cell-data="props">
+          <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
+        </template>
+        <template #body-cell-totale="props">
+          <q-td :props="props">€{{ formatNumber(props.row.Totale) }}</q-td>
+        </template>
+        <template #body-cell-azioni="props">
+          <q-td :props="props">
+            <q-btn
+              flat
+              round
+              dense
+              icon="download"
+              color="primary"
+              aria-label="Scarica CSV"
+              :disable="!props.row.File"
+              @click="scaricaLista(props.row)"
+            >
+              <q-tooltip>Scarica CSV</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              dense
+              icon="delete"
+              color="negative"
+              aria-label="Elimina lista"
+              @click="confermaEliminaLista(props.row)"
+            >
+              <q-tooltip>Elimina lista</q-tooltip>
+            </q-btn>
+          </q-td>
+        </template>
+      </q-table>
     </template>
 
     <!-- Dialog Crea Batch -->
@@ -277,20 +330,22 @@ map-options />
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { assetUrl } from 'src/utils/assets'
 import { formatDate } from 'src/utils/formatters'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { usePagamentiStore } from 'stores/pagamenti.store'
+import { useVerificaStore } from 'stores/verifica.store'
 
 const $q = useQuasar()
 const store = usePagamentiStore()
+const verificaStore = useVerificaStore()
 
 const subTab = ref('proposti')
 const selected = ref([])
 const selectedFalliti = ref([])
 const batchAssociazione = ref(null)
-const batchAssociazioneFalliti = ref(null)
 const batchFilter = ref(null)
 const batchNome = ref('')
 const showBatchDialog = ref(false)
@@ -315,7 +370,7 @@ const selectedTotal = computed(() =>
 
 const filteredInCorso = computed(() => {
   if (!batchFilter.value) return store.inCorso
-  return store.inCorso.filter(p => p.Batch === batchFilter.value)
+  return store.inCorso.filter(p => (p.Batch?.id || p.Batch) === batchFilter.value)
 })
 
 const propostiColumns = [
@@ -328,6 +383,7 @@ const propostiColumns = [
 const incorsoColumns = [
   { name: 'famiglia', label: 'Famiglia', align: 'left', field: row => row.Famiglia?.Nome_Famiglia || '' },
   { name: 'importo', label: 'Importo', align: 'right' },
+  { name: 'gruppo', label: 'Gruppo', align: 'left', field: row => row.Batch?.Nome || '—' },
   { name: 'IBAN', label: 'IBAN', field: 'IBAN', align: 'left' },
   { name: 'stato', label: 'Stato', field: 'Stato', align: 'center' },
   { name: 'azioni', label: 'Azioni', align: 'center' }
@@ -341,9 +397,26 @@ const fallitiColumns = [
   { name: 'note', label: 'Note', field: 'NoteEsito', align: 'left' }
 ]
 
+const listeColumns = [
+  { name: 'nome', label: 'Nome', align: 'left', field: 'Nome' },
+  { name: 'data', label: 'Data creazione', align: 'left' },
+  { name: 'righe', label: 'Righe', align: 'right', field: 'ConteggioRighe' },
+  { name: 'totale', label: 'Totale', align: 'right' },
+  { name: 'azioni', label: 'Azioni', align: 'center' }
+]
+
 function formatNumber(v) { return (Number.parseFloat(v) || 0).toFixed(2) }
 
 function residuo(nome) { return store.residuoAssociazione(nome) }
+
+async function ricalcolaProposte() {
+  if (verificaStore.rows.length === 0) {
+    notifyError($q, null, 'Nessun progetto caricato. Apri prima la tabella Rendicontazione.')
+    return
+  }
+  await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
+  if (store.error) notifyError($q, store.error, 'Errore ricalcolo')
+}
 
 function openCreaBatch() {
   if (selected.value.length === 0) return
@@ -362,7 +435,7 @@ async function creaBatch() {
       associazione: batchAssociazione.value,
       pagamentoIds: selected.value.map(p => p.id)
     })
-    notifySuccess($q, 'Gruppo di pagamento creato')
+    notifySuccess($q, 'Gruppo creato. La lista è disponibile in "Liste esportazione".')
     showBatchDialog.value = false
     selected.value = []
   } catch (error) {
@@ -370,10 +443,8 @@ async function creaBatch() {
   }
 }
 
-async function creaBatchDaFalliti() {
+async function handleRipristinaProposti() {
   try {
-    const ids = selectedFalliti.value.map(p => p.id)
-    // Per ogni fallito, salva correzioni prima di includere nel batch
     for (const p of selectedFalliti.value) {
       const edits = editingFalliti.value[p.id]
       if (edits?.IBAN || edits?.Intestatario) {
@@ -382,16 +453,13 @@ async function creaBatchDaFalliti() {
           intestatario: edits.Intestatario || p.Intestatario
         })
       }
+      await store.ripristinaProposto(p.id)
     }
-    await store.creaBatch({
-      nome: `Falliti ${formatDate(new Date())}`,
-      associazione: batchAssociazioneFalliti.value,
-      pagamentoIds: ids
-    })
-    notifySuccess($q, 'Batch creato con pagamenti falliti')
+    notifySuccess($q, `${selectedFalliti.value.length} pagamenti ripristinati a Bonifici`)
     selectedFalliti.value = []
+    editingFalliti.value = {}
   } catch (error) {
-    notifyError($q, error, 'Errore creazione batch da falliti')
+    notifyError($q, error, 'Errore ripristino')
   }
 }
 
@@ -417,30 +485,53 @@ async function handleFallito(pagamento) {
 
 async function handleAnnullato(pagamento) {
   try {
-    const motivo = prompt('Motivo dell\'annullamento:')
-    if (motivo === null) return
-    await store.segnaAnnullato(pagamento.id, motivo)
-    notifySuccess($q, 'Pagamento annullato')
+    await store.segnaAnnullato(pagamento.id)
+    notifySuccess($q, 'Rimosso dal gruppo')
   } catch (error) {
     notifyError($q, error, 'Errore')
   }
 }
 
-async function exportCsv() {
-  const rows = filteredInCorso.value
-  if (rows.length === 0) return
-  let csv = 'Famiglia,Importo,IBAN,Intestatario,Stato\n'
-  for (const r of rows) {
-    csv += `"${r.Famiglia?.Nome_Famiglia || ''}",${r.Importo},"${r.IBAN || ''}","${r.Intestatario || ''}",${r.Stato}\n`
-  }
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
+function scaricaLista(row) {
+  if (!row.File) return
+  const url = assetUrl(row.File, true)
   const a = document.createElement('a')
-  a.href = url; a.download = `batch-${batchFilter.value || 'tutti'}.csv`
-  a.click(); URL.revokeObjectURL(url)
+  a.href = url
+  a.download = `${row.Nome.replaceAll(/[^\w-]/g, '_')}.csv`
+  a.click()
 }
 
-onMounted(() => {
-  store.init()
+async function confermaEliminaLista(row) {
+  $q.dialog({
+    title: 'Elimina lista',
+    message: `Eliminare la lista "${row.Nome}"?`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    try {
+      await store.eliminaLista(row.id, row.File)
+      notifySuccess($q, 'Lista eliminata')
+    } catch (error) {
+      notifyError($q, error, 'Errore eliminazione')
+    }
+  })
+}
+
+onMounted(async () => {
+  await store.init()
+  if (store.proposti.length === 0) {
+    // Attendi che la verifica store abbia caricato i progetti
+    if (verificaStore.rows.length === 0) {
+      await new Promise(resolve => {
+        const unwatch = watch(() => verificaStore.rows.length, val => {
+          if (val > 0) {
+            unwatch()
+            resolve()
+          }
+        })
+      })
+    }
+    await ricalcolaProposte()
+  }
 })
 </script>

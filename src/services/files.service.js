@@ -25,5 +25,9 @@ export const filesService = {
 
   getFile(fileId) {
     return api.get(`/files/${fileId}`)
+  },
+
+  delete(fileId) {
+    return api.delete(`/files/${fileId}`)
   }
 }
