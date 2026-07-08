@@ -249,7 +249,8 @@ export const useAdminStore = defineStore('admin', {
             params: {
               'filter[Contatto][_eq]': c.id_contatto,
               'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-              'filter[Disattivo][_neq]': 'true',
+              'filter[_or][0][Disattivo][_null]': 'true',
+              'filter[_or][1][Disattivo][_neq]': 'true',
               fields: 'id',
               limit: 1
             }
@@ -263,7 +264,8 @@ export const useAdminStore = defineStore('admin', {
         const linkVolontariRes = await api.get('/items/Famiglie_Contatti', {
           params: {
             'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-            'filter[Disattivo][_neq]': 'true',
+            'filter[_or][0][Disattivo][_null]': 'true',
+            'filter[_or][1][Disattivo][_neq]': 'true',
             fields: 'id,Contatto',
             limit: -1
           }
