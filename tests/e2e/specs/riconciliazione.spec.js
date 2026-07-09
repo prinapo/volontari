@@ -99,7 +99,7 @@ test.describe('Riconciliazione', () => {
     if (newSubId) rcNfIds.inviiNoLogin.push(newSubId)
     console.log(`[RC-NF-01] created submission via API: id=${newSubId} email=${testEmail}`)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
@@ -165,7 +165,7 @@ test.describe('Riconciliazione', () => {
     })
     if (sub?.id) rcNlIds.inviiNoLogin.push(sub.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
@@ -245,7 +245,7 @@ test.describe('Riconciliazione', () => {
     const subNPId = subNP?.data?.id || subNP?.data?.[0]?.id
     if (subNPId) rcNpIds.inviiNoLogin.push(subNPId)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
@@ -363,7 +363,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     test.setTimeout(90000)
     const testEmail = `TEST_rc_setup02_${Date.now()}@test.com`
 
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     // Crea contatto con email univoca
     await createContatto(page, {
@@ -429,7 +429,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
   // ── RC-01: Pagina riconciliazione carica @smoke ──
   test('RC-01: Pagina riconciliazione carica @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -473,7 +473,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     })
     if (rc02sub?.id) _rcIds.inviiNoLogin.push(rc02sub.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -557,7 +557,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     })
     if (rc03sub?.id) _rcIds.inviiNoLogin.push(rc03sub.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -612,7 +612,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     })
     if (submission?.id) _rcIds.inviiNoLogin.push(submission.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -658,7 +658,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
   // ── RC-PG-01: Toggle scartati mostra/nasconde scartati @crud ──
   test('RC-PG-01: Toggle scartati mostra/nasconde scartati @crud', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -687,7 +687,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
   // ── RC-PG-02: Paginazione UI visibile @smoke ──
   test('RC-PG-02: Controlli paginazione visibili @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -709,7 +709,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     })
     if (rcp03sub?.id) _rcIds.inviiNoLogin.push(rcp03sub.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -768,7 +768,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     if (rc05sub?.id) _rcIds.inviiNoLogin.push(rc05sub.id)
 
     // Login come gestore_verifica e vai a riconciliazione
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
@@ -842,7 +842,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     })
     if (submission?.id) _rcIds.inviiNoLogin.push(submission.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -934,7 +934,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
   // ── RG-COMB-01: GestoreVerifica su Gestione CRUD contatti @smoke ──
   test('RG-COMB-01: GestoreVerifica accede a Gestione e vede contatti @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const gestione = new GestionePage(page)
     await gestione.goto()
@@ -953,7 +953,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     const testEmail = `TEST_card_${Date.now()}@test.com`
     const rccsub = await createTestSubmission(page, { email: testEmail, descrizione: 'Test RC-CARD richiedente' })
     if (rccsub?.id) _rcIds.inviiNoLogin.push(rccsub.id)
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -1018,7 +1018,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
           Data_Fine_Progetto: '2026-12-31'
         },
         auth,
-        'gestore'
+        'manager'
       )
     )
 
@@ -1044,7 +1044,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
           Data_Fine_Progetto: '2026-12-31'
         },
         auth,
-        'gestore'
+        'manager'
       )
     )
     await assegnaContattoAFamigliaViaUI(page, {
@@ -1062,7 +1062,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     if (rcpSub?.id) _rcIds.inviiNoLogin.push(rcpSub.id)
 
     // Login come gestore_verifica e vai a riconciliazione
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()

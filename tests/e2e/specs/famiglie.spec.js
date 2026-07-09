@@ -36,7 +36,7 @@ async function famigliaSetup(page, label, idsObj) {
       Data_Fine_Progetto: '2026-12-31'
     },
     auth,
-    'gestore'
+    'manager'
   ) // IMMEDIATO dopo creazione
 
   return { famiglia: fam.id_famiglia, progetto: idsObj.progetto, nome: nomeFam }
@@ -56,7 +56,7 @@ test.describe('Famiglie Page — Gruppo 1', () => {
 
   test('F-GR-01: Verifica pagina famiglia — dati, sezioni, espansione @smoke', async ({ page }) => {
     test.setTimeout(180000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR1', ids)
     await loginVolontarioConFamiglia(page, d.nome)
 
@@ -112,7 +112,7 @@ test.describe('Famiglie Page — Gruppo 2', () => {
 
   test('F-GR-02: Modifica IBAN e Intestatario — salva, annulla, reload @crud', async ({ page }) => {
     test.setTimeout(180000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR2', ids)
     saved.id = ids.famiglia
     try {
@@ -204,7 +204,7 @@ test.describe('Famiglie Page — Gruppo 3', () => {
 
   test('F-GR-03: Notifiche salvataggio IBAN — compare e scompare @smoke', async ({ page }) => {
     test.setTimeout(120000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR3', ids)
     saved.id = ids.famiglia
     try {
@@ -246,7 +246,7 @@ test.describe('Famiglie Page — Gruppo 3', () => {
 
   test('F-GR-05: IBAN non valido inline — errore validazione @regression', async ({ page }) => {
     test.setTimeout(60000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR5', ids)
     await loginVolontarioConFamiglia(page, d.nome)
 
@@ -287,7 +287,7 @@ test.describe('Famiglie Page — Gruppo 4', () => {
 
   test('F-GR-04: Selettore progetti, totali e badge @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR4', ids)
     await loginVolontarioConFamiglia(page, d.nome)
 

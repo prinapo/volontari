@@ -929,12 +929,9 @@ async function creaUtenteVolontario(v) {
   try {
     const rolesRes = await usersService.getRoleByName('Volontario')
     const ruoloId = rolesRes.data.data?.[0]?.id
-    let email = ''
-    if (Array.isArray(v.email)) {
-      email = v.email.find(e => e.Primary)?.email_address || v.email[0]?.email_address || ''
-    } else {
-      email = v.email || ''
-    }
+    let email = Array.isArray(v.email)
+      ? (v.email.find(e => e.Primary)?.email_address || v.email[0]?.email_address || '')
+      : (v.email || '')
     if (!email) { notifyError($q, null, 'Email mancante'); return }
 
     const userRes = await usersService.searchByEmail(email)
@@ -966,7 +963,7 @@ const roleOptions = computed(() => store.roles)
 const roleColor = (name) => {
   const n = (name || '').toLowerCase()
   if (n.includes('admin') || n.includes('administrator')) return 'negative'
-  if (n.includes('verifica') || n.includes('valid')) return 'primary'
+  if (n.includes('manager') || n.includes('verifica') || n.includes('valid')) return 'primary'
   if (n.includes('gestione') || n.includes('gestore')) return 'secondary'
   return 'grey'
 }

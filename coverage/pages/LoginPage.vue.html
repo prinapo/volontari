@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.37% </span>
+                <span class="strong">99.49% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>180/197</span>
+                <span class='fraction'>196/197</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/8</span>
+                <span class='fraction'>16/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.11% </span>
+                <span class="strong">20% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/9</span>
+                <span class='fraction'>2/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.37% </span>
+                <span class="strong">99.49% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>180/197</span>
+                <span class='fraction'>196/197</span>
             </div>
         
             
@@ -424,6 +424,20 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -431,24 +445,10 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -579,7 +579,7 @@
             Inserisci la tua email riceverai un link per reimpostare la password.
           &lt;/p&gt;
           &lt;q-input
-            v-model="resetEmail"
+            v-model="<span class="fstat-no" title="function not covered" >resetEmail"</span>
             label="Email"
             type="email"
             outlined
@@ -624,28 +624,28 @@ const sendingReset = ref(false)
 async function handleLogin() {
   const ok = await authStore.login(email.value, password.value)
   if (ok) {
-    if (authStore.canGestione) <span class="branch-0 cbranch-no" title="branch not covered" >return router.push('/gestione')</span>
-    if (authStore.canVerifica) <span class="branch-0 cbranch-no" title="branch not covered" >return router.push('/verifica')</span>
+    if (authStore.canGestione) return router.push('/gestione')
+    if (authStore.canVerifica) return router.push('/verifica')
     router.push('/famiglie')
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async function handleForgotPassword() {</span></span>
-<span class="cstat-no" title="statement not covered" >  if (!resetEmail.value) return</span>
-<span class="cstat-no" title="statement not covered" >  sendingReset.value = true</span>
-<span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    await authService.requestPasswordReset(</span>
-<span class="cstat-no" title="statement not covered" >      resetEmail.value,</span>
-<span class="cstat-no" title="statement not covered" >      import.meta.env.VITE_RESET_URL</span>
-<span class="cstat-no" title="statement not covered" >    )</span>
-<span class="cstat-no" title="statement not covered" >    notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")</span>
-<span class="cstat-no" title="statement not covered" >    showForgotPassword.value = false</span>
-<span class="cstat-no" title="statement not covered" >  } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >    notifyError($q, error, "Errore nell'invio della richiesta")</span>
-<span class="cstat-no" title="statement not covered" >  } finally {</span>
-<span class="cstat-no" title="statement not covered" >    sendingReset.value = false</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+async function handleForgotPassword() {
+  if (!resetEmail.value) return
+  sendingReset.value = true
+  try {
+    await authService.requestPasswordReset(
+      resetEmail.value,
+      import.meta.env.VITE_RESET_URL
+    )
+    notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")
+    showForgotPassword.value = false
+  } catch (error) {
+    notifyError($q, error, "Errore nell'invio della richiesta")
+  } finally {
+    sendingReset.value = false
+  }
+}
 &lt;/script&gt;
 &nbsp;
 &lt;style scoped&gt;
@@ -661,7 +661,7 @@ async function handleLogin() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-22T19:06:42.515Z
+                at 2026-06-30T09:04:30.601Z
             </div>
         <script src="../prettify.js"></script>
         <script>

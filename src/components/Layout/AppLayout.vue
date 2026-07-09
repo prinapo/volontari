@@ -64,7 +64,7 @@
         </q-item>
 
         <q-item
-          v-if="authStore.canVerifica"
+          v-if="authStore.canManager"
           v-ripple
           clickable
           :active="$route.name === 'Verifica'"
@@ -78,7 +78,7 @@
         </q-item>
 
         <q-item
-          v-if="authStore.canVerifica"
+          v-if="authStore.canManager"
           v-ripple
           clickable
           :active="$route.name === 'Riconciliazione'"
@@ -92,7 +92,7 @@
         </q-item>
 
         <q-item
-          v-if="authStore.canGestione"
+          v-if="authStore.canManager"
           v-ripple
           clickable
           :active="$route.name === 'Gestione'"

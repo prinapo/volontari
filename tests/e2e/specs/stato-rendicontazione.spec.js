@@ -33,7 +33,7 @@ test.describe('StatoRendicontazione', () => {
 
   async function creaScenario(page, giustificativi) {
     const prefix = `TEST_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const fam = await createFamigliaViaUI(page, { nomeFamiglia: prefix })
     ids.famiglia = fam.id_famiglia
 
@@ -104,26 +104,26 @@ test.describe('StatoRendicontazione', () => {
 
   test('SR-03: Nessun giustificativo → Non ricevuta (grey) @smoke', async ({ page }) => {
     const prefix = await creaScenario(page, [])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
   })
 
   test('SR-04: Solo draft → Non ricevuta (grey) @smoke', async ({ page }) => {
     const prefix = await creaScenario(page, [{ stato: 'draft', importo: '50.00' }])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
   })
 
   test('SR-05: Tutti verificati → Pronto (green) @smoke', async ({ page }) => {
     const prefix = await creaScenario(page, [{ stato: 'verificato', importo: '50.00' }])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Pronto', /bg-positive/)
   })
 
   test('SR-06: Almeno un inviato → Da verificare (orange) @smoke', async ({ page }) => {
     test.setTimeout(180000)
     const prefix = await creaScenario(page, [{ stato: 'inviato', importo: '50.00' }])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Da verificare', /bg-orange/)
   })
 
@@ -133,13 +133,13 @@ test.describe('StatoRendicontazione', () => {
       { stato: 'draft', importo: '30.00' },
       { stato: 'verificato', importo: '70.00' }
     ])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Da completare', /bg-warning/)
   })
 
   test('SR-08: Solo rifiutato → Non ricevuta (grey) @smoke', async ({ page }) => {
     const prefix = await creaScenario(page, [{ stato: 'rifiutato', importo: '50.00' }])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
   })
 
@@ -148,7 +148,7 @@ test.describe('StatoRendicontazione', () => {
       { stato: 'verificato', importo: '30.00' },
       { stato: 'rifiutato', importo: '70.00' }
     ])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Da completare', /bg-warning/)
   })
 
@@ -157,7 +157,7 @@ test.describe('StatoRendicontazione', () => {
       { stato: 'draft', importo: '30.00' },
       { stato: 'rifiutato', importo: '70.00' }
     ])
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
   })
 
@@ -168,7 +168,7 @@ test.describe('StatoRendicontazione', () => {
     const idsFlow = { famiglia: null, progetto: null, giustificativi: [] }
 
     // Setup: famiglia via UI + progetto via UI + giustificativo in stato 'inviato'
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const fam = await createFamigliaViaUI(page, { nomeFamiglia: prefix })
     idsFlow.famiglia = fam.id_famiglia
 
@@ -196,7 +196,7 @@ test.describe('StatoRendicontazione', () => {
     const vp = new VerificaPage(page)
 
     // 1. Verificatore: vede "Da verificare" sul badge
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(prefix)

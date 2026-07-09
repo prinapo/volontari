@@ -25,7 +25,7 @@ test.describe('Helpers — base', () => {
   })
 
   test('HF-01: Crea famiglia via UI e cancella via API @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const nome = uid('Fam')
     const fam = await createFamigliaViaUI(page, { nomeFamiglia: nome })
@@ -35,7 +35,7 @@ test.describe('Helpers — base', () => {
   })
 
   test('HF-02: Crea contatto via UI e cancella via API @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const cont = await createContattoViaUI(page, {
       nome: uid('C'),
@@ -48,7 +48,7 @@ test.describe('Helpers — base', () => {
 
   test('HF-03: Crea famiglia+contatto+assegna+pulisci ciclo completo @crud', async ({ page }) => {
     // 1. Crea famiglia
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const nomeFam = uid('FC')
     const fam = await createFamigliaViaUI(page, { nomeFamiglia: nomeFam })
     expect(fam.id_famiglia).toBeTruthy()
@@ -79,7 +79,7 @@ test.describe('Helpers — base', () => {
   })
 
   test('HF-04: IBAN corto → Salva disabilitato @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new (await import('../pages/GestionePage.js')).GestionePage(page)
     await gp.goto()
     await page.waitForTimeout(500)
@@ -96,7 +96,7 @@ test.describe('Helpers — base', () => {
   })
 
   test('HF-05: Cellulare lettere → Salva disabilitato @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new (await import('../pages/GestionePage.js')).GestionePage(page)
     await gp.goto()
     await page.waitForTimeout(500)
@@ -114,7 +114,7 @@ test.describe('Helpers — base', () => {
   })
 
   test('HF-06: IBAN minuscolo → auto-uppercase e valido @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new (await import('../pages/GestionePage.js')).GestionePage(page)
     await gp.goto()
     await page.waitForTimeout(500)
@@ -132,7 +132,7 @@ test.describe('Helpers — base', () => {
   })
 
   test('HF-07: IBAN con spazi → auto-strip e valido @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new (await import('../pages/GestionePage.js')).GestionePage(page)
     await gp.goto()
     await page.waitForTimeout(500)

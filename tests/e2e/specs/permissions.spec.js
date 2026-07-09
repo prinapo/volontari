@@ -14,7 +14,7 @@ async function openDrawerIfMobile(page) {
 
 test.describe('Route Guards', () => {
   test('PER-01: GestoreVerifica non accede a /admin @regression', async ({ page }) => {
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
     await page.goto('/admin')
     await page.waitForTimeout(2000)
@@ -22,15 +22,15 @@ test.describe('Route Guards', () => {
   })
 
   test('PER-02: Verificatore non accede a /gestione @regression', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+    await loginAs(page, 'volontario', auth)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
     await page.goto('/gestione')
     await page.waitForTimeout(2000)
     expect(page.url()).not.toContain('/gestione')
   })
 
   test('PER-03: Gestore non accede a /admin @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
     await page.goto('/admin')
     await page.waitForTimeout(2000)
@@ -48,7 +48,7 @@ test.describe('Route Guards', () => {
 
 test.describe('Sidebar Navigation — Extra Roles', () => {
   test('PER-05: GestoreVerifica vede Verifica+Riconciliazione+Gestione @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     await openDrawerIfMobile(page)
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
@@ -74,24 +74,25 @@ test.describe('Sidebar Navigation — Extra Roles', () => {
 
 test.describe('Pagamenti Tab Accesso', () => {
   test('PER-07: Verificatore vede tab Pagamenti @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     const pagamentiTab = page.locator('.q-tab:has-text("Pagamenti")')
     await expect(pagamentiTab).toBeVisible({ timeout: 5000 })
   })
 
-  test('PER-08: Gestore non vede tab Pagamenti @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+  test('PER-08: Volontario non vede tab Pagamenti @smoke', async ({ page }) => {
+    await loginAs(page, 'volontario', auth)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
     await page.goto('/verifica')
-    const pagamentiTab = page.locator('.q-tab:has-text("Pagamenti")')
-    expect(await pagamentiTab.count()).toBe(0)
+    await page.waitForTimeout(2000)
+    expect(page.url()).not.toContain('/verifica')
   })
 })
 
 test.describe('ErrorLog Accesso', () => {
   test('PER-09: Gestore non accede a /admin (reindirizzato) @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
     await page.goto('/admin')
     await page.waitForTimeout(2000)
@@ -99,7 +100,7 @@ test.describe('ErrorLog Accesso', () => {
   })
 
   test('PER-10: Verificatore non accede a /admin @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/admin')
     await page.waitForTimeout(2000)
     expect(page.url()).not.toContain('/admin')

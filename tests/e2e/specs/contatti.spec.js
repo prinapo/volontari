@@ -39,7 +39,7 @@ test.afterEach(async () => {
 
 test.describe('ContattiTab — Caricamento e Layout', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
   })
@@ -92,7 +92,7 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
 
 test.describe('ContattiTab — Ricerca e Filtri', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
   })
@@ -175,7 +175,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
 
 test.describe('ContattiTab — Directus 11 deep field fix', () => {
   test('CT-08: Contatti con user_id null sono visibili @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const gp = new GestionePage(page)
     await gp.waitForTable()
@@ -217,7 +217,7 @@ test.describe('ContattiTab — Directus 11 deep field fix', () => {
 
 test.describe('ContattiTab — CRUD', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const gp = new GestionePage(page)
     await gp.selectContattiTab()
   })

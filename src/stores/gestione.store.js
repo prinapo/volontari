@@ -90,7 +90,7 @@ export const useGestioneStore = defineStore('gestione', {
           const volCounts = volRes.data.data || []
           const volMap = {}
           for (const vc of volCounts) {
-            volMap[vc.Famiglia] = (vc.count?.id || 0) > 0
+            volMap[vc.Famiglia] = true
           }
           for (const f of famiglie) {
             f.HasVolontario = volMap[f.id_famiglia] || false

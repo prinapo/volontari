@@ -1,0 +1,1 @@
+import{o as e}from"./auth.store-CXVPPEYJ.js";import{t}from"./wrappers-Dfvzj6n2.js";var n=t(({app:t})=>{t.config.globalProperties.$api=e});export{e as api,n as default};

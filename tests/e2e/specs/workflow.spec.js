@@ -31,7 +31,6 @@ test.describe('Workflow', () => {
 
   test('WF-01: Flusso Submit → Riconcilia → Verifica @e2e', async ({ page }) => {
     test.setTimeout(240000)
-    page.expectApiError('/items/Famiglie_Contatti')
     const ts = Date.now()
     const prefix = `TEST_WF01_${ts}`
     const testEmail = `${prefix}@test.com`
@@ -70,7 +69,7 @@ test.describe('Workflow', () => {
         Data_Fine_Progetto: '2026-12-31'
       },
       auth,
-      'gestore'
+      'manager'
     )
 
     // 2. Crea submission via UI (simula submit anonimo)
@@ -81,7 +80,7 @@ test.describe('Workflow', () => {
     if (sub01?.id) wfIds.inviiNoLogin.push(sub01.id)
 
     // 3. Riconcilia: login verificatore, trova e riconcilia
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
@@ -121,7 +120,7 @@ test.describe('Workflow', () => {
     }
 
     // 4. Verifica page must have at least 1 row
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()
@@ -147,7 +146,7 @@ test.describe('Workflow', () => {
     if (sub02?.id) wf02Ids.inviiNoLogin.push(sub02.id)
 
     // 2. Riconcilia: deve mostrare badge "Contatto da creare"
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
@@ -235,7 +234,7 @@ test.describe('Workflow', () => {
           Data_Fine_Progetto: '2026-12-31'
         },
         auth,
-        'gestore'
+        'manager'
       )
     )
     wfIds.progetto.push(
@@ -251,7 +250,7 @@ test.describe('Workflow', () => {
           Data_Fine_Progetto: '2026-12-31'
         },
         auth,
-        'gestore'
+        'manager'
       )
     )
 
@@ -277,7 +276,7 @@ test.describe('Workflow', () => {
     await page.waitForTimeout(1000)
 
     // 4. Verificatore vede almeno 1 riga
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()
@@ -321,7 +320,7 @@ test.describe('Workflow', () => {
     await page.waitForTimeout(2000)
 
     // 2. Verificatore: almeno 1 riga in verifica
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()

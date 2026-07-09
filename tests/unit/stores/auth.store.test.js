@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ADMIN_ROLE_IDS, GESTIONE_ROLE_IDS } from 'src/utils/constants'
 import { useAuthStore } from 'src/stores/auth.store'
 
 const mockLogin = vi.fn()
@@ -90,57 +89,41 @@ describe('auth store', () => {
     })
   })
 
-  describe('canVerifica getter', () => {
-    it('allows verifica role', () => {
+  describe('canManager getter', () => {
+    it('allows manager role', () => {
       const store = useAuthStore()
-      store.user = { role: { name: 'Verifica' } }
-      expect(store.canVerifica).toBe(true)
+      store.user = { role: { name: 'Manager' } }
+      expect(store.canManager).toBe(true)
+    })
+
+    it('allows admin role', () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'admin' } }
+      expect(store.canManager).toBe(true)
     })
 
     it('denies unknown role', () => {
       const store = useAuthStore()
       store.user = { role: { name: 'user' } }
-      expect(store.canVerifica).toBe(false)
-    })
-  })
-
-  describe('canGestione getter', () => {
-    it('allows gestione role', () => {
-      const store = useAuthStore()
-      store.user = { role: { name: 'Gestione' } }
-      expect(store.canGestione).toBe(true)
-    })
-
-    it('matches gestione using configured role ids when present', () => {
-      const store = useAuthStore()
-      const roleId = GESTIONE_ROLE_IDS[0] || 'non-configured-role-id'
-      store.user = { role: { id: roleId, name: '' } }
-      expect(store.canGestione).toBe(GESTIONE_ROLE_IDS.length > 0)
+      expect(store.canManager).toBe(false)
     })
   })
 
   describe('canAdmin getter', () => {
     it('allows admin role', () => {
       const store = useAuthStore()
-      store.user = { role: { name: 'administrator' } }
+      store.user = { role: { name: 'admin' } }
       expect(store.canAdmin).toBe(true)
     })
 
-    it('matches admin using configured role ids when present', () => {
+    it('denies unknown role', () => {
       const store = useAuthStore()
-      const roleId = ADMIN_ROLE_IDS[0] || 'non-configured-role-id'
-      store.user = { role: { id: roleId, name: '' } }
-      expect(store.canAdmin).toBe(ADMIN_ROLE_IDS.length > 0)
+      store.user = { role: { name: 'manager' } }
+      expect(store.canAdmin).toBe(false)
     })
   })
 
   describe('user and role getters', () => {
-    it('matches hasRole case-insensitively', () => {
-      const store = useAuthStore()
-      store.user = { role: { name: 'Verificatore' } }
-      expect(store.hasRole('verificatore')).toBe(true)
-      expect(store.hasRole('admin')).toBe(false)
-    })
 
     it('returns userId and contattoId getters', () => {
       const store = useAuthStore()
@@ -429,7 +412,7 @@ describe('auth store', () => {
 
     it('checkRendicontazioneConsistency handles empty projects', async () => {
       const store = useAuthStore()
-      store.user = { role: { name: 'administrator' } }
+      store.user = { role: { name: 'admin' } }
       mockGetProgetti.mockResolvedValue({ data: { data: [] } })
 
       await store.checkRendicontazioneConsistency()
@@ -439,7 +422,7 @@ describe('auth store', () => {
 
     it('checkRendicontazioneConsistency stores discrepancies from computed totals', async () => {
       const store = useAuthStore()
-      store.user = { role: { name: 'administrator' } }
+      store.user = { role: { name: 'admin' } }
       mockGetProgetti.mockResolvedValue({
         data: {
           data: [
@@ -480,7 +463,7 @@ describe('auth store', () => {
 
     it('checkRendicontazioneConsistency stores service errors', async () => {
       const store = useAuthStore()
-      store.user = { role: { name: 'administrator' } }
+      store.user = { role: { name: 'admin' } }
       mockGetProgetti.mockRejectedValue(new Error('service down'))
 
       await store.checkRendicontazioneConsistency()

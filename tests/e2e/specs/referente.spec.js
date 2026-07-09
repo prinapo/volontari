@@ -49,7 +49,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-01: Bottone Assegna Referente visibile solo per Volontari @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -82,8 +82,7 @@ test.describe('Referente Role', () => {
 
   test('RF-02: Assegna Referente a Volontario @crud', async ({ page }) => {
     test.setTimeout(180000)
-    page.expectApiError('/items/email')
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     // Setup atomico: crea famiglia + assegna volontario + progetto
     const label = `RF02_${Date.now()}`
@@ -109,7 +108,7 @@ test.describe('Referente Role', () => {
         Data_Fine_Progetto: '2026-12-31'
       },
       auth,
-      'gestore'
+      'manager'
     )
 
     const timestamp = Date.now()
@@ -133,7 +132,7 @@ test.describe('Referente Role', () => {
       dialog.locator('button:has-text("Salva")').click()
     ])
     expect(postResp.status()).toBe(200)
-    const contattoId = (await postResp.json()).data?.id
+    const contattoId = (await postResp.json()).data?.id_contatto
     if (contattoId) createdContattoIds.push(contattoId)
     await expect(dialog).not.toBeVisible({ timeout: 10000 })
     await page.waitForTimeout(1000)
@@ -161,6 +160,10 @@ test.describe('Referente Role', () => {
       await page.waitForTimeout(300)
       const emailInput = dialog.locator('input[type="email"]').last()
       await emailInput.fill(rf02Email)
+      // Click elsewhere to trigger blur (onEmailBlur creates email via API)
+      await dialog.locator('.text-h6').first().click()
+      await page.waitForResponse(resp => resp.url().includes('/items/email') && resp.request().method() === 'POST', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(300)
       const [patchResp] = await Promise.all([
         page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
         dialog.locator('button:has-text("Salva")').click()
@@ -267,7 +270,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-03: Filtro Referente in ContattiTab @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -424,7 +427,7 @@ test.describe('Referente Role', () => {
   })
 
   test('RF-05: Bottone non visibile per non-Volontari @regression', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
@@ -445,7 +448,7 @@ test.describe('Referente Role', () => {
 
   test('RF-06: Dialog chiude correttamente @smoke', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()

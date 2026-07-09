@@ -31,14 +31,14 @@ test.afterEach(async () => {
 test.describe('Gestione Pagamenti', () => {
   test('PAG-01: Login gestore e pagina gestione carica @smoke', async ({ page }) => {
     test.setTimeout(30000)
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     await expect(page.locator('.q-tab:has-text("Contatti")')).toBeVisible({ timeout: 10000 })
     console.log('[PAG-01] Login e pagina gestione OK')
   })
 
   test('PAG-02: Verificatore vede pagina verifica @smoke', async ({ page }) => {
     test.setTimeout(30000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     console.log('[PAG-02] Pagina verifica OK')
@@ -46,7 +46,7 @@ test.describe('Gestione Pagamenti', () => {
 
   test('PAG-06: Tab Pagamenti in VerificaPage è visibile @smoke', async ({ page }) => {
     test.setTimeout(30000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     const pagTab = page.locator('.q-tab:has-text("Pagamenti")')
@@ -88,7 +88,7 @@ test.describe('Gestione Pagamenti', () => {
 
   test('PAG-20: Tab Pagamenti mostra sottotab Bonifici da fare @crud', async ({ page }) => {
     test.setTimeout(60000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
 
@@ -107,7 +107,7 @@ test.describe('Gestione Pagamenti', () => {
 
   test('PAG-21: Sottotab Bonifici da fare mostra contenuto @crud', async ({ page }) => {
     test.setTimeout(60000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
 
@@ -123,7 +123,7 @@ test.describe('Gestione Pagamenti', () => {
 
   test('PAG-22: Sottotab Da riscontrare si attiva @crud', async ({ page }) => {
     test.setTimeout(60000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
 
@@ -140,7 +140,7 @@ test.describe('Gestione Pagamenti', () => {
 
   test('PAG-23: Sottotab Falliti si attiva @crud', async ({ page }) => {
     test.setTimeout(60000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
 

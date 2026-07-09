@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename)
 const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
 
 async function createGiustificativoViaVerificatore(page) {
-  await loginAs(page, 'verificatore', auth)
+  await loginAs(page, 'manager', auth)
   const vp = new VerificaPage(page)
   await vp.waitForTable()
   await page.waitForTimeout(2000)
@@ -86,7 +86,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     }
 
     const vp = new VerificaPage(page)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await vp.goto()
     await vp.waitForTable()
     await page.waitForTimeout(3000)
@@ -147,7 +147,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     }
 
     const vp = new VerificaPage(page)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(nomeFam)
@@ -199,7 +199,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
     // Non invia ancora — il test verifica che da VerificaPage si possa inviare
     const vp = new VerificaPage(page)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(nomeFam)
@@ -254,7 +254,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     expect(draft, 'Creazione giustificativo fallita').not.toBeNull()
 
     // 3. Verificatore verifica e poi rifiuta
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.waitForTable()
 

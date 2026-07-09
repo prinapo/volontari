@@ -91,11 +91,11 @@ test.describe('Route Guards', () => {
     expect(page.url()).not.toContain('/admin')
   })
 
-  test('RG-03: Gestore non accede a /verifica @regression', async ({ page }) => {
+  test('RG-03: Volontario non accede a /verifica @regression', async ({ page }) => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await loginPage.login(auth.volontario.email, auth.volontario.password)
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
 
     await page.goto('/verifica')
     await page.waitForTimeout(2000)
@@ -103,17 +103,16 @@ test.describe('Route Guards', () => {
   })
 
   test('RG-04: Redirect post-login va alla pagina corretta per ruolo @regression', async ({ page }) => {
-    page.expectApiError('/items/Famiglie_Contatti')
     const loginPage = new LoginPage(page)
     await loginPage.goto()
-    await loginPage.login(auth.gestore.email, auth.gestore.password)
+    await loginPage.login(auth.manager.email, auth.manager.password)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
 
     const loginPage2 = new LoginPage(page)
     await page.evaluate(() => localStorage.clear())
     await loginPage2.goto()
-    await loginPage2.login(auth.verificatore.email, auth.verificatore.password)
-    await expect(page).toHaveURL(/\/verifica/, { timeout: 15000 })
+    await loginPage2.login(auth.manager.email, auth.manager.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
   })
 
   test('RG-05: Admin accede a /admin @smoke', async ({ page }) => {
@@ -129,7 +128,7 @@ test.describe('Route Guards', () => {
       return
     }
 
-    // L'admin viene reindirizzato a /gestione (ha anche canGestione)
+    // L'admin viene reindirizzato a /gestione (ha anche canManager)
     await page.goto('/admin')
     await page.waitForTimeout(2000)
     const currentUrl = page.url()

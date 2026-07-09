@@ -47,7 +47,7 @@ test.afterEach(async () => {
 })
 
 async function creaContattoGenitore(page, email, nome = 'TEST_EmailCon', cognome = 'TEST_Genitore') {
-  await loginAs(page, 'gestore', auth)
+  await loginAs(page, 'manager', auth)
 
   const contatto = await createContattoViaUI(page, { nome, cognome, email: email.toLowerCase() })
   _ecIds.contatti.push(contatto.id_contatto)
@@ -95,7 +95,7 @@ test.describe('Email Case-Insensitive Matching', () => {
     })
     if (subData?.id) _ecIds.invii.push(subData.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -137,7 +137,7 @@ test.describe('Email Case-Insensitive Matching', () => {
     })
     if (subData?.id) _ecIds.invii.push(subData.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -179,7 +179,7 @@ test.describe('Email Case-Insensitive Matching', () => {
     })
     if (subData?.id) _ecIds.invii.push(subData.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
@@ -219,7 +219,7 @@ test.describe('Email Case-Insensitive Matching', () => {
     })
     if (subData?.id) _ecIds.invii.push(subData.id)
 
-    await loginAs(page, 'gestore_verifica', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()

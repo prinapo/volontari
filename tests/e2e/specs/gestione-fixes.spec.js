@@ -119,7 +119,7 @@ test.describe('Gestione Fixes', () => {
 
     if (!submissionCreated) throw new Error("Submissions non creata")
 
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await page.goto('/riconciliazione')
@@ -158,7 +158,7 @@ test.describe('Gestione Fixes', () => {
   })
 
   test('GF-03: Telefono visibile nella lista submission @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
     await page.goto('/riconciliazione')

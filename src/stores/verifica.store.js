@@ -245,7 +245,7 @@ export const useVerificaStore = defineStore('verifica', {
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
-        if (useAuthStore().canPagamenti) {
+        if (useAuthStore().canManager) {
           await pagStore.ricalcolaProposta(progettoId)
         }
       } catch (error) {
@@ -265,7 +265,7 @@ export const useVerificaStore = defineStore('verifica', {
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
-        if (useAuthStore().canPagamenti) {
+        if (useAuthStore().canManager) {
           await pagStore.ricalcolaProposta(progettoId)
         }
       } catch (error) {
@@ -548,7 +548,7 @@ export const useVerificaStore = defineStore('verifica', {
         recalculateRowTotals(row)
         await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
-        if (useAuthStore().canPagamenti) {
+        if (useAuthStore().canManager) {
           await pagStore.ricalcolaProposta(progettoId)
         }
       } catch (error) {

@@ -7,16 +7,36 @@ const ORIGINAL_PWD = auth.volontario.password
 const TEMP_PWD = 'TempPass_2026_Change!'
 
 test.describe('Change Password', () => {
-  test.afterEach(async () => {
-    // Ripristina la password originale via API
-    const { apiLogin } = await import('../helpers/api.js')
-    await apiLogin(auth.admin.email, auth.admin.password)
-    const { apiPatch } = await import('../helpers/api.js')
-    await apiPatch('/users/me', { password: ORIGINAL_PWD }).catch(() => {})
+  test.afterEach(async ({ page }) => {
+    try {
+      const apiUrl = 'https://api-dev.sostienilsostegno.com'
+      // Login as admin 
+      const loginRes = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: auth.admin.email, password: auth.admin.password })
+      })
+      const loginJson = await loginRes.json()
+      const token = loginJson.data?.access_token
+      if (!token) { console.log('[AFTER] no admin token'); return }
+      // Find volontario user by email
+      const userRes = await fetch(`${apiUrl}/users?filter[email][_eq]=${encodeURIComponent(auth.volontario.email)}&fields=id`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const userData = await userRes.json()
+      const userId = userData.data?.[0]?.id
+      if (!userId) { console.log('[AFTER] no volontario user id'); return }
+      // Patch volontario password (admin can patch any user)
+      const patchRes = await fetch(`${apiUrl}/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ password: ORIGINAL_PWD })
+      })
+      if (!patchRes.ok) console.log('[AFTER] patch failed:', patchRes.status)
+    } catch (e) { console.log('[AFTER] error:', e.message) }
   })
 
   test('CPW-01: Cambia password con successo @smoke', async ({ page }) => {
-    page.expectApiError('/users/me')
     await loginAs(page, 'volontario', auth)
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
 

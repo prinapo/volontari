@@ -39,19 +39,19 @@ const routes = [
         path: 'verifica',
         name: 'Verifica',
         component: () => import('pages/VerificaPage.vue'),
-        meta: { requiredRole: 'Verifica' }
+        meta: { requiredRole: 'Manager' }
       },
       {
         path: 'riconciliazione',
         name: 'Riconciliazione',
         component: () => import('pages/RiconciliazionePage.vue'),
-        meta: { requiredRole: 'Verifica' }
+        meta: { requiredRole: 'Manager' }
       },
       {
         path: 'gestione',
         name: 'Gestione',
         component: () => import('pages/GestionePage.vue'),
-        meta: { requiredRole: 'Gestione' }
+        meta: { requiredRole: 'Manager' }
       },
       {
         path: 'deduplica',
@@ -90,15 +90,13 @@ router.beforeEach((to, from, next) => {
 
   if (isAuthenticated && to.meta.public) {
     const authStore = useAuthStore()
-    if (authStore.canGestione) return next('/gestione')
-    if (authStore.canVerifica) return next('/verifica')
+    if (authStore.canManager) return next('/gestione')
     return next('/famiglie')
   }
 
   if (isAuthenticated && to.path === '/') {
     const authStore = useAuthStore()
-    if (authStore.canGestione) return next('/gestione')
-    if (authStore.canVerifica) return next('/verifica')
+    if (authStore.canManager) return next('/gestione')
   }
 
   if (!isAuthenticated && to.meta.requiresAuth) {
@@ -107,8 +105,7 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiredRole) {
     const authStore = useAuthStore()
-    if (to.meta.requiredRole === 'Verifica' && !authStore.canVerifica) return next('/famiglie')
-    if (to.meta.requiredRole === 'Gestione' && !authStore.canGestione) return next('/famiglie')
+    if (to.meta.requiredRole === 'Manager' && !authStore.canManager) return next('/famiglie')
     if (to.meta.requiredRole === 'Admin' && !authStore.canAdmin) return next('/famiglie')
   }
   next()

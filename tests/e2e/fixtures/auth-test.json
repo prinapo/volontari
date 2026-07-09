@@ -1,9 +1,7 @@
 {
+  "manager": { "email": "fake.manager@fake.com", "password": "FakeManager_2026!!" },
   "volontario": { "email": "fake.volontario@fake.com", "password": "FakeVol_2026!!" },
   "volontario_nofam": { "email": "fake.volontario.nofam@fake.com", "password": "FakeVol_2026!!" },
   "genitore": { "email": "fake.genitore@fake.com", "password": "FakeVol_2026!!" },
-  "gestore": { "email": "fake.gestore@fake.com", "password": "FakeGest_2026!!" },
-  "verificatore": { "email": "fake.verificatore@fake.com", "password": "FakeVer_2026!!" },
-  "gestore_verifica": { "email": "fake.gestore.verifica@fake.com", "password": "FakeGestVer_2026!!" },
   "admin": { "email": "fake.admin@fake.com", "password": "FakeAdmin_2026!!" }
 }

@@ -4,14 +4,9 @@ import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
 import {
-  STORAGE_KEYS,
-  VERIFICA_ROLE_IDS,
-  VERIFICA_ROLE_NAMES,
-  GESTIONE_ROLE_IDS,
-  GESTIONE_ROLE_NAMES,
-  ADMIN_ROLE_IDS,
-  ADMIN_ROLE_NAMES
+  STORAGE_KEYS
 } from 'src/utils/constants'
+import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 
 function normalizeRoleName(role) {
@@ -64,35 +59,13 @@ export const useAuthStore = defineStore('auth', {
     roleName: state => {
       return normalizeRoleName(state.user?.role)
     },
-    hasRole: state => roleName => {
-      return (
-        normalizeRoleName(state.user?.role) ===
-        String(roleName || '')
-          .trim()
-          .toLowerCase()
-      )
-    },
-    canVerifica: state => {
+    canManager: state => {
       const roleName = normalizeRoleName(state.user?.role)
-      const roleId = getRoleId(state.user?.role)
-      return VERIFICA_ROLE_NAMES.includes(roleName) || VERIFICA_ROLE_IDS.includes(roleId)
-    },
-    canGestione: state => {
-      const roleName = normalizeRoleName(state.user?.role)
-      const roleId = getRoleId(state.user?.role)
-      return GESTIONE_ROLE_NAMES.includes(roleName) || GESTIONE_ROLE_IDS.includes(roleId)
+      return MANAGER_ROLE_NAMES.includes(roleName)
     },
     canAdmin: state => {
       const roleName = normalizeRoleName(state.user?.role)
-      const roleId = getRoleId(state.user?.role)
-      return ADMIN_ROLE_NAMES.includes(roleName) || ADMIN_ROLE_IDS.includes(roleId)
-    },
-    canPagamenti: state => {
-      const roleName = normalizeRoleName(state.user?.role)
-      const roleId = getRoleId(state.user?.role)
-      const roleNames = ['verificatore', 'verifica', 'validatore', 'validator', 'administrator', 'admin']
-      const roleIds = (import.meta.env.VITE_PAGAMENTI_ROLE_IDS || '').split(',').map(id => id.trim()).filter(Boolean)
-      return roleNames.includes(roleName) || roleIds.includes(roleId)
+      return ADMIN_ROLE_NAMES.includes(roleName)
     },
     userName: state => {
       if (state.contatto) {
@@ -205,7 +178,7 @@ export const useAuthStore = defineStore('auth', {
           this.user.role = role
         }
       } catch {
-        // If directus_roles is not readable, canVerifica can still match VITE_VERIFICA_ROLE_IDS.
+        // If directus_roles is not readable, canAdmin can still match ADMIN_ROLE_NAMES.
       }
     },
 

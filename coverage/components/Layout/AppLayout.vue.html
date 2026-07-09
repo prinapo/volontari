@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.35% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>226/237</span>
+                <span class='fraction'>237/237</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.33% </span>
+                <span class="strong">71.42% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/3</span>
+                <span class='fraction'>5/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">18.18% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/6</span>
+                <span class='fraction'>2/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.35% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>226/237</span>
+                <span class='fraction'>237/237</span>
             </div>
         
             
@@ -524,17 +524,17 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">&lt;template&gt;
@@ -702,19 +702,19 @@
         &lt;/q-card-section&gt;
         &lt;q-card-section&gt;
           &lt;q-input
-            v-model="newPassword"
+            v-model="<span class="fstat-no" title="function not covered" >newPassword"</span>
             type="password"
             label="Nuova password"
-            :rules="[val =&gt; !!val || 'Campo obbligatorio']"
+            :rules="[<span class="fstat-no" title="function not covered" >val =&gt; !!val || 'Campo obbligatorio']"</span>
             outlined
             dense
             lazy-rules
           /&gt;
           &lt;q-input
-            v-model="confirmPassword"
+            v-model="<span class="fstat-no" title="function not covered" >confirmPassword"</span>
             type="password"
             label="Conferma password"
-            :rules="[
+            :rules="<span class="fstat-no" title="function not covered" ><span class="fstat-no" title="function not covered" >[</span></span>
               val =&gt; !!val || 'Campo obbligatorio',
               val =&gt; val === newPassword || 'Le password non coincidono'
             ]"
@@ -761,17 +761,17 @@ async function handleLogout() {
   router.push('/login')
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async function handleChangePassword() {</span></span>
-<span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    await authService.changePassword(newPassword.value)</span>
-<span class="cstat-no" title="statement not covered" >    notifySuccess($q, 'Password cambiata con successo')</span>
-<span class="cstat-no" title="statement not covered" >    showChangePassword.value = false</span>
-<span class="cstat-no" title="statement not covered" >    newPassword.value = ''</span>
-<span class="cstat-no" title="statement not covered" >    confirmPassword.value = ''</span>
-<span class="cstat-no" title="statement not covered" >  } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >    notifyError($q, error, 'Errore nel cambio password')</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+async function handleChangePassword() {
+  try {
+    await authService.changePassword(newPassword.value)
+    notifySuccess($q, 'Password cambiata con successo')
+    showChangePassword.value = false
+    newPassword.value = ''
+    confirmPassword.value = ''
+  } catch (error) {
+    notifyError($q, error, 'Errore nel cambio password')
+  }
+}
 &nbsp;
 &lt;/script&gt;
 &nbsp;</pre></td></tr></table></pre>
@@ -781,7 +781,7 @@ async function handleLogout() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-22T19:06:42.515Z
+                at 2026-06-30T09:04:30.601Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

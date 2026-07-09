@@ -3,7 +3,7 @@
     <div class="page-inner">
       <q-tabs v-model="verificaTab" class="q-mb-md">
         <q-tab name="rendicontazione" label="Rendicontazione" />
-        <q-tab v-if="authStore.canPagamenti" name="pagamenti" label="Pagamenti" />
+        <q-tab v-if="authStore.canManager" name="pagamenti" label="Pagamenti" />
       </q-tabs>
 
       <q-tab-panels v-model="verificaTab">
@@ -938,7 +938,7 @@ const annoOptions = computed(() => store.anniBando.map(anno => ({
   value: anno
 })))
 
-const canVerifica = computed(() => authStore.canVerifica)
+const canVerifica = computed(() => authStore.canManager)
 
 const columns = [
   { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },

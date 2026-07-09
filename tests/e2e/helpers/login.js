@@ -1,12 +1,11 @@
 import { LoginPage } from '../pages/LoginPage.js'
 
 const ROLE_URLS = {
+  manager: /\/gestione/,
   volontario: /\/famiglie/,
   volontario_nofam: /\/famiglie/,
   genitore: /\/famiglie/,
-  gestore: /\/gestione/,
-  verificatore: /\/verifica/,
-  gestore_verifica: /\/gestione/
+  admin: /\/admin/
 }
 
 /**

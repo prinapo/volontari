@@ -37,7 +37,7 @@ test.describe('CreaProgettoPage', () => {
   test('CP-02: Crea progetto completo con tutti i campi e allegati @crud', async ({ page }) => {
     const nomeFamiglia = `TEST_CP_${Date.now()}`
 
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const fam = await createFamigliaViaUI(page, { nomeFamiglia })
     ids.famiglia = fam.id_famiglia
 

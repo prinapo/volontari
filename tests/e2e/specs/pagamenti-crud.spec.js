@@ -44,7 +44,7 @@ test.describe('Pagamenti CRUD', () => {
     const pag2 = await apiPost('Pagamenti', { Progetto: progId, Famiglia: famId, Importo: 300, Stato: 'proposto' })
     PAG.pagamenti.push(pag2.data?.id || pag2.data?.[0]?.id)
 
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await page.locator('.q-tab:has-text("Pagamenti")').click()
@@ -55,7 +55,7 @@ test.describe('Pagamenti CRUD', () => {
   })
 
   test('PAG-31: Bonifici da fare ha tabella @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await page.locator('.q-tab:has-text("Pagamenti")').click()
@@ -64,7 +64,7 @@ test.describe('Pagamenti CRUD', () => {
   })
 
   test('PAG-32: Da riscontrare tab visibile @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await page.locator('.q-tab:has-text("Pagamenti")').click()
@@ -77,7 +77,7 @@ test.describe('Pagamenti CRUD', () => {
   })
 
   test('PAG-33: Falliti tab visibile @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await page.locator('.q-tab:has-text("Pagamenti")').click()
@@ -90,7 +90,7 @@ test.describe('Pagamenti CRUD', () => {
   })
 
   test('PAG-34: Liste esportazione tab visibile @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await page.locator('.q-tab:has-text("Pagamenti")').click()

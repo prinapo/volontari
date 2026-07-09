@@ -5,34 +5,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refresh_token'
 }
 
-export const VERIFICA_ROLE_NAMES = [
-  'verifica',
-  'verificatore',
-  'validatore',
-  'validator',
-  'gestoreverifica',
-  'administrator',
-  'admin'
-]
-
-export const VERIFICA_ROLE_IDS = (import.meta.env.VITE_VERIFICA_ROLE_IDS || '')
-  .split(',')
-  .map(id => id.trim())
-  .filter(Boolean)
-
-export const GESTIONE_ROLE_NAMES = ['gestore volontari', 'gestione', 'gestoreverifica', 'administrator', 'admin']
-
-export const GESTIONE_ROLE_IDS = (import.meta.env.VITE_GESTIONE_ROLE_IDS || '')
-  .split(',')
-  .map(id => id.trim())
-  .filter(Boolean)
-
-export const ADMIN_ROLE_NAMES = ['administrator', 'admin']
-
-export const ADMIN_ROLE_IDS = (import.meta.env.VITE_ADMIN_ROLE_IDS || '')
-  .split(',')
-  .map(id => id.trim())
-  .filter(Boolean)
+export const ADMIN_ROLE_NAMES = ['admin']
 
 export const STATI_GIUSTIFICATIVO = {
   DRAFT: 'draft',

@@ -66,7 +66,7 @@ export async function creaFamigliaVolontarioProgetto(page, ids) {
       Allocato: 5000
     },
     auth,
-    'gestore'
+    'manager'
   )
 
   return { nomeFam, prefix }
@@ -84,10 +84,10 @@ export async function loginVolontarioConFamiglia(page, nomeFam, role = 'volontar
 }
 
 /**
- * Login gestore per setup.
+ * Login manager per setup.
  */
 export async function loginGestore(page) {
-  await loginAs(page, 'gestore', auth)
+  await loginAs(page, 'manager', auth)
 }
 
 /**

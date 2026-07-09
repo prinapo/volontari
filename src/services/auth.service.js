@@ -16,7 +16,7 @@ export const authService = {
   getMe() {
     return api.get('/users/me', {
       params: {
-        fields: 'id,email,first_name,last_name,role,role.*'
+        fields: 'id,email,first_name,last_name,role,role.id,role.name'
       }
     })
   },

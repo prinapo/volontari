@@ -51,7 +51,7 @@ test.describe('VerificaPage', () => {
 
   test.describe('Auth & Layout', () => {
     test('VR-01: Accesso verificatore apre VerificaPage @smoke', async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     })
 
@@ -66,7 +66,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('TB-01: Colonne ordine corretto @smoke', async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
 
       const viewport = await page.viewportSize()
@@ -96,7 +96,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('TB-05: Colonna Totali non esiste @regression', async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('th:has-text("Totali")')).not.toBeVisible()
     })
@@ -104,7 +104,7 @@ test.describe('VerificaPage', () => {
 
   test.describe('Filtri', () => {
     test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -163,7 +163,7 @@ test.describe('VerificaPage', () => {
 
   test.describe('Expanded Row & Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -227,7 +227,7 @@ test.describe('VerificaPage', () => {
 
   test.describe('Dati bancari edit', () => {
     test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -380,7 +380,7 @@ test.describe('VerificaPage', () => {
 
     test('DB-V5: IBAN non valido → Salva disabilitato @regression', async ({ page }) => {
       const vp = new VerificaPage(page)
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await vp.goto()
       await vp.waitForTable()
       await page.waitForTimeout(3000)
@@ -402,7 +402,7 @@ test.describe('VerificaPage', () => {
 
   test.describe('Stato riga', () => {
     test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -452,7 +452,7 @@ test.describe('VerificaPage', () => {
         localStorage.clear()
         sessionStorage.clear()
       })
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       if (!page.url().includes('/verifica')) {
         await page.goto('/verifica', { timeout: 15000 }).catch(() => {})
       }
@@ -471,7 +471,7 @@ test.describe('VerificaPage', () => {
 
   test.describe('Error Handling', () => {
     test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
     })
 
     test('EH-01: Errore API mostra banner di errore @regression', async ({ page }) => {
@@ -495,7 +495,7 @@ test.describe('VerificaPage', () => {
 
   test('VR-SS-01: Screenshot VerificaPage non cambia @visual', async ({ page }) => {
     test.setTimeout(90000)
-    await loginAs(page, 'verificatore', auth)
+    await loginAs(page, 'manager', auth)
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.summary-grid')).toBeVisible({ timeout: 5000 })
     await expect(page).toHaveScreenshot('verifica-page.png', {
@@ -511,7 +511,7 @@ test.describe('VerificaPage', () => {
       // Crea dati atomici per garantire almeno un progetto in tabella
       await loginGestore(page)
       const r = await creaFamigliaVolontarioProgetto(page, ids)
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -704,7 +704,7 @@ test.describe('VerificaPage', () => {
     }
 
     test('VCP-01: Chiudi progetto con badge Aperto @crud', async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       const vp = new VerificaPage(page)
       await vp.goto()
       await vp.waitForTable()
@@ -721,7 +721,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('VCP-02: Chiudi progetto con motivo @crud', async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       const vp = new VerificaPage(page)
       await vp.goto()
       await vp.waitForTable()
@@ -742,7 +742,7 @@ test.describe('VerificaPage', () => {
     })
 
     test('VCP-03: Annulla chiusura progetto @smoke', async ({ page }) => {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       const vp = new VerificaPage(page)
       await vp.goto()
       await vp.waitForTable()

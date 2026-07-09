@@ -81,7 +81,7 @@
         </div>
 
         <!-- Nessuna famiglia e utente ha accesso a verifica -->
-        <div v-else-if="!loading && authStore.canVerifica" class="text-center q-mt-xl">
+        <div v-else-if="!loading && authStore.canManager" class="text-center q-mt-xl">
           <q-icon name="fact_check" size="lg" color="primary" />
           <div class="q-mt-sm text-h6">
             Area verifica disponibile

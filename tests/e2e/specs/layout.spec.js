@@ -14,7 +14,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
 
   test.beforeEach(async ({ page }) => {
     const nomeFamiglia = 'TEST_LAYOUT_' + Date.now()
-    await loginAs(page, 'gestore', auth)
+    await loginAs(page, 'manager', auth)
     const fam = await createFamigliaViaUI(page, { nomeFamiglia })
     createdFamiglia = fam.id_famiglia
     await assegnaContattoAFamigliaViaUI(page, {
@@ -60,20 +60,18 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     expect(await adminItem.count()).toBe(0)
   })
 
-  test('LB-02: Gestore vede Gestione ma non Verifica @smoke', async ({ page }) => {
-    await loginAs(page, 'gestore', auth)
+  test('LB-02: Manager vede Gestione + Verifica + Riconciliazione @smoke', async ({ page }) => {
+    await loginAs(page, 'manager', auth)
     await openDrawerIfMobile(page)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
 
-    const gestioneItem = drawer.locator('text=Gestione')
-    await expect(gestioneItem.first()).toBeVisible()
+    await expect(drawer.locator('text=Gestione').first()).toBeVisible()
+    await expect(drawer.locator('text=Verifica').first()).toBeVisible()
+    await expect(drawer.locator('text=Riconciliazione').first()).toBeVisible()
 
-    const verificaItem = drawer.locator('text=Verifica')
     const adminItem = drawer.locator('text=User Admin')
-
-    expect(await verificaItem.count()).toBe(0)
     expect(await adminItem.count()).toBe(0)
   })
 
@@ -86,24 +84,17 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     await expect(page).toHaveScreenshot('sidebar-volontario.png', { maxDiffPixels: 1500, animations: 'disabled' })
   })
 
-  test('LB-03: Verificatore vede Verifica e Riconciliazione @smoke', async ({ page }) => {
-    await loginAs(page, 'verificatore', auth)
+  test('LB-03: Admin vede tutte le voci di navigazione @smoke', async ({ page }) => {
+    await loginAs(page, 'admin', auth)
     await openDrawerIfMobile(page)
 
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
 
-    const verificaItem = drawer.locator('text=Verifica').first()
-    await expect(verificaItem).toBeVisible()
-
-    const riconcItem = drawer.locator('text=Riconciliazione')
-    await expect(riconcItem).toBeVisible()
-
-    const gestioneItem = drawer.locator('text=Gestione')
-    const adminItem = drawer.locator('text=User Admin')
-
-    expect(await gestioneItem.count()).toBe(0)
-    expect(await adminItem.count()).toBe(0)
+    await expect(drawer.locator('text=Gestione').first()).toBeVisible()
+    await expect(drawer.locator('text=Verifica').first()).toBeVisible()
+    await expect(drawer.locator('text=Riconciliazione').first()).toBeVisible()
+    await expect(drawer.locator('text=User Admin').first()).toBeVisible()
   })
 
   test('LB-04: Click menu item naviga alla pagina corretta @smoke', async ({ page }) => {
