@@ -21,11 +21,12 @@ const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'))
 const VERSION = pkg.version
 const RELEASE_DIR = `releases/v${VERSION}`
 
-// Blocco: il tag esiste già? Allora la versione non è stata bumpata
+// Blocco: il tag esiste già su un commit diverso? Versione non bumpata.
 try {
-  const tagExists = execSync(`git tag -l 'v${VERSION}'`, { encoding: 'utf-8', cwd: ROOT }).trim()
-  if (tagExists) {
-    console.error(`❌ Il tag v${VERSION} esiste già. Prima di deployare devi aumentare la versione in package.json e creare un nuovo tag.`)
+  const tagCommit = execSync(`git rev-list -n 1 'v${VERSION}' 2>/dev/null || true`, { encoding: 'utf-8', cwd: ROOT }).trim()
+  const headCommit = execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: ROOT }).trim()
+  if (tagCommit && tagCommit !== headCommit) {
+    console.error(`❌ Il tag v${VERSION} esiste già su un commit diverso. Bumpa la versione in package.json.`)
     process.exit(1)
   }
 } catch {
