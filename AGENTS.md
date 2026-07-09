@@ -95,7 +95,6 @@ Regola: **se il ruolo non ha permessi di lettura su una collection, l'app non de
 ## E2E testing (Playwright)
 
 - Run: `npm run test:e2e` (needs Directus accessible)
-- 16 spec files, 151+ tests, 27 test files
 - Tags: `@smoke` (critical path), `@crud` (data persistence), `@regression` (edge cases), `@visual` (screenshots)
 - Page Object Model in `tests/e2e/pages/`
 - Two projects in Playwright: `chromium` (desktop) and `mobile` (Pixel 6)
@@ -132,3 +131,10 @@ Regola: **se il ruolo non ha permessi di lettura su una collection, l'app non de
 - Il volontario riceve password gestita manualmente dall'admin
 - Il cambio password è disponibile dal menu utente (AppLayout)
 - Il reset password via email funziona dalla pagina di login
+
+## Deploy
+
+- **MAI deployare in produzione senza prima chiedere esplicita autorizzazione all'utente.**
+- Prima del deploy: E2E full suite passata.
+- Dopo il deploy: avvisare l'utente e chiedere conferma.
+- Il numero di versione (patch) va aumentato solo dopo autorizzazione.
