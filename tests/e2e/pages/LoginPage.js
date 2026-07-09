@@ -8,27 +8,26 @@ export class LoginPage {
 
   async goto() {
     await this.page.goto('/login', { timeout: 20000 })
-    // If redirected (leaked auth), clear and retry
     if (!this.page.url().includes('/login')) {
       console.log('[LOGIN] redirected from /login, clearing leaked auth...')
       await this.page.evaluate(() => {
         localStorage.clear()
         sessionStorage.clear()
+        window.location.href = '/login'
       })
-      await this.page.goto('/login', { timeout: 20000 })
       await this.page.waitForTimeout(2000)
     }
   }
 
   async login(email, password) {
-    // Ensure we're at /login — clear leaked auth if needed
+    // Navigate to /login in a single step to avoid API calls without token
     if (!this.page.url().includes('/login')) {
       console.log('[LOGIN] not at /login, clearing leaked auth...')
       await this.page.evaluate(() => {
         localStorage.clear()
         sessionStorage.clear()
+        window.location.href = '/login'
       })
-      await this.page.goto('/login', { timeout: 20000 })
       await this.page.waitForTimeout(2000)
     }
 

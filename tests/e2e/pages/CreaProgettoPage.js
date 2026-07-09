@@ -104,15 +104,12 @@ export class CreaProgettoPage {
   }
 }
 
-export async function createProgettoViaUI(page, data, auth, returnRole) {
+export async function createProgettoViaUI(page, data, auth) {
   await loginAs(page, 'admin', auth)
   const creaProgettoPage = new CreaProgettoPage(page)
   await creaProgettoPage.goto()
   await creaProgettoPage.fillForm(data)
   await creaProgettoPage.uploadAttachments(data.attachments)
   const progettoId = await creaProgettoPage.submit()
-  if (returnRole) {
-    await loginAs(page, returnRole, auth)
-  }
   return progettoId
 }

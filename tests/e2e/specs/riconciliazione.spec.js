@@ -1017,12 +1017,12 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
           Data_Inizio_Progetto: '2026-01-01',
           Data_Fine_Progetto: '2026-12-31'
         },
-        auth,
-        'manager'
+        auth
       )
     )
 
-    // Assegna contatto come Volontario
+    // Assegna contatto come Volontario (login manager dopo createProgettoViaUI)
+    await loginAs(page, 'manager', auth)
     await assegnaContattoAFamigliaViaUI(page, {
       famigliaNome: famVol.nome,
       searchTerm: testEmail,
@@ -1043,10 +1043,10 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
           Data_Inizio_Progetto: '2026-01-01',
           Data_Fine_Progetto: '2026-12-31'
         },
-        auth,
-        'manager'
+        auth
       )
     )
+    await loginAs(page, 'manager', auth)
     await assegnaContattoAFamigliaViaUI(page, {
       famigliaNome: famGen.nome,
       searchTerm: testEmail,

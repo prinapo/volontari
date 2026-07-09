@@ -31,7 +31,14 @@ test.describe('Workflow', () => {
 
   test('WF-01: Flusso Submit → Riconcilia → Verifica @e2e', async ({ page }) => {
     test.setTimeout(240000)
-    page.expectApiError('/items/Famiglie_Contatti')
+
+    // Debug minimale: logga la pagina attiva quando arriva 403 su FC
+    page.on('response', resp => {
+      if (resp.url().includes('/items/Famiglie_Contatti') && resp.status() >= 400) {
+        console.log(`[FC ${resp.status()}] page: ${page.url()}`)
+      }
+    })
+
     const ts = Date.now()
     const prefix = `TEST_WF01_${ts}`
     const testEmail = `${prefix}@test.com`
@@ -69,8 +76,7 @@ test.describe('Workflow', () => {
         Data_Inizio_Progetto: '2026-01-01',
         Data_Fine_Progetto: '2026-12-31'
       },
-      auth,
-      'manager'
+      auth
     )
 
     // 2. Crea submission via UI (simula submit anonimo)
@@ -234,8 +240,7 @@ test.describe('Workflow', () => {
           Data_Inizio_Progetto: '2026-01-01',
           Data_Fine_Progetto: '2026-12-31'
         },
-        auth,
-        'manager'
+        auth
       )
     )
     wfIds.progetto.push(
@@ -250,8 +255,7 @@ test.describe('Workflow', () => {
           Data_Inizio_Progetto: '2026-01-01',
           Data_Fine_Progetto: '2026-12-31'
         },
-        auth,
-        'manager'
+        auth
       )
     )
 
