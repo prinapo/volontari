@@ -303,7 +303,11 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
 
     // Crea famiglia atomica per il test
     await loginGestore(page)
+    await page.goto('/gestione')
+    await page.waitForTimeout(2000)
     const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+    await page.goto('/gestione')
+    await page.waitForTimeout(2000)
     const famData = await apiGet('Famiglie', {
       filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
       limit: 1,
