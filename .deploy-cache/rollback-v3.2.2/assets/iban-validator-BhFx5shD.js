@@ -1,0 +1,1 @@
+var e=/^[a-z]{2}\d{2}[\da-z]{11,30}$/i,t=[t=>!t||e.test(t)||`IBAN non valido`];function n(e){return e&&e.replaceAll(/\s/g,``).toUpperCase()}export{t as n,n as r,e as t};

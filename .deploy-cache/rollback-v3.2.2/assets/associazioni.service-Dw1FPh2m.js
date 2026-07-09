@@ -1,0 +1,1 @@
+import{Ot as e,c as t}from"./auth.store-D5aoQHQL.js";var n=e({associazioniService:()=>r}),r={getAll(){return t.get(`/items/Associazioni`,{params:{limit:-1,sort:`Nome`}})},create(e){return t.post(`/items/Associazioni`,e)},update(e,n){return t.patch(`/items/Associazioni/${e}`,n)}};export{n,r as t};

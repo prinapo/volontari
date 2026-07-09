@@ -1,0 +1,1 @@
+import{t as e}from"./auth.store-D5aoQHQL.js";import{t}from"./wrappers-Dfvzj6n2.js";var n=t(async()=>{await e().initFromStorage()});export{n as default};

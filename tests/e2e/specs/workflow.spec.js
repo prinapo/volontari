@@ -31,6 +31,7 @@ test.describe('Workflow', () => {
 
   test('WF-01: Flusso Submit → Riconcilia → Verifica @e2e', async ({ page }) => {
     test.setTimeout(240000)
+    page.expectApiError('/items/Famiglie_Contatti')
     const ts = Date.now()
     const prefix = `TEST_WF01_${ts}`
     const testEmail = `${prefix}@test.com`

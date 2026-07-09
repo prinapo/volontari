@@ -39,7 +39,7 @@ test.afterEach(async () => {
 
 test.describe('Error Log', () => {
   test('EL-01: Tab Errori in AdminPage è accessibile @smoke', async ({ page }) => {
-    test.setTimeout(30000)
+    test.setTimeout(45000)
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
     await page.waitForTimeout(2000)

@@ -1,0 +1,1 @@
+import{c as e}from"./auth.store-D5aoQHQL.js";var t={getById(t){return e.get(`/items/Progetti/${t}`)},updateStats(t,n){return e.patch(`/items/Progetti/${t}`,n)},createProgetto(t){return e.post(`/items/Progetti`,t)},uploadFile(t,n){let r=new FormData;return n&&r.append(`folder`,n),r.append(`file`,t),e.post(`/files`,r)},createAllegato(t,n){return e.post(`/items/${t}`,n)}};export{t};

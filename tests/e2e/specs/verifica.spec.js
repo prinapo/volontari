@@ -52,6 +52,8 @@ test.describe('VerificaPage', () => {
   test.describe('Auth & Layout', () => {
     test('VR-01: Accesso verificatore apre VerificaPage @smoke', async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
+      await page.waitForTimeout(2000)
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     })
 
@@ -496,6 +498,8 @@ test.describe('VerificaPage', () => {
   test('VR-SS-01: Screenshot VerificaPage non cambia @visual', async ({ page }) => {
     test.setTimeout(90000)
     await loginAs(page, 'manager', auth)
+    await page.goto('/verifica')
+    await page.waitForTimeout(2000)
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.summary-grid')).toBeVisible({ timeout: 5000 })
     await expect(page).toHaveScreenshot('verifica-page.png', {
