@@ -174,4 +174,35 @@ test.describe('Gestione Fixes', () => {
     const hasTelefono = (await page.locator('.q-expansion-item:has-text("Telefono")').count()) > 0
     expect(hasTelefono).toBe(true)
   })
+
+  test('GF-04: Tabella famiglie si carica con righe @smoke', async ({ page }) => {
+    await loginAs(page, 'manager', auth)
+    await page.goto('/gestione')
+    await page.waitForTimeout(2000)
+    // Cerca il contenuto della tabella: q-table su desktop, q-expansion-item su mobile grid
+    const table = page.locator('.q-table')
+    const gridContent = page.locator('.q-expansion-item')
+    const hasTable = await table.count() > 0
+    if (hasTable) {
+      await expect(table).toBeVisible({ timeout: 10000 })
+      const isGrid = await page.locator('.q-table--grid').count() > 0
+      if (isGrid) {
+        await expect(gridContent.first()).toBeVisible({ timeout: 5000 })
+      } else {
+        await expect(table.locator('tbody tr').first()).toBeVisible({ timeout: 5000 })
+      }
+    } else {
+      await expect(gridContent.first()).toBeVisible({ timeout: 10000 })
+    }
+  })
+
+  test('GF-05: Tabella contatti si carica con righe @smoke', async ({ page }) => {
+    await loginAs(page, 'manager', auth)
+    await page.goto('/gestione')
+    await page.waitForTimeout(1000)
+    await page.locator('.q-tab:has-text("Contatti")').click()
+    await page.waitForTimeout(2000)
+    const table = page.locator('.q-table')
+    await expect(table).toBeVisible({ timeout: 10000 })
+  })
 })

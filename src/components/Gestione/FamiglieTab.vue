@@ -391,7 +391,7 @@ async function loadData() {
     : undefined
   const params = {
     page: pagination.value.page,
-    limit: pagination.value.rowsPerPage,
+    limit: pagination.value.rowsPerPage > 0 ? pagination.value.rowsPerPage : -1,
     search: search.value || undefined,
     sort
   }

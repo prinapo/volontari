@@ -415,8 +415,8 @@ async function onRequest(props) {
     const sort = descending ? `-${sortBy || 'Cognome'}` : sortBy || 'Cognome'
 
     const res = await contattiService.query({
-      limit: rowsPerPage,
-      offset: (page - 1) * rowsPerPage,
+      limit: rowsPerPage > 0 ? rowsPerPage : -1,
+      offset: rowsPerPage > 0 ? (page - 1) * rowsPerPage : 0,
       sort,
       search: search.value || undefined,
       isVolontario: filters.isVolontario,
