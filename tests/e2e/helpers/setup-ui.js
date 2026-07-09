@@ -95,7 +95,7 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
     }
 
     if (g.stato === 'verificato' || g.stato === 'rifiutato') {
-      await loginAs(page, 'verificatore', auth)
+      await loginAs(page, 'manager', auth)
       const vp = new VerificaPage(page)
       await vp.goto()
       await vp.waitForTable()
