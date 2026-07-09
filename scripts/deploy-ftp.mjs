@@ -9,8 +9,10 @@
 
 import ftp from 'basic-ftp'
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
+import { execSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { createInterface } from 'readline'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -18,6 +20,26 @@ const ROOT = resolve(__dirname, '..')
 const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'))
 const VERSION = pkg.version
 const RELEASE_DIR = `releases/v${VERSION}`
+
+// Blocco: il tag esiste già? Allora la versione non è stata bumpata
+try {
+  const tagExists = execSync(`git tag -l 'v${VERSION}'`, { encoding: 'utf-8', cwd: ROOT }).trim()
+  if (tagExists) {
+    console.error(`❌ Il tag v${VERSION} esiste già. Prima di deployare devi aumentare la versione in package.json e creare un nuovo tag.`)
+    process.exit(1)
+  }
+} catch {
+  // git non disponibile — skip check
+}
+
+// Conferma interattiva
+const rl = createInterface({ input: process.stdin, output: process.stdout })
+const answer = await new Promise(resolve => rl.question(`⚠️  Sei sicuro di voler deployare v${VERSION} in PRODUZIONE? (y/N) `, resolve))
+rl.close()
+if (answer.toLowerCase() !== 'y') {
+  console.log('❌ Deploy annullato.')
+  process.exit(0)
+}
 
 function loadEnv() {
   const envFiles = ['.env.local', '.env']
