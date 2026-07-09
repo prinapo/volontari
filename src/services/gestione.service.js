@@ -8,8 +8,6 @@ const FAMIGLIE_CONTATTI_FIELDS = [
   'Famiglia.Nome_Famiglia'
 ].join(',')
 
-const ATTIVO_FILTER_OR = { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
-
 export const gestioneService = {
   getFamiglie({ page = 1, limit = 25, sort, search, meta, famigliaIds, excludeIds } = {}) {
     const params = {
@@ -50,19 +48,27 @@ export const gestioneService = {
   getFamiglieByContatto(contattoId) {
     return api.get('/items/Famiglie_Contatti', {
       params: {
-        'filter[Contatto][_eq]': contattoId,
-        ...ATTIVO_FILTER_OR,
+        filter: JSON.stringify({
+          _and: [
+            { Contatto: { _eq: contattoId } },
+            { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
+          ]
+        }),
         fields: FAMIGLIE_CONTATTI_FIELDS
       }
     })
   },
 
   queryFamiglieContatti(contattoIds) {
-    const ids = Array.isArray(contattoIds) ? contattoIds.join(',') : contattoIds
+    const ids = Array.isArray(contattoIds) ? contattoIds : [contattoIds]
     return api.get('/items/Famiglie_Contatti', {
       params: {
-        'filter[Contatto][_in]': ids,
-        ...ATTIVO_FILTER_OR,
+        filter: JSON.stringify({
+          _and: [
+            { Contatto: { _in: ids } },
+            { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
+          ]
+        }),
         fields: FAMIGLIE_CONTATTI_FIELDS,
         limit: -1
       }
@@ -95,10 +101,14 @@ export const gestioneService = {
     const { Contatto, Famiglia, Ruolo_nella_Famiglia } = data
     const active = await api.get('/items/Famiglie_Contatti', {
       params: {
-        'filter[Contatto][_eq]': Contatto,
-        'filter[Famiglia][_eq]': Famiglia,
-        'filter[Ruolo_nella_Famiglia][_eq]': Ruolo_nella_Famiglia,
-        ...ATTIVO_FILTER_OR,
+        filter: JSON.stringify({
+          _and: [
+            { Contatto: { _eq: Contatto } },
+            { Famiglia: { _eq: Famiglia } },
+            { Ruolo_nella_Famiglia: { _eq: Ruolo_nella_Famiglia } },
+            { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
+          ]
+        }),
         limit: 1
       }
     })
