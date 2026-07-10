@@ -123,7 +123,8 @@ size="sm"
               Risultati: {{ store.volontariCheck.senzaUtente.length }} senza utente,
               {{ store.volontariCheck.utenteCancellato.length }} con utente cancellato,
               {{ store.volontariCheck.flagOrfano.length }} flag orfani,
-              {{ store.volontariCheck.linkSenzaFlag.length }} link senza flag.
+              {{ store.volontariCheck.linkSenzaFlag.length }} link senza flag,
+              {{ store.volontariCheck.senzaRuolo.length }} senza ruolo.
             </div>
 
             <template v-if="store.volontariCheck.senzaUtente.length > 0">
@@ -213,6 +214,32 @@ color="positive"
 size="sm"
 @click="setVolontarioFlag(c)">
                       <q-tooltip>Imposta IsVolontario</q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+
+            <template v-if="store.volontariCheck.senzaRuolo.length > 0">
+              <q-separator class="q-mb-sm" />
+              <div class="text-caption text-weight-medium q-mb-xs">Utente Directus senza ruolo</div>
+              <q-list dense>
+                <q-item v-for="c in store.volontariCheck.senzaRuolo" :key="c.id_contatto" dense class="q-px-none">
+                  <q-item-section>
+                    <q-item-label>{{ c.Nome }} {{ c.Cognome }}</q-item-label>
+                    <q-item-label caption>{{ c.email }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      dense
+                      icon="badge"
+                      color="primary"
+                      size="sm"
+                      :loading="savingVolontario"
+                      @click="assignVolontarioRole(c)"
+                    >
+                      <q-tooltip>Assegna ruolo Volontario</q-tooltip>
                     </q-btn>
                   </q-item-section>
                 </q-item>
@@ -938,6 +965,9 @@ async function creaUtenteVolontario(v) {
     const existing = (userRes.data.data || [])[0]
     if (existing) {
       await contattiService.update(v.id_contatto, { user_id: existing.id })
+      if (!existing.role && ruoloId) {
+        await usersService.update(existing.id, { role: ruoloId })
+      }
     } else {
       const newUserRes = await usersService.create({
         email,
@@ -1097,6 +1127,16 @@ async function setVolontarioFlag(c) {
     await runConsistencyCheck()
   } else {
     notifyError($q, store.error, "Errore nell'impostazione IsVolontario")
+  }
+}
+
+async function assignVolontarioRole(c) {
+  const ok = await store.assignVolontarioRole(c.user_id)
+  if (ok) {
+    notifySuccess($q, `${c.Nome} ${c.Cognome}: ruolo Volontario assegnato`)
+    await runConsistencyCheck()
+  } else {
+    notifyError($q, store.error, 'Errore assegnazione ruolo')
   }
 }
 

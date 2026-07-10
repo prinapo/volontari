@@ -190,7 +190,7 @@ export const useAdminStore = defineStore('admin', {
       this.volontariCheckLoading = true
       this.volontariCheck = null
       try {
-        const result = { senzaUtente: [], utenteCancellato: [], flagOrfano: [], linkSenzaFlag: [] }
+        const result = { senzaUtente: [], utenteCancellato: [], flagOrfano: [], linkSenzaFlag: [], senzaRuolo: [] }
 
         // 1. Contatti con IsVolontario=true e user_id=null
         const senzaUtenteRes = await api.get('/items/contatti', {
@@ -286,6 +286,28 @@ export const useAdminStore = defineStore('admin', {
           } catch { /* contatto potrebbe non esistere */ }
         }
 
+        // 5. Directus users con role=null che hanno un contatto collegato
+        const usersNoRoleRes = await api.get('/users', {
+          params: {
+            'filter[role][_null]': 'true',
+            fields: 'id,email',
+            limit: -1
+          }
+        })
+        for (const u of (usersNoRoleRes.data || [])) {
+          const contattoRes = await api.get('/items/contatti', {
+            params: {
+              'filter[user_id][_eq]': u.id,
+              fields: 'id_contatto,Nome,Cognome',
+              limit: 1
+            }
+          })
+          const c = contattoRes.data.data?.[0]
+          if (c) {
+            result.senzaRuolo.push({ ...c, email: u.email || '' })
+          }
+        }
+
         this.volontariCheck = result
       } catch (error) {
         this.error = error.message || 'Errore nella verifica consistenza volontari'
@@ -317,6 +339,21 @@ export const useAdminStore = defineStore('admin', {
         await api.patch(`/items/contatti/${contattoId}`, { IsVolontario: true })
         return true
       } catch {
+        return false
+      }
+    },
+
+    async assignVolontarioRole(userId) {
+      try {
+        const roleRes = await api.get('/roles', {
+          params: { 'filter[name][_eq]': 'Volontario', fields: 'id', limit: 1 }
+        })
+        const ruoloId = roleRes.data.data?.[0]?.id
+        if (!ruoloId) { this.error = 'Ruolo "Volontario" non trovato'; return false }
+        await api.patch(`/users/${userId}`, { role: ruoloId })
+        return true
+      } catch {
+        this.error = 'Errore assegnazione ruolo'
         return false
       }
     }
