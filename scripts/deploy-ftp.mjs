@@ -12,7 +12,15 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
 import { execSync } from 'child_process'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { isatty } from 'tty'
 import { createInterface } from 'readline'
+
+// Sicurezza: deploy solo da terminale interattivo
+if (!isatty(process.stdin.fd)) {
+  console.error('❌ Deploy annullato: eseguire direttamente da terminale, non via pipe/script.')
+  console.error('   Usa: node scripts/deploy-ftp.mjs')
+  process.exit(1)
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
