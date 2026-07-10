@@ -15,8 +15,9 @@ import { fileURLToPath } from 'url'
 import { isatty } from 'tty'
 import { createInterface } from 'readline'
 
-// Sicurezza: deploy solo da terminale interattivo
-if (!isatty(process.stdin.fd)) {
+// Sicurezza: deploy solo da terminale interattivo (--yes bypassa per deploy remoti autorizzati)
+const isRemoteDeploy = process.argv.includes('--yes')
+if (!isatty(process.stdin.fd) && !isRemoteDeploy) {
   console.error('❌ Deploy annullato: eseguire direttamente da terminale, non via pipe/script.')
   console.error('   Usa: node scripts/deploy-ftp.mjs')
   process.exit(1)
@@ -42,9 +43,18 @@ try {
 }
 
 // Conferma interattiva
-const rl = createInterface({ input: process.stdin, output: process.stdout })
-const answer = await new Promise(resolve => rl.question(`⚠️  Sei sicuro di voler deployare v${VERSION} in PRODUZIONE? (y/N) `, resolve))
-rl.close()
+let answer = ''
+if (isRemoteDeploy) {
+  console.log(`\n⚠️  Per deployare v${VERSION} in PRODUZIONE, l'utente deve confermare.`)
+  console.log('   Rispondi "y" qui nel terminale quando sei pronto.')
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  answer = await new Promise(resolve => rl.question('   Confermi? (y/N) ', resolve))
+  rl.close()
+} else {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  answer = await new Promise(resolve => rl.question(`⚠️  Sei sicuro di voler deployare v${VERSION} in PRODUZIONE? (y/N) `, resolve))
+  rl.close()
+}
 if (answer.toLowerCase() !== 'y') {
   console.log('❌ Deploy annullato.')
   process.exit(0)

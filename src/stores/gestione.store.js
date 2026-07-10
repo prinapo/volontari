@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import api from 'src/services/api'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
@@ -23,7 +24,18 @@ export const useGestioneStore = defineStore('gestione', {
       const contattoRes = await contattiService.getById(contattoId)
       const contatto = contattoRes.data.data
       if (!contatto) return { error: 'Contatto non trovato' }
-      if (contatto.user_id) return { success: true, contatto }
+      if (contatto.user_id) {
+        // Se esiste user_id, verifica che l'utente abbia un ruolo
+        try {
+          const userRes = await api.get(`/users/${contatto.user_id}`, { params: { fields: 'id,role' } })
+          if (userRes.data.data && !userRes.data.data.role) {
+            const rolesRes = await usersService.getRoleByName('Volontario')
+            const ruoloId = rolesRes.data.data?.[0]?.id
+            if (ruoloId) await usersService.update(contatto.user_id, { role: ruoloId })
+          }
+        } catch { /* utente non trovato o errore — skip */ }
+        return { success: true, contatto }
+      }
 
       const email = contatto.email?.find(e => e.Primary === true)?.email_address || contatto.email?.[0]?.email_address
       if (!email) return { error: 'Email mancante' }
