@@ -32,6 +32,11 @@ export const useGestioneStore = defineStore('gestione', {
       const existing = (userRes.data.data || [])[0]
       if (existing) {
         await contattiService.update(contattoId, { user_id: existing.id })
+        if (!existing.role) {
+          const rolesRes = await usersService.getRoleByName('Volontario')
+          const ruoloId = rolesRes.data.data?.[0]?.id
+          if (ruoloId) await usersService.update(existing.id, { role: ruoloId })
+        }
         return { success: true, contatto }
       }
 

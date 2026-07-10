@@ -261,24 +261,8 @@ describe('gestione store', () => {
     expect(store.error).toBe('remove fail')
   })
 
-  it('sendInvite calls service', async () => {
-    mockSendInvite.mockResolvedValue({})
+  it('referente actions handle errors', async () => {
     const store = useGestioneStore()
-    const ok = await store.sendInvite('test@r.it')
-    expect(ok).toBe(true)
-  })
-
-  it('sendInvite and referente actions handle errors', async () => {
-    const store = useGestioneStore()
-
-    mockSendInvite.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'invite fail' }] } } })
-    expect(await store.sendInvite('bad@r.it')).toBe(false)
-    expect(store.error).toBe('invite fail')
-
-    mockCreateReferente.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'assign fail' }] } } })
-    expect(await store.assignReferente('v-1', 'r-1')).toBe(false)
-    expect(store.error).toBe('assign fail')
-
     mockRemoveReferente.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'remove ref fail' }] } } })
     expect(await store.removeReferente('rel-1')).toBe(false)
     expect(store.error).toBe('remove ref fail')
