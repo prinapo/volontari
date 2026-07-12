@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { giustificativiService } from 'src/services/giustificativi.service'
-import { rendicontazioniService } from 'src/services/rendicontazioni.service'
 import { FOLDERS } from 'src/utils/constants'
 import { uploadAndPrefixFile, markFileObsolete } from 'src/utils/file-naming'
 
@@ -68,14 +67,14 @@ export const useGiustificativiStore = defineStore('giustificativi', {
     async ensureRendicontazione(data) {
       if (!data.Famiglia || !data.Progetto) return null
 
-      const existingRes = await rendicontazioniService.findByProject({
+      const existingRes = await giustificativiService.findByProject({
         famigliaId: data.Famiglia,
         progettoId: data.Progetto
       })
       const existing = existingRes.data.data?.[0]
       if (existing?.id) return existing.id
 
-      const createRes = await rendicontazioniService.create({
+      const createRes = await giustificativiService.createRendicontazione({
         Famiglia: data.Famiglia,
         Progetto: data.Progetto,
         AnnoBando: data.AnnoBando || null,

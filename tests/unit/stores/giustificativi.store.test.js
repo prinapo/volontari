@@ -19,14 +19,9 @@ vi.mock('src/services/giustificativi.service', () => ({
     create: (...a) => mockCreate(...a),
     update: (...a) => mockUpdate(...a),
     submit: (...a) => mockSubmit(...a),
-    invalidate: (...a) => mockInvalidate(...a)
-  }
-}))
-
-vi.mock('src/services/rendicontazioni.service', () => ({
-  rendicontazioniService: {
+    invalidate: (...a) => mockInvalidate(...a),
     findByProject: (...a) => mockFindByProject(...a),
-    create: (...a) => mockCreateRendicontazione(...a)
+    createRendicontazione: (...a) => mockCreateRendicontazione(...a)
   }
 }))
 

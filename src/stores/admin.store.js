@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { adminService } from 'src/services/admin.service'
 import api from 'src/services/api'
+import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
+import { gestioneService } from 'src/services/gestione.service'
+import { usersService } from 'src/services/users.service'
 import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
 
 function generatePassword(length = 16) {
@@ -74,7 +77,7 @@ export const useAdminStore = defineStore('admin', {
       this.nuovaPassword = ''
       try {
         if (!this.contattoTrovato) {
-          const contattoRes = await adminService.createContatto({
+          const contattoRes = await contattiService.create({
             Nome: firstName || '',
             Cognome: lastName || ''
           })
@@ -87,7 +90,7 @@ export const useAdminStore = defineStore('admin', {
         }
 
         const pwd = generatePassword()
-        await adminService.createUser({
+        await usersService.create({
           email,
           password: pwd,
           role,
@@ -110,7 +113,7 @@ export const useAdminStore = defineStore('admin', {
       this.saving = true
       this.error = null
       try {
-        await adminService.updateUser(userId, { role: roleId })
+        await usersService.update(userId, { role: roleId })
         await this.fetchUsers()
         return true
       } catch (error) {
@@ -125,7 +128,7 @@ export const useAdminStore = defineStore('admin', {
       this.saving = true
       this.error = null
       try {
-        await adminService.updateUser(userId, { password })
+        await usersService.update(userId, { password })
         return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
@@ -189,42 +192,23 @@ export const useAdminStore = defineStore('admin', {
 
     // ── Volontari Consistency Check ──
     async _checkSenzaUtente() {
-      const res = await api.get('/items/contatti', {
-        params: {
-          'filter[IsVolontario][_eq]': 'true',
-          'filter[user_id][_null]': 'true',
-          fields: 'id_contatto,Nome,Cognome',
-          limit: -1
-        }
-      })
-      const result = []
-      for (const c of res.data.data || []) {
-        const emailRes = await api.get('/items/email', {
-          params: {
-            'filter[Contatto_Relation][_eq]': c.id_contatto,
-            'filter[Primary][_eq]': 'true',
-            fields: 'email_address',
-            limit: 1
-          }
-        })
-        result.push({ ...c, email: emailRes.data.data?.[0]?.email_address || '' })
-      }
-      return result
+      const res = await contattiService.getVolontariSenzaUtente()
+      return (res.data.data || []).map(c => ({
+        id_contatto: c.id_contatto,
+        Nome: c.Nome,
+        Cognome: c.Cognome,
+        email: Array.isArray(c.email)
+          ? c.email.find(e => e.Primary)?.email_address || c.email[0]?.email_address || ''
+          : c.email || ''
+      }))
     },
 
     async _checkUtenteCancellato() {
-      const res = await api.get('/items/contatti', {
-        params: {
-          'filter[IsVolontario][_eq]': 'true',
-          'filter[user_id][_nnull]': 'true',
-          fields: 'id_contatto,Nome,Cognome,user_id',
-          limit: -1
-        }
-      })
+      const res = await contattiService.query({ isVolontario: true, limit: -1 })
       const result = []
       for (const c of res.data.data || []) {
         try {
-          await api.get(`/users/${c.user_id}`)
+          await usersService.getByIds([c.user_id])
         } catch {
           result.push({ id_contatto: c.id_contatto, Nome: c.Nome, Cognome: c.Cognome, user_id: c.user_id })
         }
@@ -233,21 +217,10 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async _checkFlagOrfani() {
-      const res = await api.get('/items/contatti', {
-        params: { 'filter[IsVolontario][_eq]': 'true', fields: 'id_contatto,Nome,Cognome', limit: -1 }
-      })
+      const res = await contattiService.query({ isVolontario: true, limit: -1 })
       const result = []
       for (const c of res.data.data || []) {
-        const fcRes = await api.get('/items/Famiglie_Contatti', {
-          params: {
-            'filter[Contatto][_eq]': c.id_contatto,
-            'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-            'filter[_or][0][Disattivo][_null]': 'true',
-            'filter[_or][1][Disattivo][_neq]': 'true',
-            fields: 'id',
-            limit: 1
-          }
-        })
+        const fcRes = await gestioneService.queryFamiglieContatti([c.id_contatto])
         if (!fcRes.data.data || fcRes.data.data.length === 0) {
           result.push(c)
         }
@@ -256,15 +229,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async _checkLinkSenzaFlag() {
-      const res = await api.get('/items/Famiglie_Contatti', {
-        params: {
-          'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-          'filter[_or][0][Disattivo][_null]': 'true',
-          'filter[_or][1][Disattivo][_neq]': 'true',
-          fields: 'id,Contatto',
-          limit: -1
-        }
-      })
+      const res = await gestioneService.checkAllFamiglieVolontari()
       const seen = new Set()
       const result = []
       for (const fc of res.data.data || []) {
@@ -272,9 +237,7 @@ export const useAdminStore = defineStore('admin', {
         if (!contattoId || seen.has(contattoId)) continue
         seen.add(contattoId)
         try {
-          const cRes = await api.get(`/items/contatti/${contattoId}`, {
-            params: { fields: 'id_contatto,Nome,Cognome,IsVolontario' }
-          })
+          const cRes = await contattiService.getById(contattoId)
           if (cRes.data.data && !cRes.data.data.IsVolontario) result.push(cRes.data.data)
         } catch {
           /* contatto potrebbe non esistere */
@@ -284,14 +247,10 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async _checkSenzaRuolo() {
-      const usersRes = await api.get('/users', {
-        params: { 'filter[role][_null]': 'true', fields: 'id,email', limit: -1 }
-      })
+      const usersRes = await usersService.searchByRoleNull()
       const result = []
       for (const u of usersRes.data || []) {
-        const cRes = await api.get('/items/contatti', {
-          params: { 'filter[user_id][_eq]': u.id, fields: 'id_contatto,Nome,Cognome', limit: 1 }
-        })
+        const cRes = await contattiService.getByUserId(u.id)
         const c = cRes.data.data?.[0]
         if (c) result.push({ ...c, email: u.email || '' })
       }

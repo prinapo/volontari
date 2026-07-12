@@ -1,5 +1,6 @@
 <template>
   <q-btn
+    v-if="value"
     flat
     dense
     no-caps
@@ -22,7 +23,7 @@ const props = defineProps({
   },
   value: {
     type: String,
-    required: true
+    default: null
   }
 })
 

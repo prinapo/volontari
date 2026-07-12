@@ -511,11 +511,8 @@ icon="edit"
                     {{ col.value }}
                   </template>
                 </q-td>
-              </q-tr>
-            </template>
-
-            <template #expanded-row="props">
-              <q-tr :props="props">
+                  </q-tr>
+              <q-tr v-if="expandedRows.includes(props.row.idProgetto)" :props="props">
                 <q-td colspan="100%" class="q-pa-none">
                     <div class="expandable-content bg-grey-1">
                     <div class="q-px-md q-pt-md q-pb-xs">

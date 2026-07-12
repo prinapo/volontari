@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import api from 'src/services/api'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
@@ -27,7 +26,7 @@ export const useGestioneStore = defineStore('gestione', {
       if (contatto.user_id) {
         // Se esiste user_id, verifica che l'utente abbia un ruolo
         try {
-          const userRes = await api.get(`/users/${contatto.user_id}`, { params: { fields: 'id,role' } })
+          const userRes = await usersService.getByIds([contatto.user_id])
           if (userRes.data.data && !userRes.data.data.role) {
             const rolesRes = await usersService.getRoleByName('Volontario')
             const ruoloId = rolesRes.data.data?.[0]?.id

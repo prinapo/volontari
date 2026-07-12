@@ -19,14 +19,6 @@ export const adminService = {
     })
   },
 
-  updateUser(id, data) {
-    return api.patch(`/users/${id}`, data)
-  },
-
-  createUser(data) {
-    return api.post('/users', data)
-  },
-
   searchContattoByEmail(email) {
     return api.get('/items/email', {
       params: {
@@ -40,14 +32,6 @@ export const adminService = {
         ].join(',')
       }
     })
-  },
-
-  createContatto(data) {
-    return api.post('/items/contatti', data)
-  },
-
-  createEmail(data) {
-    return api.post('/items/email', data)
   },
 
   sendEmail(data) {

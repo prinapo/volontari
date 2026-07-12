@@ -44,5 +44,15 @@ export const usersService = {
         limit: 1
       }
     })
+  },
+
+  searchByRoleNull() {
+    return api.get('/users', {
+      params: {
+        'filter[role][_null]': 'true',
+        fields: 'id,email',
+        limit: -1
+      }
+    })
   }
 }

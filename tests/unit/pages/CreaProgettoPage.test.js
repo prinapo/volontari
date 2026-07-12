@@ -22,10 +22,15 @@ vi.mock('src/services/gestione.service', () => ({
   gestioneService: { searchFamiglie: (...args) => mockSearchFamiglie(...args) }
 }))
 
+vi.mock('src/services/files.service', () => ({
+  filesService: {
+    upload: (...args) => mockUploadFile(...args)
+  }
+}))
+
 vi.mock('src/services/progetti.service', () => ({
   progettiService: {
     createProgetto: (...args) => mockCreateProgetto(...args),
-    uploadFile: (...args) => mockUploadFile(...args),
     createAllegato: (...args) => mockCreateAllegato(...args)
   }
 }))

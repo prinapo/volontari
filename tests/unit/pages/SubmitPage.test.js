@@ -22,9 +22,14 @@ vi.mock('components/Giustificativi/GiustificativoFilePicker.vue', () => ({
   }
 }))
 
+vi.mock('src/services/files.service', () => ({
+  filesService: {
+    upload: (...args) => mockUploadFile(...args)
+  }
+}))
+
 vi.mock('src/services/submit.service', () => ({
   submitService: {
-    uploadFile: (...args) => mockUploadFile(...args),
     createSubmission: (...args) => mockCreateSubmission(...args)
   }
 }))

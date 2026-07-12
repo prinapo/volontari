@@ -217,6 +217,7 @@
 import { useQuasar } from 'quasar'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { filesService } from 'src/services/files.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { progettiService } from 'src/services/progetti.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
@@ -291,7 +292,7 @@ function normalizeNumber(value, parser) {
 
 async function uploadAllegato(file) {
   if (!file) return null
-  const res = await progettiService.uploadFile(file)
+  const res = await filesService.upload(file)
   return res.data.data.id
 }
 

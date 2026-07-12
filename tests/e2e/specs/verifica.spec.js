@@ -69,6 +69,7 @@ test.describe('VerificaPage', () => {
 
     test('TB-01: Colonne ordine corretto @smoke', async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
 
       const viewport = await page.viewportSize()
@@ -99,6 +100,7 @@ test.describe('VerificaPage', () => {
 
     test('TB-05: Colonna Totali non esiste @regression', async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('th:has-text("Totali")')).not.toBeVisible()
     })
@@ -107,6 +109,7 @@ test.describe('VerificaPage', () => {
   test.describe('Filtri', () => {
     test.beforeEach(async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -128,7 +131,7 @@ test.describe('VerificaPage', () => {
       if ((await firstOption.count()) === 0) {
         firstOption = page.locator('.q-dialog .q-item').first()
       }
-      
+
       await firstOption.click()
       await page.waitForTimeout(500)
       const viewport = await page.viewportSize()
@@ -145,7 +148,7 @@ test.describe('VerificaPage', () => {
       const isMobile = viewport && viewport.width < 600
       if (isMobile) {
         const expItems = page.locator('.q-expansion-item')
-        
+
         const firstFamiglia = await page.locator('.q-item__label').first().innerText()
         await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
         await page.waitForTimeout(4000)
@@ -153,7 +156,7 @@ test.describe('VerificaPage', () => {
         expect(filteredCount).toBeGreaterThanOrEqual(0)
       } else {
         const allRows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-        
+
         const firstFamiglia = await page.locator('.verifica-table .text-weight-medium').first().innerText()
         await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
         await page.waitForTimeout(4000)
@@ -166,6 +169,7 @@ test.describe('VerificaPage', () => {
   test.describe('Expanded Row & Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -179,12 +183,13 @@ test.describe('VerificaPage', () => {
         await expect(expItem).toBeVisible({ timeout: 5000 })
         await expItem.click()
         await page.waitForTimeout(2000)
-        const hasContacts = (await expItem.innerText()).toLowerCase().includes('genitori') ||
+        const hasContacts =
+          (await expItem.innerText()).toLowerCase().includes('genitori') ||
           (await expItem.innerText()).toLowerCase().includes('volontari')
         expect(hasContacts).toBe(true)
       } else {
         const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-        
+
         const expandBtn = page.locator('[data-testid="expand-row"]').first()
         await expandBtn.click()
         await page.waitForTimeout(2000)
@@ -210,7 +215,7 @@ test.describe('VerificaPage', () => {
         expect(hasGiust).toBe(true)
       } else {
         const rows = page.locator('.verifica-table tbody tr:has(td .q-btn)')
-        
+
         const expandBtn = page.locator('[data-testid="expand-row"]').first()
         await expandBtn.click()
         await page.waitForTimeout(2000)
@@ -230,6 +235,7 @@ test.describe('VerificaPage', () => {
   test.describe('Dati bancari edit', () => {
     test.beforeEach(async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -292,7 +298,7 @@ test.describe('VerificaPage', () => {
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      
+
       await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
       await expect(page.locator('.q-dialog:has(.text-h6:has-text("Modifica dati bancari"))')).toBeVisible({
@@ -316,7 +322,7 @@ test.describe('VerificaPage', () => {
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      
+
       await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
@@ -341,14 +347,14 @@ test.describe('VerificaPage', () => {
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      
+
       await editBtn.click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
 
       const ibanInput = page.locator('.q-dialog [data-testid="bancari-iban"]')
       if ((await ibanInput.count()) === 0) {
         await page.locator('.q-dialog button:has-text("Annulla")').click()
-        
+
         return
       }
 
@@ -405,6 +411,7 @@ test.describe('VerificaPage', () => {
   test.describe('Stato riga', () => {
     test.beforeEach(async ({ page }) => {
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -420,7 +427,7 @@ test.describe('VerificaPage', () => {
       await page.waitForTimeout(1000)
       const giustDesc = `TEST_SR-02 ${Date.now()}`
       const aggiungi = page.locator('button:has-text("Aggiungi")')
-      
+
       await aggiungi.scrollIntoViewIfNeeded()
       await page.waitForTimeout(500)
       await aggiungi.dispatchEvent('click')
@@ -516,6 +523,7 @@ test.describe('VerificaPage', () => {
       await loginGestore(page)
       const r = await creaFamigliaVolontarioProgetto(page, ids)
       await loginAs(page, 'manager', auth)
+      await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
     })
@@ -763,4 +771,3 @@ test.describe('VerificaPage', () => {
     })
   })
 })
-

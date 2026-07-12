@@ -19,7 +19,9 @@ test.describe('Gestione Fixes', () => {
     for (const id of _gfSubmittedIds) {
       try {
         await apiDelete('InviiGiustificativiNoLogin', id)
-      } catch { /* */ }
+      } catch {
+        /* */
+      }
     }
     _gfSubmittedIds.length = 0
   })
@@ -29,6 +31,7 @@ test.describe('Gestione Fixes', () => {
     const ids = {}
     await loginGestore(page)
     await creaFamigliaVolontarioProgetto(page, ids)
+    await page.goto('/gestione')
 
     const gestionePage = new GestionePage(page)
     await gestionePage.famiglieTab.click()
@@ -37,7 +40,7 @@ test.describe('Gestione Fixes', () => {
     await page.waitForTimeout(2000)
 
     const clicked = await gestionePage.clickContactsOnFamiglia(ids.prefix + 'Fam')
-    if (!clicked) throw new Error("clickContactsOnFamiglia fallito")
+    if (!clicked) throw new Error('clickContactsOnFamiglia fallito')
 
     const dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -53,7 +56,11 @@ test.describe('Gestione Fixes', () => {
     const networkLog = []
     page.on('response', async resp => {
       const entry = { method: resp.request().method(), url: resp.url().replace(/\?.*$/, ''), status: resp.status() }
-      if (resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST' && resp.status() < 400) {
+      if (
+        resp.url().includes('/items/InviiGiustificativiNoLogin') &&
+        resp.request().method() === 'POST' &&
+        resp.status() < 400
+      ) {
         try {
           const body = await resp.json()
           if (body?.data?.id) _gfSubmittedIds.push(body.data.id)
@@ -117,7 +124,7 @@ test.describe('Gestione Fixes', () => {
         )}`
       )
 
-    if (!submissionCreated) throw new Error("Submissions non creata")
+    if (!submissionCreated) throw new Error('Submissions non creata')
 
     await loginAs(page, 'manager', auth)
 
@@ -182,10 +189,10 @@ test.describe('Gestione Fixes', () => {
     // Cerca il contenuto della tabella: q-table su desktop, q-expansion-item su mobile grid
     const table = page.locator('.q-table')
     const gridContent = page.locator('.q-expansion-item')
-    const hasTable = await table.count() > 0
+    const hasTable = (await table.count()) > 0
     if (hasTable) {
       await expect(table).toBeVisible({ timeout: 10000 })
-      const isGrid = await page.locator('.q-table--grid').count() > 0
+      const isGrid = (await page.locator('.q-table--grid').count()) > 0
       if (isGrid) {
         await expect(gridContent.first()).toBeVisible({ timeout: 5000 })
       } else {

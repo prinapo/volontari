@@ -214,6 +214,7 @@
 import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import GiustificativoFilePicker from 'components/Giustificativi/GiustificativoFilePicker.vue'
+import { filesService } from 'src/services/files.service'
 import { submitService } from 'src/services/submit.service'
 import { FOLDERS } from 'src/utils/constants'
 import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
@@ -272,7 +273,7 @@ async function handleSubmit() {
   saving.value = true
   try {
     for (const g of giustificativi.value) {
-      const uploadRes = await submitService.uploadFile(g.file, FOLDERS.INVII_PUBBLICI)
+      const uploadRes = await filesService.upload(g.file, FOLDERS.INVII_PUBBLICI)
       const allegatoId = uploadRes.data.data.id
 
       await submitService.createSubmission({
