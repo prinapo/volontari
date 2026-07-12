@@ -281,9 +281,12 @@ class="q-mb-sm"
               dense
               icon="download"
               color="primary"
+              type="a"
               aria-label="Scarica CSV"
               :disable="!props.row.File"
-              @click="scaricaLista(props.row)"
+              :href="assetUrl(props.row.File, true)"
+              :download="`${props.row.Nome.replaceAll(/[^\w-]/g, '_')}.csv`"
+              target="_blank"
             >
               <q-tooltip>Scarica CSV</q-tooltip>
             </q-btn>
@@ -305,13 +308,13 @@ class="q-mb-sm"
 
     <!-- Dialog Crea Batch -->
     <q-dialog v-model="showBatchDialog" persistent>
-      <q-card style="width: 100%; max-width: 450px">
+      <q-card>
         <q-card-section class="row items-center">
           <div class="text-h6">Crea gruppo di pagamento</div>
           <q-space /><q-btn v-close-popup flat round dense icon="close" />
         </q-card-section>
         <q-card-section>
-          <q-input v-model="batchNome" label="Nome gruppo *" outlined dense autofocus />
+          <q-input v-model="batchNome" label="Nome gruppo *" outlined dense />
           <div class="text-caption q-mt-sm">
             {{ selected.length }} pagamenti selezionati, totale €{{ formatNumber(selectedTotal) }}
           </div>
@@ -473,14 +476,25 @@ async function handlePagato(pagamento) {
 }
 
 async function handleFallito(pagamento) {
-  try {
-    const note = prompt('Motivo del fallimento:')
-    if (note === null) return
-    await store.segnaFallito(pagamento.id, note)
-    notifySuccess($q, 'Pagamento segnato come fallito')
-  } catch (error) {
-    notifyError($q, error, 'Errore')
-  }
+  $q.dialog({
+    title: 'Segna come fallito',
+    message: 'Motivo del fallimento:',
+    prompt: { model: '', type: 'text' },
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Conferma', color: 'negative' },
+    persistent: true
+  }).onOk(async (note) => {
+    if (!note) {
+      notifyError($q, new Error('Il motivo è obbligatorio'), 'Errore')
+      return
+    }
+    try {
+      await store.segnaFallito(pagamento.id, note)
+      notifySuccess($q, 'Pagamento segnato come fallito')
+    } catch (error) {
+      notifyError($q, error, 'Errore')
+    }
+  })
 }
 
 async function handleAnnullato(pagamento) {
@@ -490,15 +504,6 @@ async function handleAnnullato(pagamento) {
   } catch (error) {
     notifyError($q, error, 'Errore')
   }
-}
-
-function scaricaLista(row) {
-  if (!row.File) return
-  const url = assetUrl(row.File, true)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${row.Nome.replaceAll(/[^\w-]/g, '_')}.csv`
-  a.click()
 }
 
 async function confermaEliminaLista(row) {

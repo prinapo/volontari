@@ -32,6 +32,10 @@ const mockUpdateFolder = vi.fn()
 const mockFindProgettoByFamiglia = vi.fn()
 const mockRicalcolaProposta = vi.fn()
 
+vi.mock('stores/auth.store', () => ({
+  useAuthStore: () => ({ canManager: true })
+}))
+
 vi.mock('src/services/verifica.service', () => ({
   verificaService: {
     getProgetti: (...a) => mockGetProgetti(...a),
@@ -68,6 +72,7 @@ vi.mock('src/services/contatti.service', () => ({
 vi.mock('src/services/email.service', () => ({
   emailService: {
     update: (...a) => mockUpdateEmail(...a),
+    updateSafe: (...a) => mockUpdateEmail(...a),
     getByContatto: (...a) => mockGetEmailByContatto(...a)
   }
 }))

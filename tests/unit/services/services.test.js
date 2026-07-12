@@ -183,26 +183,6 @@ describe('services', () => {
     )
   })
 
-  it('deduplica.service', async () => {
-    const { deduplicaService } = await import('src/services/deduplica.service')
-    await deduplicaService.getAllEmails()
-    expect(mockGet).toHaveBeenCalledWith('/items/email', expect.any(Object))
-    await deduplicaService.getContatto('c-1')
-    expect(mockGet).toHaveBeenCalledWith('/items/contatti/c-1', expect.any(Object))
-    await deduplicaService.updateContatto('c-1', { Nome: 'M' })
-    expect(mockPatch).toHaveBeenCalledWith('/items/contatti/c-1', { Nome: 'M' })
-    await deduplicaService.getFamiglieByContatto('c-1')
-    expect(mockGet).toHaveBeenCalledWith('/items/Famiglie_Contatti', expect.any(Object))
-    await deduplicaService.updateEmail('e-1', { email_address: 'x' })
-    expect(mockPatch).toHaveBeenCalledWith('/items/email/e-1', { email_address: 'x' })
-    await deduplicaService.deleteEmail('e-1')
-    expect(mockDelete).toHaveBeenCalledWith('/items/email/e-1')
-    await deduplicaService.deleteContatto('c-1')
-    expect(mockDelete).toHaveBeenCalledWith('/items/contatti/c-1')
-    await deduplicaService.getIdDuplicates('contatti', 'id_contatto')
-    expect(mockGet).toHaveBeenCalledWith('/items/contatti', expect.any(Object))
-  })
-
   it('email.service', async () => {
     const { emailService } = await import('src/services/email.service')
     await emailService.getByContatto(['c-1'])
@@ -246,7 +226,14 @@ describe('services', () => {
     await famiglieService.getVolontariByFamiglia('fam-1')
     expect(mockGet).toHaveBeenCalledWith('/items/Famiglie_Contatti', expect.any(Object))
     await famiglieService.getFamiglieByContatto('c-1')
-    expect(mockGet).toHaveBeenCalledWith('/items/Famiglie_Contatti', expect.any(Object))
+    expect(mockGet).toHaveBeenCalledWith(
+      '/items/Famiglie_Contatti',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          filter: expect.stringContaining('"Contatto"')
+        })
+      })
+    )
   })
 
   it('files.service', async () => {
@@ -307,14 +294,19 @@ describe('services', () => {
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Famiglie_Contatti',
       expect.objectContaining({
-        params: expect.objectContaining({ 'filter[Contatto][_eq]': 'cont-1' })
+        params: expect.objectContaining({
+          filter: expect.stringContaining('"Contatto"')
+        })
       })
     )
     await gestioneService.queryFamiglieContatti(['cont-1', 'cont-2'])
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Famiglie_Contatti',
       expect.objectContaining({
-        params: expect.objectContaining({ 'filter[Contatto][_in]': 'cont-1,cont-2', limit: -1 })
+        params: expect.objectContaining({
+          filter: expect.stringContaining('"Contatto"'),
+          limit: -1
+        })
       })
     )
     await gestioneService.getContattiByFamiglia('fam-1')

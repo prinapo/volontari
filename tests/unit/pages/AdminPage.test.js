@@ -15,6 +15,7 @@ const mockContattoUpdate = vi.fn()
 const mockSearchByEmail = vi.fn()
 const mockGetRoleByName = vi.fn()
 const mockUsersCreate = vi.fn()
+const mockUsersUpdate = vi.fn()
 const mockSendInvite = vi.fn()
 const mockAssocGetAll = vi.fn()
 const mockAssocUpdate = vi.fn()
@@ -72,6 +73,7 @@ vi.mock('src/services/users.service', () => ({
     searchByEmail: (...a) => mockSearchByEmail(...a),
     getRoleByName: (...a) => mockGetRoleByName(...a),
     create: (...a) => mockUsersCreate(...a),
+    update: (...a) => mockUsersUpdate(...a),
     sendInvite: (...a) => mockSendInvite(...a)
   }
 }))
@@ -136,57 +138,6 @@ describe('AdminPage', () => {
     expect(wrapper.text()).toContain('Nessun utente trovato')
   })
 
-  it('fetches initial data on mount', async () => {
-    quasarMount(AdminPage)
-    await Promise.resolve()
-    expect(mockFetchAll).toHaveBeenCalled()
-    expect(mockFetchProgetti).toHaveBeenCalled()
-    expect(mockGetVolontariSenzaUtente).toHaveBeenCalled()
-    expect(mockErrorFetchAll).toHaveBeenCalled()
-  })
-
-  it('manages beneficiary edit buffers, single save and saveAll', async () => {
-    mockUpdateBeneficiario.mockResolvedValue(true)
-    mockFetchProgetti.mockResolvedValue()
-    const wrapper = quasarMount(AdminPage)
-    const progetto = { id_progetto: 1, Cognome_Beneficiario: 'Rossi', Nome_Beneficiario: 'Mario' }
-
-    const buf = wrapper.vm.getBuffer(progetto)
-    expect(buf.cognome).toBe('Rossi')
-    expect(wrapper.vm.isModified(progetto)).toBe(false)
-
-    wrapper.vm.setCognome(progetto, 'Verdi')
-    wrapper.vm.setNome(progetto, 'Luigi')
-    expect(wrapper.vm.isModified(progetto)).toBe(true)
-
-    await wrapper.vm.saveBeneficiario(progetto)
-    expect(mockUpdateBeneficiario).toHaveBeenCalledWith(1, 'Verdi', 'Luigi')
-    expect(mockFetchProgetti).toHaveBeenCalled()
-
-    adminState.progetti = [progetto, { id_progetto: 2, Cognome_Beneficiario: 'Bianchi', Nome_Beneficiario: 'Anna' }]
-    wrapper.vm.getBuffer(adminState.progetti[1])
-    wrapper.vm.setNome(adminState.progetti[1], 'Anna Maria')
-    await wrapper.vm.saveAll()
-    expect(mockNotifySuccess).toHaveBeenCalledWith(expect.anything(), 'Tutti i beneficiari aggiornati')
-  })
-
-  it('handles save errors, refreshes projects and shows error details', async () => {
-    adminState.error = 'Errore update'
-    mockUpdateBeneficiario.mockResolvedValue(false)
-    const wrapper = quasarMount(AdminPage)
-    const progetto = { id_progetto: 1, Cognome_Beneficiario: 'Rossi', Nome_Beneficiario: 'Mario' }
-    wrapper.vm.getBuffer(progetto)
-
-    await wrapper.vm.saveBeneficiario(progetto)
-    expect(mockNotifyError).toHaveBeenCalled()
-
-    wrapper.vm.showErrorDetail('stacktrace')
-    expect(wrapper.vm.errorDetail).toEqual({ visible: true, text: 'stacktrace' })
-
-    wrapper.vm.refreshProgetti()
-    expect(mockFetchProgetti).toHaveBeenCalled()
-  })
-
   it('edits associazioni budget and saves it', async () => {
     mockAssocUpdate.mockResolvedValue({})
     const wrapper = quasarMount(AdminPage)
@@ -214,13 +165,13 @@ describe('AdminPage', () => {
 
     await wrapper.vm.creaUtenteVolontario(volontario)
     expect(mockContattoUpdate).toHaveBeenCalledWith('c1', { user_id: 'user-existing' })
+    expect(mockUsersUpdate).toHaveBeenCalledWith('user-existing', { role: 'role-vol' })
     expect(mockNotifySuccess).toHaveBeenCalled()
 
     mockSearchByEmail.mockResolvedValueOnce({ data: { data: [] } })
     mockUsersCreate.mockResolvedValueOnce({ data: { data: { id: 'user-new' } } })
     await wrapper.vm.creaUtenteVolontario(volontario)
     expect(mockUsersCreate).toHaveBeenCalled()
-    expect(mockSendInvite).toHaveBeenCalled()
 
     await wrapper.vm.creaUtenteVolontario({ id_contatto: 'c2', Nome: 'NoMail', Cognome: 'User', email: [] })
     expect(mockNotifyError).toHaveBeenCalledWith(expect.anything(), null, 'Email mancante')

@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="visible" persistent>
-    <q-card style="width: 100%; max-width: 900px; min-width: unset">
+    <q-card>
       <q-card-section class="row items-center">
         <div class="text-h6">
           Contatti di {{ famiglia?.Nome_Famiglia }}
@@ -40,16 +40,16 @@
                   </div>
                   <div class="text-caption q-mt-xs">
                     <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink type="email" :value="em.email_address" />
                       <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                     </template>
                     <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
                   </div>
                   <div class="text-caption text-grey-7">
                     <template v-if="slotPropsV.row.Contatto?.Numero_di_cellulare">
-                      <a :href="'tel:'+slotPropsV.row.Contatto?.Numero_di_cellulare" class="text-primary">{{ slotPropsV.row.Contatto?.Numero_di_cellulare }}</a>
+                      <ContactLink type="tel" :value="slotPropsV.row.Contatto?.Numero_di_cellulare" />
                     </template><template v-if="slotPropsV.row.Contatto?.Numero_di_telefono">
-                      <a :href="'tel:'+slotPropsV.row.Contatto?.Numero_di_telefono" class="text-primary">{{ slotPropsV.row.Contatto?.Numero_di_telefono }}</a>
+                      <ContactLink type="tel" :value="slotPropsV.row.Contatto?.Numero_di_telefono" />
                     </template>
                   </div>
                   <div class="row q-mt-sm justify-end">
@@ -73,7 +73,7 @@
             <q-td :props="slotPropsV">
               <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
                 <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
+                <ContactLink type="email" :value="em.email_address" />
                 <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
               </template>
               <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
@@ -116,16 +116,16 @@
                   </div>
                   <div class="text-caption q-mt-xs">
                     <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink type="email" :value="em.email_address" />
                       <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                     </template>
                     <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
                   </div>
                   <div class="text-caption text-grey-7">
                     <template v-if="slotPropsG.row.Contatto?.Numero_di_cellulare">
-                      <a :href="'tel:'+slotPropsG.row.Contatto?.Numero_di_cellulare" class="text-primary">{{ slotPropsG.row.Contatto?.Numero_di_cellulare }}</a>
+                      <ContactLink type="tel" :value="slotPropsG.row.Contatto?.Numero_di_cellulare" />
                     </template><template v-if="slotPropsG.row.Contatto?.Numero_di_telefono">
-                      <a :href="'tel:'+slotPropsG.row.Contatto?.Numero_di_telefono" class="text-primary">{{ slotPropsG.row.Contatto?.Numero_di_telefono }}</a>
+                      <ContactLink type="tel" :value="slotPropsG.row.Contatto?.Numero_di_telefono" />
                     </template>
                   </div>
                   <div class="row q-mt-sm justify-end">
@@ -148,7 +148,7 @@
             <q-td :props="slotPropsG">
               <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
                 <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
+                <ContactLink type="email" :value="em.email_address" />
                 <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
               </template>
               <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
@@ -227,7 +227,7 @@
   />
 
   <q-dialog v-model="showRoleDialog" persistent>
-    <q-card style="width: 100%; max-width: 450px; min-width: unset">
+    <q-card>
       <q-card-section class="text-center">
         <div class="text-h6 q-mb-md">
           Associare {{ newContattoNome }} alla famiglia?
@@ -264,6 +264,7 @@
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, watch } from 'vue'
+import ContactLink from 'components/Common/ContactLink.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'

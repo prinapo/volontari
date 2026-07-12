@@ -22,17 +22,17 @@ npx quasar build        # Build produzione (dist/spa/)
 
 Tutta la documentazione è in `docs/`:
 
-| File | Contenuto |
-|---|---|
-| `architecture.md` | Architettura, component tree, data flow |
-| `api-integration.md` | Endpoint Directus, error handling |
-| `auth-flow.md` | Login, token refresh, route guard |
-| `components-map.md` | Gerarchia componenti, props/events |
-| `appsmith-migration-map.md` | Mapping Appsmith → Quasar |
-| `state-management.md` | Store Pinia, state/getters/actions |
-| `testing-plan.md` | Strategia test, ID reference |
-| `test-cases.md` | Design pattern dei test |
-| `deployment-guide.md` | Build, deploy, CORS, permissioni |
+| File                        | Contenuto                               |
+| --------------------------- | --------------------------------------- |
+| `architecture.md`           | Architettura, component tree, data flow |
+| `api-integration.md`        | Endpoint Directus, error handling       |
+| `auth-flow.md`              | Login, token refresh, route guard       |
+| `components-map.md`         | Gerarchia componenti, props/events      |
+| `appsmith-migration-map.md` | Mapping Appsmith → Quasar               |
+| `state-management.md`       | Store Pinia, state/getters/actions      |
+| `testing-plan.md`           | Strategia test, ID reference            |
+| `test-cases.md`             | Design pattern dei test                 |
+| `deployment-guide.md`       | Build, deploy, CORS, permissioni        |
 
 ## Ambiente
 
@@ -44,7 +44,7 @@ cp .env.example .env
 
 ## Struttura
 
-```
+```text
 src/
 ├── boot/           # Axios + auth init
 ├── components/     # Layout, Famiglia, Giustificativi, Common

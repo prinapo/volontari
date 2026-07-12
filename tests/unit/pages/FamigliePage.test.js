@@ -8,7 +8,7 @@ const mockSelectProgetto = vi.fn()
 
 const authState = {
   initialized: true,
-  canVerifica: false,
+  canManager: false,
   contattoId: 'cont-1'
 }
 
@@ -66,7 +66,7 @@ describe('FamigliePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     authState.initialized = true
-    authState.canVerifica = false
+    authState.canManager = false
     authState.contattoId = 'cont-1'
     famiglieState.loading = false
     famiglieState.famiglia = null
@@ -105,7 +105,7 @@ describe('FamigliePage', () => {
   })
 
   it('shows verifica area when no family is linked but user can verify', () => {
-    authState.canVerifica = true
+    authState.canManager = true
     const wrapper = quasarMount(FamigliePage)
     expect(wrapper.text()).toContain('Area verifica disponibile')
   })

@@ -2,10 +2,9 @@ export const API_URL = import.meta.env.VITE_API_URL || 'https://app.sostienilsos
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
-  REFRESH_TOKEN: 'refresh_token'
+  REFRESH_TOKEN: 'refresh_token',
+  USER_ID: 'user_id'
 }
-
-export const ADMIN_ROLE_NAMES = ['admin']
 
 export const STATI_GIUSTIFICATIVO = {
   DRAFT: 'draft',

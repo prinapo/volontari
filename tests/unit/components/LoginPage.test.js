@@ -17,8 +17,7 @@ const mockAuthStore = {
   login: (...a) => mockLogin(...a),
   initialized: true,
   isAuthenticated: false,
-  canGestione: false,
-  canVerifica: false
+  canManager: false
 }
 
 vi.mock('stores/auth.store', () => ({
@@ -41,8 +40,7 @@ describe('LoginPage', () => {
     vi.clearAllMocks()
     mockAuthStore.loading = false
     mockAuthStore.error = null
-    mockAuthStore.canGestione = false
-    mockAuthStore.canVerifica = false
+    mockAuthStore.canManager = false
     mockRequestPasswordReset.mockResolvedValue({})
   })
 
@@ -62,24 +60,14 @@ describe('LoginPage', () => {
     expect(mockLogin).toHaveBeenCalledWith('mario@test.it', 'Secret123!')
   })
 
-  it('redirects to gestione after login for gestione role', async () => {
+  it('redirects to gestione after login for manager role', async () => {
     mockLogin.mockResolvedValue(true)
-    mockAuthStore.canGestione = true
+    mockAuthStore.canManager = true
     const wrapper = quasarMount(LoginPage)
 
     await wrapper.vm.handleLogin()
 
     expect(mockPush).toHaveBeenCalledWith('/gestione')
-  })
-
-  it('redirects to verifica after login for verifica role', async () => {
-    mockLogin.mockResolvedValue(true)
-    mockAuthStore.canVerifica = true
-    const wrapper = quasarMount(LoginPage)
-
-    await wrapper.vm.handleLogin()
-
-    expect(mockPush).toHaveBeenCalledWith('/verifica')
   })
 
   it('redirects to famiglie after generic successful login', async () => {

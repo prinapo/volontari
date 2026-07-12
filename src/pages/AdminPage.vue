@@ -311,7 +311,7 @@ size="sm"
                         outlined
                         emit-value
                         map-options
-                        class="admin-role-select admin-role-min-width"
+                        class="admin-role-select select-min-width"
                         :loading="store.saving"
                         @update:model-value="(val) => handleRoleChange(props.row.id, val)"
                       >
@@ -506,7 +506,14 @@ bordered
             </template>
             <template #body-cell-message="props">
               <q-td :props="props">
-                <div class="ellipsis cursor-pointer text-primary" style="max-width: 300px" @click="showErrorDetail(props.value)">
+                <div
+                  class="ellipsis cursor-pointer text-primary"
+                  style="max-width: 300px"
+                  role="button"
+                  tabindex="0"
+                  @click="showErrorDetail(props.value)"
+                  @keydown.enter.prevent="showErrorDetail(props.value)"
+                >
                   {{ props.value || '' }}
                 </div>
               </q-td>
@@ -577,7 +584,7 @@ size="sm"
       </q-tab-panels>
       <!-- Nuova Associazione Dialog -->
       <q-dialog v-model="showNewAssociazioneDialog" persistent>
-        <q-card style="width: 100%; max-width: 400px; min-width: unset">
+        <q-card>
           <q-card-section class="row items-center">
             <div class="text-h6">Nuova associazione</div>
             <q-space />
@@ -629,7 +636,7 @@ size="sm"
 
           <q-separator />
 
-          <q-card-section class="scroll admin-scroll-area">
+          <q-card-section class="scroll scroll-area-70">
             <!-- Step 1: Email search -->
             <div class="row q-col-gutter-sm items-end q-mb-md">
               <div class="col">
@@ -746,7 +753,7 @@ size="sm"
 
       <!-- Reset Password Dialog -->
       <q-dialog v-model="showResetDialog" persistent>
-        <q-card style="width: 100%; max-width: 400px; min-width: unset">
+        <q-card>
           <q-card-section class="row items-center">
             <div class="text-h6">
               Reset password
@@ -798,7 +805,7 @@ size="sm"
 
       <!-- Error detail dialog -->
       <q-dialog v-model="errorDetail.visible">
-        <q-card style="width: 100%; max-width: 600px; min-width: unset">
+        <q-card>
           <q-card-section class="row items-center">
             <div class="text-h6">
               Dettaglio errore
@@ -856,20 +863,20 @@ const filteredUsers = computed(() => {
 })
 
 const userColumns = [
-  { name: 'name', label: 'Nome', align: 'left', style: 'width: 200px' },
+  { name: 'name', label: 'Nome', align: 'left' },
   { name: 'email', label: 'Email', align: 'left' },
-  { name: 'role', label: 'Ruolo', align: 'center', style: 'width: 130px' },
-  { name: 'actions', label: 'Azioni', align: 'center', style: 'width: 220px' }
+  { name: 'role', label: 'Ruolo', align: 'center' },
+  { name: 'actions', label: 'Azioni', align: 'center' }
 ]
 
 const erroriColumns = [
-  { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left', style: 'width: 160px' },
-  { name: 'level', label: 'Livello', field: 'level', align: 'center', style: 'width: 80px' },
-  { name: 'method', label: 'Metodo', field: 'method', align: 'center', style: 'width: 80px' },
-  { name: 'status', label: 'Status', field: 'status', align: 'center', style: 'width: 70px' },
+  { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left' },
+  { name: 'level', label: 'Livello', field: 'level', align: 'center' },
+  { name: 'method', label: 'Metodo', field: 'method', align: 'center' },
+  { name: 'status', label: 'Status', field: 'status', align: 'center' },
   { name: 'message', label: 'Messaggio', field: 'message', align: 'left' },
-  { name: 'read', label: 'Letto', field: 'read', align: 'center', style: 'width: 70px' },
-  { name: 'actions', label: '', align: 'center', style: 'width: 50px' }
+  { name: 'read', label: 'Letto', field: 'read', align: 'center' },
+  { name: 'actions', label: '', align: 'center' }
 ]
 
 // Associazioni
@@ -1146,18 +1153,3 @@ onMounted(() => {
   errorLogStore.fetchAll()
 })
 </script>
-
-<style scoped>
-.admin-role-select {
-  min-width: 140px;
-}
-.admin-role-min-width {
-  min-width: 120px;
-}
-.admin-scroll-area {
-  max-height: 70vh;
-}
-.inline-edit-input {
-  min-width: 120px;
-}
-</style>

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { adminService } from 'src/services/admin.service'
 import api from 'src/services/api'
+import { emailService } from 'src/services/email.service'
+import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
 
 function generatePassword(length = 16) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
@@ -77,7 +79,7 @@ export const useAdminStore = defineStore('admin', {
             Cognome: lastName || ''
           })
           const contattoId = contattoRes.data.data?.id_contatto
-          await adminService.createEmail({
+          await emailService.createSafe({
             email_address: email.toLowerCase(),
             Contatto_Relation: contattoId,
             Primary: true
@@ -186,129 +188,127 @@ export const useAdminStore = defineStore('admin', {
     },
 
     // ── Volontari Consistency Check ──
+    async _checkSenzaUtente() {
+      const res = await api.get('/items/contatti', {
+        params: {
+          'filter[IsVolontario][_eq]': 'true',
+          'filter[user_id][_null]': 'true',
+          fields: 'id_contatto,Nome,Cognome',
+          limit: -1
+        }
+      })
+      const result = []
+      for (const c of res.data.data || []) {
+        const emailRes = await api.get('/items/email', {
+          params: {
+            'filter[Contatto_Relation][_eq]': c.id_contatto,
+            'filter[Primary][_eq]': 'true',
+            fields: 'email_address',
+            limit: 1
+          }
+        })
+        result.push({ ...c, email: emailRes.data.data?.[0]?.email_address || '' })
+      }
+      return result
+    },
+
+    async _checkUtenteCancellato() {
+      const res = await api.get('/items/contatti', {
+        params: {
+          'filter[IsVolontario][_eq]': 'true',
+          'filter[user_id][_nnull]': 'true',
+          fields: 'id_contatto,Nome,Cognome,user_id',
+          limit: -1
+        }
+      })
+      const result = []
+      for (const c of res.data.data || []) {
+        try {
+          await api.get(`/users/${c.user_id}`)
+        } catch {
+          result.push({ id_contatto: c.id_contatto, Nome: c.Nome, Cognome: c.Cognome, user_id: c.user_id })
+        }
+      }
+      return result
+    },
+
+    async _checkFlagOrfani() {
+      const res = await api.get('/items/contatti', {
+        params: { 'filter[IsVolontario][_eq]': 'true', fields: 'id_contatto,Nome,Cognome', limit: -1 }
+      })
+      const result = []
+      for (const c of res.data.data || []) {
+        const fcRes = await api.get('/items/Famiglie_Contatti', {
+          params: {
+            'filter[Contatto][_eq]': c.id_contatto,
+            'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+            'filter[_or][0][Disattivo][_null]': 'true',
+            'filter[_or][1][Disattivo][_neq]': 'true',
+            fields: 'id',
+            limit: 1
+          }
+        })
+        if (!fcRes.data.data || fcRes.data.data.length === 0) {
+          result.push(c)
+        }
+      }
+      return result
+    },
+
+    async _checkLinkSenzaFlag() {
+      const res = await api.get('/items/Famiglie_Contatti', {
+        params: {
+          'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+          'filter[_or][0][Disattivo][_null]': 'true',
+          'filter[_or][1][Disattivo][_neq]': 'true',
+          fields: 'id,Contatto',
+          limit: -1
+        }
+      })
+      const seen = new Set()
+      const result = []
+      for (const fc of res.data.data || []) {
+        const contattoId = typeof fc.Contatto === 'object' ? fc.Contatto?.id_contatto : fc.Contatto
+        if (!contattoId || seen.has(contattoId)) continue
+        seen.add(contattoId)
+        try {
+          const cRes = await api.get(`/items/contatti/${contattoId}`, {
+            params: { fields: 'id_contatto,Nome,Cognome,IsVolontario' }
+          })
+          if (cRes.data.data && !cRes.data.data.IsVolontario) result.push(cRes.data.data)
+        } catch {
+          /* contatto potrebbe non esistere */
+        }
+      }
+      return result
+    },
+
+    async _checkSenzaRuolo() {
+      const usersRes = await api.get('/users', {
+        params: { 'filter[role][_null]': 'true', fields: 'id,email', limit: -1 }
+      })
+      const result = []
+      for (const u of usersRes.data || []) {
+        const cRes = await api.get('/items/contatti', {
+          params: { 'filter[user_id][_eq]': u.id, fields: 'id_contatto,Nome,Cognome', limit: 1 }
+        })
+        const c = cRes.data.data?.[0]
+        if (c) result.push({ ...c, email: u.email || '' })
+      }
+      return result
+    },
+
     async fetchVolontariConsistency() {
       this.volontariCheckLoading = true
       this.volontariCheck = null
       try {
-        const result = { senzaUtente: [], utenteCancellato: [], flagOrfano: [], linkSenzaFlag: [], senzaRuolo: [] }
-
-        // 1. Contatti con IsVolontario=true e user_id=null
-        const senzaUtenteRes = await api.get('/items/contatti', {
-          params: {
-            'filter[IsVolontario][_eq]': 'true',
-            'filter[user_id][_null]': 'true',
-            fields: 'id_contatto,Nome,Cognome',
-            limit: -1
-          }
-        })
-        for (const c of (senzaUtenteRes.data.data || [])) {
-          const emailRes = await api.get('/items/email', {
-            params: {
-              'filter[Contatto_Relation][_eq]': c.id_contatto,
-              'filter[Primary][_eq]': 'true',
-              fields: 'email_address',
-              limit: 1
-            }
-          })
-          const email = emailRes.data.data?.[0]?.email_address || ''
-          result.senzaUtente.push({ ...c, email })
+        this.volontariCheck = {
+          senzaUtente: await this._checkSenzaUtente(),
+          utenteCancellato: await this._checkUtenteCancellato(),
+          flagOrfano: await this._checkFlagOrfani(),
+          linkSenzaFlag: await this._checkLinkSenzaFlag(),
+          senzaRuolo: await this._checkSenzaRuolo()
         }
-
-        // 2. Contatti con IsVolontario=true e user_id non null (verifica se utente Directus esiste)
-        const conUtenteRes = await api.get('/items/contatti', {
-          params: {
-            'filter[IsVolontario][_eq]': 'true',
-            'filter[user_id][_nnull]': 'true',
-            fields: 'id_contatto,Nome,Cognome,user_id',
-            limit: -1
-          }
-        })
-        for (const c of (conUtenteRes.data.data || [])) {
-          try {
-            await api.get(`/users/${c.user_id}`)
-          } catch {
-            result.utenteCancellato.push({
-              id_contatto: c.id_contatto,
-              Nome: c.Nome,
-              Cognome: c.Cognome,
-              user_id: c.user_id
-            })
-          }
-        }
-
-        // 3. Contatti con IsVolontario=true ma nessun Famiglie_Contatti Volontario attivo
-        const flagOrfaniRes = await api.get('/items/contatti', {
-          params: {
-            'filter[IsVolontario][_eq]': 'true',
-            fields: 'id_contatto,Nome,Cognome',
-            limit: -1
-          }
-        })
-        for (const c of (flagOrfaniRes.data.data || [])) {
-          const fcRes = await api.get('/items/Famiglie_Contatti', {
-            params: {
-              'filter[Contatto][_eq]': c.id_contatto,
-              'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-              'filter[_or][0][Disattivo][_null]': 'true',
-              'filter[_or][1][Disattivo][_neq]': 'true',
-              fields: 'id',
-              limit: 1
-            }
-          })
-          if (!fcRes.data.data || fcRes.data.data.length === 0) {
-            result.flagOrfano.push(c)
-          }
-        }
-
-        // 4. Famiglie_Contatti Volontario attivi su contatti con IsVolontario=false/null
-        const linkVolontariRes = await api.get('/items/Famiglie_Contatti', {
-          params: {
-            'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
-            'filter[_or][0][Disattivo][_null]': 'true',
-            'filter[_or][1][Disattivo][_neq]': 'true',
-            fields: 'id,Contatto',
-            limit: -1
-          }
-        })
-        const seenContatti = new Set()
-        for (const fc of (linkVolontariRes.data.data || [])) {
-          const contattoId = typeof fc.Contatto === 'object' ? fc.Contatto?.id_contatto : fc.Contatto
-          if (!contattoId || seenContatti.has(contattoId)) continue
-          seenContatti.add(contattoId)
-          try {
-            const cRes = await api.get(`/items/contatti/${contattoId}`, {
-              params: { fields: 'id_contatto,Nome,Cognome,IsVolontario' }
-            })
-            const c = cRes.data.data
-            if (c && !c.IsVolontario) {
-              result.linkSenzaFlag.push(c)
-            }
-          } catch { /* contatto potrebbe non esistere */ }
-        }
-
-        // 5. Directus users con role=null che hanno un contatto collegato
-        const usersNoRoleRes = await api.get('/users', {
-          params: {
-            'filter[role][_null]': 'true',
-            fields: 'id,email',
-            limit: -1
-          }
-        })
-        for (const u of (usersNoRoleRes.data || [])) {
-          const contattoRes = await api.get('/items/contatti', {
-            params: {
-              'filter[user_id][_eq]': u.id,
-              fields: 'id_contatto,Nome,Cognome',
-              limit: 1
-            }
-          })
-          const c = contattoRes.data.data?.[0]
-          if (c) {
-            result.senzaRuolo.push({ ...c, email: u.email || '' })
-          }
-        }
-
-        this.volontariCheck = result
       } catch (error) {
         this.error = error.message || 'Errore nella verifica consistenza volontari'
       } finally {
@@ -346,10 +346,13 @@ export const useAdminStore = defineStore('admin', {
     async assignVolontarioRole(userId) {
       try {
         const roleRes = await api.get('/roles', {
-          params: { 'filter[name][_eq]': 'Volontario', fields: 'id', limit: 1 }
+          params: { 'filter[name][_eq]': VOLONTARIO_ROLE_NAMES[0], fields: 'id', limit: 1 }
         })
         const ruoloId = roleRes.data.data?.[0]?.id
-        if (!ruoloId) { this.error = 'Ruolo "Volontario" non trovato'; return false }
+        if (!ruoloId) {
+          this.error = 'Ruolo "Volontario" non trovato'
+          return false
+        }
         await api.patch(`/users/${userId}`, { role: ruoloId })
         return true
       } catch {

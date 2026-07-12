@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="model" persistent>
-    <q-card style="width: 100%; max-width: 400px; min-width: unset">
+    <q-card>
       <q-card-section class="row items-center">
         <q-icon :name="icon" :color="iconColor" size="md" class="q-mr-sm" />
         <div>

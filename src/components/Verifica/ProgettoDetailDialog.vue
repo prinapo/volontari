@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="visible" persistent data-testid="progetto-detail-dialog">
-    <q-card style="width: 100%; max-width: 900px; min-width: unset">
+    <q-card>
       <q-card-section>
         <div class="text-h6">
           {{ progetto.famiglia }}

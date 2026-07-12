@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="model" persistent>
-    <q-card style="width: 100%; max-width: 520px; min-width: unset">
+    <q-card>
       <q-card-section class="row items-center">
         <div class="text-h6">
           Nuovo giustificativo

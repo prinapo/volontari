@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { quasarMount } from '../quasar-mount'
 import ContattoInfoLine from 'src/components/Common/ContattoInfoLine.vue'
 
 describe('ContattoInfoLine', () => {
   it('renders contact name', () => {
-    const wrapper = mount(ContattoInfoLine, {
+    const wrapper = quasarMount(ContattoInfoLine, {
       props: {
         contact: { Nome: 'Mario', Cognome: 'Rossi' }
       },
@@ -15,7 +15,7 @@ describe('ContattoInfoLine', () => {
   })
 
   it('renders nothing when contact is null', () => {
-    const wrapper = mount(ContattoInfoLine, {
+    const wrapper = quasarMount(ContattoInfoLine, {
       props: { contact: null },
       global: { stubs: { 'q-icon': true, 'q-badge': true } }
     })
@@ -23,7 +23,7 @@ describe('ContattoInfoLine', () => {
   })
 
   it('renders primary email badge', () => {
-    const wrapper = mount(ContattoInfoLine, {
+    const wrapper = quasarMount(ContattoInfoLine, {
       props: {
         contact: { Nome: 'Mario' },
         emails: [{ email_address: 'mario@test.it', Primary: true }]
@@ -34,7 +34,7 @@ describe('ContattoInfoLine', () => {
   })
 
   it('renders phone numbers', () => {
-    const wrapper = mount(ContattoInfoLine, {
+    const wrapper = quasarMount(ContattoInfoLine, {
       props: {
         contact: { Nome: 'Mario', Numero_di_cellulare: '3331234567', Numero_di_telefono: '021234567' }
       },

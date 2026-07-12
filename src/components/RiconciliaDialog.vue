@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="model" persistent @show="initData">
-    <q-card class="riconcilia-dialog-card" style="width: 100%; max-width: 600px; min-width: unset">
+    <q-card class="riconcilia-dialog-card bg-grey-1">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">
           Riconcilia giustificativo
@@ -31,7 +31,7 @@
 
       <q-separator />
 
-      <q-scroll-area class="riconcilia-scroll-area">
+      <q-scroll-area style="height: 65vh">
         <div class="q-pa-md">
           <!-- Genitori / Volontari -->
           <q-card flat bordered class="q-mb-md">
@@ -43,9 +43,9 @@
                 <div v-for="g in genitoriList" :key="'g-'+g.id" class="text-body2 q-ml-sm">
                   <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
                   {{ displayFullName(g.Contatto) }}
-                  <span v-if="g._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+g._emails[0].email_address" class="text-primary">{{ g._emails[0].email_address }}</a></span>
-                  <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+g.Contatto.Numero_di_cellulare" class="text-primary">{{ g.Contatto.Numero_di_cellulare }}</a></span>
-                  <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+g.Contatto.Numero_di_telefono" class="text-primary">{{ g.Contatto.Numero_di_telefono }}</a></span>
+                  <span v-if="g._emails?.[0]" class="text-grey-7"> — <ContactLink type="email" :value="g._emails[0].email_address" /></span>
+                  <span v-if="g.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <ContactLink type="tel" :value="g.Contatto.Numero_di_cellulare" /></span>
+                  <span v-if="g.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <ContactLink type="tel" :value="g.Contatto.Numero_di_telefono" /></span>
                 </div>
               </div>
               <div v-if="volontariList.length > 0" class="q-mb-sm">
@@ -55,9 +55,9 @@
                 <div v-for="v in volontariList" :key="'v-'+v.id" class="text-body2 q-ml-sm">
                   <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
                   {{ displayFullName(v.Contatto) }}
-                  <span v-if="v._emails?.[0]" class="text-grey-7"> — <a :href="'mailto:'+v._emails[0].email_address" class="text-primary">{{ v._emails[0].email_address }}</a></span>
-                  <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <a :href="'tel:'+v.Contatto.Numero_di_cellulare" class="text-primary">{{ v.Contatto.Numero_di_cellulare }}</a></span>
-                  <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <a :href="'tel:'+v.Contatto.Numero_di_telefono" class="text-primary">{{ v.Contatto.Numero_di_telefono }}</a></span>
+                  <span v-if="v._emails?.[0]" class="text-grey-7"> — <ContactLink type="email" :value="v._emails[0].email_address" /></span>
+                  <span v-if="v.Contatto?.Numero_di_cellulare" class="text-grey-7"> — Cell. <ContactLink type="tel" :value="v.Contatto.Numero_di_cellulare" /></span>
+                  <span v-if="v.Contatto?.Numero_di_telefono" class="text-grey-7"> — Tel. <ContactLink type="tel" :value="v.Contatto.Numero_di_telefono" /></span>
                 </div>
               </div>
             </q-card-section>
@@ -471,6 +471,7 @@ aria-label="Salva"
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
+import ContactLink from 'components/Common/ContactLink.vue'
 import { verificaService } from 'src/services/verifica.service'
 import { assetUrl } from 'src/utils/assets'
 import { displayFullName } from 'src/utils/formatters'
@@ -832,12 +833,3 @@ function toLocalDate(isoStr) {
 
 
 </script>
-
-<style scoped>
-.riconcilia-scroll-area {
-  height: 65vh;
-}
-.riconcilia-dialog-card {
-  background: #FAFAF7;
-}
-</style>

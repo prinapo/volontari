@@ -2,7 +2,10 @@
   <div
     class="inline-editable-field"
     :class="{ 'cursor-pointer': !readonly }"
+    role="button"
+    tabindex="0"
     @click="!readonly && !editing && startEdit()"
+    @keydown.enter.prevent="!readonly && !editing && startEdit()"
   >
     <!-- Display mode -->
     <template v-if="!editing">
@@ -35,7 +38,6 @@
           v-model="editValue"
           outlined
           dense
-          autofocus
           readonly
           class="col cursor-pointer"
           @click="dateProxy?.show()"
@@ -81,7 +83,6 @@
           :type="type"
           outlined
           dense
-          autofocus
           :rules="rules"
           lazy-rules
           class="col"

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from 'src/stores/auth.store'
 import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
+import { errorLogService } from './error-log.service'
 
 const API_URL = ENV_API_URL
 
@@ -47,21 +48,6 @@ function isInvalidTokenError(error) {
     String(code).toLowerCase() === 'invalid_payload' ||
     String(code).toLowerCase().includes('token')
   )
-}
-
-function logErrorSilently(entry) {
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  if (!token) return
-  try {
-    const body = JSON.stringify(entry)
-    fetch(`${API_URL}/items/ErrorLog`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body
-    })
-  } catch {
-    /* silent */
-  }
 }
 
 api.interceptors.request.use(config => {
@@ -126,7 +112,7 @@ api.interceptors.response.use(
         }
         const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
         if (token) {
-          logErrorSilently(entry)
+          errorLogService.log(entry)
         }
       }
     }

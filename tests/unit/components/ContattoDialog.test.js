@@ -28,7 +28,9 @@ vi.mock('src/services/email.service', () => ({
   emailService: {
     getAllByContatto: (...args) => mockGetAllByContatto(...args),
     update: (...args) => mockUpdateEmail(...args),
+    updateSafe: (...args) => mockUpdateEmail(...args),
     create: (...args) => mockCreateEmail(...args),
+    createSafe: (...args) => mockCreateEmail(...args),
     remove: (...args) => mockRemoveEmail(...args)
   }
 }))

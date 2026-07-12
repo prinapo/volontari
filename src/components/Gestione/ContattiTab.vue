@@ -21,7 +21,7 @@
         :options="tipoOptions"
         dense
         outlined
-        class="col-auto contatti-filter-select"
+        class="col-auto select-min-width"
         @update:model-value="onFilterChange"
       />
 
@@ -31,7 +31,7 @@
         :options="statoOptions"
         dense
         outlined
-        class="col-auto contatti-filter-select"
+        class="col-auto select-min-width"
         @update:model-value="onFilterChange"
       />
 
@@ -60,7 +60,7 @@
             expand-separator
             :label="displayNome(props.row)"
             :caption="props.row.Email?.[0]?.email_address || props.row._emails?.[0]?.email_address || ''"
-            :header-style="{ borderRadius: '12px' }"
+            header-class="expansion-header"
           >
             <q-card flat bordered>
               <q-card-section class="q-pa-sm">
@@ -84,13 +84,13 @@
                     </div>
                     <template v-if="props.row.user_id?.email">
                       <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                      <a :href="'mailto:'+props.row.user_id.email" class="text-primary text-caption">{{ props.row.user_id.email }}</a>
+                      <ContactLink type="email" :value="props.row.user_id.email" />
                       <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
                     </template>
                     <template v-else-if="props.row._emails?.length">
                       <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
                         <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                        <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                        <ContactLink type="email" :value="em.email_address" />
                         <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
                       </div>
                     </template>
@@ -100,13 +100,13 @@
                     <div class="text-caption text-grey-7">
                       Cellulare
                     </div>
-                    <div><a v-if="props.row.Numero_di_cellulare" :href="'tel:'+props.row.Numero_di_cellulare" class="text-primary">{{ props.row.Numero_di_cellulare }}</a><span v-else class="text-grey-5">—</span></div>
+                    <div><ContactLink v-if="props.row.Numero_di_cellulare" type="tel" :value="props.row.Numero_di_cellulare" /><span v-else class="text-grey-5">—</span></div>
                   </div>
                   <div class="col-6">
                     <div class="text-caption text-grey-7">
                       Telefono
                     </div>
-                    <div><a v-if="props.row.Numero_di_telefono" :href="'tel:'+props.row.Numero_di_telefono" class="text-primary">{{ props.row.Numero_di_telefono }}</a><span v-else class="text-grey-5">—</span></div>
+                    <div><ContactLink v-if="props.row.Numero_di_telefono" type="tel" :value="props.row.Numero_di_telefono" /><span v-else class="text-grey-5">—</span></div>
                   </div>
                   <div class="col-12">
                     <div class="text-caption text-grey-7">
@@ -180,13 +180,13 @@
         <q-td :props="props">
           <template v-if="props.row.user_id?.email">
             <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-            <a :href="'mailto:'+props.row.user_id.email" class="text-primary text-caption">{{ props.row.user_id.email }}</a>
+            <ContactLink type="email" :value="props.row.user_id.email" />
             <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
           </template>
           <template v-else-if="props.row._emails?.length">
             <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+              <ContactLink type="email" :value="em.email_address" />
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
             </div>
           </template>
@@ -196,13 +196,13 @@
 
       <template #body-cell-cellulare="props">
         <q-td :props="props">
-          <a v-if="props.row.Numero_di_cellulare" :href="'tel:'+props.row.Numero_di_cellulare" class="text-primary">{{ props.row.Numero_di_cellulare }}</a><span v-else class="text-grey-5">—</span>
+          <ContactLink v-if="props.row.Numero_di_cellulare" type="tel" :value="props.row.Numero_di_cellulare" /><span v-else class="text-grey-5">—</span>
         </q-td>
       </template>
 
       <template #body-cell-telefono="props">
         <q-td :props="props">
-          <a v-if="props.row.Numero_di_telefono" :href="'tel:'+props.row.Numero_di_telefono" class="text-primary">{{ props.row.Numero_di_telefono }}</a><span v-else class="text-grey-5">—</span>
+          <ContactLink v-if="props.row.Numero_di_telefono" type="tel" :value="props.row.Numero_di_telefono" /><span v-else class="text-grey-5">—</span>
         </q-td>
       </template>
 
@@ -300,6 +300,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import ContactLink from 'components/Common/ContactLink.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
@@ -534,8 +535,3 @@ async function onSaved() {
 }
 </script>
 
-<style scoped>
-.contatti-filter-select {
-  min-width: 150px;
-}
-</style>

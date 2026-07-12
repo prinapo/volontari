@@ -16,16 +16,16 @@
           <div class="text-body2 text-grey">
             <div v-for="em in g._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
+              <ContactLink type="email" :value="em.email_address" />
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="g.Numero_di_cellulare">
               <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'tel:' + g.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ g.Numero_di_cellulare }}</a>
+              <ContactLink type="tel" :value="g.Numero_di_cellulare" />
             </template>
             <template v-if="g.Numero_di_telefono">
               <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'tel:' + g.Numero_di_telefono" class="text-primary text-caption">{{ g.Numero_di_telefono }}</a>
+              <ContactLink type="tel" :value="g.Numero_di_telefono" />
             </template>
           </div>
         </div>
@@ -42,16 +42,16 @@
           <div class="text-body2 text-grey">
             <div v-for="em in v._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'mailto:'+em.email_address" class="text-primary text-caption">{{ em.email_address }}</a>
+              <ContactLink type="email" :value="em.email_address" />
               <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
             </div>
             <template v-if="v.Numero_di_cellulare">
               <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'tel:' + v.Numero_di_cellulare" class="text-primary text-caption q-mr-sm">{{ v.Numero_di_cellulare }}</a>
+              <ContactLink type="tel" :value="v.Numero_di_cellulare" />
             </template>
             <template v-if="v.Numero_di_telefono">
               <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
-              <a :href="'tel:' + v.Numero_di_telefono" class="text-primary text-caption">{{ v.Numero_di_telefono }}</a>
+              <ContactLink type="tel" :value="v.Numero_di_telefono" />
             </template>
             <template v-if="v._referenti?.length">
               <div v-for="ref in v._referenti" :key="ref.id_contatto" class="q-py-xs">
@@ -94,6 +94,7 @@
 <script setup>
 import { useQuasar } from 'quasar'
 import { computed } from 'vue'
+import ContactLink from 'components/Common/ContactLink.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'

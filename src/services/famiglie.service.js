@@ -1,10 +1,11 @@
+import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 import api from './api'
 
 export const famiglieService = {
   getFamiglieByVolontario(contattoId) {
     return api.get('/items/Famiglie_Contatti', {
       params: {
-        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+        'filter[Ruolo_nella_Famiglia][_eq]': RUOLI_FAMIGLIA.VOLONTARIO,
         'filter[Contatto][_eq]': contattoId,
         fields: ['id', 'Famiglia.id_famiglia', 'Famiglia.Nome_Famiglia'].join(',')
       }
@@ -68,9 +69,10 @@ export const famiglieService = {
   getFamiglieByContatto(contattoId) {
     return api.get('/items/Famiglie_Contatti', {
       params: {
-        'filter[Contatto][_eq]': contattoId,
-        'filter[_or][0][Disattivo][_null]': true,
-        'filter[_or][1][Disattivo][_eq]': false,
+        filter: JSON.stringify({
+          Contatto: { _eq: contattoId },
+          _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }]
+        }),
         fields: [
           'id',
           'Famiglia',
@@ -88,7 +90,7 @@ export const famiglieService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Famiglia][_eq]': famigliaId,
-        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+        'filter[Ruolo_nella_Famiglia][_eq]': RUOLI_FAMIGLIA.VOLONTARIO,
         fields: [
           'id',
           'Contatto.id_contatto',

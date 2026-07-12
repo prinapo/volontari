@@ -1,3 +1,4 @@
+import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 import api from './api'
 
 const FAMIGLIE_CONTATTI_FIELDS = [
@@ -64,10 +65,7 @@ export const gestioneService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         filter: JSON.stringify({
-          _and: [
-            { Contatto: { _in: ids } },
-            { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }
-          ]
+          _and: [{ Contatto: { _in: ids } }, { _or: [{ Disattivo: { _null: true } }, { Disattivo: { _eq: false } }] }]
         }),
         fields: FAMIGLIE_CONTATTI_FIELDS,
         limit: -1
@@ -139,7 +137,7 @@ export const gestioneService = {
     return api.get('/items/Famiglie_Contatti', {
       params: {
         'filter[Famiglia][_in]': famigliaIds.join(','),
-        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+        'filter[Ruolo_nella_Famiglia][_eq]': RUOLI_FAMIGLIA.VOLONTARIO,
         'filter[_or][0][Disattivo][_null]': 'true',
         'filter[_or][1][Disattivo][_eq]': 'false',
         fields: 'id,Famiglia',
@@ -151,7 +149,7 @@ export const gestioneService = {
   checkAllFamiglieVolontari() {
     return api.get('/items/Famiglie_Contatti', {
       params: {
-        'filter[Ruolo_nella_Famiglia][_eq]': 'Volontario',
+        'filter[Ruolo_nella_Famiglia][_eq]': RUOLI_FAMIGLIA.VOLONTARIO,
         'filter[_or][0][Disattivo][_null]': 'true',
         'filter[_or][1][Disattivo][_eq]': 'false',
         fields: 'id,Famiglia',

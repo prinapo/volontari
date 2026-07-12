@@ -12,6 +12,13 @@ const mockSendEmail = vi.fn()
 const mockGetProgetti = vi.fn()
 const mockUpdateProgetto = vi.fn()
 
+vi.mock('src/services/email.service', () => ({
+  emailService: {
+    createSafe: (...a) => mockCreateEmail(...a),
+    create: (...a) => mockCreateEmail(...a)
+  }
+}))
+
 vi.mock('src/services/admin.service', () => ({
   adminService: {
     getUsers: (...a) => mockGetUsers(...a),

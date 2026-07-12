@@ -6,7 +6,7 @@ import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STATO_PAGAMENTO, STATO_PROGETTO } from 'src/utils/constants'
+import { STATO_PAGAMENTO, STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
 
 export const usePagamentiStore = defineStore('pagamenti', {
   state: () => ({
@@ -52,6 +52,50 @@ export const usePagamentiStore = defineStore('pagamenti', {
       ])
     },
 
+    _ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet) {
+      const pid = row.idProgetto
+      const allocato = Number.parseFloat(row.allocato) || 0
+      const giustificativi = giustByProgetto[pid] || []
+      const pagamenti = pagByProgetto[pid] || []
+
+      const totaleVerificato = giustificativi
+        .filter(g => g.Stato === 'verificato')
+        .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
+
+      const totaleStorico = pagamenti
+        .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
+        .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
+
+      const erogabile = Math.min(totaleVerificato, allocato)
+      const nuovoProposto = erogabile - totaleStorico
+      const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
+
+      if (nuovoProposto > 0) {
+        if (esistente) {
+          if (Number.parseFloat(esistente.Importo) !== nuovoProposto) {
+            writeOps.push(pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }))
+            ricalcolaSet.add(pid)
+          }
+        } else {
+          writeOps.push(
+            pagamentiService.createPagamento({
+              Progetto: pid,
+              Famiglia: row.idFamiglia,
+              Importo: nuovoProposto,
+              Stato: STATO_PAGAMENTO.PROPOSTO,
+              IBAN: row.iban || '',
+              Intestatario: row.intestatario || '',
+              DataProposta: new Date().toISOString()
+            })
+          )
+          ricalcolaSet.add(pid)
+        }
+      } else if (esistente) {
+        writeOps.push(pagamentiService.deletePagamento(esistente.id))
+        ricalcolaSet.add(pid)
+      }
+    },
+
     async ricalcolaPropostiDaProgetti(progetti) {
       if (!progetti?.length) return
       const aperti = progetti.filter(r => r.statoProgetto !== 'chiuso')
@@ -61,23 +105,16 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         const [giustRes, pagRes] = await Promise.all([
           verificaService.getGiustificativiByProgetti(ids),
-          pagamentiService.getPagamenti({
-            'filter[Progetto][_in]': ids.join(','),
-            limit: -1
-          })
+          pagamentiService.getPagamenti({ 'filter[Progetto][_in]': ids.join(','), limit: -1 })
         ])
-        const allGiust = giustRes.data.data || []
-        const allPag = pagRes.data.data || []
-
         const giustByProgetto = {}
-        for (const g of allGiust) {
+        for (const g of giustRes.data.data || []) {
           const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
           if (!giustByProgetto[pid]) giustByProgetto[pid] = []
           giustByProgetto[pid].push(g)
         }
-
         const pagByProgetto = {}
-        for (const p of allPag) {
+        for (const p of pagRes.data.data || []) {
           const pid = typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto
           if (!pagByProgetto[pid]) pagByProgetto[pid] = []
           pagByProgetto[pid].push(p)
@@ -85,57 +122,14 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
         const writeOps = []
         const ricalcolaSet = new Set()
-
         for (const row of aperti) {
-          const pid = row.idProgetto
-          const allocato = Number.parseFloat(row.allocato) || 0
-          const giustificativi = giustByProgetto[pid] || []
-          const pagamenti = pagByProgetto[pid] || []
-
-          const totaleVerificato = giustificativi
-            .filter(g => g.Stato === 'verificato')
-            .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
-
-          const totaleStorico = pagamenti
-            .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
-            .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
-
-          const erogabile = Math.min(totaleVerificato, allocato)
-          const nuovoProposto = erogabile - totaleStorico
-          const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
-
-          if (nuovoProposto > 0) {
-            if (esistente) {
-              if (Number.parseFloat(esistente.Importo) !== nuovoProposto) {
-                writeOps.push(pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }))
-                ricalcolaSet.add(pid)
-              }
-            } else {
-              writeOps.push(pagamentiService.createPagamento({
-                Progetto: pid,
-                Famiglia: row.idFamiglia,
-                Importo: nuovoProposto,
-                Stato: STATO_PAGAMENTO.PROPOSTO,
-                IBAN: row.iban || '',
-                Intestatario: row.intestatario || '',
-                DataProposta: new Date().toISOString()
-              }))
-              ricalcolaSet.add(pid)
-            }
-          } else if (esistente) {
-            writeOps.push(pagamentiService.deletePagamento(esistente.id))
-            ricalcolaSet.add(pid)
-          }
+          this._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
         }
 
         if (writeOps.length > 0) await Promise.all(writeOps)
-
         if (ricalcolaSet.size > 0) {
-          await Promise.all(
-            [...ricalcolaSet].map(id => this.ricalcolaTotaliProgetto(id))
-          )
+          await Promise.all([...ricalcolaSet].map(id => this.ricalcolaTotaliProgetto(id)))
         }
-
         await this.fetchProposti()
       } catch (error) {
         this.error = error.message
@@ -319,7 +313,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           'filter[Batch][_eq]': batchId,
           'filter[_or][0][Stato][_eq]': STATO_PAGAMENTO.IN_PAGAMENTO,
           'filter[_or][1][Stato][_eq]': STATO_PAGAMENTO.PAGATO,
-           fields: 'id,Stato,Importo,IBAN,Intestatario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
+          fields: 'id,Stato,Importo,IBAN,Intestatario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
           limit: -1
         })
         const pagamenti = pagamentiRes.data.data || []
@@ -414,7 +408,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           )
         }
 
-        const userId = localStorage.getItem('user_id')
+        const userId = localStorage.getItem(STORAGE_KEYS.USER_ID)
         const batchRes = await pagamentiService.createBatch({
           Nome: nome,
           Associazione: associazione,
@@ -625,63 +619,6 @@ export const usePagamentiStore = defineStore('pagamenti', {
         this.liste = await listePagamentiService.getAll()
       } catch {
         this.liste = []
-      }
-    },
-
-    async generaLista(nome) {
-      this.loading = true
-      this.error = null
-      try {
-        const { useVerificaStore } = await import('stores/verifica.store')
-        const verificaStore = useVerificaStore()
-
-        const aspiRows = verificaStore.filteredRows.filter(
-          row => row.totaleRimborsabile > 0 && row.iban && row.intestatario && !row.giustificativi.some(g => g.Stato === 'inviato')
-        )
-
-        if (aspiRows.length === 0) {
-          throw new Error('Nessuna riga esportabile trovata')
-        }
-
-        const escapeCsv = (value) => {
-          const normalized = value == null ? '' : String(value)
-          return `"${normalized.replaceAll('"', '""')}"`
-        }
-
-        const header = ['ID famiglia', 'Famiglia', 'Beneficiario', 'Intestatario', 'IBAN', 'Importo']
-        const csv = [
-          header.map(escapeCsv).join(';'),
-          ...aspiRows.map(row => {
-            const line = [
-              row.idFamiglia,
-              row.famiglia,
-              row.beneficiario,
-              row.intestatario,
-              row.iban,
-              row.totaleRimborsabile.toFixed(2).replace('.', ',')
-            ]
-            return line.map(escapeCsv).join(';')
-          })
-        ].join('\n')
-
-        const totale = aspiRows.reduce((s, r) => s + (Number.parseFloat(r.totaleRimborsabile) || 0), 0)
-
-        const fileId = await listePagamentiService.uploadCsv(csv, nome)
-
-        await listePagamentiService.create({
-          Nome: nome,
-          File: fileId,
-          Totale: totale,
-          ConteggioRighe: aspiRows.length,
-          DataCreazione: new Date().toISOString()
-        })
-
-        await this.fetchListe()
-      } catch (error) {
-        this.error = error.message || 'Errore generazione lista'
-        throw error
-      } finally {
-        this.loading = false
       }
     },
 

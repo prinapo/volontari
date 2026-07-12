@@ -4,6 +4,7 @@ const mockCreate = vi.fn()
 const mockAxiosPost = vi.fn()
 const mockAuthPatch = vi.fn()
 const mockErrorLog = vi.fn()
+const mockStorageGet = vi.fn()
 
 let requestInterceptor
 let responseSuccessHandler
@@ -93,7 +94,9 @@ describe('api.js', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    mockStorageGet.mockReset()
 
+    vi.stubGlobal('navigator', { userAgent: 'test-agent' })
     assignSpy = vi.fn()
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -117,7 +120,7 @@ describe('api.js', () => {
     expect(typeof responseErrorHandler).toBe('function')
   })
 
-  it('request interceptor adds bearer token and cache-busting timestamp to GET requests', async () => {
+  it('attaches bearer token and cache-busting timestamp to GET requests', async () => {
     await loadApiModule()
     localStorage.setItem('access_token', 'access-123')
 
@@ -129,6 +132,19 @@ describe('api.js', () => {
 
     expect(config.headers.Authorization).toBe('Bearer access-123')
     expect(config.url).toMatch(/^\/items\/Famiglie\?limit=10&_t=\d+$/)
+  })
+
+  it('does not add token when localStorage is empty', async () => {
+    await loadApiModule()
+    localStorage.clear()
+
+    const config = requestInterceptor({
+      headers: {},
+      method: 'get',
+      url: '/items/Famiglie?limit=10'
+    })
+
+    expect(config.headers.Authorization).toBeUndefined()
   })
 
   it('response success interceptor returns the response untouched', async () => {
@@ -194,8 +210,9 @@ describe('api.js', () => {
     expect(assignSpy).toHaveBeenCalledWith('/login')
   })
 
-  it('logs non-auth 4xx errors and rethrows them', async () => {
+  it('logs 4xx errors and rethrows them', async () => {
     await loadApiModule()
+    localStorage.setItem('access_token', 'access-123')
     const error = {
       config: {
         url: '/items/Famiglie',
@@ -223,7 +240,7 @@ describe('api.js', () => {
     )
   })
 
-  it('does not redirect or log for auth endpoint errors', async () => {
+  it('does not log 4xx for auth endpoint errors', async () => {
     await loadApiModule()
     const error = makeInvalidTokenError({
       config: {

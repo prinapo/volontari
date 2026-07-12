@@ -10,7 +10,7 @@
     <q-inner-loading :showing="loading && authStore.initialized" />
 
     <template v-if="authStore.initialized">
-      <div class="q-gutter-y-md famiglia-page-container">
+      <div class="q-gutter-y-md q-mx-auto">
 
         <!-- Selettore famiglia (sempre visibile se multi-famiglia, anche senza famiglia caricata) -->
         <q-select
@@ -60,7 +60,7 @@
                   </div>
                 </div>
                 <q-space />
-                <div class="text-caption text-grey famiglia-caption">
+                <div class="text-caption text-grey">
                   Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{ formatCurrency(allocato) }})
                 </div>
               </q-card-section>
@@ -153,13 +153,3 @@ function handleProjectChange(progettoId) {
   famiglieStore.selectProgetto(progettoId)
 }
 </script>
-
-<style scoped>
-.famiglia-page-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-.famiglia-caption {
-  max-width: 280px;
-}
-</style>

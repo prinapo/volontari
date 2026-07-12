@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { STORAGE_KEYS } from 'src/utils/constants'
+import { ROUTE_ROLES } from 'src/utils/permissions'
 import { useAuthStore } from 'stores/auth.store'
 
 const routes = [
@@ -39,37 +40,31 @@ const routes = [
         path: 'verifica',
         name: 'Verifica',
         component: () => import('pages/VerificaPage.vue'),
-        meta: { requiredRole: 'Manager' }
+        meta: { requiredRole: ROUTE_ROLES.MANAGER }
       },
       {
         path: 'riconciliazione',
         name: 'Riconciliazione',
         component: () => import('pages/RiconciliazionePage.vue'),
-        meta: { requiredRole: 'Manager' }
+        meta: { requiredRole: ROUTE_ROLES.MANAGER }
       },
       {
         path: 'gestione',
         name: 'Gestione',
         component: () => import('pages/GestionePage.vue'),
-        meta: { requiredRole: 'Manager' }
-      },
-      {
-        path: 'deduplica',
-        name: 'Deduplica',
-        component: () => import('pages/DeduplicaPage.vue'),
-        meta: { requiredRole: 'Admin' }
+        meta: { requiredRole: ROUTE_ROLES.MANAGER }
       },
       {
         path: 'admin',
         name: 'Admin',
         component: () => import('pages/AdminPage.vue'),
-        meta: { requiredRole: 'Admin' }
+        meta: { requiredRole: ROUTE_ROLES.ADMIN }
       },
       {
         path: 'progetti/crea',
         name: 'CreaProgetto',
         component: () => import('pages/CreaProgettoPage.vue'),
-        meta: { requiredRole: 'Admin' }
+        meta: { requiredRole: ROUTE_ROLES.ADMIN }
       }
     ]
   },
@@ -105,8 +100,8 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiredRole) {
     const authStore = useAuthStore()
-    if (to.meta.requiredRole === 'Manager' && !authStore.canManager) return next('/famiglie')
-    if (to.meta.requiredRole === 'Admin' && !authStore.canAdmin) return next('/famiglie')
+    if (to.meta.requiredRole === ROUTE_ROLES.MANAGER && !authStore.canManager) return next('/famiglie')
+    if (to.meta.requiredRole === ROUTE_ROLES.ADMIN && !authStore.canAdmin) return next('/famiglie')
   }
   next()
 })

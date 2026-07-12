@@ -2,7 +2,7 @@
   <q-layout view="lHh Lpr lFf">
     <q-page-container>
       <q-page class="flex flex-center bg-grey-2">
-        <q-card class="login-card" flat bordered>
+        <q-card class="login-card full-width" flat bordered>
           <template v-if="!token">
             <q-card-section class="text-center q-pt-xl q-px-xl">
               <div class="text-h6 text-negative">
@@ -145,9 +145,3 @@ async function handleReset() {
 }
 </script>
 
-<style scoped>
-.login-card {
-  width: 100%;
-  max-width: 420px;
-}
-</style>

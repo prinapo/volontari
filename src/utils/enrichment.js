@@ -1,3 +1,9 @@
+/**
+ * Arricchisce una mappa contatto → email con i dati delle email
+ * @param {string[]} contattoIds - ID dei contatti
+ * @param {Function} getEmailsFn - Funzione per ottenere le email (es. emailService.getByContatto)
+ * @returns {Promise<Object.<string, Array<{email_address: string, Primary: boolean}>>>}
+ */
 export async function enrichWithEmails(contattoIds, getEmailsFn) {
   if (!contattoIds || contattoIds.length === 0) return {}
   const emailRes = await getEmailsFn(contattoIds)

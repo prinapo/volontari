@@ -1,6 +1,13 @@
 import { famiglieService } from 'src/services/famiglie.service'
 import { filesService } from 'src/services/files.service'
 
+/**
+ * Carica un file su Directus e lo rinomina con prefisso famiglia
+ * @param {File} file - File da caricare
+ * @param {string} famigliaId - ID della famiglia
+ * @param {string} folder - ID della cartella Directus
+ * @returns {Promise<string>} ID del file caricato
+ */
 export async function uploadAndPrefixFile(file, famigliaId, folder) {
   const uploadRes = await filesService.upload(file, folder)
   const fileId = uploadRes.data.data.id
@@ -14,6 +21,10 @@ export async function uploadAndPrefixFile(file, famigliaId, folder) {
   return fileId
 }
 
+/**
+ * Marca un file come obsoleto rinominandolo con prefisso OBSOLETE_ e data
+ * @param {string} fileId - ID del file Directus
+ */
 export async function markFileObsolete(fileId) {
   const fileRes = await filesService.getFile(fileId)
   const origName = fileRes.data.data?.filename_download || 'file'
@@ -21,6 +32,10 @@ export async function markFileObsolete(fileId) {
   await filesService.renameFile(fileId, `OBSOLETE_${date}_${origName}`)
 }
 
+/**
+ * Marca un file come rifiutato rinominandolo con prefisso RIFIUTATO_ e data
+ * @param {string} fileId - ID del file Directus
+ */
 export async function markFileRejected(fileId) {
   const fileRes = await filesService.getFile(fileId)
   const origName = fileRes.data.data?.filename_download || 'file'

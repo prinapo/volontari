@@ -12,9 +12,10 @@ module.exports = {
     'plugin:sonarjs/recommended',
     'plugin:promise/recommended',
     'plugin:unicorn/recommended',
+    'plugin:vuejs-accessibility/recommended',
     'prettier'
   ],
-  plugins: ['security'],
+  plugins: ['security', 'vuejs-accessibility'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module'

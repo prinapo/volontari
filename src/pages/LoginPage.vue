@@ -5,7 +5,7 @@
         🔧 AMBIENTE DI TEST
       </q-banner>
       <q-page class="flex flex-center bg-grey-2 column">
-        <q-card class="login-card" flat bordered>
+        <q-card class="login-card full-width" flat bordered>
           <q-card-section class="text-center q-pt-xl">
             <div class="text-h4 text-primary">
               Portale Volontario
@@ -75,7 +75,7 @@
           </q-card-section>
         </q-card>
 
-        <q-card flat bordered class="login-card q-mt-md">
+        <q-card flat bordered class="login-card q-mt-md full-width">
           <q-card-section class="text-center">
             <div class="text-body2 text-grey-8 q-mb-sm">
               Non hai un account?
@@ -98,7 +98,7 @@
 
     <!-- Forgot Password Dialog -->
     <q-dialog v-model="showForgotPassword" persistent>
-      <q-card style="width: 100%; max-width: 400px; min-width: unset">
+      <q-card>
         <q-card-section class="row items-center">
           <div class="text-h6">
             Recupera password
@@ -188,9 +188,3 @@ async function handleForgotPassword() {
 }
 </script>
 
-<style scoped>
-.login-card {
-  width: 100%;
-  max-width: 420px;
-}
-</style>

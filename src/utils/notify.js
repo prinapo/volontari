@@ -1,3 +1,9 @@
+/**
+ * Mostra una notifica di errore tramite Quasar
+ * @param {import('quasar').QNotify} $q - Istanza di Quasar
+ * @param {string|Error} err - Errore o messaggio
+ * @param {string} [fallback='Errore'] - Messaggio di fallback
+ */
 export function notifyError($q, err, fallback = 'Errore') {
   let message = fallback
   if (typeof err === 'string') {
@@ -15,6 +21,11 @@ export function notifyError($q, err, fallback = 'Errore') {
   })
 }
 
+/**
+ * Mostra una notifica di successo tramite Quasar
+ * @param {import('quasar').QNotify} $q - Istanza di Quasar
+ * @param {string} message - Messaggio di successo
+ */
 export function notifySuccess($q, message) {
   $q.notify({ type: 'positive', message })
 }

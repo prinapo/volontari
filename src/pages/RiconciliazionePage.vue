@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md riconciliazione-page">
-    <div class="page-inner">
+    <div class="page-inner q-mx-auto">
       <div class="row items-center q-gutter-sm q-mb-md">
         <div class="text-h5 text-weight-medium">
           Da riconciliare
@@ -45,10 +45,8 @@
               expand-separator
               :label="`${props.row.nome_richiedente || ''} ${props.row.cognome_richiedente || ''}` || 'Richiedente sconosciuto'"
               :caption="props.row.email || ''"
-              :header-style="{
-                borderRadius: '12px',
-                borderLeft: `4px solid ${cardStateColor(props.row._detectState, props.row.stato)}`
-              }"
+              header-class="expansion-header"
+              :style="{ '--header-border-color': cardStateColor(props.row._detectState, props.row.stato) }"
             >
               <q-card flat bordered>
                 <q-card-section class="q-pa-sm">
@@ -91,7 +89,7 @@
                       <div class="text-caption text-grey-7">
                         Telefono
                       </div>
-                      <div><a v-if="props.row.telefono" :href="'tel:'+props.row.telefono" class="text-primary">{{ props.row.telefono }}</a><span v-else class="text-grey-5">—</span></div>
+                      <div><ContactLink v-if="props.row.telefono" type="tel" :value="props.row.telefono" /><span v-else class="text-grey-5">—</span></div>
                     </div>
                     <div class="col-6">
                       <div class="text-caption text-grey-7">
@@ -345,7 +343,7 @@
               </div>
             </template>
             <template v-else>
-              <a :href="'mailto:'+props.value" class="text-primary">{{ props.value }}</a>
+              <ContactLink type="email" :value="props.value" />
             </template>
           </q-td>
         </template>
@@ -371,7 +369,7 @@
 
         <template #body-cell-telefono="props">
           <q-td :props="props">
-            <a v-if="props.value" :href="'tel:'+props.value" class="text-primary">{{ props.value }}</a><span v-else class="text-grey-5">—</span>
+            <ContactLink v-if="props.value" type="tel" :value="props.value" /><span v-else class="text-grey-5">—</span>
           </q-td>
         </template>
 
@@ -490,7 +488,7 @@
 
       <!-- Dialog descrizione completa -->
       <q-dialog v-model="descrizioneDialog.visible">
-        <q-card style="width: 100%; max-width: 500px; min-width: unset">
+        <q-card>
           <q-card-section class="row items-center">
             <div class="text-h6">
               Descrizione
@@ -513,6 +511,7 @@
 <script setup>
 import { useQuasar } from 'quasar'
 import { onMounted, ref, computed, watch } from 'vue'
+import ContactLink from 'components/Common/ContactLink.vue'
 import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
 import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
 import RiconciliaDialog from 'components/RiconciliaDialog.vue'
@@ -704,7 +703,7 @@ function cardStateColor(detectState, stato) {
 </script>
 
 <style scoped>
-.page-inner {
-  margin: 0 auto;
+.expansion-header {
+  border-left: 4px solid var(--header-border-color, #9E9E9E);
 }
 </style>

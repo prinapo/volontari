@@ -2,7 +2,7 @@
   <q-layout view="lHh Lpr lFf">
     <q-page-container>
       <q-page class="q-pa-md submit-page">
-        <div class="page-inner">
+        <div class="page-inner page-inner--narrow q-mx-auto">
           <div class="text-center q-mb-lg">
             <div class="text-h4 text-weight-medium">
               Invio giustificativi
@@ -321,9 +321,3 @@ function resetForm() {
 }
 </script>
 
-<style scoped>
-.page-inner {
-  max-width: 640px;
-  margin: 0 auto;
-}
-</style>

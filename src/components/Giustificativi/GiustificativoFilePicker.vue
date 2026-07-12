@@ -1,13 +1,16 @@
 <template>
   <div>
     <div class="row items-center q-gutter-sm">
-      <input
+      <q-file
+        v-show="false"
         ref="fileInput"
-        type="file"
+        v-model="internalFile"
         :accept="FILE_ACCEPT"
-        hidden
-        @change="onFileChange"
-      >
+        :max-file-size="FILE_MAX_SIZE"
+        aria-label="Allega file"
+        @update:model-value="onFileChange"
+        @rejected="onRejected"
+      />
       <q-btn
         icon="attach_file"
         label="Allega file"
@@ -15,7 +18,7 @@
         :flat="!internalTouched || !modelValue"
         :outline="!modelValue"
         :class="{ 'bg-green-1': modelValue }"
-        @click="fileInput?.click()"
+        @click="fileInput?.pickFiles()"
       />
       <q-btn
         v-if="modelValue"
@@ -40,8 +43,11 @@
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
 import { ref, computed } from 'vue'
 import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
+
+const $q = useQuasar()
 
 const props = defineProps({
   modelValue: { type: File, default: null }
@@ -50,6 +56,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const fileInput = ref(null)
+const internalFile = ref(null)
 const internalTouched = ref(false)
 
 const fileBtnColor = computed(() => {
@@ -58,19 +65,24 @@ const fileBtnColor = computed(() => {
   return 'grey-7'
 })
 
-function onFileChange(event) {
-  const file = event.target.files?.[0]
+function onFileChange(file) {
   if (file) {
-    if (file.size > FILE_MAX_SIZE) return
     emit('update:modelValue', file)
     internalTouched.value = true
   }
-  event.target.value = ''
+  internalFile.value = null
+}
+
+function onRejected() {
+  $q.notify({
+    type: 'negative',
+    message: 'Il file supera la dimensione massima consentita (5MB)',
+    timeout: 3000
+  })
 }
 
 function removeFile() {
   emit('update:modelValue', null)
-  if (fileInput.value) fileInput.value.value = ''
 }
 
 function touch() {

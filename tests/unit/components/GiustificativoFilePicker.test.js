@@ -1,6 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { quasarMount } from '../quasar-mount'
 import GiustificativoFilePicker from 'src/components/Giustificativi/GiustificativoFilePicker.vue'
+
+vi.mock('quasar', () => ({
+  useQuasar: () => ({ notify: vi.fn() })
+}))
 
 const bigFile = new File(['a'.repeat(10)], 'big.pdf')
 Object.defineProperty(bigFile, 'size', { value: 6 * 1024 * 1024 })
@@ -18,26 +22,27 @@ describe('GiustificativoFilePicker', () => {
     expect(wrapper.vm.fileBtnColor).toBe('green')
   })
 
-  it('emits selected file and resets the input value', () => {
+  it('emits selected file via onFileChange', () => {
     const wrapper = quasarMount(GiustificativoFilePicker)
     const file = new File(['a'], 'ok.pdf')
-    const event = { target: { files: [file], value: 'tmp' } }
 
-    wrapper.vm.onFileChange(event)
+    wrapper.vm.onFileChange(file)
 
     expect(wrapper.emitted('update:modelValue')).toEqual([[file]])
-    expect(event.target.value).toBe('')
   })
 
-  it('ignores oversized files and can remove current file', async () => {
+  it('resets internalFile after file change', () => {
+    const wrapper = quasarMount(GiustificativoFilePicker)
+    wrapper.vm.onFileChange(new File(['a'], 'ok.pdf'))
+
+    expect(wrapper.vm.internalFile).toBeNull()
+  })
+
+  it('removes current file', () => {
     const wrapper = quasarMount(GiustificativoFilePicker, {
       props: { modelValue: new File(['a'], 'ok.pdf') }
     })
 
-    wrapper.vm.onFileChange({ target: { files: [bigFile], value: 'tmp' } })
-    expect(wrapper.emitted('update:modelValue')).toBeFalsy()
-
-    wrapper.vm.fileInput = { value: 'tmp' }
     wrapper.vm.removeFile()
     expect(wrapper.emitted('update:modelValue')).toEqual([[null]])
   })

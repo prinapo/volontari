@@ -406,14 +406,15 @@ describe('pagamenti store', () => {
     const propostaSpy = vi.spyOn(store, 'ricalcolaProposta').mockResolvedValue()
     const initSpy = vi.spyOn(store, 'init').mockResolvedValue()
 
-    await store.segnaAnnullato('p-1', 'motivo')
+    await store.segnaAnnullato('p-1')
 
     expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', {
       Stato: 'annullato',
-      NoteEsito: 'motivo'
+      Batch: null,
+      NoteEsito: 'Rimosso dal gruppo'
     })
     expect(totalsSpy).toHaveBeenCalledWith(7)
-    expect(propostaSpy).toHaveBeenCalledWith(7)
+    expect(propostaSpy).toHaveBeenCalledWith(7, { iban: undefined, intestatario: undefined })
     expect(initSpy).toHaveBeenCalled()
   })
 
@@ -427,17 +428,19 @@ describe('pagamenti store', () => {
     vi.spyOn(store, 'ricalcolaProposta').mockResolvedValue()
     vi.spyOn(store, 'init').mockResolvedValue()
 
-    await store.segnaAnnullato('p-2', 'retry')
+    await store.segnaAnnullato('p-2')
     expect(mockUpdatePagamento).toHaveBeenCalledWith('p-2', {
       Stato: 'annullato',
-      NoteEsito: 'retry'
+      Batch: null,
+      NoteEsito: 'Rimosso dal gruppo'
     })
+    expect(store.error).toBeFalsy()
 
     mockGetPagamenti.mockResolvedValueOnce({
       data: { data: [{ id: 'p-3', Stato: 'pagato', Progetto: 9 }] }
     })
-    await store.segnaAnnullato('p-3', 'nope')
-    expect(store.error).toBe('Solo pagamenti in_pagamento o falliti possono essere annullati')
+    await store.segnaAnnullato('p-3')
+    expect(store.error).toBe('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
   })
 
   it('creaBatch rejects non-proposed payments and insufficient budget', async () => {
@@ -580,57 +583,6 @@ describe('pagamenti store', () => {
     mockGetListe.mockRejectedValueOnce(new Error('fail'))
     await store.fetchListe()
     expect(store.liste).toEqual([])
-  })
-
-  it('generaLista uploads CSV, creates list and refreshes collection', async () => {
-    mockVerificaStore.filteredRows = [
-      {
-        idFamiglia: 'F1',
-        famiglia: 'Famiglia "Uno"',
-        beneficiario: 'Mario Rossi',
-        intestatario: 'Mario Rossi',
-        iban: 'IT00X',
-        totaleRimborsabile: 123.45,
-        giustificativi: [{ Stato: 'verificato' }]
-      },
-      {
-        idFamiglia: 'F2',
-        famiglia: 'Da scartare',
-        beneficiario: 'No Export',
-        intestatario: '',
-        iban: '',
-        totaleRimborsabile: 99,
-        giustificativi: []
-      }
-    ]
-    mockUploadCsv.mockResolvedValueOnce('file-1')
-    mockCreateLista.mockResolvedValueOnce({ id: 'lista-1' })
-    mockGetListe.mockResolvedValueOnce([{ id: 'lista-1', Nome: 'Lista giugno' }])
-    const store = usePagamentiStore()
-
-    await store.generaLista('Lista giugno')
-
-    expect(mockUploadCsv).toHaveBeenCalledWith(expect.stringContaining('"Famiglia ""Uno"""'), 'Lista giugno')
-    expect(mockCreateLista).toHaveBeenCalledWith(
-      expect.objectContaining({ Nome: 'Lista giugno', File: 'file-1', Totale: 123.45, ConteggioRighe: 1 })
-    )
-    expect(store.liste).toEqual([{ id: 'lista-1', Nome: 'Lista giugno' }])
-  })
-
-  it('generaLista sets error and throws when no row is exportable', async () => {
-    mockVerificaStore.filteredRows = [
-      {
-        totaleRimborsabile: 0,
-        iban: '',
-        intestatario: '',
-        giustificativi: [{ Stato: 'inviato' }]
-      }
-    ]
-    const store = usePagamentiStore()
-
-    await expect(store.generaLista('Vuota')).rejects.toThrow('Nessuna riga esportabile trovata')
-    expect(store.error).toBe('Nessuna riga esportabile trovata')
-    expect(store.loading).toBe(false)
   })
 
   it('eliminaLista deletes optional file and keeps error on failure', async () => {

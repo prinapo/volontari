@@ -105,20 +105,6 @@
           <q-item-section>Gestione</q-item-section>
         </q-item>
 
-        <q-item
-          v-if="authStore.canAdmin"
-          v-ripple
-          clickable
-          :active="$route.name === 'Deduplica'"
-          active-class="text-white"
-          to="/deduplica"
-        >
-          <q-item-section avatar>
-            <q-icon name="cleaning_services" />
-          </q-item-section>
-          <q-item-section>Duplicati</q-item-section>
-        </q-item>
-
         <q-item-label v-if="authStore.canAdmin" header class="q-mt-md">
           Amministrazione
         </q-item-label>
@@ -144,7 +130,7 @@
     </q-page-container>
 
     <q-dialog v-model="showChangePassword" persistent>
-      <q-card style="width: 100%; max-width: 400px; min-width: unset">
+      <q-card>
         <q-card-section class="row items-center">
           <div class="text-h6">
             Cambia password

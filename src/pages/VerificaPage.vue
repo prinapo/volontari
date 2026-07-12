@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md verifica-page">
-    <div class="page-inner">
+    <div class="page-inner q-mx-auto">
       <q-tabs v-model="verificaTab" class="q-mb-md">
         <q-tab name="rendicontazione" label="Rendicontazione" />
         <q-tab v-if="authStore.canManager" name="pagamenti" label="Pagamenti" />
@@ -57,38 +57,18 @@
               />
             </div>
           </div>
-          <div class="summary-grid q-mb-md">
-            <div class="summary-cell">
-              <div class="text-caption text-grey-7">
-                Famiglie/progetti
-              </div>
-              <div class="text-h6">
-                {{ filteredRows.length }}
-              </div>
-            </div>
-            <div class="summary-cell">
-              <div class="text-caption text-grey-7">
-                Rendicontato
-              </div>
-              <div class="text-h6 text-primary">
-                {{ formatCurrency(selectedTotals.rendicontato) }}
-              </div>
-            </div>
-            <div class="summary-cell">
-              <div class="text-caption text-grey-7">
-                Rimborsabile 80%
-              </div>
-              <div class="text-h6 text-positive">
-                {{ formatCurrency(selectedTotals.rimborsabile) }}
-              </div>
-            </div>
-            <div class="summary-cell">
-              <div class="text-caption text-grey-7">
-                Pronte
-              </div>
-              <div class="text-h6">
-                {{ prontiCount }}
-              </div>
+          <div class="row q-col-gutter-md q-mb-md">
+            <div v-for="s in summary" :key="s.label" class="col-6 col-sm-3">
+              <q-card flat bordered class="fit">
+                <q-card-section class="text-center">
+                  <div class="text-caption text-grey-7">
+                    {{ s.label }}
+                  </div>
+                  <div class="text-h6" :class="s.color ? 'text-' + s.color : ''">
+                    {{ s.value }}
+                  </div>
+                </q-card-section>
+              </q-card>
             </div>
           </div>
 
@@ -98,9 +78,10 @@
 
           <q-table
             v-model:pagination="pagination"
+            v-model:expanded="expandedRows"
             flat
             bordered
-            class="verifica-table"
+            class="verifica-table bg-white"
             row-key="idProgetto"
             :rows="filteredRows"
             :columns="columns"
@@ -125,7 +106,7 @@
                   expand-separator
                   :label="props.row.famiglia || 'Famiglia senza nome'"
                   :caption="`${props.row.beneficiario || ''} — Bando ${props.row.annoBando}`"
-                  :header-style="{ borderRadius: '12px' }"
+                  header-class="expansion-header"
                   @show="loadFamigliaContatti(props.row.idFamiglia)"
                 >
                   <q-card flat bordered>
@@ -425,12 +406,12 @@ icon="edit"
                     flat
                     round
                     dense
-                    :icon="props.expand ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+                    :icon="expandedRows.includes(props.row.idProgetto) ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
                     data-testid="expand-row"
-                    :aria-label="props.expand ? 'Chiudi' : 'Apri dettagli'"
-                    @click="toggleExpand(props)"
+                    :aria-label="expandedRows.includes(props.row.idProgetto) ? 'Chiudi' : 'Apri dettagli'"
+                    @click="toggleExpand(props.row.idProgetto)"
                   >
-                    <q-tooltip>{{ props.expand ? 'Chiudi' : 'Apri dettagli' }}</q-tooltip>
+                    <q-tooltip>{{ expandedRows.includes(props.row.idProgetto) ? 'Chiudi' : 'Apri dettagli' }}</q-tooltip>
                   </q-btn>
                 </q-td>
                 <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -531,9 +512,12 @@ icon="edit"
                   </template>
                 </q-td>
               </q-tr>
-              <q-tr v-show="props.expand" :props="props">
+            </template>
+
+            <template #expanded-row="props">
+              <q-tr :props="props">
                 <q-td colspan="100%" class="q-pa-none">
-                  <div class="expandable-content">
+                    <div class="expandable-content bg-grey-1">
                     <div class="q-px-md q-pt-md q-pb-xs">
                       <div class="row q-col-gutter-md q-mb-md">
                         <div class="col-6">
@@ -778,7 +762,7 @@ icon="edit"
       />
 
       <q-dialog v-model="chiudiProgettoDialog" persistent>
-        <q-card style="width: 100%; max-width: 400px; min-width: unset">
+        <q-card>
           <q-card-section class="row items-center">
             <div class="text-h6">Chiudi progetto</div>
             <q-space />
@@ -819,7 +803,7 @@ aria-label="Chiudi" />
       </q-dialog>
 
       <q-dialog v-model="rejectDialog" persistent>
-        <q-card class="reject-dialog-card">
+        <q-card class="q-pa-lg">
           <q-card-section>
             <div class="text-h6">
               Rifiuta giustificativo
@@ -834,7 +818,6 @@ aria-label="Chiudi" />
               v-model="rejectNota"
               outlined
               dense
-              autofocus
               label="Motivazione del rifiuto *"
               type="textarea"
               :rules="[val => !!val || 'Inserisci una motivazione']"
@@ -966,6 +949,13 @@ const prontiCount = computed(() => {
   ).length
 })
 
+const summary = computed(() => [
+  { label: 'Famiglie/progetti', value: String(filteredRows.value.length), color: '' },
+  { label: 'Rendicontato', value: formatCurrency(selectedTotals.value.rendicontato), color: 'primary' },
+  { label: 'Rimborsabile 80%', value: formatCurrency(selectedTotals.value.rimborsabile), color: 'positive' },
+  { label: 'Pronte', value: String(prontiCount.value), color: '' }
+])
+
 onMounted(() => {
   store.fetchAnni()
   loadData()
@@ -1028,9 +1018,17 @@ async function loadFamigliaContatti(famigliaId) {
   }
 }
 
-function toggleExpand(props) {
-  props.expand = !props.expand
-  if (props.expand) loadFamigliaContatti(props.row.idFamiglia)
+const expandedRows = ref([])
+
+function toggleExpand(progettoId) {
+  const idx = expandedRows.value.indexOf(progettoId)
+  if (idx === -1) {
+    expandedRows.value.push(progettoId)
+    const row = filteredRows.value.find(r => r.idProgetto === progettoId)
+    if (row) loadFamigliaContatti(row.idFamiglia)
+  } else {
+    expandedRows.value.splice(idx, 1)
+  }
 }
 
 function openBancariDialog(row) {
@@ -1169,50 +1167,3 @@ function openRowDetail(row) {
   detailDialog.value = true
 }
 </script>
-
-<style scoped>
-.page-inner {
-  margin: 0 auto;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.summary-cell {
-  min-height: 76px;
-  padding: 12px 14px;
-  border: 1px solid #dedede;
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.verifica-table {
-  background: #ffffff;
-}
-
-.expandable-content {
-  background: #f8f9fa;
-  border-top: 1px solid #dedede;
-}
-
-.giust-sub-list .giust-item {
-  border-bottom: 1px solid #eee;
-}
-
-.giust-sub-list .giust-item:last-child {
-  border-bottom: none;
-}
-
-.reject-dialog-card {
-  min-width: 400px;
-}
-
-@media (max-width: 720px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-</style>

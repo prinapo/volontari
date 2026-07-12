@@ -8,7 +8,7 @@
         placeholder="Cerca per nome famiglia..."
         clearable
         debounce="300"
-        class="col famiglia-search-input"
+        class="col"
         @update:model-value="onSearchChange"
       >
         <template #prepend>
@@ -63,7 +63,7 @@
             expand-separator
             :label="props.row.Nome_Famiglia || 'Famiglia senza nome'"
             :caption="(props.row.HasVolontario ? '✅' : '❌') + ' Volontario'"
-            :header-style="{ borderRadius: '12px' }"
+            header-class="expansion-header"
             @show="loadExpanded(props.row)"
           >
             <q-card flat bordered>
@@ -109,7 +109,7 @@
                         </q-item-label>
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                            <q-icon name="email" size="xs" class="q-mr-xs" /><ContactLink type="email" :value="em.email_address" />
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                         </q-item-label>
@@ -127,7 +127,7 @@
                         </q-item-label>
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" /><a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                            <q-icon name="email" size="xs" class="q-mr-xs" /><ContactLink type="email" :value="em.email_address" />
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                         </q-item-label>
@@ -244,19 +244,19 @@
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
                             <q-icon name="email" size="xs" class="q-mr-xs" />
-                            <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                            <ContactLink type="email" :value="em.email_address" />
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                           <template v-if="c.Contatto?.Numero_di_cellulare">
                             <span class="q-ml-sm">
                               <q-icon name="smartphone" size="xs" class="q-mr-xs" />
-                              <a :href="'tel:'+c.Contatto.Numero_di_cellulare" class="text-primary">{{ c.Contatto.Numero_di_cellulare }}</a>
+                              <ContactLink type="tel" :value="c.Contatto.Numero_di_cellulare" />
                             </span>
                           </template>
                           <template v-if="c.Contatto?.Numero_di_telefono">
                             <span class="q-ml-sm">
                               <q-icon name="phone" size="xs" class="q-mr-xs" />
-                              <a :href="'tel:'+c.Contatto.Numero_di_telefono" class="text-primary">{{ c.Contatto.Numero_di_telefono }}</a>
+                              <ContactLink type="tel" :value="c.Contatto.Numero_di_telefono" />
                             </span>
                           </template>
                         </q-item-label>
@@ -281,19 +281,19 @@
                         <q-item-label caption lines="1">
                           <template v-for="em in c._emails" :key="em.email_address">
                             <q-icon name="email" size="xs" class="q-mr-xs" />
-                            <a :href="'mailto:'+em.email_address" class="text-primary">{{ em.email_address }}</a>
+                            <ContactLink type="email" :value="em.email_address" />
                             <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                           </template>
                           <template v-if="c.Contatto?.Numero_di_cellulare">
                             <span class="q-ml-sm">
                               <q-icon name="smartphone" size="xs" class="q-mr-xs" />
-                              <a :href="'tel:'+c.Contatto.Numero_di_cellulare" class="text-primary">{{ c.Contatto.Numero_di_cellulare }}</a>
+                              <ContactLink type="tel" :value="c.Contatto.Numero_di_cellulare" />
                             </span>
                           </template>
                           <template v-if="c.Contatto?.Numero_di_telefono">
                             <span class="q-ml-sm">
                               <q-icon name="phone" size="xs" class="q-mr-xs" />
-                              <a :href="'tel:'+c.Contatto.Numero_di_telefono" class="text-primary">{{ c.Contatto.Numero_di_telefono }}</a>
+                              <ContactLink type="tel" :value="c.Contatto.Numero_di_telefono" />
                             </span>
                           </template>
                         </q-item-label>
@@ -323,6 +323,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import ContactLink from 'components/Common/ContactLink.vue'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
@@ -464,9 +465,3 @@ function onSaved() {
   // nothing to refresh
 }
 </script>
-
-<style scoped>
-.famiglia-search-input {
-  max-width: 320px;
-}
-</style>

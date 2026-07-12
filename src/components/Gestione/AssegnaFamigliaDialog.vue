@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="visible" persistent>
-    <q-card style="width: 100%; max-width: 800px; min-width: unset">
+    <q-card>
       <q-card-section class="row items-center">
         <div class="text-h6">
           Associa a famiglia
@@ -80,7 +80,7 @@
             dense
             outlined
             label="Ruolo"
-            class="col-12 col-sm-auto assegna-ruolo-min-width"
+            class="col-12 col-sm-auto select-min-width"
           />
           <q-select
             v-model="selectedFamiglia"
@@ -221,8 +221,3 @@ async function handleRemove(row) {
 }
 </script>
 
-<style scoped>
-.assegna-ruolo-min-width {
-  min-width: 120px;
-}
-</style>

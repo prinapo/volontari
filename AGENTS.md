@@ -68,18 +68,19 @@ Tabella basata sulle permissions Directus verificate sulle collections (giu 2026
 Regola: **se il ruolo non ha permessi di lettura su una collection, l'app non deve mostrare l'interfaccia che chiama quella collection**.
 
 | Collection / Feature | Administrator | Gestore Volontari | GestoreVerifica | Verificatore | Volontario |
-|---|---|---|---|---|---|
-| Pagamenti | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
-| Associazioni | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
-| BatchPagamenti | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
-| ListePagamenti | ✅ 200 | ❌ 403 | ❌ 403 | ✅ 200 | ❌ 403 |
-| ErrorLog | ✅ 200 | ✅ 200 | ✅ 200 | ❌ 403 | ❌ 403 |
-| Famiglie_Contatti | ✅ 200 | ✅ 200 | ✅ 200 | ✅ 200 | ✅ 200 |
-| Progetti | ✅ 200 | ✅ 200 | ✅ 200 | — | — |
-| Famiglie | ✅ 200 | ✅ 200 | ✅ 200 | ✅ 200 | — |
-| Contatti | ❌ 403 | — | — | — | — |
+| -------------------- | ------------- | ----------------- | --------------- | ------------ | ---------- |
+| Pagamenti            | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
+| Associazioni         | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
+| BatchPagamenti       | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
+| ListePagamenti       | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
+| ErrorLog             | ✅ 200        | ✅ 200            | ✅ 200          | ❌ 403       | ❌ 403     |
+| Famiglie_Contatti    | ✅ 200        | ✅ 200            | ✅ 200          | ✅ 200       | ✅ 200     |
+| Progetti             | ✅ 200        | ✅ 200            | ✅ 200          | —            | —          |
+| Famiglie             | ✅ 200        | ✅ 200            | ✅ 200          | ✅ 200       | —          |
+| Contatti             | ❌ 403        | —                 | —               | —            | —          |
 
 **Permessi Directus attuali** (giu 2026):
+
 - **Verificatore**: lettura + modifica su `Pagamenti`; lettura su `Associazioni`; lettura + creazione su `BatchPagamenti` + `ListePagamenti`
 - **Administrator**: full su tutte
 - **ErrorLog**: admin + gestori hanno accesso; verificatore **no** — l'interceptor Axios che logga errori 4xx tenta POST ma fallisce con 403 silenziato nel catch; browser mostra console.error ma non blocca il flusso

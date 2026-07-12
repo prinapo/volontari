@@ -12,8 +12,7 @@ const authStoreState = {
   isAuthenticated: false,
   userName: '',
   hasFamiglieAccess: false,
-  canVerifica: false,
-  canGestione: false,
+  canManager: false,
   canAdmin: false,
   logout: (...a) => mockLogout(...a)
 }
@@ -44,8 +43,7 @@ describe('AppLayout', () => {
     authStoreState.isAuthenticated = false
     authStoreState.userName = ''
     authStoreState.hasFamiglieAccess = false
-    authStoreState.canVerifica = false
-    authStoreState.canGestione = false
+    authStoreState.canManager = false
     authStoreState.canAdmin = false
   })
 
@@ -68,17 +66,17 @@ describe('AppLayout', () => {
     expect(wrapper.text()).toContain('Famiglie')
   })
 
-  it('shows Verifica when canVerifica', () => {
+  it('shows Verifica when canManager', () => {
     authStoreState.isAuthenticated = true
-    authStoreState.canVerifica = true
+    authStoreState.canManager = true
     const wrapper = quasarMount(AppLayout)
     expect(wrapper.text()).toContain('Verifica')
     expect(wrapper.text()).toContain('Riconciliazione')
   })
 
-  it('shows Gestione when canGestione', () => {
+  it('shows Gestione when canManager', () => {
     authStoreState.isAuthenticated = true
-    authStoreState.canGestione = true
+    authStoreState.canManager = true
     const wrapper = quasarMount(AppLayout)
     expect(wrapper.text()).toContain('Gestione')
   })
@@ -88,7 +86,6 @@ describe('AppLayout', () => {
     authStoreState.canAdmin = true
     const wrapper = quasarMount(AppLayout)
     expect(wrapper.text()).toContain('User Admin')
-    expect(wrapper.text()).toContain('Duplicati')
   })
 
   it('calls logout and redirects to login', async () => {

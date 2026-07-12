@@ -8,7 +8,7 @@ const mockCorreggiDati = vi.fn()
 const mockSegnaPagato = vi.fn()
 const mockSegnaFallito = vi.fn()
 const mockSegnaAnnullato = vi.fn()
-const mockGeneraLista = vi.fn()
+const mockRipristinaProposto = vi.fn()
 const mockEliminaLista = vi.fn()
 const mockResiduo = vi.fn()
 const mockNotifySuccess = vi.fn()
@@ -29,7 +29,7 @@ const pagamentiState = {
   segnaPagato: (...args) => mockSegnaPagato(...args),
   segnaFallito: (...args) => mockSegnaFallito(...args),
   segnaAnnullato: (...args) => mockSegnaAnnullato(...args),
-  generaLista: (...args) => mockGeneraLista(...args),
+  ripristinaProposto: (...args) => mockRipristinaProposto(...args),
   eliminaLista: (...args) => mockEliminaLista(...args),
   residuoAssociazione: (...args) => mockResiduo(...args)
 }
@@ -119,7 +119,6 @@ describe('PagamentiTab', () => {
       createObjectURL: vi.fn(() => 'blob:test'),
       revokeObjectURL: vi.fn()
     })
-    vi.stubGlobal('prompt', vi.fn())
   })
 
   afterEach(() => {
@@ -176,85 +175,52 @@ describe('PagamentiTab', () => {
     expect(mockNotifyError).toHaveBeenCalled()
   })
 
-  it('edits failed payments and creates a batch from falliti', async () => {
-    mockCreaBatch.mockResolvedValue({})
+  it('handles payment status transitions', async () => {
+    mockSegnaPagato.mockResolvedValue({})
+    mockSegnaFallito.mockResolvedValue({})
+    mockSegnaAnnullato.mockResolvedValue({})
+    const wrapper = quasarMount(PagamentiTab)
+
+    await wrapper.vm.handlePagato({ id: 11 })
+    expect(mockSegnaPagato).toHaveBeenCalledWith(11)
+
+    mockDialog.mockImplementationOnce(() => ({
+      onOk(cb) {
+        cb('IBAN errato')
+        return this
+      }
+    }))
+    await wrapper.vm.handleFallito({ id: 11 })
+    expect(mockSegnaFallito).toHaveBeenCalledWith(11, 'IBAN errato')
+
+    await wrapper.vm.handleAnnullato({ id: 11 })
+    expect(mockSegnaAnnullato).toHaveBeenCalledWith(11)
+    expect(mockNotifySuccess).toHaveBeenCalled()
+  })
+
+  it('handles ripristino proposto for falliti', async () => {
     mockCorreggiDati.mockResolvedValue({})
+    mockRipristinaProposto.mockResolvedValue({})
     const wrapper = quasarMount(PagamentiTab)
     const row = { id: 21, IBAN: 'ITX', Intestatario: 'Luca' }
 
     wrapper.vm.editFallito(row, 'IBAN', 'IT 99')
     wrapper.vm.editFallito(row, 'Intestatario', 'Mario Rossi')
     wrapper.vm.selectedFalliti = [row]
-    wrapper.vm.batchAssociazioneFalliti = 'Assoc 2'
 
-    await wrapper.vm.creaBatchDaFalliti()
+    await wrapper.vm.handleRipristinaProposti()
 
     expect(mockCorreggiDati).toHaveBeenCalledWith(21, {
       iban: 'IT 99',
       intestatario: 'Mario Rossi'
     })
-    expect(mockCreaBatch).toHaveBeenCalledWith({
-      nome: 'Falliti 2026-06-30',
-      associazione: 'Assoc 2',
-      pagamentoIds: [21]
-    })
-    expect(wrapper.vm.selectedFalliti).toEqual([])
-    expect(mockNotifySuccess).toHaveBeenCalledWith(expect.anything(), 'Batch creato con pagamenti falliti')
+    expect(mockRipristinaProposto).toHaveBeenCalledWith(21)
+    expect(mockNotifySuccess).toHaveBeenCalledWith(expect.anything(), '1 pagamenti ripristinati a Bonifici')
   })
 
-  it('handles payment status transitions, including prompt cancellations', async () => {
-    mockSegnaPagato.mockResolvedValue({})
-    mockSegnaFallito.mockResolvedValue({})
-    mockSegnaAnnullato.mockRejectedValueOnce(new Error('boom'))
-    const wrapper = quasarMount(PagamentiTab)
-
-    await wrapper.vm.handlePagato({ id: 11 })
-    expect(mockSegnaPagato).toHaveBeenCalledWith(11)
-
-    prompt.mockReturnValueOnce(null)
-    await wrapper.vm.handleFallito({ id: 11 })
-    expect(mockSegnaFallito).not.toHaveBeenCalled()
-
-    prompt.mockReturnValueOnce('IBAN errato')
-    await wrapper.vm.handleFallito({ id: 11 })
-    expect(mockSegnaFallito).toHaveBeenCalledWith(11, 'IBAN errato')
-
-    prompt.mockReturnValueOnce('duplicato')
-    await wrapper.vm.handleAnnullato({ id: 11 })
-    expect(mockSegnaAnnullato).toHaveBeenCalledWith(11, 'duplicato')
-    expect(mockNotifyError).toHaveBeenCalled()
-  })
-
-  it('exports csv only when filtered rows exist', async () => {
-    const wrapper = quasarMount(PagamentiTab)
-
-    wrapper.vm.batchFilter = 'none'
-    await wrapper.vm.exportCsv()
-    expect(anchor.click).not.toHaveBeenCalled()
-
-    wrapper.vm.batchFilter = 'b1'
-    await wrapper.vm.exportCsv()
-    expect(URL.createObjectURL).toHaveBeenCalled()
-    expect(anchor.download).toBe('batch-b1.csv')
-    expect(anchor.click).toHaveBeenCalled()
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test')
-  })
-
-  it('generates, downloads and deletes export lists', async () => {
-    mockGeneraLista.mockResolvedValue({})
+  it('deletes export lists', async () => {
     mockEliminaLista.mockResolvedValue({})
     const wrapper = quasarMount(PagamentiTab)
-    wrapper.vm.listaNome = 'Lista / Test'
-    wrapper.vm.showGeneraListaDialog = true
-
-    await wrapper.vm.generaLista()
-    expect(mockGeneraLista).toHaveBeenCalledWith('Lista / Test')
-    expect(wrapper.vm.showGeneraListaDialog).toBe(false)
-    expect(wrapper.vm.listaNome).toBe('')
-
-    wrapper.vm.scaricaLista({ Nome: 'Lista / Test', File: 'file-1' })
-    expect(anchor.href).toBe('https://files/file-1')
-    expect(anchor.download).toBe('Lista___Test.csv')
 
     mockDialog.mockReturnValueOnce(okDialog(callback => callback()))
     await wrapper.vm.confermaEliminaLista({ id: 'l1', Nome: 'Lista 1', File: 'file-1' })

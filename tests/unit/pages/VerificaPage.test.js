@@ -32,7 +32,7 @@ const verificaState = {
   rejectGiustificativo: (...a) => mockRejectGiustificativo(...a)
 }
 
-const authState = { canVerifica: true, initialized: true }
+const authState = { canManager: true, initialized: true }
 
 vi.mock('stores/verifica.store', () => ({
   useVerificaStore: () => verificaState
@@ -205,12 +205,13 @@ describe('VerificaPage', () => {
   })
 
   it('toggles expansion and manages bancari dialog save success/error', async () => {
+    mockLoadFamigliaContacts.mockResolvedValueOnce({ genitori: [], volontari: [] })
     mockUpdateBancari.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom'))
     const wrapper = mountPage()
-    const props = { expand: false, row: { idFamiglia: 'fam-1' } }
+    verificaState.rows = [{ idProgetto: 'p1', idFamiglia: 'fam-1' }]
 
-    wrapper.vm.toggleExpand(props)
-    expect(props.expand).toBe(true)
+    wrapper.vm.toggleExpand('p1')
+    expect(wrapper.vm.expandedRows).toEqual(['p1'])
 
     wrapper.vm.openBancariDialog({ idFamiglia: 'fam-1' })
     expect(wrapper.vm.bancariDialog).toBe(true)
@@ -235,7 +236,7 @@ describe('VerificaPage', () => {
     wrapper.vm.chiudiProgettoNota = 'completato'
     await wrapper.vm.handleChiudiProgetto()
     expect(mockChiudiProgetto).toHaveBeenCalledWith('p1', { automatica: false, motivo: 'completato' })
-    expect(mockFetchAll).toHaveBeenCalled()
+    expect(mockFetchAllPages).toHaveBeenCalled()
 
     await wrapper.vm.handleVerify('p1', { id: 'g1' })
     expect(mockVerifyGiustificativo).toHaveBeenCalledWith('p1', 'g1')

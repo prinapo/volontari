@@ -49,7 +49,9 @@ vi.mock('src/services/contatti.service', () => ({
 vi.mock('src/services/email.service', () => ({
   emailService: {
     create: (...a) => mockCreateEmail(...a),
+    createSafe: (...a) => mockCreateEmail(...a),
     update: (...a) => mockUpdateEmail(...a),
+    updateSafe: (...a) => mockUpdateEmail(...a),
     getRecordByContatto: (...a) => mockGetEmailRecord(...a)
   }
 }))

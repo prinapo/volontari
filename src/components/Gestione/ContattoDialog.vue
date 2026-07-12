@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="visible" persistent>
-    <q-card style="width: 100%; max-width: 700px; min-width: unset">
+    <q-card>
       <q-card-section class="row items-center">
         <div class="text-h6">
           {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
@@ -240,13 +240,13 @@ async function onEmailBlur(em, _idx) {
   if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
   if (em.id) {
     try {
-      await emailService.update(em.id, { email_address: em.email_address.toLowerCase() })
+      await emailService.updateSafe(em.id, { email_address: em.email_address.toLowerCase() })
     } catch (error) {
       notifyError($q, error, "Errore nell'aggiornamento dell'email")
     }
   } else {
     try {
-      const res = await emailService.create({
+      const res = await emailService.createSafe({
         email_address: em.email_address.toLowerCase(),
         Contatto_Relation: props.editItem.id_contatto,
         Primary: em.Primary
@@ -266,9 +266,9 @@ async function saveEmails(contattoId) {
   try {
     for (const em of emails.value) {
       if (em.id && em.email_address) {
-        await emailService.update(em.id, { email_address: em.email_address.toLowerCase(), Primary: em.Primary })
+        await emailService.updateSafe(em.id, { email_address: em.email_address.toLowerCase(), Primary: em.Primary })
       } else if (!em.id && em.email_address) {
-        await emailService.create({
+        await emailService.createSafe({
           email_address: em.email_address.toLowerCase(),
           Contatto_Relation: contattoId,
           Primary: em.Primary

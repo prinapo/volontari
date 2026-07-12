@@ -33,7 +33,9 @@ export const useGestioneStore = defineStore('gestione', {
             const ruoloId = rolesRes.data.data?.[0]?.id
             if (ruoloId) await usersService.update(contatto.user_id, { role: ruoloId })
           }
-        } catch { /* utente non trovato o errore — skip */ }
+        } catch {
+          /* utente non trovato o errore — skip */
+        }
         return { success: true, contatto }
       }
 
@@ -148,7 +150,7 @@ export const useGestioneStore = defineStore('gestione', {
         })
         const contattoId = contattoRes.data.data?.id_contatto
         if (contattoId && data.Email) {
-          await emailService.create({
+          await emailService.createSafe({
             email_address: data.Email.toLowerCase(),
             Contatto_Relation: contattoId,
             Primary: true
@@ -187,8 +189,8 @@ export const useGestioneStore = defineStore('gestione', {
           const emailRes = await emailService.getRecordByContatto(id)
           const existing = emailRes.data.data?.[0]
           await (existing
-            ? emailService.update(existing.id, { email_address: newEmail.toLowerCase() })
-            : emailService.create({
+            ? emailService.updateSafe(existing.id, { email_address: newEmail.toLowerCase() })
+            : emailService.createSafe({
                 email_address: newEmail.toLowerCase(),
                 Contatto_Relation: id,
                 Primary: true
