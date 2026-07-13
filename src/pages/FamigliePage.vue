@@ -131,7 +131,9 @@ const allocato = computed(() => {
 })
 
 const totaleGiustificativi = computed(() => {
-  return giustificativiStore.items.reduce((sum, item) => sum + (Number.parseFloat(item.Importo) || 0), 0)
+  return giustificativiStore.items
+    .filter(i => !i.Invalidato)
+    .reduce((sum, item) => sum + (Number.parseFloat(item.Importo) || 0), 0)
 })
 
 const totaleRimborsabile = computed(() => {

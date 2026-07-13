@@ -19,6 +19,7 @@ function toNumber(value) {
 }
 
 function isCountedInTotals(item) {
+  if (item.Invalidato) return false
   const stato = String(item.Stato || '').toLowerCase()
   return stato === 'inviato' || stato === 'verificato'
 }
