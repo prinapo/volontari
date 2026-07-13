@@ -341,7 +341,6 @@ describe('pagamenti store', () => {
   })
 
   it('inviaNotificaPagamento logs errors when email delivery fails', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockGetProgettoById.mockResolvedValueOnce({ data: { data: { id_progetto: 1 } } })
     mockGetFamigliaVolontari.mockResolvedValueOnce({
       data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
@@ -357,8 +356,7 @@ describe('pagamenti store', () => {
       Importo: 100,
       NotificaInviata: false
     })
-    expect(errorSpy).toHaveBeenCalled()
-    errorSpy.mockRestore()
+    expect(store.error).toBeTruthy()
   })
 
   it('fetchAssociazioni handles error silently', async () => {

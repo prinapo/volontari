@@ -3,9 +3,7 @@ import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
-import {
-  STORAGE_KEYS
-} from 'src/utils/constants'
+import { STORAGE_KEYS } from 'src/utils/constants'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 
@@ -51,7 +49,9 @@ export const useAuthStore = defineStore('auth', {
       ok: true,
       discrepancies: [],
       lastChecked: null
-    }
+    },
+    isImpersonating: false,
+    impersonatedUserId: null
   }),
 
   getters: {
@@ -66,6 +66,10 @@ export const useAuthStore = defineStore('auth', {
     canAdmin: state => {
       const roleName = normalizeRoleName(state.user?.role)
       return ADMIN_ROLE_NAMES.includes(roleName)
+    },
+    canImpersonate: state => {
+      const roleName = normalizeRoleName(state.user?.role)
+      return ADMIN_ROLE_NAMES.includes(roleName) && !state.isImpersonating
     },
     userName: state => {
       if (state.contatto) {
@@ -82,14 +86,23 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async initFromStorage() {
-      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-      if (token && refreshToken) {
-        this.token = token
-        this.refreshToken = refreshToken
-        await this.fetchUserData()
+      try {
+        const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+        const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+        const adminJwt = sessionStorage.getItem('admin_jwt')
+        if (adminJwt) {
+          this.isImpersonating = true
+        }
+        if (token) {
+          this.token = token
+          if (refreshToken) this.refreshToken = refreshToken
+          await this.fetchUserData()
+        }
+      } catch {
+        this.logout()
+      } finally {
+        this.initialized = true
       }
-      this.initialized = true
     },
 
     async login(email, password) {
@@ -119,7 +132,8 @@ export const useAuthStore = defineStore('auth', {
         await this.resolveUserRole()
 
         if (!this.user?.id) return
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.token = null
         this.refreshToken = null
         this.user = null
@@ -135,7 +149,8 @@ export const useAuthStore = defineStore('auth', {
           this.contatto = contattoRes.data.data[0]
           await this.resolveFamiglieAccess()
         }
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.contatto = null
         this.hasFamiglieAccess = false
       }
@@ -154,7 +169,8 @@ export const useAuthStore = defineStore('auth', {
       try {
         const fcRes = await famiglieService.getFamiglieByVolontario(this.contatto.id_contatto)
         this.hasFamiglieAccess = (fcRes.data.data || []).length > 0
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.hasFamiglieAccess = false
       }
     },
@@ -177,7 +193,8 @@ export const useAuthStore = defineStore('auth', {
         if (role?.id) {
           this.user.role = role
         }
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         // If directus_roles is not readable, canAdmin can still match ADMIN_ROLE_NAMES.
       }
     },
@@ -280,8 +297,8 @@ export const useAuthStore = defineStore('auth', {
         if (refreshToken) {
           await authService.logout(refreshToken)
         }
-      } catch {
-        // ignore logout API errors
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
       } finally {
         this.token = null
         this.refreshToken = null

@@ -23,7 +23,9 @@ export const usersService = {
   },
 
   create(data) {
-    return api.post('/users', data)
+    const payload = { ...data }
+    if (payload.email) payload.email = payload.email.toLowerCase()
+    return api.post('/users', payload)
   },
 
   update(id, data) {
@@ -54,5 +56,13 @@ export const usersService = {
         limit: -1
       }
     })
+  },
+
+  setToken(userId, token) {
+    return api.patch(`/users/${userId}`, { token })
+  },
+
+  clearToken(userId) {
+    return api.patch(`/users/${userId}`, { token: null })
   }
 }

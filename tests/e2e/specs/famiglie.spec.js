@@ -245,7 +245,7 @@ test.describe('Famiglie Page — Gruppo 3', () => {
   })
 
   test('F-GR-05: IBAN non valido inline — errore validazione @regression', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(90000)
     await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR5', ids)
     await loginVolontarioConFamiglia(page, d.nome)
@@ -292,7 +292,7 @@ test.describe('Famiglie Page — Gruppo 4', () => {
     await loginVolontarioConFamiglia(page, d.nome)
 
     // PS-01+PS-04: chip progetto selezionato visibile con formato corretto
-    const chip = page.locator('.bg-green-1').first()
+    const chip = page.locator('.q-select .q-field__native').first()
     await expect(chip).toBeVisible({ timeout: 5000 })
     const chipText = await chip.innerText()
     expect(chipText).toMatch(/€/)

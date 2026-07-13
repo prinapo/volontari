@@ -26,7 +26,7 @@
     </template>
 
     <template #selected-item="scope">
-      <div class="q-gutter-xs row items-center bg-green-1 rounded-borders q-pa-xs">
+      <div class="q-gutter-xs row items-center rounded-borders q-pa-xs">
         <q-item-label class="text-primary text-weight-medium">
           {{ scope.opt.AnnoBando }} — {{ [scope.opt.Cognome_Beneficiario, scope.opt.Nome_Beneficiario].filter(Boolean).join(' ') }} — {{ scope.opt.Eta }} anni
         </q-item-label>

@@ -51,8 +51,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         const res = await adminService.getRoles()
         this.roles = res.data.data || []
-      } catch {
-        // silent
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
       }
     },
 
@@ -66,8 +66,8 @@ export const useAdminStore = defineStore('admin', {
         if (emails.length > 0) {
           this.contattoTrovato = emails[0].Contatto_Relation
         }
-      } catch {
-        // silent
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
       }
     },
 
@@ -269,7 +269,8 @@ export const useAdminStore = defineStore('admin', {
           senzaRuolo: await this._checkSenzaRuolo()
         }
       } catch (error) {
-        this.error = error.message || 'Errore nella verifica consistenza volontari'
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica consistenza volontari'
       } finally {
         this.volontariCheckLoading = false
       }
@@ -279,7 +280,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         await api.patch(`/items/contatti/${contattoId}`, { IsVolontario: false })
         return true
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         return false
       }
     },
@@ -288,7 +290,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         await api.patch(`/items/contatti/${contattoId}`, { user_id: userId })
         return true
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         return false
       }
     },
@@ -297,7 +300,8 @@ export const useAdminStore = defineStore('admin', {
       try {
         await api.patch(`/items/contatti/${contattoId}`, { IsVolontario: true })
         return true
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         return false
       }
     },
@@ -317,6 +321,47 @@ export const useAdminStore = defineStore('admin', {
       } catch {
         this.error = 'Errore assegnazione ruolo'
         return false
+      }
+    },
+
+    async startImpersonation(userId) {
+      try {
+        const currentToken = localStorage.getItem('access_token')
+        if (!currentToken) return false
+        const uuid = crypto.randomUUID()
+        await usersService.setToken(userId, uuid)
+        sessionStorage.setItem('admin_jwt', currentToken)
+        sessionStorage.setItem('admin_refresh', localStorage.getItem('refresh_token') || '')
+        localStorage.setItem('impersonating_user_id', userId)
+        localStorage.setItem('access_token', uuid)
+        localStorage.removeItem('refresh_token')
+        window.location.reload()
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || "Errore nell'avvio dell'impersonazione"
+        return false
+      }
+    },
+
+    async stopImpersonation() {
+      try {
+        const userId = localStorage.getItem('impersonating_user_id')
+        if (userId) await usersService.clearToken(userId)
+        const adminJwt = sessionStorage.getItem('admin_jwt')
+        const adminRefresh = sessionStorage.getItem('admin_refresh')
+        if (adminJwt) {
+          localStorage.setItem('access_token', adminJwt)
+          sessionStorage.removeItem('admin_jwt')
+        }
+        if (adminRefresh) {
+          localStorage.setItem('refresh_token', adminRefresh)
+          sessionStorage.removeItem('admin_refresh')
+        }
+        localStorage.removeItem('impersonating_user_id')
+        window.location.reload()
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || "Errore nel termine dell'impersonazione"
       }
     }
   }

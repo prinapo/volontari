@@ -27,14 +27,24 @@ export const useErrorLogStore = defineStore('errorLog', {
     },
 
     async markAsRead(id) {
-      await errorLogService.markAsRead(id)
-      const item = this.items.find(i => i.id === id)
-      if (item) item.read = true
+      this.error = null
+      try {
+        await errorLogService.markAsRead(id)
+        const item = this.items.find(i => i.id === id)
+        if (item) item.read = true
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+      }
     },
 
     async delete(id) {
-      await errorLogService.delete(id)
-      this.items = this.items.filter(i => i.id !== id)
+      this.error = null
+      try {
+        await errorLogService.delete(id)
+        this.items = this.items.filter(i => i.id !== id)
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+      }
     }
   }
 })

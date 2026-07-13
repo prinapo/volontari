@@ -42,14 +42,18 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
   actions: {
     async init() {
-      await Promise.all([
-        this.fetchAssociazioni(),
-        this.fetchProposti(),
-        this.fetchInCorso(),
-        this.fetchFalliti(),
-        this.fetchBatches(),
-        this.fetchListe()
-      ])
+      try {
+        await Promise.all([
+          this.fetchAssociazioni(),
+          this.fetchProposti(),
+          this.fetchInCorso(),
+          this.fetchFalliti(),
+          this.fetchBatches(),
+          this.fetchListe()
+        ])
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore inizializzazione pagamenti'
+      }
     },
 
     _ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet) {
@@ -132,7 +136,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         }
         await this.fetchProposti()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel ricalcolo proposte'
       }
     },
 
@@ -144,7 +148,9 @@ export const usePagamentiStore = defineStore('pagamenti', {
         for (const a of this.associazioni) {
           this.budgetMap[a.Nome] = Number.parseFloat(a.Budget) || 0
         }
-      } catch {
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento associazioni'
         this.associazioni = []
       }
     },
@@ -159,7 +165,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
           sort: '-DataProposta'
         })
         this.proposti = res.data.data || []
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento proposti'
         this.proposti = []
       }
     },
@@ -174,7 +181,9 @@ export const usePagamentiStore = defineStore('pagamenti', {
           sort: '-DataProposta'
         })
         this.inCorso = res.data.data || []
-      } catch {
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento pagamenti in corso'
         this.inCorso = []
       }
     },
@@ -187,7 +196,9 @@ export const usePagamentiStore = defineStore('pagamenti', {
           limit: -1
         })
         this.falliti = res.data.data || []
-      } catch {
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento pagamenti falliti'
         this.falliti = []
       }
     },
@@ -200,7 +211,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
           sort: '-DataCreazione'
         })
         this.batches = res.data.data || []
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento batch'
         this.batches = []
       }
     },
@@ -258,7 +270,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.ricalcolaTotaliProgetto(progettoId)
         await this.fetchProposti()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       }
     },
 
@@ -303,7 +315,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           await this.chiudiProgetto(progettoId, { automatica: true })
         }
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       }
     },
 
@@ -361,8 +373,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
           })
         }
         await this.fetchListe()
-      } catch {
-        // best effort
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore aggiornamento lista batch'
       }
     },
 
@@ -379,7 +391,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.ricalcolaTotaliProgetto(pagamento.Progetto)
         await this.fetchProposti()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       } finally {
         this.loading = false
       }
@@ -472,7 +484,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.inviaNotificaPagamento(pagamento)
         await this.init()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       } finally {
         this.loading = false
       }
@@ -494,7 +506,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         if (pagamento.Batch) await this._aggiornaListaBatch(pagamento.Batch)
         await this.init()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       } finally {
         this.loading = false
       }
@@ -522,7 +534,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         await this.init()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       } finally {
         this.loading = false
       }
@@ -542,7 +554,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await famiglieService.update(pagamento.Famiglia, { IBAN: iban, Intestatario_CC: intestatario })
         await this.fetchFalliti()
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       } finally {
         this.loading = false
       }
@@ -556,7 +568,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
         })
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       }
     },
 
@@ -568,7 +580,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           MotivoChiusura: null
         })
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
       }
     },
 
@@ -610,14 +622,15 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
         await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
       } catch (error) {
-        console.error('[Pagamento] Errore invio notifica:', error.message)
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore invio notifica pagamento'
       }
     },
 
     async fetchListe() {
       try {
         this.liste = await listePagamentiService.getAll()
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento liste'
         this.liste = []
       }
     },
@@ -631,7 +644,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await listePagamentiService.delete(id)
         await this.fetchListe()
       } catch (error) {
-        this.error = error.message || 'Errore eliminazione lista'
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore eliminazione lista'
       } finally {
         this.loading = false
       }

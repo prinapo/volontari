@@ -1,12 +1,12 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
-import { apiLogin, apiGet, apiPost, apiDelete } from '../helpers/api.js'
+import { apiLogin, apiGet, apiPost, apiDelete, apiPatchSystem } from '../helpers/api.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Admin Page', () => {
   test.beforeEach(async ({ page }) => {
     test.setTimeout(30000)
-    
+
     await loginAs(page, 'admin', auth)
     await page.waitForTimeout(1000)
     await page.goto('/admin')
@@ -33,14 +33,21 @@ test.describe('Admin Page', () => {
   test('ADU-01: Tabella utenti si carica con colonne @smoke', async ({ page }) => {
     await expect(page.locator('.text-h5:has-text("User Admin")')).toBeVisible({ timeout: 15000 })
     // Attendi che la tabella o il contenuto utenti sia caricato (mobile: grid mode)
-    await page.waitForFunction(() => {
-      return document.querySelector('.q-table') || 
-             document.querySelector('.q-table__grid-content') ||
-             document.querySelector('.text-center.text-grey-5') ||
-             document.querySelector('.q-table--grid')
-    }, { timeout: 20000 }).catch(() => {
-      console.log('[ADU-01] waitForFunction timed out on mobile, continuing')
-    })
+    await page
+      .waitForFunction(
+        () => {
+          return (
+            document.querySelector('.q-table') ||
+            document.querySelector('.q-table__grid-content') ||
+            document.querySelector('.text-center.text-grey-5') ||
+            document.querySelector('.q-table--grid')
+          )
+        },
+        { timeout: 20000 }
+      )
+      .catch(() => {
+        console.log('[ADU-01] waitForFunction timed out on mobile, continuing')
+      })
   })
 
   test('ADU-02: Ricerca utenti filtra tabella @smoke', async ({ page }) => {
@@ -70,9 +77,14 @@ test.describe('Admin Page', () => {
   test('ADA-01: Tab Associazioni mostra tabella budget @smoke', async ({ page }) => {
     await page.locator('.q-tab:has-text("Associazioni")').click()
     await page.waitForTimeout(2000)
-    await page.waitForFunction(() => {
-      return document.querySelector('.q-table') || document.querySelector('.q-table__grid-content')
-    }, { timeout: 15000 }).catch(() => {})
+    await page
+      .waitForFunction(
+        () => {
+          return document.querySelector('.q-table') || document.querySelector('.q-table__grid-content')
+        },
+        { timeout: 15000 }
+      )
+      .catch(() => {})
   })
 })
 
@@ -85,7 +97,11 @@ test.describe('Admin — Associazioni CRUD', () => {
 
   test.afterEach(async () => {
     if (ids.associazione) {
-      try { await apiDelete('Associazioni', ids.associazione) } catch { /* */ }
+      try {
+        await apiDelete('Associazioni', ids.associazione)
+      } catch {
+        /* */
+      }
       ids.associazione = null
     }
   })
@@ -139,17 +155,66 @@ test.describe('Admin — Associazioni CRUD', () => {
   })
 })
 
-test.describe('Admin — Email Cleanup', () => {
+test.describe('Admin — Impersonazione', () => {
   test.beforeAll(async () => {
     await apiLogin(auth.admin.email, auth.admin.password)
   })
 
-  test('AEC-01: Tab Email mostra scansiona banner @smoke', async ({ page }) => {
+  test('AD-IMP-01: Pulsante Impersona visibile su utenti @smoke', async ({ page }) => {
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
     await page.waitForTimeout(3000)
-    await page.locator('.q-tab:has-text("Email")').click()
-    await page.waitForTimeout(1000)
-    await expect(page.locator('button[aria-label="Scansiona"]')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('button[aria-label="Impersona utente"]').first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test('AD-IMP-02: Impersona utente e torna a admin @crud', async ({ page }) => {
+    let targetUserId = null
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForTimeout(3000)
+
+    // Legge il primo userId dalla tabella utenti per cleanup
+    targetUserId = await page
+      .evaluate(() => {
+        try {
+          const pinia = document.querySelector('#q-app')?.__vue_app__?.config?.globalProperties?.$pinia
+          const users = pinia?.state?.value?.admin?.users
+          return users?.[0]?.id || null
+        } catch {
+          return null
+        }
+      })
+      .catch(() => null)
+
+    // Clicca il primo pulsante impersona
+    const impBtn = page.locator('button[aria-label="Impersona utente"]').first()
+    await expect(impBtn).toBeVisible({ timeout: 10000 })
+    await Promise.all([page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {}), impBtn.click()])
+    await page.waitForTimeout(3000)
+
+    // Verifica che il banner di impersonazione sia visibile
+    const banner = page.locator('.bg-purple-8')
+    const bannerVisible = await banner.isVisible({ timeout: 10000 }).catch(() => false)
+    expect(bannerVisible).toBe(true)
+
+    // Torna a admin
+    await page.locator('button:has-text("Torna a Admin")').click()
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {})
+    await page.waitForTimeout(3000)
+    await page.goto('/admin', { timeout: 15000 }).catch(() => {})
+    await page.waitForTimeout(3000)
+
+    // Verifica di essere tornato alla pagina admin
+    await expect(page.locator('.admin-page')).toBeVisible({ timeout: 15000 })
+
+    // Cleanup: rimuovi eventuale token statico
+    if (targetUserId) {
+      try {
+        await apiPatchSystem('users', targetUserId, { token: null })
+      } catch {
+        /* cleanup */
+      }
+    }
   })
 })

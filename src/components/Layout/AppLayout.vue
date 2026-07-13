@@ -125,6 +125,20 @@
       </q-list>
     </q-drawer>
 
+    <q-banner
+      v-if="authStore.isImpersonating"
+      class="bg-purple-8 text-white text-center q-py-sm"
+      rounded
+    >
+      <template #avatar>
+        <q-icon name="theater_comedy" />
+      </template>
+      Stai visualizzando come <strong>{{ authStore.userName || 'utente impersonato' }}</strong>
+      <template #action>
+        <q-btn flat dense color="white" label="Torna a Admin" @click="stopImpersonation" />
+      </template>
+    </q-banner>
+
     <q-page-container>
       <router-view />
     </q-page-container>
@@ -190,6 +204,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from 'src/services/auth.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
 
 const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
@@ -206,6 +221,11 @@ const confirmPassword = ref('')
 async function handleLogout() {
   await authStore.logout()
   router.push('/login')
+}
+
+function stopImpersonation() {
+  const adminStore = useAdminStore()
+  adminStore.stopImpersonation()
 }
 
 async function handleChangePassword() {

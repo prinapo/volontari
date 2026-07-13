@@ -73,7 +73,8 @@ export const useFamiglieStore = defineStore('famiglie', {
         const fcRes = await famiglieService.getFamiglieByVolontario(contattoId)
         this.famiglieContatti = fcRes.data.data || []
         return this.famiglieContatti.length > 0
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.famiglieContatti = []
         return false
       }
@@ -119,7 +120,8 @@ export const useFamiglieStore = defineStore('famiglie', {
             // silent
           }
         }
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.genitori = []
       } finally {
         this.contattiLoading = false
@@ -179,7 +181,8 @@ export const useFamiglieStore = defineStore('famiglie', {
           }
         }
         this.altriVolontari = filtered
-      } catch {
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.altriVolontari = []
       } finally {
         this.contattiLoading = false

@@ -23,7 +23,6 @@
               {{ errorLogStore.unreadCount }}
             </q-badge>
           </q-tab>
-          <q-tab name="email" icon="email" label="Email" />
         </q-tabs>
       </div>
 
@@ -324,6 +323,17 @@ size="sm"
                       <q-btn
                         flat
                         dense
+                        icon="theater_comedy"
+                        color="purple"
+                        size="sm"
+                        aria-label="Impersona utente"
+                        @click="store.startImpersonation(props.row.id)"
+                      >
+                        <q-tooltip>Impersona {{ props.row.first_name || props.row.email }}</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        flat
+                        dense
                         icon="lock_reset"
                         color="warning"
                         size="sm"
@@ -390,6 +400,17 @@ size="sm"
                       </div>
                     </template>
                   </q-select>
+                  <q-btn
+                    flat
+                    dense
+                    icon="theater_comedy"
+                    color="purple"
+                    size="sm"
+                    aria-label="Impersona utente"
+                    @click="store.startImpersonation(props.row.id)"
+                  >
+                    <q-tooltip>Impersona {{ props.row.first_name || props.row.email }}</q-tooltip>
+                  </q-btn>
                   <q-btn
                     flat
                     dense
@@ -575,10 +596,6 @@ size="sm"
               </div>
             </template>
           </q-table>
-        </q-tab-panel>
-
-        <q-tab-panel name="email">
-          <EmailCleanupTab />
         </q-tab-panel>
 
       </q-tab-panels>
@@ -828,7 +845,6 @@ size="sm"
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted, reactive } from 'vue'
-import EmailCleanupTab from 'components/Admin/EmailCleanupTab.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'

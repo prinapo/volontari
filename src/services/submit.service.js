@@ -2,6 +2,8 @@ import api from './api'
 
 export const submitService = {
   createSubmission(data) {
-    return api.post('/items/InviiGiustificativiNoLogin', data)
+    const payload = { ...data }
+    if (payload.email) payload.email = payload.email.toLowerCase()
+    return api.post('/items/InviiGiustificativiNoLogin', payload)
   }
 }

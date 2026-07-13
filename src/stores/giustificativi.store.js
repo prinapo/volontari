@@ -24,6 +24,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
   actions: {
     async fetchByProgetto(progettoId) {
       this.loading = true
+      this.error = null
       try {
         const res = await giustificativiService.getByProgetto(progettoId)
         this.items = res.data.data || []
@@ -36,6 +37,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
 
     async createGiustificativo(data, file) {
       this.saving = true
+      this.error = null
       try {
         const rendicontazioneId = await this.ensureRendicontazione(data)
         let fileId = null
@@ -86,6 +88,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
 
     async updateGiustificativo(id, data, newFile) {
       this.saving = true
+      this.error = null
       try {
         if (newFile) {
           const existingItem = this.items.find(i => i.id === id)
@@ -113,6 +116,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
 
     async submitGiustificativo(id) {
       this.saving = true
+      this.error = null
       try {
         const patchRes = await giustificativiService.submit(id)
         const updated = patchRes.data.data
@@ -140,6 +144,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
     },
 
     async saveInlineEdit(id, field, value) {
+      this.error = null
       try {
         const patchRes = await giustificativiService.update(id, { [field]: value })
         const updated = patchRes.data.data
@@ -156,6 +161,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
 
     async invalidateGiustificativo(id) {
       this.saving = true
+      this.error = null
       try {
         const item = this.items.find(i => i.id === id)
         if (item?.Allegato) {
