@@ -25,7 +25,7 @@ export const useAdminStore = defineStore('admin', {
     progetti: [],
     progettiLoading: false,
     searchProgetti: '',
-    volontariCheck: null,
+    volontariCheck: { senzaUtente: [], utenteCancellato: [], flagOrfano: [], linkSenzaFlag: [], senzaRuolo: [] },
     volontariCheckLoading: false
   }),
 
@@ -284,7 +284,6 @@ export const useAdminStore = defineStore('admin', {
 
     async fetchVolontariConsistency() {
       this.volontariCheckLoading = true
-      this.volontariCheck = null
       try {
         this.volontariCheck = {
           senzaUtente: await this._checkSenzaUtente(),
