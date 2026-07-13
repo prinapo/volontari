@@ -33,20 +33,31 @@ export class LoginPage {
 
     // Navigate through fallback strategies
     for (const [desc, fn] of [
-      ['wait 10s', async () => { await this.emailInput.waitFor({ state: 'visible', timeout: 10000 }) }],
-      ['reload+clear', async () => {
-        await this.page.evaluate(() => {
-          localStorage.clear()
-          sessionStorage.clear()
-        })
-        await this.page.reload()
-        await this.emailInput.waitFor({ state: 'visible', timeout: 20000 })
-      }],
-      ['hard nav', async () => {
-        await this.page.goto('/?_=' + Date.now(), { timeout: 20000 })
-        await this.page.goto('/login', { timeout: 20000 })
-        await this.emailInput.waitFor({ state: 'visible', timeout: 20000 })
-      }],
+      [
+        'wait 10s',
+        async () => {
+          await this.emailInput.waitFor({ state: 'visible', timeout: 10000 })
+        }
+      ],
+      [
+        'reload+clear',
+        async () => {
+          await this.page.evaluate(() => {
+            localStorage.clear()
+            sessionStorage.clear()
+          })
+          await this.page.reload()
+          await this.emailInput.waitFor({ state: 'visible', timeout: 20000 })
+        }
+      ],
+      [
+        'hard nav',
+        async () => {
+          await this.page.goto('/?_=' + Date.now(), { timeout: 20000 })
+          await this.page.goto('/login', { timeout: 20000 })
+          await this.emailInput.waitFor({ state: 'visible', timeout: 20000 })
+        }
+      ]
     ]) {
       try {
         await fn()
@@ -54,7 +65,7 @@ export class LoginPage {
         await this.passwordInput.fill(password)
         await this.submitButton.click()
         // Wait for login redirect to complete before returning
-        await this.page.waitForURL(/\/gestione|\/verifica|\/famiglie/, { timeout: 20000 }).catch(() => {
+        await this.page.waitForURL(/\/gestione|\/verifica|\/famiglie|\/admin/, { timeout: 20000 }).catch(() => {
           console.log('[LOGIN] navigation after submit timed out')
         })
         return

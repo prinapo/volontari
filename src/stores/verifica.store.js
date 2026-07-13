@@ -425,13 +425,15 @@ export const useVerificaStore = defineStore('verifica', {
 
     async _handleAllegatoRiconciliazione(allegato, famigliaId) {
       if (!allegato) return
-      await filesService.updateFolder(allegato, FOLDERS.GIUSTIFICATIVI).catch(() => {})
+      const fileId = typeof allegato === 'object' ? allegato?.id : allegato
+      if (!fileId) return
+      await filesService.updateFolder(fileId, FOLDERS.GIUSTIFICATIVI).catch(() => {})
       const famRes = await famiglieService.getFamiglieBatch([famigliaId])
       const nomeFamiglia = famRes.data.data?.[0]?.Nome_Famiglia || ''
       if (!nomeFamiglia) return
-      const fileRes = await filesService.getFile(allegato)
+      const fileRes = await filesService.getFile(fileId)
       const origName = fileRes.data.data?.filename_download || 'file'
-      await filesService.renameFile(allegato, `${nomeFamiglia}_${origName}`)
+      await filesService.renameFile(fileId, `${nomeFamiglia}_${origName}`)
     },
 
     async _createGiustificativoDaRiconciliazione(giustData, famigliaId, progettoId) {

@@ -18,16 +18,9 @@ const ROLE_URLS = {
  * @returns {Promise<LoginPage>}
  */
 export async function loginAs(page, role, auth, options = {}) {
-  const { urlTimeout = 15000 } = options
+  const { urlTimeout = 2000 } = options
   const loginPage = new LoginPage(page)
   await loginPage.goto()
   await loginPage.login(auth[role].email, auth[role].password)
-
-  const expectedUrl = ROLE_URLS[role]
-  if (expectedUrl) {
-    await page.waitForURL(expectedUrl, { timeout: urlTimeout }).catch(() => {
-      console.log(`[loginAs] URL match for ${role} timed out — continuing anyway`)
-    })
-  }
   return loginPage
 }

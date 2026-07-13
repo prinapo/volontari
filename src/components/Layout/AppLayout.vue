@@ -81,6 +81,20 @@
           v-if="authStore.canManager"
           v-ripple
           clickable
+          :active="$route.name === 'Pagamenti'"
+          active-class="text-white"
+          to="/pagamenti"
+        >
+          <q-item-section avatar>
+            <q-icon name="payments" />
+          </q-item-section>
+          <q-item-section>Pagamenti</q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="authStore.canManager"
+          v-ripple
+          clickable
           :active="$route.name === 'Riconciliazione'"
           active-class="text-white"
           to="/riconciliazione"

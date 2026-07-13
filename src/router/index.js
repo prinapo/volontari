@@ -43,6 +43,12 @@ const routes = [
         meta: { requiredRole: ROUTE_ROLES.MANAGER }
       },
       {
+        path: 'pagamenti',
+        name: 'Pagamenti',
+        component: () => import('pages/PagamentiPage.vue'),
+        meta: { requiredRole: ROUTE_ROLES.MANAGER }
+      },
+      {
         path: 'riconciliazione',
         name: 'Riconciliazione',
         component: () => import('pages/RiconciliazionePage.vue'),
