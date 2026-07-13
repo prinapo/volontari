@@ -18,6 +18,8 @@
         </q-btn>
       </q-card-section>
 
+      <q-separator />
+
       <q-card-section>
         <q-form @submit.prevent="handleSave">
           <q-input

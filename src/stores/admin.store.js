@@ -205,56 +205,81 @@ export const useAdminStore = defineStore('admin', {
 
     async _checkUtenteCancellato() {
       const res = await contattiService.query({ isVolontario: true, limit: -1 })
-      const result = []
-      for (const c of res.data.data || []) {
-        try {
-          await usersService.getByIds([c.user_id])
-        } catch {
-          result.push({ id_contatto: c.id_contatto, Nome: c.Nome, Cognome: c.Cognome, user_id: c.user_id })
+      const contatti = res.data.data || []
+      if (contatti.length === 0) return []
+      // Batch-check all users at once
+      const userIds = contatti.map(c => c.user_id).filter(Boolean)
+      try {
+        await usersService.getByIds(userIds)
+        // All users exist — no deleted ones
+        return []
+      } catch {
+        // If batch fails, find which ones are missing
+        const result = []
+        for (const c of contatti) {
+          if (!c.user_id) continue
+          try {
+            await usersService.getByIds([c.user_id])
+          } catch {
+            result.push({ id_contatto: c.id_contatto, Nome: c.Nome, Cognome: c.Cognome, user_id: c.user_id })
+          }
         }
+        return result
       }
-      return result
     },
 
     async _checkFlagOrfani() {
       const res = await contattiService.query({ isVolontario: true, limit: -1 })
-      const result = []
-      for (const c of res.data.data || []) {
-        const fcRes = await gestioneService.queryFamiglieContatti([c.id_contatto])
-        if (!fcRes.data.data || fcRes.data.data.length === 0) {
-          result.push(c)
-        }
-      }
-      return result
+      const contatti = res.data.data || []
+      if (contatti.length === 0) return []
+      const ids = contatti.map(c => c.id_contatto)
+      // Batch query all FCs at once
+      const fcRes = await gestioneService.queryFamiglieContatti(ids)
+      const fcContattoIds = new Set(
+        (fcRes.data.data || []).map(fc => (typeof fc.Contatto === 'object' ? fc.Contatto?.id_contatto : fc.Contatto))
+      )
+      return contatti.filter(c => !fcContattoIds.has(c.id_contatto))
     },
 
     async _checkLinkSenzaFlag() {
       const res = await gestioneService.checkAllFamiglieVolontari()
+      const fcList = res.data.data || []
+      if (fcList.length === 0) return []
+      // Collect unique contattoIds from all FCs
       const seen = new Set()
-      const result = []
-      for (const fc of res.data.data || []) {
-        const contattoId = typeof fc.Contatto === 'object' ? fc.Contatto?.id_contatto : fc.Contatto
-        if (!contattoId || seen.has(contattoId)) continue
-        seen.add(contattoId)
-        try {
-          const cRes = await contattiService.getById(contattoId)
-          if (cRes.data.data && !cRes.data.data.IsVolontario) result.push(cRes.data.data)
-        } catch {
-          /* contatto potrebbe non esistere */
+      const contattoIds = []
+      for (const fc of fcList) {
+        const id = typeof fc.Contatto === 'object' ? fc.Contatto?.id_contatto : fc.Contatto
+        if (id && !seen.has(id)) {
+          seen.add(id)
+          contattoIds.push(id)
         }
       }
-      return result
+      if (contattoIds.length === 0) return []
+      // Batch fetch all contatti at once
+      const cRes = await contattiService.getByIds(contattoIds)
+      return (cRes.data.data || []).filter(c => !c.IsVolontario)
     },
 
     async _checkSenzaRuolo() {
       const usersRes = await usersService.searchByRoleNull()
-      const result = []
-      for (const u of usersRes.data || []) {
-        const cRes = await contattiService.getByUserId(u.id)
-        const c = cRes.data.data?.[0]
-        if (c) result.push({ ...c, email: u.email || '' })
+      const users = usersRes.data || []
+      if (users.length === 0) return []
+      // Batch fetch all contatti with these user_ids
+      const userIds = users.map(u => u.id)
+      const cRes = await api.get('/items/contatti', {
+        params: { 'filter[user_id][_in]': userIds.join(','), fields: 'id_contatto,Nome,Cognome,user_id', limit: -1 }
+      })
+      const contattiMap = {}
+      for (const c of cRes.data.data || []) {
+        if (c.user_id) contattiMap[c.user_id] = c
       }
-      return result
+      return users
+        .filter(u => contattiMap[u.id])
+        .map(u => ({
+          ...contattiMap[u.id],
+          email: u.email || ''
+        }))
     },
 
     async fetchVolontariConsistency() {

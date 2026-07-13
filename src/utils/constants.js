@@ -6,13 +6,6 @@ export const STORAGE_KEYS = {
   USER_ID: 'user_id'
 }
 
-export const STATI_GIUSTIFICATIVO = {
-  DRAFT: 'draft',
-  INVIATO: 'inviato',
-  VERIFICATO: 'verificato',
-  RIFIUTATO: 'rifiutato'
-}
-
 export const RUOLI_FAMIGLIA = {
   VOLONTARIO: 'Volontario',
   GENITORE: 'Genitore',

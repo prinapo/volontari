@@ -18,6 +18,8 @@
         </q-btn>
       </q-card-section>
 
+      <q-separator />
+
       <q-card-section>
         <q-table
           :rows="famiglie"

@@ -7,7 +7,10 @@ import { API_URL, STORAGE_KEYS } from './constants'
  * @returns {string} URL completo del file
  */
 export function assetUrl(fileId, download = false) {
+  if (!fileId) return ''
+  const id = typeof fileId === 'object' ? fileId?.id : fileId
+  if (!id) return ''
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  const base = `${API_URL}/assets/${fileId}?access_token=${token}`
+  const base = `${API_URL}/assets/${id}?access_token=${token}`
   return download ? `${base}&download=1` : base
 }

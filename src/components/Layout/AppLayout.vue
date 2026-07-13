@@ -161,6 +161,7 @@
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
+        <q-separator />
         <q-card-section>
           <q-input
             v-model="newPassword"

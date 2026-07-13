@@ -440,7 +440,9 @@ export const useVerificaStore = defineStore('verifica', {
       const progetto = progetti.find(p => p.id_progetto === progettoId)
       if (progetto?.AnnoBando) giustData.AnnoBando = progetto.AnnoBando
       const createRes = await giustificativiService.create(giustData)
-      return createRes.data.data.id
+      const id = createRes?.data?.data?.id
+      if (!id) throw new Error('Errore nella creazione del giustificativo')
+      return id
     },
 
     async reconcileSubmission({

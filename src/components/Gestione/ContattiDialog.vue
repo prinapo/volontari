@@ -18,6 +18,8 @@
         </q-btn>
       </q-card-section>
 
+      <q-separator />
+
       <q-card-section>
         <div class="text-subtitle1 q-mb-sm">
           Volontari assegnati

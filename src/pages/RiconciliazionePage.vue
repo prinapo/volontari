@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pa-md riconciliazione-page">
-    <div class="page-inner q-mx-auto">
       <div class="row items-center q-gutter-sm q-mb-md">
         <div class="text-h5 text-weight-medium">
           Da riconciliare
@@ -494,8 +493,17 @@
               Descrizione
             </div>
             <q-space />
-            <q-btn v-close-popup icon="close" flat round dense />
+            <q-btn
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
+              <q-tooltip>Chiudi</q-tooltip>
+            </q-btn>
           </q-card-section>
+          <q-separator />
           <q-card-section class="q-pt-none text-body2" style="white-space: pre-wrap;">
             {{ descrizioneDialog.text }}
           </q-card-section>
@@ -504,7 +512,6 @@
           </q-card-actions>
         </q-card>
       </q-dialog>
-    </div>
   </q-page>
 </template>
 

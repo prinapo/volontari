@@ -24,15 +24,16 @@ export const usePagamentiStore = defineStore('pagamenti', {
   getters: {
     residuoAssociazione: state => nome => {
       const budget = state.budgetMap[nome] || 0
+      const getBatchId = p => (typeof p.Batch === 'object' ? p.Batch?.id : p.Batch)
       const impegnato = state.inCorso
         .filter(p => {
-          const batch = state.batches.find(b => b.id === p.Batch)
+          const batch = state.batches.find(b => b.id === getBatchId(p))
           return batch?.Associazione === nome
         })
         .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
       const pagato = state.proposti
         .filter(p => {
-          const batch = state.batches.find(b => b.id === p.Batch)
+          const batch = state.batches.find(b => b.id === getBatchId(p))
           return batch?.Associazione === nome
         })
         .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)

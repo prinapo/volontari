@@ -189,7 +189,7 @@
               N. giustificativi
             </div>
             <div class="text-weight-medium" data-testid="detail-totale-giustificativi">
-              {{ progetto.giustificativi.length }}
+              {{ (progetto.giustificativi || []).length }}
             </div>
           </div>
           <div class="col-4">

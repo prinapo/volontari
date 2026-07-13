@@ -104,7 +104,8 @@ export const verificaService = {
       filter: JSON.stringify(filter),
       sort: '-data_invio',
       limit,
-      page
+      page,
+      fields: '*,allegato.id'
     }
     if (meta) params.meta = meta
     return api.get('/items/InviiGiustificativiNoLogin', { params })

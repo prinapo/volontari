@@ -27,7 +27,7 @@ export const useGestioneStore = defineStore('gestione', {
         // Se esiste user_id, verifica che l'utente abbia un ruolo
         try {
           const userRes = await usersService.getByIds([contatto.user_id])
-          if (userRes.data.data && !userRes.data.data.role) {
+          if (userRes.data.data?.[0] && !userRes.data.data[0].role) {
             const rolesRes = await usersService.getRoleByName('Volontario')
             const ruoloId = rolesRes.data.data?.[0]?.id
             if (ruoloId) await usersService.update(contatto.user_id, { role: ruoloId })

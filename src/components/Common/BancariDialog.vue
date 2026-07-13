@@ -10,6 +10,8 @@
         </div>
       </q-card-section>
 
+      <q-separator />
+
       <q-card-section class="q-pt-none">
         <q-input
           v-model="localIban"

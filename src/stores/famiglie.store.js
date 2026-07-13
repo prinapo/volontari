@@ -202,7 +202,8 @@ export const useFamiglieStore = defineStore('famiglie', {
           Intestatario_CC: intestatario
         })
 
-        const updated = patchRes.data.data
+        const updated = patchRes?.data?.data
+        if (!updated) return false
 
         // merge selettivo: aggiorno solo i campi inviati, preservo relazioni (Progetti, Relazioni)
         this.famiglia.IBAN = updated.IBAN

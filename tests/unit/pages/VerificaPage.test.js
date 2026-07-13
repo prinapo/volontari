@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { quasarMount } from '../quasar-mount'
-import VerificaPage from 'src/pages/VerificaPage.vue'
+import RendicontazioneTab from 'src/components/Verifica/RendicontazioneTab.vue'
 
 const mockFetchAnni = vi.fn()
 const mockFetchAllPages = vi.fn()
@@ -68,7 +68,6 @@ vi.mock('quasar', () => ({
 }))
 
 vi.mock('src/utils/assets', () => ({ assetUrl: id => `/assets/${id}` }))
-vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }), useRoute: () => ({ name: 'Verifica' }) }))
 
 async function flushAll() {
   await nextTick()
@@ -76,11 +75,10 @@ async function flushAll() {
   await nextTick()
 }
 
-function mountPage() {
-  return quasarMount(VerificaPage, {
+function mountTab() {
+  return quasarMount(RendicontazioneTab, {
     global: {
       stubs: {
-        PagamentiTab: { template: '<div />' },
         BancariDialog: { template: '<div />' },
         ContattoInfoLine: { template: '<div />' },
         InlineEditableField: { template: '<div />' },
@@ -91,7 +89,7 @@ function mountPage() {
   })
 }
 
-describe('VerificaPage', () => {
+describe('RendicontazioneTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     verificaState.rows = []
@@ -120,7 +118,7 @@ describe('VerificaPage', () => {
         giustificativi: [{ Stato: 'inviato' }]
       }
     ]
-    const wrapper = mountPage()
+    const wrapper = mountTab()
     expect(wrapper.text()).toContain('Verifica')
     expect(mockFetchAnni).toHaveBeenCalled()
     expect(mockFetchAllPages).toHaveBeenCalled()
@@ -133,7 +131,7 @@ describe('VerificaPage', () => {
   })
 
   it('loadData reacts to search and year filters', async () => {
-    const wrapper = mountPage()
+    const wrapper = mountTab()
     wrapper.vm.search = 'rossi'
     wrapper.vm.selectedAnno = 2026
     await wrapper.vm.loadData()
@@ -146,7 +144,7 @@ describe('VerificaPage', () => {
   })
 
   it('covers row state helpers across branches', () => {
-    const wrapper = mountPage()
+    const wrapper = mountTab()
     expect(wrapper.vm.statoRiga({ totaleRendicontato: 0, iban: '', intestatario: '', giustificativi: [] })).toEqual({
       label: 'Non ricevuta',
       color: 'grey'
@@ -187,7 +185,7 @@ describe('VerificaPage', () => {
   it('loads family contacts, caches them and handles failures', async () => {
     mockLoadFamigliaContacts.mockResolvedValueOnce({ genitori: [{ id: 1 }], volontari: [{ id: 2 }] })
     mockLoadFamigliaContacts.mockRejectedValueOnce(new Error('boom'))
-    const wrapper = mountPage()
+    const wrapper = mountTab()
 
     await wrapper.vm.loadFamigliaContatti(null)
     expect(mockLoadFamigliaContacts).not.toHaveBeenCalled()
@@ -207,7 +205,7 @@ describe('VerificaPage', () => {
   it('toggles expansion and manages bancari dialog save success/error', async () => {
     mockLoadFamigliaContacts.mockResolvedValueOnce({ genitori: [], volontari: [] })
     mockUpdateBancari.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom'))
-    const wrapper = mountPage()
+    const wrapper = mountTab()
     verificaState.rows = [{ idProgetto: 'p1', idFamiglia: 'fam-1' }]
 
     wrapper.vm.toggleExpand('p1')
@@ -230,7 +228,7 @@ describe('VerificaPage', () => {
     mockChiudiProgetto.mockResolvedValue({})
     mockVerifyGiustificativo.mockResolvedValue({})
     mockUpdateGiustificativoField.mockResolvedValue({})
-    const wrapper = mountPage()
+    const wrapper = mountTab()
 
     wrapper.vm.openChiudiProgetto({ idProgetto: 'p1' })
     wrapper.vm.chiudiProgettoNota = 'completato'
@@ -249,7 +247,7 @@ describe('VerificaPage', () => {
     mockUpdateGiustificativoField.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom'))
     mockAddGiustificativo.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom'))
     mockRejectGiustificativo.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom'))
-    const wrapper = mountPage()
+    const wrapper = mountTab()
 
     wrapper.vm.handleReject('p1', { id: 'g1' })
     expect(wrapper.vm.rejectDialog).toBe(true)

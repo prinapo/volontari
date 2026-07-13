@@ -18,6 +18,8 @@
         </q-btn>
       </q-card-section>
 
+      <q-separator />
+
       <q-card-section>
         <q-form @submit.prevent="handleSave">
           <div class="row q-col-gutter-sm q-mb-md">

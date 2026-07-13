@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { quasarMount } from '../quasar-mount'
 import AdminPage from 'src/pages/AdminPage.vue'
+import AdminAssociazioniTab from 'src/components/Admin/AdminAssociazioniTab.vue'
+import AdminConsistencyTab from 'src/components/Admin/AdminConsistencyTab.vue'
+import AdminUtentiTab from 'src/components/Admin/AdminUtentiTab.vue'
 
 const mockFetchAll = vi.fn()
 const mockFetchProgetti = vi.fn()
@@ -123,13 +126,11 @@ describe('AdminPage', () => {
     expect(wrapper.text()).toContain('Caricamento...')
   })
 
-  it('renders user list and filters users by search', () => {
+  it('renders tabs and shows utenti tab by default', () => {
     const wrapper = quasarMount(AdminPage)
-    expect(wrapper.text()).toContain('User Admin')
-    wrapper.vm.usersSearch = 'rossi'
-    expect(wrapper.vm.filteredUsers).toHaveLength(1)
-    wrapper.vm.usersSearch = 'missing'
-    expect(wrapper.vm.filteredUsers).toEqual([])
+    expect(wrapper.text()).toContain('Utenti')
+    expect(wrapper.text()).toContain('Associazioni')
+    expect(wrapper.text()).toContain('Errori')
   })
 
   it('shows empty state when no users', () => {
@@ -138,9 +139,33 @@ describe('AdminPage', () => {
     expect(wrapper.text()).toContain('Nessun utente trovato')
   })
 
+  it('renders user list and filters users by search', () => {
+    adminState.users = [
+      {
+        id: 'u-1',
+        email: 'mario@test.it',
+        first_name: 'Mario',
+        last_name: 'Rossi',
+        role: { id: 'r1', name: 'Volontario' }
+      },
+      {
+        id: 'u-2',
+        email: 'luigi@test.it',
+        first_name: 'Luigi',
+        last_name: 'Verdi',
+        role: { id: 'r3', name: 'Gestore Volontari' }
+      }
+    ]
+    const wrapper = quasarMount(AdminUtentiTab)
+    wrapper.vm.usersSearch = 'rossi'
+    expect(wrapper.vm.filteredUsers).toHaveLength(1)
+    wrapper.vm.usersSearch = 'missing'
+    expect(wrapper.vm.filteredUsers).toEqual([])
+  })
+
   it('edits associazioni budget and saves it', async () => {
     mockAssocUpdate.mockResolvedValue({})
-    const wrapper = quasarMount(AdminPage)
+    const wrapper = quasarMount(AdminAssociazioniTab)
 
     wrapper.vm.editAssocBudget({ id: 'a1' }, '25.5')
     expect(wrapper.vm.assocBudgetCache.a1).toBe(25.5)
@@ -155,7 +180,7 @@ describe('AdminPage', () => {
   it('creates or links volunteer users and handles missing email', async () => {
     mockGetRoleByName.mockResolvedValue({ data: { data: [{ id: 'role-vol' }] } })
     mockSearchByEmail.mockResolvedValue({ data: { data: [{ id: 'user-existing' }] } })
-    const wrapper = quasarMount(AdminPage)
+    const wrapper = quasarMount(AdminConsistencyTab)
     const volontario = {
       id_contatto: 'c1',
       Nome: 'Mario',
@@ -177,12 +202,11 @@ describe('AdminPage', () => {
     expect(mockNotifyError).toHaveBeenCalledWith(expect.anything(), null, 'Email mancante')
   })
 
-  it('handles create-user dialog, email sending, reset password and role change', async () => {
+  it('handles create-user dialog, reset password and role change', async () => {
     mockCreateUser.mockResolvedValue(true)
-    mockSendCustomEmail.mockResolvedValue(true)
     mockResetUserPassword.mockResolvedValue(true)
     mockUpdateUserRole.mockResolvedValue(true)
-    const wrapper = quasarMount(AdminPage)
+    const wrapper = quasarMount(AdminUtentiTab)
 
     wrapper.vm.openCreateDialog()
     expect(wrapper.vm.showCreateDialog).toBe(true)
@@ -199,14 +223,6 @@ describe('AdminPage', () => {
     expect(mockCreateUser).toHaveBeenCalledWith('mario@test.it', 'r1', 'Mario', 'Rossi')
     expect(wrapper.vm.userCreated).toBe(true)
 
-    adminState.contattoTrovato = { Nome: 'Mario', Cognome: 'Rossi' }
-    wrapper.vm.emailSubject = 'Ciao'
-    wrapper.vm.emailBody = 'Benvenuto {nome}'
-    await wrapper.vm.handleSendEmail()
-    expect(mockSendCustomEmail).toHaveBeenCalledWith('mario@test.it', 'Ciao', 'Benvenuto Mario Rossi')
-    expect(wrapper.vm.emailSubject).toBe('')
-    expect(wrapper.vm.emailBody).toBe('')
-
     wrapper.vm.openResetPasswordDialog({ id: 'u-1' })
     wrapper.vm.resetPassword = 'NuovaPass123'
     await wrapper.vm.handleResetPassword()
@@ -218,7 +234,7 @@ describe('AdminPage', () => {
   })
 
   it('computes role colors correctly', () => {
-    const wrapper = quasarMount(AdminPage)
+    const wrapper = quasarMount(AdminUtentiTab)
     expect(wrapper.vm.roleColor('Administrator')).toBe('negative')
     expect(wrapper.vm.roleColor('Gestore Volontari')).toBe('secondary')
     expect(wrapper.vm.roleColor('Verificatore')).toBe('primary')

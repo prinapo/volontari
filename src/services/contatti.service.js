@@ -150,5 +150,16 @@ export const contattiService = {
         limit: -1
       }
     })
+  },
+
+  getByIds(ids) {
+    const list = Array.isArray(ids) ? ids.join(',') : ids
+    return api.get('/items/contatti', {
+      params: {
+        'filter[id_contatto][_in]': list,
+        fields: 'id_contatto,Nome,Cognome,IsVolontario,user_id',
+        limit: -1
+      }
+    })
   }
 }

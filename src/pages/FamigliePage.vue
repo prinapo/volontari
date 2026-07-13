@@ -10,20 +10,23 @@
     <q-inner-loading :showing="loading && authStore.initialized" />
 
     <template v-if="authStore.initialized">
-      <div class="q-gutter-y-md q-mx-auto">
+      <div class="q-gutter-y-md q-mx-auto" style="max-width: 960px">
 
         <!-- Selettore famiglia (sempre visibile se multi-famiglia, anche senza famiglia caricata) -->
-        <q-select
-          v-if="famiglieStore.famiglieContatti.length > 1"
-          :model-value="famiglieStore.selectedFamigliaId"
-          :options="famiglieStore.famigliaOptions"
-          label="Seleziona famiglia"
-          outlined
-          dense
-          emit-value
-          map-options
-          @update:model-value="handleFamigliaChange"
-        />
+        <div v-if="famiglieStore.famiglieContatti.length > 1" class="row">
+          <div class="col-sm-4 col-md-3">
+            <q-select
+              :model-value="famiglieStore.selectedFamigliaId"
+              :options="famiglieStore.famigliaOptions"
+              label="Seleziona famiglia"
+              outlined
+              dense
+              emit-value
+              map-options
+              @update:model-value="handleFamigliaChange"
+            />
+          </div>
+        </div>
 
         <!-- Famiglia caricata: mostra contenuto -->
         <template v-if="famiglieStore.famiglia">

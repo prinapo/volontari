@@ -18,6 +18,8 @@
         </q-btn>
       </q-card-section>
 
+      <q-separator />
+
       <q-card-section v-if="volontario">
         <div class="text-body2 q-mb-md">
           Volontario: <strong>{{ volontario.Nome }} {{ volontario.Cognome }}</strong>

@@ -59,8 +59,11 @@ export const famiglieService = {
           'Contatto.id_contatto',
           'Contatto.Nome',
           'Contatto.Cognome',
+          'Contatto.user_id',
           'Contatto.Numero_di_cellulare',
-          'Contatto.Numero_di_telefono'
+          'Contatto.Numero_di_telefono',
+          'Contatto.email.email_address',
+          'Contatto.email.Primary'
         ].join(',')
       }
     })
@@ -96,8 +99,11 @@ export const famiglieService = {
           'Contatto.id_contatto',
           'Contatto.Nome',
           'Contatto.Cognome',
+          'Contatto.user_id',
           'Contatto.Numero_di_cellulare',
-          'Contatto.Numero_di_telefono'
+          'Contatto.Numero_di_telefono',
+          'Contatto.email.email_address',
+          'Contatto.email.Primary'
         ].join(',')
       }
     })

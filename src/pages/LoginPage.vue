@@ -115,6 +115,7 @@
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
+        <q-separator />
         <q-card-section>
           <p class="text-body2 text-grey">
             Inserisci la tua email riceverai un link per reimpostare la password.

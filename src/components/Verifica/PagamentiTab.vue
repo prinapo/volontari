@@ -285,7 +285,7 @@ class="q-mb-sm"
               aria-label="Scarica CSV"
               :disable="!props.row.File"
               :href="assetUrl(props.row.File, true)"
-              :download="`${props.row.Nome.replaceAll(/[^\w-]/g, '_')}.csv`"
+              :download="`${(props.row.Nome || '').replaceAll(/[^\w-]/g, '_')}.csv`"
               target="_blank"
             >
               <q-tooltip>Scarica CSV</q-tooltip>
@@ -311,8 +311,17 @@ class="q-mb-sm"
       <q-card>
         <q-card-section class="row items-center">
           <div class="text-h6">Crea gruppo di pagamento</div>
-          <q-space /><q-btn v-close-popup flat round dense icon="close" />
+          <q-space /><q-btn
+v-close-popup
+flat
+round
+dense
+icon="close"
+aria-label="Chiudi">
+            <q-tooltip>Chiudi</q-tooltip>
+          </q-btn>
         </q-card-section>
+        <q-separator />
         <q-card-section>
           <q-input v-model="batchNome" label="Nome gruppo *" outlined dense />
           <div class="text-caption q-mt-sm">
@@ -509,7 +518,7 @@ async function handleAnnullato(pagamento) {
 async function confermaEliminaLista(row) {
   $q.dialog({
     title: 'Elimina lista',
-    message: `Eliminare la lista "${row.Nome}"?`,
+    message: `Eliminare la lista "${row.Nome || ''}"?`,
     cancel: true,
     persistent: true
   }).onOk(async () => {
