@@ -113,7 +113,7 @@
     "eslint-plugin-security": "^2.1.1",
     "eslint-plugin-sonarjs": "^0.25.1",
     "eslint-plugin-unicorn": "^49.0.0",
-    "eslint-plugin-vue": "^9.0.0",
+    "eslint-plugin-vue": "^10.9.2",
     "eslint-plugin-vuejs-accessibility": "^2.5.0",
     "husky": "^9.1.7",
     "imapflow": "^1.4.7",
