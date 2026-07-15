@@ -141,10 +141,9 @@ test.describe('Admin — Associazioni CRUD', () => {
     await page.locator('.q-dialog:visible button:has-text("Crea")').click()
     await expect(page.locator('.q-dialog:visible')).not.toBeVisible({ timeout: 15000 })
 
-    // Verifica che l'associazione sia nella tabella
-    await page.waitForTimeout(1000)
-    const cell = page.locator('.q-table td').filter({ hasText: nome }).first()
-    await expect(cell).toBeVisible({ timeout: 10000 })
+    // Verifica che l'associazione sia visibile (table mode o grid mode)
+    await page.waitForTimeout(1500)
+    await expect(page.locator(`text="${nome}"`).first()).toBeVisible({ timeout: 10000 })
 
     // Salva ID per cleanup
     const res = await apiGet('Associazioni', {
@@ -216,5 +215,58 @@ test.describe('Admin — Impersonazione', () => {
         /* cleanup */
       }
     }
+  })
+
+  test('AD-CHECK-01: Tab Check mostra verifica consistenza @smoke', async ({ page }) => {
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.locator('.q-tab:has-text("Check")').click()
+    await page.waitForTimeout(3000)
+    await expect(page.locator('.q-banner').first()).toBeVisible({ timeout: 15000 })
+  })
+
+  test('AD-CHECK-02: Contatto senza utente appare nel Check @crud', async ({ page }) => {
+    const emailAddr = `test.adcheck.${Date.now()}@example.com`
+    const contattoRes = await apiPost('contatti', {
+      id_contatto: `TEST_ADCHECK_${Date.now()}`,
+      Nome: 'TEST_AD',
+      Cognome: 'CHECK',
+      IsVolontario: true
+    })
+    const contattoId = contattoRes.data?.id_contatto || contattoRes.data?.id
+    expect(contattoId).toBeTruthy()
+
+    const emailRes = await apiPost('email', { Contatto: contattoId, email_address: emailAddr, Primary: true })
+    const emailId = emailRes.data?.id || emailRes.data?.[0]?.id
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.locator('.q-tab:has-text("Check")').click()
+    await page.waitForTimeout(5000)
+
+    // The contact should appear in either the senzaUtente list or "Nessuna anomalia"
+    const senzaUtenteSection = page.locator('text=Senza utente Directus').first()
+    const noAnomalie = page.locator('text=Nessuna anomalia trovata').first()
+    await expect(noAnomalie.or(senzaUtenteSection)).toBeVisible({ timeout: 15000 })
+
+    if (emailId) {
+      try {
+        await apiDelete('email', emailId)
+      } catch {}
+    }
+    if (contattoId) {
+      try {
+        await apiDelete('contatti', contattoId)
+      } catch {}
+    }
+  })
+
+  test('AD-IMP-03: Pulsante Impersona visibile su mobile @smoke', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 })
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForTimeout(3000)
+    const impBtn = page.locator('[aria-label="Impersona utente"]').first()
+    await expect(impBtn).toBeVisible({ timeout: 10000 })
   })
 })

@@ -23,6 +23,7 @@
     bordered
     hide-pagination
     :pagination="{ rowsPerPage: 0 }"
+    :grid="$q.screen.lt.sm"
   >
     <template #body-cell-budget="props">
       <q-td :props="props">
@@ -52,6 +53,39 @@
           <q-tooltip>Salva</q-tooltip>
         </q-btn>
       </q-td>
+    </template>
+    <template #item="props">
+      <div class="q-pa-xs col-12">
+        <q-card flat bordered>
+          <q-card-section>
+            <div class="text-weight-medium">{{ props.row.Nome }}</div>
+            <div class="row items-center q-gutter-sm q-mt-sm">
+              <q-input
+                :model-value="assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget"
+                outlined
+dense
+type="number"
+min="0"
+step="0.01"
+                label="Budget (€)"
+                @update:model-value="val => editAssocBudget(props.row, val)"
+              />
+              <q-btn
+                v-if="assocBudgetCache[props.row.id] !== undefined"
+                icon="save"
+color="positive"
+round
+flat
+size="sm"
+                :loading="savingAssoc"
+                @click="saveAssocBudget(props.row)"
+              >
+                <q-tooltip>Salva</q-tooltip>
+              </q-btn>
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
     </template>
   </q-table>
 

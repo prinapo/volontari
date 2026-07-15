@@ -116,6 +116,7 @@ test.describe('Referente Role', () => {
     const cognome = 'AutoTest'
 
     const gestionePage = new GestionePage(page)
+    await gestionePage.goto()
     await gestionePage.selectContattiTab()
     await page.waitForTimeout(2000)
 
@@ -162,7 +163,11 @@ test.describe('Referente Role', () => {
       await emailInput.fill(rf02Email)
       // Click elsewhere to trigger blur (onEmailBlur creates email via API)
       await dialog.locator('.text-h6').first().click()
-      await page.waitForResponse(resp => resp.url().includes('/items/email') && resp.request().method() === 'POST', { timeout: 5000 }).catch(() => {})
+      await page
+        .waitForResponse(resp => resp.url().includes('/items/email') && resp.request().method() === 'POST', {
+          timeout: 5000
+        })
+        .catch(() => {})
       await page.waitForTimeout(300)
       const [patchResp] = await Promise.all([
         page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
@@ -199,9 +204,13 @@ test.describe('Referente Role', () => {
       }
       await page.waitForTimeout(500)
       if (await gestionePage.contattiDialog.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await page.evaluate(() => {
-          document.querySelectorAll('.q-dialog').forEach(d => { d.style.display = 'none' })
-        }).catch(() => {})
+        await page
+          .evaluate(() => {
+            document.querySelectorAll('.q-dialog').forEach(d => {
+              d.style.display = 'none'
+            })
+          })
+          .catch(() => {})
       }
       await expect(gestionePage.contattiDialog).not.toBeVisible({ timeout: 5000 })
       console.log('[RF-02] contatti dialog closed')
@@ -293,8 +302,7 @@ test.describe('Referente Role', () => {
 
     // Setup: volontario via UI + trova un referente esistente via API
     await loginGestore(page)
-    const { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } =
-      await import('../helpers/pagina-gestione.js')
+    const { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } = await import('../helpers/pagina-gestione.js')
     const fam = await createFamigliaViaUI(page, { nomeFamiglia: prefix })
     rf04Ids.famiglia = fam.id_famiglia
     // Trova il primo referente disponibile nel DB
@@ -354,7 +362,7 @@ test.describe('Referente Role', () => {
       }
     }
 
-    if (!targetRow) throw new Error("Nessuna riga trovata")
+    if (!targetRow) throw new Error('Nessuna riga trovata')
 
     // Apri dialog Assegna Referente
     if (isMobile) {
@@ -373,7 +381,11 @@ test.describe('Referente Role', () => {
 
     // Cerca il referente esistente per nome (primi 3 caratteri)
     const searchInput = refDialog.locator('input[aria-label="Cerca referente..."]')
-    try { await searchInput.click({ timeout: 3000 }) } catch { await searchInput.click({ force: true }) }
+    try {
+      await searchInput.click({ timeout: 3000 })
+    } catch {
+      await searchInput.click({ force: true })
+    }
     await page.waitForTimeout(300)
     await searchInput.fill(refName.slice(0, 3))
     await page.waitForTimeout(2000)
@@ -386,7 +398,7 @@ test.describe('Referente Role', () => {
     await option.waitFor({ state: 'attached', timeout: 5000 }).catch(() => {})
     const menuCount = await option.count()
     console.log(`[RF-04] referente options: ${menuCount}`)
-    
+
     await option.click({ force: true }).catch(() => option.click())
     await page.waitForTimeout(500)
 
@@ -401,8 +413,6 @@ test.describe('Referente Role', () => {
     const referenteItems = refDialog.locator('.row.items-center .text-body2')
     const afterAddCount = await referenteItems.count()
     console.log(`[RF-04] afterAddCount: ${afterAddCount}`)
-
-    
 
     // Rimuovi il referente
     await page.keyboard.press('Escape').catch(() => {})
@@ -483,7 +493,7 @@ test.describe('Referente Role', () => {
       }
     }
 
-    if (!targetRow) throw new Error("Nessuna riga trovata")
+    if (!targetRow) throw new Error('Nessuna riga trovata')
 
     if (isMobile) {
       await targetRow.locator('[data-testid="btn-assigna-referente"]').click()

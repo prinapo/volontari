@@ -508,7 +508,7 @@ test.describe('VerificaPage', () => {
     await page.goto('/verifica')
     await page.waitForTimeout(2000)
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('.summary-grid')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.text-caption:has-text("Famiglie/progetti")')).toBeVisible({ timeout: 5000 })
     await expect(page).toHaveScreenshot('verifica-page.png', {
       maxDiffPixels: 1000,
       animations: 'disabled',

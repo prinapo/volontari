@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="model" persistent @show="initData">
+  <q-dialog v-model="model" persistent :full-width="$q.screen.lt.sm" @show="initData">
     <q-card class="riconcilia-dialog-card bg-grey-1">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">
@@ -31,9 +31,8 @@
 
       <q-separator />
 
-      <q-scroll-area style="height: 65vh">
-        <div class="q-pa-md">
-          <!-- Genitori / Volontari -->
+      <div class="q-pa-md">
+        <!-- Genitori / Volontari -->
           <q-card flat bordered class="q-mb-md">
             <q-card-section class="q-pa-sm">
               <div v-if="genitoriList.length > 0" class="q-mb-sm">
@@ -71,197 +70,168 @@
             <div v-for="field in leftFields" :key="field.key" class="q-mb-sm">
               <q-card flat bordered>
                 <q-card-section class="q-pa-sm">
-                  <div class="row items-center q-gutter-x-xs q-mb-xs">
-                    <div class="text-subtitle2 text-weight-medium">
-                      {{ field.label }}
-                    </div>
-                    <span class="text-caption text-grey-6">— valore inserito</span>
-                  </div>
-                  <div class="text-body1">
-                    {{ getLeftValue(field.key) || '—' }}
+                  <div class="text-subtitle2 text-weight-medium q-mb-xs">
+                    {{ field.label }}
                   </div>
 
-                  <div class="text-center q-my-xs">
+                  <div class="row items-center q-gutter-x-xs q-mb-xs">
+                    <span class="text-caption text-grey-6">Inserito:</span>
+                    <span class="text-body1">{{ getLeftValue(field.key) || '—' }}</span>
                     <template v-if="isFieldDifferent(field.key)">
                       <q-btn
                         round
                         flat
-                        icon="arrow_downward"
+                        icon="content_copy"
                         color="primary"
                         size="xs"
                         aria-label="Copia dal richiedente"
                         @click="copyField(field.key)"
                       >
-                        <q-tooltip>Copia dal richiedente</q-tooltip>
+                        <q-tooltip>Copia e salva</q-tooltip>
                       </q-btn>
                     </template>
-                    <q-icon v-else name="check_circle" color="positive" size="xs" class="q-mx-xs">
+                    <q-icon v-else name="check_circle" color="positive" size="xs">
                       <q-tooltip>Dati corrispondenti</q-tooltip>
                     </q-icon>
                   </div>
 
-                  <div class="text-caption text-grey-6">
-                    valore nel database
+                  <div class="row items-center q-gutter-x-xs no-wrap">
+                    <span class="text-caption text-grey-6">Database:</span>
+                    <q-input
+                      v-if="field.editable && isFieldDifferent(field.key)"
+                      :model-value="rightValues[field.key]"
+                      outlined
+                      :color="isFieldDifferent(field.key) ? 'negative' : 'primary'"
+                      :error="isFieldDifferent(field.key)"
+                      :type="field.inputType || 'text'"
+                      dense
+                      class="col"
+                      @update:model-value="(val) => setRightValue(field.key, val)"
+                    />
+                    <span v-else class="text-body1">{{ rightValues[field.key] || '—' }}</span>
+                    <template v-if="isFieldDifferent(field.key)">
+                      <q-btn
+                        icon="check"
+                        color="positive"
+                        round
+                        flat
+                        size="sm"
+                        aria-label="Dato già corretto"
+                        @click="confirmField(field.key)"
+                      >
+                        <q-tooltip>Dato già corretto</q-tooltip>
+                      </q-btn>
+                    </template>
                   </div>
-                  <q-input
-                    v-if="field.editable"
-                    :model-value="rightValues[field.key]"
-                    outlined
-                    :color="isFieldDifferent(field.key) ? 'negative' : 'primary'"
-                    :error="isFieldDifferent(field.key)"
-                    :type="field.inputType || 'text'"
-                    dense
-                    @update:model-value="(val) => setRightValue(field.key, val)"
-                  />
-                  <div v-else class="text-body1">
-                    {{ rightValues[field.key] || '—' }}
-                  </div>
-
-                  <div v-if="field.saveable && isFieldDifferent(field.key)" class="text-center row q-gutter-xs justify-center">
-                    <q-btn
-                      icon="check"
-                      color="positive"
-                      round
-                      flat
-                      size="sm"
-                      aria-label="Dato già corretto"
-                      @click="confirmField(field.key)"
-                    >
-                      <q-tooltip>Dato già corretto</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      icon="save"
-                      color="positive"
-                      round
-                      flat
-                      size="sm"
-                      data-testid="btn-save-field"
-                      aria-label="Salva"
-                      @click="saveField(field.key)"
-                    >
-                      <q-tooltip>Salva</q-tooltip>
-                  </q-btn>
-                </div>
-              </q-card-section>
-            </q-card>
+                </q-card-section>
+              </q-card>
             </div>
           </div>
 
-          <!-- Dati Bancari (raggruppa IBAN + Intestatario) -->
+          <!-- Dati Bancari - Intestatario -->
           <div class="q-mb-sm">
             <q-card flat bordered>
               <q-card-section class="q-pa-sm">
-                <div class="text-subtitle2 text-weight-medium q-mb-sm">Dati Bancari</div>
-
-                <!-- IBAN -->
-                <div class="q-mb-sm">
-                  <div class="row items-center q-gutter-x-xs q-mb-xs">
-                    <div class="text-subtitle2 text-weight-medium">IBAN</div>
-                    <span class="text-caption text-grey-6">— valore inserito</span>
-                  </div>
-                  <div class="text-body1">
-                    {{ getLeftValue('IBAN') || '—' }}
-                  </div>
-                  <div class="text-center q-my-xs">
-                    <template v-if="isFieldDifferent('IBAN')">
-                      <q-btn
-round
-flat
-icon="arrow_downward"
-color="primary"
-size="xs"
-aria-label="Copia IBAN"
-@click="copyField('IBAN')">
-                        <q-tooltip>Copia dal richiedente</q-tooltip>
-                      </q-btn>
-                    </template>
-                    <q-icon v-else name="check_circle" color="positive" size="xs" class="q-mx-xs">
-                      <q-tooltip>Dati corrispondenti</q-tooltip>
-                    </q-icon>
-                  </div>
-                  <div class="text-caption text-grey-6">valore nel database</div>
-                  <q-input
-:model-value="rightValues.IBAN"
-outlined
-dense
-:color="isFieldDifferent('IBAN') ? 'negative' : 'primary'"
-:error="isFieldDifferent('IBAN')"
-@update:model-value="val => setRightValue('IBAN', val)" />
-                  <div v-if="isFieldDifferent('IBAN')" class="text-center row q-gutter-xs justify-center q-mt-xs">
-                    <q-btn
-icon="check"
-color="positive"
-round
-flat
-size="sm"
-aria-label="Dato già corretto"
-@click="confirmField('IBAN')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
-                    <q-btn
-icon="save"
-color="positive"
-round
-flat
-size="sm"
-data-testid="btn-save-field"
-aria-label="Salva"
-@click="saveField('IBAN')"><q-tooltip>Salva</q-tooltip></q-btn>
-                  </div>
-                </div>
-
-                <q-separator class="q-my-sm" />
-
-                <!-- Intestatario -->
+                <div class="text-subtitle2 text-weight-medium q-mb-sm">Dati Bancari - Intestatario</div>
                 <div>
                   <div class="row items-center q-gutter-x-xs q-mb-xs">
-                    <div class="text-subtitle2 text-weight-medium">Intestatario</div>
-                    <span class="text-caption text-grey-6">— valore inserito</span>
-                  </div>
-                  <div class="text-body1">
-                    {{ getLeftValue('Intestatario') || '—' }}
-                  </div>
-                  <div class="text-center q-my-xs">
+                    <span class="text-caption text-grey-6">Inserito:</span>
+                    <span class="text-body1">{{ getLeftValue('Intestatario') || '—' }}</span>
                     <template v-if="isFieldDifferent('Intestatario')">
                       <q-btn
 round
 flat
-icon="arrow_downward"
+icon="content_copy"
 color="primary"
 size="xs"
-aria-label="Copia Intestatario"
+                        aria-label="Copia Intestatario"
 @click="copyField('Intestatario')">
-                        <q-tooltip>Copia dal richiedente</q-tooltip>
+                        <q-tooltip>Copia e salva</q-tooltip>
                       </q-btn>
                     </template>
-                    <q-icon v-else name="check_circle" color="positive" size="xs" class="q-mx-xs">
+                    <q-icon v-else name="check_circle" color="positive" size="xs">
                       <q-tooltip>Dati corrispondenti</q-tooltip>
                     </q-icon>
                   </div>
-                  <div class="text-caption text-grey-6">valore nel database</div>
-                  <q-input
-:model-value="rightValues.Intestatario"
-outlined
+                  <div class="row items-center q-gutter-x-xs no-wrap">
+                    <span class="text-caption text-grey-6">Database:</span>
+                    <q-input
+                      v-if="isFieldDifferent('Intestatario')"
+                      :model-value="rightValues.Intestatario"
+                      outlined
 dense
-:color="isFieldDifferent('Intestatario') ? 'negative' : 'primary'"
-:error="isFieldDifferent('Intestatario')"
-@update:model-value="val => setRightValue('Intestatario', val)" />
-                  <div v-if="isFieldDifferent('Intestatario')" class="text-center row q-gutter-xs justify-center q-mt-xs">
-                    <q-btn
+class="col"
+                      :error="isFieldDifferent('Intestatario')"
+                      :color="isFieldDifferent('Intestatario') ? 'negative' : 'primary'"
+                      @update:model-value="val => setRightValue('Intestatario', val)" />
+                    <span v-else class="text-body1">{{ rightValues.Intestatario || '—' }}</span>
+                    <template v-if="isFieldDifferent('Intestatario')">
+                      <q-btn
 icon="check"
 color="positive"
 round
 flat
 size="sm"
-aria-label="Dato già corretto"
-@click="confirmField('Intestatario')"><q-tooltip>Dato già corretto</q-tooltip></q-btn>
-                    <q-btn
-icon="save"
+                        aria-label="Dato già corretto"
+@click="confirmField('Intestatario')">
+                        <q-tooltip>Dato già corretto</q-tooltip>
+                      </q-btn>
+                    </template>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <!-- Dati Bancari - IBAN -->
+          <div class="q-mb-sm">
+            <q-card flat bordered>
+              <q-card-section class="q-pa-sm">
+                <div class="text-subtitle2 text-weight-medium q-mb-sm">Dati Bancari - IBAN</div>
+                <div class="q-mb-sm">
+                  <div class="text-caption text-grey-6 q-mb-xs">Inserito:</div>
+                  <div class="row items-center q-gutter-x-xs">
+                    <span class="text-body1">{{ getLeftValue('IBAN') || '—' }}</span>
+                    <template v-if="isFieldDifferent('IBAN')">
+                      <q-btn
+round
+flat
+icon="content_copy"
+color="primary"
+size="xs"
+                        aria-label="Copia IBAN"
+@click="copyField('IBAN')">
+                        <q-tooltip>Copia e salva</q-tooltip>
+                      </q-btn>
+                    </template>
+                    <q-icon v-else name="check_circle" color="positive" size="xs">
+                      <q-tooltip>Dati corrispondenti</q-tooltip>
+                    </q-icon>
+                  </div>
+                  <div class="text-caption text-grey-6 q-mt-xs q-mb-xs">Database:</div>
+                  <div class="row items-center q-gutter-x-xs no-wrap">
+                    <q-input
+                      v-if="isFieldDifferent('IBAN')"
+                      :model-value="rightValues.IBAN"
+                      outlined
+dense
+class="col"
+                      :error="isFieldDifferent('IBAN')"
+                      :color="isFieldDifferent('IBAN') ? 'negative' : 'primary'"
+                      @update:model-value="val => setRightValue('IBAN', val)" />
+                    <span v-else class="text-body1">{{ rightValues.IBAN || '—' }}</span>
+                    <template v-if="isFieldDifferent('IBAN')">
+                      <q-btn
+icon="check"
 color="positive"
 round
 flat
 size="sm"
-data-testid="btn-save-field"
-aria-label="Salva"
-@click="saveField('Intestatario')"><q-tooltip>Salva</q-tooltip></q-btn>
+                        aria-label="Dato già corretto"
+@click="confirmField('IBAN')">
+                        <q-tooltip>Dato già corretto</q-tooltip>
+                      </q-btn>
+                    </template>
                   </div>
                 </div>
               </q-card-section>
@@ -295,74 +265,59 @@ aria-label="Salva"
                 <div v-for="field in projectFields" :key="field.key" class="q-mb-sm">
                   <q-card flat bordered>
                     <q-card-section class="q-pa-sm">
-                      <div class="row items-center q-gutter-x-xs q-mb-xs">
-                        <div class="text-subtitle2 text-weight-medium">
-                          {{ field.label }}
-                        </div>
-                        <span class="text-caption text-grey-6">— valore inserito</span>
-                      </div>
-                      <div class="text-body1">
-                        {{ getSubmissionProjectValue(field.key) || '—' }}
+                      <div class="text-subtitle2 text-weight-medium q-mb-xs">
+                        {{ field.label }}
                       </div>
 
-                      <div class="text-center q-my-xs">
+                      <div class="row items-center q-gutter-x-xs q-mb-xs">
+                        <span class="text-caption text-grey-6">Inserito:</span>
+                        <span class="text-body1">{{ getSubmissionProjectValue(field.key) || '—' }}</span>
                         <template v-if="isProjectFieldDifferent(field.key)">
                           <q-btn
-                            round
-                            flat
-                            icon="arrow_downward"
-                            color="primary"
-                            size="xs"
+round
+flat
+icon="content_copy"
+color="primary"
+size="xs"
                             aria-label="Copia dal submission"
-                            @click="copyProjectField(field.key)"
-                          >
-                            <q-tooltip>Copia dal submission</q-tooltip>
+@click="copyProjectField(field.key)">
+                            <q-tooltip>Copia e salva</q-tooltip>
                           </q-btn>
                         </template>
-                        <q-icon v-else name="check_circle" color="positive" size="xs" class="q-mx-xs">
+                        <q-icon v-else name="check_circle" color="positive" size="xs">
                           <q-tooltip>Dati corrispondenti</q-tooltip>
                         </q-icon>
                       </div>
 
-                      <div class="text-caption text-grey-6">
-                        valore nel database
-                      </div>
-                      <q-input
+                      <div class="row items-center q-gutter-x-xs no-wrap">
+                        <span class="text-caption text-grey-6">Database:</span>
+                        <q-input
+                          v-if="isProjectFieldDifferent(field.key)"
                           :model-value="projectValues[field.key]"
                           outlined
-                          :color="isProjectFieldDifferent(field.key) ? 'negative' : 'primary'"
+dense
+class="col"
                           :error="isProjectFieldDifferent(field.key)"
+                          :color="isProjectFieldDifferent(field.key) ? 'negative' : 'primary'"
                           :disable="!field.editable"
-                          dense
                           @update:model-value="(val) => setProjectValue(field.key, val)"
                         />
-
-                        <div v-if="field.saveable && isProjectFieldDifferent(field.key)" class="text-center row q-gutter-xs justify-center">
+                        <span v-else class="text-body1">{{ projectValues[field.key] || '—' }}</span>
+                        <template v-if="field.saveable && isProjectFieldDifferent(field.key)">
                           <q-btn
-                            icon="check"
-                            color="positive"
-                            round
-                            flat
-                            size="sm"
+icon="check"
+color="positive"
+round
+flat
+size="sm"
                             aria-label="Dato già corretto"
-                            @click="confirmProjectField(field.key)"
-                          >
+@click="confirmProjectField(field.key)">
                             <q-tooltip>Dato già corretto</q-tooltip>
                           </q-btn>
-                          <q-btn
-                            icon="save"
-                            color="positive"
-                            round
-                            flat
-                            size="sm"
-                            :aria-label="'Salva'"
-                            @click="saveProjectField(field.key)"
-                          >
-                            <q-tooltip>Salva</q-tooltip>
-                          </q-btn>
-                        </div>
-                  </q-card-section>
-                </q-card>
+                        </template>
+                      </div>
+                    </q-card-section>
+                  </q-card>
                 </div>
               </div>
             </template>
@@ -448,17 +403,23 @@ aria-label="Salva"
             />
           </div>
         </div>
-      </q-scroll-area>
 
       <q-separator />
 
-      <q-card-actions align="right" class="q-pa-md">
+      <div v-if="hasUnresolvedDiffs" class="q-px-md q-pt-sm">
+        <div class="text-caption text-negative row items-center q-gutter-x-xs">
+          <q-icon name="warning" size="xs" />
+          <span>Risolvi tutte le differenze nei dati prima di creare il giustificativo</span>
+        </div>
+      </div>
+
+      <q-card-actions align="right" class="q-pa-md q-pb-xl">
         <q-btn v-close-popup flat label="Annulla" color="negative" />
         <q-btn
           flat
           label="Crea giustificativo"
           color="primary"
-          :disable="!selectedProgettoId || savingField !== null"
+          :disable="!selectedProgettoId || savingField !== null || hasUnresolvedDiffs"
           :loading="saving"
           data-testid="btn-crea-giustificativo"
           @click="confirmReconcile"
@@ -581,6 +542,19 @@ const progettoOptions = computed(() =>
   }))
 )
 
+const hasUnresolvedDiffs = computed(() => {
+  const fieldKeys = leftFields.map(f => f.key)
+  const bancariKeys = ['IBAN', 'Intestatario']
+  const projectKeys = projectFields.map(f => f.key)
+  for (const key of [...fieldKeys, ...bancariKeys]) {
+    if (isFieldDifferent(key)) return true
+  }
+  for (const key of projectKeys) {
+    if (isProjectFieldDifferent(key)) return true
+  }
+  return false
+})
+
 function getSubmissionProjectValue(key) {
   const submission = props.submission
   if (!submission) return ''
@@ -613,17 +587,9 @@ function copyProjectField(key) {
   const val = typeof srcMapping === 'function' ? srcMapping(props.submission) : (props.submission[srcMapping] || '')
   if (!val) return
 
-  $q.dialog({
-    title: 'Salva il dato',
-    message: `Vuoi salvare "${val}" come ${key} nel progetto?`,
-    cancel: { label: 'No', flat: true },
-    ok: { label: 'Sì, salva', color: 'primary' },
-    persistent: true
-  }).onOk(async () => {
-    projectValues.value[key] = val
-    projectConfirmedFields.value.delete(key)
-    await saveProjectField(key)
-  })
+  projectValues.value[key] = val
+  projectConfirmedFields.value.delete(key)
+  saveProjectField(key)
 }
 
 async function saveProjectField(key) {
@@ -686,18 +652,9 @@ function copyField(key) {
   const val = props.submission[srcKey] || ''
   if (!val) return
 
-  const label = leftFields.find(f => f.key === key)?.label || key
-  $q.dialog({
-    title: 'Salva il dato',
-    message: `Vuoi salvare "${val}" come ${label} nel database?`,
-    cancel: { label: 'No', flat: true },
-    ok: { label: 'Sì, salva', color: 'primary' },
-    persistent: true
-  }).onOk(async () => {
-    rightValues.value[key] = val
-    confirmedFields.value.delete(key)
-    await saveField(key)
-  })
+  rightValues.value[key] = val
+  confirmedFields.value.delete(key)
+  saveField(key)
 }
 
 async function saveField(key) {

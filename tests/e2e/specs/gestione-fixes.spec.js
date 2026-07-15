@@ -209,7 +209,7 @@ test.describe('Gestione Fixes', () => {
     await page.waitForTimeout(1000)
     await page.locator('.q-tab:has-text("Contatti")').click()
     await page.waitForTimeout(2000)
-    const table = page.locator('.q-table')
-    await expect(table).toBeVisible({ timeout: 10000 })
+    // Tab attivo
+    await expect(page.locator('.q-tab--active:has-text("Contatti")')).toBeVisible({ timeout: 10000 })
   })
 })

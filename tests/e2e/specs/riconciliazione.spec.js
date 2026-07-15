@@ -70,7 +70,7 @@ test.describe('Riconciliazione', () => {
   })
 
   // ── RC-SETUP-01: Aggiunge IBAN/Intestatario a famiglia via FamigliaDialog ──
-  
+
   // ── RC-NF-01: not_found → Crea contatto ──
   test('RC-NF-01: not_found crea contatto e aggiorna stato @crud', async ({ page }) => {
     test.setTimeout(120000)
@@ -83,7 +83,7 @@ test.describe('Riconciliazione', () => {
       fields: 'id',
       limit: 50
     })
-    for (const s of (oldSubs.data || [])) {
+    for (const s of oldSubs.data || []) {
       await apiDelete('InviiGiustificativiNoLogin', s.id).catch(() => {})
     }
 
@@ -103,7 +103,10 @@ test.describe('Riconciliazione', () => {
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
-    await page.locator('button[aria-label="Aggiorna"]').click().catch(() => {})
+    await page
+      .locator('button[aria-label="Aggiorna"]')
+      .click()
+      .catch(() => {})
     await page.waitForTimeout(3000)
 
     // Cerca su tutte le pagine
@@ -121,7 +124,8 @@ test.describe('Riconciliazione', () => {
           if (value === testEmail) emailMatch = true
         } else {
           const caption = rows.nth(i).locator('.q-item__label--caption')
-          const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await rows.nth(i).innerText()
+          const rowText =
+            (await caption.count()) > 0 ? await caption.first().innerText() : await rows.nth(i).innerText()
           if (rowText.toLowerCase().includes(testEmail.toLowerCase())) emailMatch = true
         }
         if (emailMatch) {
@@ -232,7 +236,7 @@ test.describe('Riconciliazione', () => {
       fields: 'id',
       limit: 50
     })
-    for (const s of (oldSubsNP.data || [])) {
+    for (const s of oldSubsNP.data || []) {
       await apiDelete('InviiGiustificativiNoLogin', s.id).catch(() => {})
     }
     const subNP = await apiPost('InviiGiustificativiNoLogin', {
@@ -249,7 +253,10 @@ test.describe('Riconciliazione', () => {
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
-    await page.locator('button[aria-label="Aggiorna"]').click().catch(() => {})
+    await page
+      .locator('button[aria-label="Aggiorna"]')
+      .click()
+      .catch(() => {})
     await page.waitForTimeout(3000)
 
     // Cerca su tutte le pagine
@@ -267,7 +274,8 @@ test.describe('Riconciliazione', () => {
           if (value === testEmail) emailMatch = true
         } else {
           const caption = rows.nth(i).locator('.q-item__label--caption')
-          const rowText = (await caption.count()) > 0 ? await caption.first().innerText() : await rows.nth(i).innerText()
+          const rowText =
+            (await caption.count()) > 0 ? await caption.first().innerText() : await rows.nth(i).innerText()
           if (rowText.toLowerCase().includes(testEmail.toLowerCase())) emailMatch = true
         }
         if (emailMatch) {
@@ -298,7 +306,7 @@ test.describe('Riconciliazione', () => {
       await apiDelete('Famiglie', id).catch(() => {})
     }
   })
-test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
+  test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
     test.setTimeout(90000)
 
     // Crea famiglia atomica per il test
@@ -593,14 +601,13 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     await foundBtn.click()
     await riconcPage.waitForDialog()
 
-    const saveBtn = riconcPage.dialog.locator('[data-testid="btn-save-field"]').first()
-    if ((await saveBtn.count()) === 0 || (await saveBtn.isDisabled())) {
+    // Copia il valore dal richiedente (salva automaticamente)
+    const copyBtn = riconcPage.dialog.locator('[aria-label="Copia dal richiedente"]').first()
+    if ((await copyBtn.count()) === 0 || (await copyBtn.isDisabled())) {
       await riconcPage.closeDialog()
-      throw new Error('Save button disabled — dati già uguali')
-      return
+      throw new Error('Copy button disabled — dati già uguali')
     }
-
-    await saveBtn.click()
+    await copyBtn.click()
     await expect(page.locator('.q-notification.bg-positive').first()).toBeVisible({ timeout: 5000 })
     await riconcPage.closeDialog()
     await page.evaluate(() => localStorage.clear())
@@ -674,7 +681,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     // Attiva toggle "Mostra scartati"
     const toggle = page.locator('.q-toggle:has-text("Mostra scartati")')
     if ((await toggle.count()) === 0) {
-      }
+    }
     await toggle.click()
     await riconcPage.waitForTable()
 
@@ -807,8 +814,21 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
       firstItem = page.locator('.q-dialog .q-item').first()
     }
     if ((await firstItem.count()) === 0) {
-      }
+      // noop
+    }
     await firstItem.click()
+
+    // Risolvi tutte le differenze nei campi prima di creare il giustificativo
+    while (true) {
+      const checkBtn = riconcPage.dialog.locator('[aria-label="Dato già corretto"]').first()
+      if (await checkBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+        await checkBtn.click()
+        await page.waitForTimeout(200)
+      } else {
+        break
+      }
+    }
+    await page.waitForTimeout(500)
 
     // Compila giustificativo
     await riconcPage.dialog.locator('[data-testid="riconcilia-descrizione"]').fill('TEST_RC-05 Riconciliazione')
@@ -890,7 +910,7 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     // Ora attiva toggle scartati e recupera
     const toggle = page.locator('.q-toggle:has-text("Mostra scartati")')
     if ((await toggle.count()) === 0) {
-      }
+    }
     const toggleInput = toggle.locator('input')
     const isChecked = await toggleInput.isChecked()
     if (!isChecked) {
@@ -988,7 +1008,8 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
 
     // Setup atomico: crea 2 famiglie + contatto
     await loginGestore(page)
-    const { createFamigliaViaUI, createContattoViaUI, assegnaContattoAFamigliaViaUI } = await import('../helpers/pagina-gestione.js')
+    const { createFamigliaViaUI, createContattoViaUI, assegnaContattoAFamigliaViaUI } =
+      await import('../helpers/pagina-gestione.js')
 
     // Crea contatto
     const contatto = await createContattoViaUI(page, {
@@ -1097,4 +1118,3 @@ test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ pag
     expect(found, `Submission ${testEmail} non trovata come contatto verificato`).toBe(true)
   })
 })
-

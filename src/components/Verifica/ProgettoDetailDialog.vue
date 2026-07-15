@@ -260,6 +260,7 @@
         <q-table
           v-if="(progetto.giustificativi || []).length > 0"
           flat
+          bordered
           dense
           :rows="progetto.giustificativi"
           :columns="giustColumns"

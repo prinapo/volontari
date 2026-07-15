@@ -20,6 +20,7 @@ const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf
 async function createGiustificativoViaVerificatore(page) {
   await loginAs(page, 'manager', auth)
   const vp = new VerificaPage(page)
+  await vp.goto()
   await vp.waitForTable()
   await page.waitForTimeout(2000)
 
@@ -94,7 +95,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await page.waitForTimeout(1000)
     const rowCount = await vp.getRowCount()
     if (rowCount === 0) {
-      }
+    }
     let foundRow = -1
     for (let i = 0; i < rowCount; i++) {
       const text = await vp.rows.nth(i).innerText()
@@ -104,7 +105,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       }
     }
     if (foundRow === -1) {
-      }
+    }
     await vp.expandRow(foundRow)
     await page.waitForTimeout(1000)
 
@@ -112,7 +113,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
       if (!(await verifyBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
         console.log('[VF-01] btn-verify not visible after expand')
-        }
+      }
       await verifyBtn.click()
       await page.waitForTimeout(3000)
     })
@@ -153,14 +154,14 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.searchFamiglia(nomeFam)
     await page.waitForTimeout(1000)
     if ((await vp.getRowCount()) === 0) {
-      }
+    }
     await vp.expandRow(0)
     await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'rifiutato', async () => {
       const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
       if (!(await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-        }
+      }
       await rejectBtn.click()
       await page.waitForTimeout(1500)
 
@@ -205,14 +206,14 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.searchFamiglia(nomeFam)
     await page.waitForTimeout(1000)
     if ((await vp.getRowCount()) === 0) {
-      }
+    }
     await vp.expandRow(0)
     await page.waitForTimeout(1000)
 
     const patches = await waitForPatchStato(page, 'inviato', async () => {
       const sendBtn = page.locator('[data-testid="btn-send"]').first()
       if (!(await sendBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-        }
+      }
       await sendBtn.click()
       await page.waitForTimeout(3000)
     })
@@ -256,6 +257,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     // 3. Verificatore verifica e poi rifiuta
     await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
+    await vp.goto()
     await vp.waitForTable()
 
     // Cerca il giustificativo appena creato

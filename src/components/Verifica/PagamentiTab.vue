@@ -59,11 +59,13 @@
         :rows="store.proposti"
         :columns="propostiColumns"
         row-key="id"
-flat
+        flat
         bordered
+        class="bg-white"
         selection="multiple"
         :loading="store.loading"
         :grid="$q.screen.lt.sm"
+        :dense="$q.screen.lt.md"
         :pagination="{ rowsPerPage: 0 }"
         hide-pagination
       >
@@ -112,11 +114,13 @@ map-options
         :columns="incorsoColumns"
         row-key="id"
         flat
-bordered
+        bordered
+        class="bg-white"
         :loading="store.loading"
         :pagination="{ rowsPerPage: 0 }"
         hide-pagination
         :grid="$q.screen.lt.sm"
+        :dense="$q.screen.lt.md"
       >
         <template #body-cell-importo="props">
           <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
@@ -170,26 +174,29 @@ aria-label="Rimuovi dal gruppo"
                 <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
                 <div v-else class="row q-gutter-xs q-mt-sm">
                   <q-btn
-flat
-dense
-icon="check_circle"
-color="positive"
-size="sm"
-@click="handlePagato(props.row)"><q-tooltip>Pagato</q-tooltip></q-btn>
+ flat
+ dense
+ icon="check_circle"
+ color="positive"
+ size="sm"
+ aria-label="Segna pagato"
+ @click="handlePagato(props.row)"><q-tooltip>Pagato</q-tooltip></q-btn>
                   <q-btn
-flat
-dense
-icon="cancel"
-color="negative"
-size="sm"
-@click="handleFallito(props.row)"><q-tooltip>Fallito</q-tooltip></q-btn>
+ flat
+ dense
+ icon="cancel"
+ color="negative"
+ size="sm"
+ aria-label="Segna fallito"
+ @click="handleFallito(props.row)"><q-tooltip>Fallito</q-tooltip></q-btn>
                   <q-btn
-flat
-dense
-icon="block"
-color="grey"
-size="sm"
-@click="handleAnnullato(props.row)"><q-tooltip>Rimuovi dal gruppo</q-tooltip></q-btn>
+ flat
+ dense
+ icon="block"
+ color="grey"
+ size="sm"
+ aria-label="Rimuovi dal gruppo"
+ @click="handleAnnullato(props.row)"><q-tooltip>Rimuovi dal gruppo</q-tooltip></q-btn>
                 </div>
               </q-card-section>
             </q-card>
@@ -205,13 +212,15 @@ size="sm"
         :rows="store.falliti"
         :columns="fallitiColumns"
         row-key="id"
-flat
+        flat
         bordered
+        class="bg-white"
         selection="multiple"
         :loading="store.loading"
         :pagination="{ rowsPerPage: 0 }"
         hide-pagination
         :grid="$q.screen.lt.sm"
+        :dense="$q.screen.lt.md"
       >
         <template #body-cell-iban="props">
           <q-td :props="props">
@@ -230,14 +239,18 @@ flat
           <div class="q-pa-xs col-12">
             <q-card flat bordered>
               <q-card-section>
+                <div class="row items-center q-gutter-sm q-mb-sm">
+                  <q-checkbox v-model="selectedFalliti" :val="props.row" dense />
+                  <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
+                </div>
                 <q-input
-:model-value="props.row.IBAN"
-label="IBAN"
-dense
-outlined
-class="q-mb-sm"
-:rules="IBAN_RULES"
-@update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))" />
+ :model-value="props.row.IBAN"
+ label="IBAN"
+ dense
+ outlined
+ class="q-mb-sm"
+ :rules="IBAN_RULES"
+ @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))" />
                 <q-input :model-value="props.row.Intestatario" label="Intestatario" dense outlined @update:model-value="val => editFallito(props.row, 'Intestatario', val)" />
               </q-card-section>
             </q-card>
@@ -263,9 +276,12 @@ class="q-mb-sm"
         row-key="id"
         flat
         bordered
+        class="bg-white"
         :loading="store.loading"
         :pagination="{ rowsPerPage: 0 }"
         hide-pagination
+        :grid="$q.screen.lt.sm"
+        :dense="$q.screen.lt.md"
       >
         <template #body-cell-data="props">
           <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
@@ -302,6 +318,47 @@ class="q-mb-sm"
               <q-tooltip>Elimina lista</q-tooltip>
             </q-btn>
           </q-td>
+        </template>
+        <template #item="props">
+          <div class="q-pa-xs col-12">
+            <q-card flat bordered>
+              <q-card-section>
+                <div class="text-weight-medium">{{ props.row.Nome || '—' }}</div>
+                <div class="text-caption">{{ formatDate(props.row.DataCreazione) }}</div>
+                <div class="row items-center q-gutter-sm q-mt-sm">
+                  <span>€{{ formatNumber(props.row.Totale) }}</span>
+                  <q-btn
+                    flat
+round
+dense
+icon="download"
+color="primary"
+size="sm"
+                    type="a"
+aria-label="Scarica CSV"
+                    :disable="!props.row.File"
+                    :href="assetUrl(props.row.File, true)"
+                    :download="`${(props.row.Nome || '').replaceAll(/[^\w-]/g, '_')}.csv`"
+                    target="_blank"
+                  >
+                    <q-tooltip>Scarica CSV</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+round
+dense
+icon="delete"
+color="negative"
+size="sm"
+                    aria-label="Elimina lista"
+                    @click="confermaEliminaLista(props.row)"
+                  >
+                    <q-tooltip>Elimina lista</q-tooltip>
+                  </q-btn>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
         </template>
       </q-table>
     </template>

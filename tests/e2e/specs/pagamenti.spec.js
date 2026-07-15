@@ -33,25 +33,30 @@ test.describe('Gestione Pagamenti', () => {
     test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
     await expect(page.locator('.q-tab:has-text("Contatti")')).toBeVisible({ timeout: 10000 })
-    console.log('[PAG-01] Login e pagina gestione OK')
   })
 
-  test('PAG-02: Verificatore vede pagina verifica @smoke', async ({ page }) => {
+  test('PAG-02: Manager vede pagina verifica @smoke', async ({ page }) => {
     test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    console.log('[PAG-02] Pagina verifica OK')
   })
 
-  test('PAG-06: Tab Pagamenti in VerificaPage è visibile @smoke', async ({ page }) => {
+  test('PM-01: Pagina pagamenti carica @smoke', async ({ page }) => {
     test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
-    await page.goto('/verifica')
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    const pagTab = page.locator('.q-tab:has-text("Pagamenti")')
-    await expect(pagTab).toBeVisible({ timeout: 5000 })
-    console.log('[PAG-06] Tab Pagamenti visibile')
+    await page.goto('/pagamenti')
+    await expect(page.locator('.q-tab:has-text("Bonifici da fare")')).toBeVisible({ timeout: 10000 })
+  })
+
+  test('PM-02: Volontario non accede a /pagamenti @regression', async ({ page }) => {
+    test.setTimeout(30000)
+    await loginAs(page, 'volontario', auth)
+    await page.goto('/pagamenti')
+    await page.waitForTimeout(3000)
+    const finalUrl = page.url()
+    expect(finalUrl).not.toContain('/pagamenti')
+    expect(finalUrl).toContain('/famiglie')
   })
 
   test('PAG-10: Admin vede tab Errori in AdminPage @smoke', async ({ page }) => {
@@ -68,7 +73,6 @@ test.describe('Gestione Pagamenti', () => {
     await expect(page.locator('.q-tab--active')).toBeVisible({ timeout: 3000 })
     const label = await page.locator('.q-tab--active').innerText()
     expect(label.toLowerCase()).toContain('errori')
-    console.log('[PAG-10] AdminPage e tab Errori OK')
   })
 
   test('PAG-17: Volontario vede pagina famiglie @smoke', async ({ page }) => {
@@ -82,76 +86,43 @@ test.describe('Gestione Pagamenti', () => {
     const r = await creaFamigliaVolontarioProgetto(page, ids)
     await loginVolontarioConFamiglia(page, r.nomeFam)
     await expect(page.locator('.text-h6').first()).toBeVisible({ timeout: 10000 })
-    console.log('[PAG-17] Pagina famiglie OK')
     await pulisciIds(ids)
   })
 
-  test('PAG-20: Tab Pagamenti mostra sottotab Bonifici da fare @crud', async ({ page }) => {
-    test.setTimeout(60000)
+  test('PAG-20: Pagina pagamenti mostra sottotab Bonifici da fare @crud', async ({ page }) => {
+    test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
-    await page.goto('/verifica')
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
+    await page.goto('/pagamenti')
+    await page.waitForTimeout(2000)
 
-    // Click tab Pagamenti
-    const pagTab = page.locator('.q-tab:has-text("Pagamenti")')
-    await expect(pagTab).toBeVisible({ timeout: 5000 })
-    await pagTab.click()
-    await page.waitForTimeout(1000)
-
-    // Verifica che i sottotab siano visibili
     await expect(page.locator('.q-tab:has-text("Bonifici da fare")')).toBeVisible({ timeout: 5000 })
     await expect(page.locator('.q-tab:has-text("Da riscontrare")')).toBeVisible()
     await expect(page.locator('.q-tab:has-text("Falliti")')).toBeVisible()
-    console.log('[PAG-20] Sottotab Pagamenti visibili')
   })
 
-  test('PAG-21: Sottotab Bonifici da fare mostra contenuto @crud', async ({ page }) => {
-    test.setTimeout(60000)
+  test('PAG-21: Sottotab Bonifici da fare attivo @crud', async ({ page }) => {
+    test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
-    await page.goto('/verifica')
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-
-    const pagTab = page.locator('.q-tab:has-text("Pagamenti")')
-    await expect(pagTab).toBeVisible({ timeout: 5000 })
-    await pagTab.click()
+    await page.goto('/pagamenti')
     await page.waitForTimeout(1500)
-
-    // Verifica che Bonifici da fare sia attivo
     await expect(page.locator('.q-tab--active').first()).toBeVisible({ timeout: 3000 })
-    console.log('[PAG-21] Tab Pagamenti attivo')
   })
 
   test('PAG-22: Sottotab Da riscontrare si attiva @crud', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
-    await page.goto('/verifica')
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-
-    const pagTab = page.locator('.q-tab:has-text("Pagamenti")')
-    await expect(pagTab).toBeVisible({ timeout: 5000 })
-    await pagTab.click()
+    await page.goto('/pagamenti')
     await page.waitForTimeout(1000)
-
-    // Click su Da riscontrare
     await page.locator('.q-tab:has-text("Da riscontrare")').click()
     await page.waitForTimeout(500)
-    console.log('[PAG-22] Sottotab Da riscontrare attivato')
   })
 
   test('PAG-23: Sottotab Falliti si attiva @crud', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(30000)
     await loginAs(page, 'manager', auth)
-    await page.goto('/verifica')
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-
-    const pagTab = page.locator('.q-tab:has-text("Pagamenti")')
-    await expect(pagTab).toBeVisible({ timeout: 5000 })
-    await pagTab.click()
+    await page.goto('/pagamenti')
     await page.waitForTimeout(1000)
-
-    // Click su Falliti
     await page.locator('.q-tab:has-text("Falliti")').click()
     await page.waitForTimeout(500)
-    console.log('[PAG-23] Sottotab Falliti attivato')
   })
 })

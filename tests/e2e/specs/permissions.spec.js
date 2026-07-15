@@ -73,20 +73,17 @@ test.describe('Sidebar Navigation — Extra Roles', () => {
 })
 
 test.describe('Pagamenti Tab Accesso', () => {
-  test('PER-07: Verificatore vede tab Pagamenti @smoke', async ({ page }) => {
+  test('PER-07: Verificatore vede pagina Pagamenti @smoke', async ({ page }) => {
     await loginAs(page, 'manager', auth)
-    await page.goto('/verifica')
-    await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-    const pagamentiTab = page.locator('.q-tab:has-text("Pagamenti")')
-    await expect(pagamentiTab).toBeVisible({ timeout: 5000 })
+    await page.goto('/pagamenti')
+    await expect(page.locator('.q-tab:has-text("Bonifici da fare")')).toBeVisible({ timeout: 10000 })
   })
 
-  test('PER-08: Volontario non vede tab Pagamenti @smoke', async ({ page }) => {
+  test('PER-08: Volontario non vede pagina Pagamenti @regression', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
-    await page.goto('/verifica')
-    await page.waitForTimeout(2000)
-    expect(page.url()).not.toContain('/verifica')
+    await page.goto('/pagamenti')
+    await page.waitForTimeout(3000)
+    expect(page.url()).not.toContain('/pagamenti')
   })
 })
 
