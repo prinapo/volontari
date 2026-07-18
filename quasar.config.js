@@ -67,7 +67,7 @@ export default function (ctx) {
       plugins: ['Notify', 'Dialog'],
       config: {
         brand: {
-          primary: '#2E5D6E',
+          primary: ctx.dev ? '#C0503A' : '#2E5D6E',
           secondary: '#6B6B7B',
           accent: '#D4956A',
           positive: '#4A7C59',
