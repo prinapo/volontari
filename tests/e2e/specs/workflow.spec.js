@@ -95,7 +95,7 @@ test.describe('Workflow', () => {
       .locator('button[aria-label="Aggiorna"]')
       .click()
       .catch(() => {})
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     let found = false
     const rows = riconcPage.rowLocator
@@ -103,7 +103,7 @@ test.describe('Workflow', () => {
     for (let i = 0; i < rCount; i++) {
       if ((await rows.nth(i).innerText()).toLowerCase().includes(testEmail)) {
         await riconcPage.expandRow(i).catch(() => {})
-        await page.waitForTimeout(300)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const btn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
         if ((await btn.count()) > 0) {
           await btn.click()
@@ -114,7 +114,7 @@ test.describe('Workflow', () => {
     }
     if (found) {
       await riconcPage.waitForDialog()
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const riconciliaBtn = riconcPage.dialog.locator('button:has-text("Riconcilia")')
       if ((await riconciliaBtn.count()) > 0 && !(await riconciliaBtn.isDisabled().catch(() => true))) {
         const descInput = riconcPage.dialog.locator('[data-testid="riconcilia-descrizione"]')
@@ -122,7 +122,7 @@ test.describe('Workflow', () => {
         const importoInput = riconcPage.dialog.locator('[data-testid="riconcilia-importo"]')
         if ((await importoInput.count()) > 0) await importoInput.fill('100.00')
         await riconciliaBtn.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
       }
     }
 
@@ -131,7 +131,7 @@ test.describe('Workflow', () => {
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(await vp.getRowCount()).toBeGreaterThanOrEqual(1)
 
     // Cleanup via pulisciIds
@@ -161,14 +161,14 @@ test.describe('Workflow', () => {
       .locator('button[aria-label="Aggiorna"]')
       .click()
       .catch(() => {})
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     let foundBadge = false
     const rows = riconcPage.rowLocator
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       await riconcPage.expandRow(i).catch(() => {})
-      await page.waitForTimeout(300)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const badges = rows.nth(i).locator('.q-badge')
       for (let j = 0; j < (await badges.count()); j++) {
         const text = await badges.nth(j).innerText()
@@ -266,26 +266,26 @@ test.describe('Workflow', () => {
       .first()
       .waitFor({ state: 'visible', timeout: 15000 })
       .catch(() => {})
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const r1 = await createGiustificativoViaDialog(page, { descrizione: `${prefix}V1_${ts}`, importo: 50 })
     expect(r1?.id, 'Giustificativo Vol1 non creato').toBeTruthy()
     if (r1?.id) wfIds.giustificativi.push(r1.id)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // 3. Volontario 2: login con selezione famiglia, crea giustificativo
     await loginVolontarioConFamiglia(page, fam2.nome, 'volontario_nofam')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const r2 = await createGiustificativoViaDialog(page, { descrizione: `${prefix}V2_${ts}`, importo: 75 })
     expect(r2?.id, 'Giustificativo Vol2 non creato').toBeTruthy()
     if (r2?.id) wfIds.giustificativi.push(r2.id)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // 4. Verificatore vede almeno 1 riga
     await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(await vp.getRowCount()).toBeGreaterThanOrEqual(1)
 
     // Cleanup: prima le famiglie (inclusi FC figli), poi ripristino contatti
@@ -312,7 +312,7 @@ test.describe('Workflow', () => {
       .first()
       .waitFor({ state: 'visible', timeout: 15000 })
       .catch(() => {})
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const result = await createGiustificativoViaDialog(page, {
       descrizione: `TEST_WF05_${ts}`,
@@ -322,14 +322,14 @@ test.describe('Workflow', () => {
     })
     if (result?.id) ids.giustificativi.push(result.id)
     expect(result?.id, 'Giustificativo non creato').toBeTruthy()
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // 2. Verificatore: almeno 1 riga in verifica
     await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(await vp.getRowCount()).toBeGreaterThanOrEqual(1)
 
     await pulisciIds(ids)

@@ -18,7 +18,7 @@ async function expandFirstCardIfMobile(page) {
   const exp = page.locator('.q-expansion-item')
   if ((await exp.count()) > 0 && (await page.locator('.q-expansion-item--expanded').count()) === 0) {
     await exp.first().click()
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
   }
 }
 
@@ -63,7 +63,7 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
     })
     if (cont?.id_contatto) createdContattoIds.push(cont.id_contatto)
     await gp.search('TEST_CT_SS_FixedName')
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page).toHaveScreenshot('contatti-tab.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
@@ -164,7 +164,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     } else {
       // Espandi la prima card per vedere il badge
       await page.locator('.q-expansion-item').first().click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const badge = page.locator('.q-expansion-item--expanded .q-badge').first()
       await expect(badge).toBeVisible()
       const text = await badge.innerText()

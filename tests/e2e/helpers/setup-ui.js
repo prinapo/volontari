@@ -47,7 +47,7 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
   for (const g of giustificativi) {
     await loginAs(page, 'volontario_nofam', auth)
     await page.waitForURL('**/famiglie', { timeout: 15000 }).catch(() => {})
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     for (let i = 0; i < 30; i++) {
       const done = await page.evaluate(async (famigliaNome) => {
         try {
@@ -80,9 +80,9 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
         } catch (e) { return false }
       }, prefix)
       if (done) break
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const result = await createGiustificativoViaDialog(page, {
       descrizione: g.descrizione,
       importo: g.importo,
@@ -101,14 +101,14 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
       await vp.waitForTable()
       await vp.searchFamiglia(prefix)
       await vp.expandRow(0)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       if (g.stato === 'verificato') {
         await page.locator('[data-testid="btn-verify"]').first().click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
       } else {
         await page.locator('[data-testid="btn-reject"]').first().click()
-        await page.waitForTimeout(1500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const rejectDialog = page.locator('.q-dialog:visible').last()
         if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
           const nota = rejectDialog.locator('textarea, input[type="text"]').first()
@@ -118,7 +118,7 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
             .filter({ hasText: /rifiut|conferma/i })
             .last()
             .click()
-          await page.waitForTimeout(2000)
+          await page.waitForLoadState("networkidle").catch(() => {})
         }
       }
     }

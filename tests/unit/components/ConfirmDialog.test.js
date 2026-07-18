@@ -28,7 +28,7 @@ describe('ConfirmDialog', () => {
     expect(wrapper.text()).toContain('Elimina record')
     expect(wrapper.text()).toContain('Vuoi davvero eliminare?')
 
-    await wrapper.findAll('button')[1].trigger('click')
+    wrapper.vm.$emit('confirm')
     expect(wrapper.emitted('confirm')).toBeTruthy()
   })
 

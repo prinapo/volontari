@@ -1,23 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { quasarMount } from '../quasar-mount'
 import BancariDialog from 'src/components/Common/BancariDialog.vue'
 
 function createWrapper(props = {}) {
-  return mount(BancariDialog, {
+  return quasarMount(BancariDialog, {
     props: {
       modelValue: true,
       ...props
-    },
-    global: {
-      stubs: {
-        'q-dialog': true,
-        'q-card': { template: '<div><slot /></div>' },
-        'q-card-section': { template: '<div><slot /></div>' },
-        'q-card-actions': { template: '<div><slot /></div>' },
-        'q-input': true,
-        'q-btn': true,
-        'close-popup': true
-      }
     }
   })
 }

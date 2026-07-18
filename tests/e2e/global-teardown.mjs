@@ -205,16 +205,25 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[TEARDOWN] Deleted ${orphanFC.data.length} orphaned Famiglie_Contatti rows`)
   }
 
-  // 9. Delete orphan pagamenti
-  const pagamenti = await apiGet(baseUrl, token, '/items/Pagamenti', {
+  // 9. Delete test pagamenti (via batch with TEST_ name)
+  const batchPerPagamenti = await apiGet(baseUrl, token, '/items/BatchPagamenti', {
+    filter: JSON.stringify({ Nome: { _starts_with: 'TEST_' } }),
     fields: 'id',
     limit: -1
   })
-  for (const p of (pagamenti.data || [])) {
-    await apiDelete(baseUrl, token, `/items/Pagamenti/${p.id}`)
-  }
-  if ((pagamenti.data || []).length > 0) {
-    console.log(`[TEARDOWN] Deleted ${pagamenti.data.length} orphan pagamenti`)
+  const batchIds = (batchPerPagamenti.data || []).map(b => b.id)
+  if (batchIds.length > 0) {
+    const pagamenti = await apiGet(baseUrl, token, '/items/Pagamenti', {
+      filter: JSON.stringify({ Batch: { _in: batchIds.join(',') } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const p of (pagamenti.data || [])) {
+      await apiDelete(baseUrl, token, `/items/Pagamenti/${p.id}`)
+    }
+    if ((pagamenti.data || []).length > 0) {
+      console.log(`[TEARDOWN] Deleted ${pagamenti.data.length} test pagamenti`)
+    }
   }
 
   // 10. Delete test associazioni
@@ -230,8 +239,9 @@ async function cleanupTestData(baseUrl, token) {
     console.log(`[TEARDOWN] Deleted ${associazioni.data.length} test associazioni`)
   }
 
-  // 11. Delete orphan batch pagamenti
+  // 11. Delete test batch pagamenti
   const batch = await apiGet(baseUrl, token, '/items/BatchPagamenti', {
+    filter: JSON.stringify({ Nome: { _starts_with: 'TEST_' } }),
     fields: 'id',
     limit: -1
   })
@@ -239,11 +249,12 @@ async function cleanupTestData(baseUrl, token) {
     await apiDelete(baseUrl, token, `/items/BatchPagamenti/${b.id}`)
   }
   if ((batch.data || []).length > 0) {
-    console.log(`[TEARDOWN] Deleted ${batch.data.length} batch pagamenti`)
+    console.log(`[TEARDOWN] Deleted ${batch.data.length} test batch pagamenti`)
   }
 
-  // 12. Delete orphan liste pagamenti
+  // 12. Delete test liste pagamenti
   const liste = await apiGet(baseUrl, token, '/items/ListePagamenti', {
+    filter: JSON.stringify({ Nome: { _starts_with: 'TEST_' } }),
     fields: 'id',
     limit: -1
   })
@@ -251,7 +262,7 @@ async function cleanupTestData(baseUrl, token) {
     await apiDelete(baseUrl, token, `/items/ListePagamenti/${l.id}`)
   }
   if ((liste.data || []).length > 0) {
-    console.log(`[TEARDOWN] Deleted ${liste.data.length} liste pagamenti`)
+    console.log(`[TEARDOWN] Deleted ${liste.data.length} test liste pagamenti`)
   }
 
   console.log('[TEARDOWN] Done')

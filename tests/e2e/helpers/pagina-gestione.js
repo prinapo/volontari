@@ -37,7 +37,7 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
   await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
   await famiglieTab.click()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   // Clicca "Aggiungi Famiglia"
   const aggiungiBtn = page.locator('button:has-text("Aggiungi Famiglia")')
@@ -97,7 +97,7 @@ export async function createContattoViaUI(page, { nome, cognome, email, cellular
   const contattiTab = page.locator('.q-tab:has-text("Contatti")')
   await contattiTab.waitFor({ state: 'visible', timeout: 10000 })
   await contattiTab.click()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
   await waitForContattiTable(page)
 
   // Clicca "Aggiungi Contatto"
@@ -122,7 +122,7 @@ export async function createContattoViaUI(page, { nome, cognome, email, cellular
     const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
     if (await addEmailBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
       await addEmailBtn.click()
-      await page.waitForTimeout(300)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await dialog.locator('[data-testid="contatto-email-0"]').fill(email)
     }
   }
@@ -167,10 +167,10 @@ export async function assegnaContattoAFamigliaViaUI(
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
   await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
   await famiglieTab.click()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   await gp.famiglieSearch.fill(famigliaNome)
-  await page.waitForTimeout(1500)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   const found = await gp.clickContactsOnFamiglia(famigliaNome)
   if (!found) {
@@ -187,7 +187,7 @@ export async function assegnaContattoAFamigliaViaUI(
   // Chiude il dialog
   await gp.contattiDialog.locator('button:has-text("Chiudi")').click()
   await gp.contattiDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 }
 
 /**
@@ -206,10 +206,10 @@ export async function rimuoviContattoDaFamigliaViaUI(page, { famigliaNome, fullN
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
   await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
   await famiglieTab.click()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   await gp.famiglieSearch.fill(famigliaNome)
-  await page.waitForTimeout(1500)
+  await page.waitForLoadState("networkidle").catch(() => {})
   const famTable = page.locator('.q-table')
   const famRow = famTable.locator('td').filter({ hasText: famigliaNome }).first()
   await famRow.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
@@ -225,7 +225,7 @@ export async function rimuoviContattoDaFamigliaViaUI(page, { famigliaNome, fullN
   await gp.removeFromFamiglia(fullName)
   await gp.contattiDialog.locator('button:has-text("Chiudi")').click()
   await gp.contattiDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 }
 
 /**
@@ -268,7 +268,7 @@ async function clickGroupsOnContatto(page, displayName) {
       // Espandi se non già espanso
       if ((await expItems.nth(i).locator('.q-expansion-item--expanded').count()) === 0) {
         await expItems.nth(i).click()
-        await page.waitForTimeout(300)
+        await page.waitForLoadState("networkidle").catch(() => {})
       }
       const groupsBtn = expItems.nth(i).locator('[aria-label="Assegna famiglia"]')
       if ((await groupsBtn.count()) > 0) {

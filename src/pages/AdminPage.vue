@@ -17,7 +17,9 @@
           <q-tab name="utenti" icon="people" label="Utenti" />
           <q-tab name="associazioni" icon="business" label="Associazioni" />
           <q-tab name="errori" icon="bug_report" label="Errori">
-            <q-badge v-if="errorLogStore.unreadCount > 0" color="negative" floating>{{ errorLogStore.unreadCount }}</q-badge>
+            <q-badge v-if="errorLogStore.unreadCount > 0" color="negative" floating>{{
+              errorLogStore.unreadCount
+            }}</q-badge>
           </q-tab>
           <q-tab name="check" icon="fact_check" label="Check" />
         </q-tabs>

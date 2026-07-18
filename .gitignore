@@ -9,3 +9,6 @@ test-results/
 tests/e2e/fixtures/auth.json
 tests/e2e/fixtures/auth-verifica.json
 tests/e2e/fixtures/auth-email.json
+
+# Test coverage
+coverage/

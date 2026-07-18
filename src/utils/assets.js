@@ -1,16 +1,18 @@
 import { API_URL, STORAGE_KEYS } from './constants'
 
 /**
- * Genera URL per un file Directus con token di accesso
- * @param {string} fileId - ID del file Directus
- * @param {boolean} [download=false] - Se true, forza il download
- * @returns {string} URL completo del file
+ * Genera URL per un file Directus
+ * In produzione usa il cookie di sessione; in locale usa il token in query string
  */
 export function assetUrl(fileId, download = false) {
   if (!fileId) return ''
   const id = typeof fileId === 'object' ? fileId?.id : fileId
   if (!id) return ''
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  const base = `${API_URL}/assets/${id}?access_token=${token}`
-  return download ? `${base}&download=1` : base
+  const base = `${API_URL}/assets/${id}`
+  const isLocalhost = typeof globalThis !== 'undefined' && globalThis.location.hostname === 'localhost'
+  if (isLocalhost) {
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+    return download ? `${base}?access_token=${token}&download=1` : `${base}?access_token=${token}`
+  }
+  return download ? `${base}?download=1` : base
 }

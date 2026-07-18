@@ -135,8 +135,8 @@ describe('ContattiTab', () => {
     expect(wrapper.vm.displayNome({ Nome: 'Mario', Cognome: 'Rossi' })).toBe('Mario Rossi')
     expect(wrapper.vm.displayNome({})).toBe('—')
     expect(wrapper.vm.tipoBadgeColor('Volontario')).toBe('primary')
-    expect(wrapper.vm.tipoBadgeColor('Genitore')).toBe('accent')
-    expect(wrapper.vm.tipoBadgeColor('Referente')).toBe('teal')
+    expect(wrapper.vm.tipoBadgeColor('Genitore')).toBe('secondary')
+    expect(wrapper.vm.tipoBadgeColor('Referente')).toBe('accent')
     expect(wrapper.vm.tipoBadgeColor('Altro')).toBe('grey')
     expect(wrapper.vm.computedTipi({ IsVolontario: true, IsGenitore: true, IsReferente: false })).toEqual([
       'Volontario',

@@ -74,21 +74,18 @@ test.describe('SubmitPage', () => {
     expect(await submitPage.giustificativoCount()).toBe(0)
 
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
-    expect(await submitPage.giustificativoCount()).toBe(1)
     await expect(submitPage.getGiustificativoTitle(0)).toBeVisible()
+    expect(await submitPage.giustificativoCount()).toBe(1)
   })
 
   test('SP-04: Pulsante delete rimuove riga @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
+    await expect(submitPage.getGiustificativoTitle(0)).toBeVisible()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
     expect(await submitPage.giustificativoCount()).toBe(2)
 
     await submitPage.clickDeleteGiustificativo(0)
-    await page.waitForTimeout(300)
     expect(await submitPage.giustificativoCount()).toBe(1)
     await expect(submitPage.getGiustificativoTitle(0)).toBeVisible()
   })
@@ -96,17 +93,14 @@ test.describe('SubmitPage', () => {
   test('SP-SS-01: SubmitPage screenshot con form compilato @visual', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
-    await page.waitForTimeout(500)
     await expect(page).toHaveScreenshot('submit-page.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
   test('SP-05: Submit vuoto Invia disabilitato mostra errori validazione @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
 
     // Compila tutto (compreso file per abilitare Invia), poi svuota Nome e blur
     await submitPage.fillForm(formData)
@@ -114,7 +108,6 @@ test.describe('SubmitPage', () => {
 
     await submitPage.nomeRichiedente.fill('')
     await submitPage.cognomeRichiedente.click()
-    await page.waitForTimeout(500)
 
     const errorFields = page.locator('.q-field--error')
     const count = await errorFields.count()
@@ -124,14 +117,12 @@ test.describe('SubmitPage', () => {
   test('SP-06: Email non valida mostra errore @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
 
     // Compila tutto tranne email invalida
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
     await submitPage.emailInput.fill('not-an-email')
     await submitPage.cognomeRichiedente.click()
-    await page.waitForTimeout(500)
 
     await expect(page.locator('.q-field--error').filter({ hasText: 'Email non valida' }).first()).toBeVisible()
   })
@@ -139,7 +130,7 @@ test.describe('SubmitPage', () => {
   test('SP-07: Submit 1 giustificativo mostra notifica successo @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
@@ -170,8 +161,7 @@ test.describe('SubmitPage', () => {
     await submitPage.clickAddGiustificativo()
     await submitPage.clickAddGiustificativo()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
-
+    await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
     await submitPage.fillGiustificativo(1, makeGiustificativo('B'))
     await submitPage.fillGiustificativo(2, makeGiustificativo('C'))
@@ -200,7 +190,7 @@ test.describe('SubmitPage', () => {
   test('SP-09: Submit resetta automaticamente il form @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
@@ -237,7 +227,6 @@ test.describe('SubmitPage', () => {
   test('SP-10: IBAN non valido → Invia disabilitato @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(300)
     await submitPage.fillForm({ ...formData, iban: 'abc' })
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
     const inviaBtn = page.locator('button[type="submit"]:has-text("Invia")')

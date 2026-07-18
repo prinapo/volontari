@@ -79,7 +79,7 @@ export class GestionePage {
         { timeout: 20000 }
       )
       .catch(() => {})
-    await this.page.waitForTimeout(500)
+    await this.page.waitForLoadState('networkidle')
   }
 
   async waitForTableMobile() {
@@ -110,7 +110,6 @@ export class GestionePage {
 
   async search(text) {
     await this.searchInput.fill(text)
-    await this.page.waitForTimeout(350)
     await this._waitForContattiApi()
     await this.waitForTable()
     const isMobile = (await this.page.locator('.q-table__grid').count()) > 0
@@ -193,7 +192,7 @@ export class GestionePage {
         // Espandi se non già espanso
         if ((await expItems.nth(i).locator('.q-expansion-item--expanded').count()) === 0) {
           await expItems.nth(i).click()
-          await this.page.waitForTimeout(500)
+          await this.page.waitForLoadState('networkidle')
         }
         const contactsBtn = expItems.nth(i).locator('[aria-label="Gestisci contatti"]')
         if ((await contactsBtn.count()) > 0) {
@@ -214,11 +213,12 @@ export class GestionePage {
   async assignGenitore(searchTerm) {
     const select = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto"))')
     await select.click()
-    await this.page.waitForTimeout(500)
     const input = select.locator('input')
     await input.fill(searchTerm)
-    // QSelect ha input-debounce="300" + API call async in filterContatti
-    await this.page.waitForTimeout(1500)
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
     const item = this.page.locator('.q-item').filter({ hasText: searchTerm }).first()
     if ((await item.count()) > 0) {
       await item.click({ force: true })
@@ -227,7 +227,6 @@ export class GestionePage {
       const any = this.page.locator('.q-menu .q-item, .q-dialog .q-item').first()
       if ((await any.count()) > 0) await any.click({ force: true })
     }
-    await this.page.waitForTimeout(300)
     await this.contattiDialog.locator('button:has-text("Genitore")').last().click()
   }
 
@@ -238,10 +237,12 @@ export class GestionePage {
   async assignVolontario(searchEmail) {
     const select = this.contattiDialog.locator('.q-select:has(.q-field__label:has-text("Cerca contatto"))')
     await select.click()
-    await this.page.waitForTimeout(500)
     const input = select.locator('input')
     await input.fill(searchEmail)
-    await this.page.waitForTimeout(1500)
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
     // Cerca l'item per email: su desktop è in .q-menu, su mobile in .q-dialog
     const item = this.page.locator('.q-item').filter({ hasText: searchEmail }).first()
     if ((await item.count()) > 0) {
@@ -251,7 +252,6 @@ export class GestionePage {
       const any = this.page.locator('.q-menu .q-item, .q-dialog .q-item').first()
       if ((await any.count()) > 0) await any.click({ force: true })
     }
-    await this.page.waitForTimeout(500)
     await this.contattiDialog.locator('button:has-text("Volontario")').first().click()
   }
 

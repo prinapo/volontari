@@ -26,7 +26,7 @@ async function expandFirstCardIfMobile(page) {
   const exp = page.locator('.q-expansion-item')
   if ((await exp.count()) > 0 && (await page.locator('.q-expansion-item--expanded').count()) === 0) {
     await exp.first().click()
-    await page.waitForTimeout(500)
+    await page.waitForLoadState('networkidle')
   }
 }
 
@@ -107,7 +107,7 @@ test.describe('Riconciliazione', () => {
       .locator('button[aria-label="Aggiorna"]')
       .click()
       .catch(() => {})
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
 
     // Cerca su tutte le pagine
     let foundSubmit = false
@@ -173,7 +173,7 @@ test.describe('Riconciliazione', () => {
     const riconcPage = new RiconciliazionePage(page)
     await riconcPage.goto()
     await riconcPage.waitForTable()
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle')
 
     // Trova la riga in stato not_linked
     const rows = riconcPage.rowLocator
@@ -257,7 +257,7 @@ test.describe('Riconciliazione', () => {
       .locator('button[aria-label="Aggiorna"]')
       .click()
       .catch(() => {})
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
 
     // Cerca su tutte le pagine
     let foundNotParent = false
@@ -312,10 +312,10 @@ test.describe('Riconciliazione', () => {
     // Crea famiglia atomica per il test
     await loginGestore(page)
     await page.goto('/gestione')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle')
     const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
     await page.goto('/gestione')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle')
     const famData = await apiGet('Famiglie', {
       filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
       limit: 1,
@@ -345,7 +345,7 @@ test.describe('Riconciliazione', () => {
     } else {
       // Su mobile: espandi card e clicca modifica
       await page.locator('.q-expansion-item').first().click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(editBtnMobile).toBeVisible({ timeout: 5000 })
       await editBtnMobile.click()
     }
@@ -587,8 +587,8 @@ test.describe('Riconciliazione', () => {
       if (rowText.toLowerCase().includes(testEmail.toLowerCase())) {
         // Su mobile le righe sono expansion-item: espandi per vedere i pulsanti
         await riconcPage.expandRow(i).catch(() => {})
-        await page.waitForTimeout(300)
         const btn = rows.nth(i).locator('[data-testid="btn-riconcilia"]').first()
+        await btn.waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
           foundBtn = btn
           break
@@ -808,7 +808,7 @@ test.describe('Riconciliazione', () => {
     // Seleziona progetto nel dialog
     const progettoSelect = riconcPage.dialog.locator('[data-testid="select-progetto-riconcilia"]')
     await progettoSelect.locator('input').click()
-    await page.waitForTimeout(500)
+    await page.locator('[role="option"]').first().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
     let firstItem = page.locator('[role="option"]').first()
     if ((await firstItem.count()) === 0) {
       firstItem = page.locator('.q-dialog .q-item').first()
@@ -823,12 +823,10 @@ test.describe('Riconciliazione', () => {
       const checkBtn = riconcPage.dialog.locator('[aria-label="Dato già corretto"]').first()
       if (await checkBtn.isVisible({ timeout: 500 }).catch(() => false)) {
         await checkBtn.click()
-        await page.waitForTimeout(200)
       } else {
         break
       }
     }
-    await page.waitForTimeout(500)
 
     // Compila giustificativo
     await riconcPage.dialog.locator('[data-testid="riconcilia-descrizione"]').fill('TEST_RC-05 Riconciliazione')

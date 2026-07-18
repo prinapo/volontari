@@ -1,18 +1,12 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-page-container>
-      <q-banner v-if="isDev" class="bg-orange-9 text-white text-center q-py-xs">
-        🔧 AMBIENTE DI TEST
-      </q-banner>
+      <q-banner v-if="isDev" class="bg-orange-9 text-white text-center q-py-xs"> 🔧 AMBIENTE DI TEST </q-banner>
       <q-page class="flex flex-center bg-grey-2 column">
         <q-card class="login-card full-width" flat bordered>
           <q-card-section class="text-center q-pt-xl">
-            <div class="text-h4 text-primary">
-              Portale Volontario
-            </div>
-            <div class="text-caption text-grey q-mt-sm">
-              Accedi per gestire i tuoi progetti
-            </div>
+            <div class="text-h4 text-primary">Portale Volontario</div>
+            <div class="text-caption text-grey q-mt-sm">Accedi per gestire i tuoi progetti</div>
           </q-card-section>
 
           <q-card-section class="q-px-xl q-pb-xl">
@@ -77,11 +71,9 @@
 
         <q-card flat bordered class="login-card q-mt-md full-width">
           <q-card-section class="text-center">
-            <div class="text-body2 text-grey-8 q-mb-sm">
-              Non hai un account?
-            </div>
+            <div class="text-body2 text-grey-8 q-mb-sm">Non hai un account?</div>
             <q-btn
-              color="secondary"
+              color="primary"
               size="md"
               label="Invia un giustificativo senza account →"
               to="/submit"
@@ -90,9 +82,7 @@
           </q-card-section>
         </q-card>
 
-        <div class="text-caption text-grey-5 text-center q-mt-md">
-          v{{ version }}
-        </div>
+        <div class="text-caption text-grey-5 text-center q-mt-md">v{{ version }}</div>
       </q-page>
     </q-page-container>
 
@@ -100,42 +90,26 @@
     <q-dialog v-model="showForgotPassword" persistent>
       <q-card>
         <q-card-section class="row items-center">
-          <div class="text-h6">
-            Recupera password
-          </div>
+          <div class="text-h6">Recupera password</div>
           <q-space />
           <q-btn
-            v-close-popup
-            icon="close"
-            flat
-            round
-            dense
-            aria-label="Chiudi"
-          >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
         <q-separator />
         <q-card-section>
-          <p class="text-body2 text-grey">
-            Inserisci la tua email riceverai un link per reimpostare la password.
-          </p>
-          <q-input
-            v-model="resetEmail"
-            label="Email"
-            type="email"
-            outlined
-            dense
-          />
+          <p class="text-body2 text-grey">Inserisci la tua email riceverai un link per reimpostare la password.</p>
+          <q-input v-model="resetEmail" label="Email" type="email" outlined dense />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn v-close-popup flat label="Annulla" />
-          <q-btn
-            color="primary"
-            label="Invia link"
-            :loading="sendingReset"
-            @click="handleForgotPassword"
-          />
+          <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+          <q-btn color="primary" label="Invia link" :loading="sendingReset" @click="handleForgotPassword" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -175,10 +149,7 @@ async function handleForgotPassword() {
   if (!resetEmail.value) return
   sendingReset.value = true
   try {
-    await authService.requestPasswordReset(
-      resetEmail.value,
-      import.meta.env.VITE_RESET_URL
-    )
+    await authService.requestPasswordReset(resetEmail.value, import.meta.env.VITE_RESET_URL)
     notifySuccess($q, "Se l'email esiste, riceverai un link per il reset")
     showForgotPassword.value = false
   } catch (error) {
@@ -188,4 +159,3 @@ async function handleForgotPassword() {
   }
 }
 </script>
-

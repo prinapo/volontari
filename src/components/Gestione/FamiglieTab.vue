@@ -16,8 +16,6 @@
         </template>
       </q-input>
 
-      <q-space />
-
       <q-select
         v-model="volontarioFilter"
         :options="filterOptions"
@@ -30,6 +28,8 @@
         class="col-auto"
         style="min-width: 160px"
       />
+
+      <q-space />
 
       <q-btn color="primary" icon="home_work" label="Aggiungi Famiglia" @click="openCreate" />
     </div>
@@ -61,40 +61,62 @@
             dense
             dense-toggle
             expand-separator
-            :label="props.row.Nome_Famiglia || 'Famiglia senza nome'"
-            :caption="(props.row.HasVolontario ? '✅' : '❌') + ' Volontario'"
             header-class="expansion-header"
             @show="loadExpanded(props.row)"
           >
+            <template #header>
+              <q-item-section>
+                <q-item-label>{{ props.row.Nome_Famiglia || 'Famiglia senza nome' }}</q-item-label>
+                <q-item-label caption>
+                  <q-badge
+                    :color="props.row.HasVolontario ? 'positive' : 'grey-5'"
+                    :label="props.row.HasVolontario ? 'Associato' : 'Nessuno'"
+                    class="q-mr-xs"
+                  />
+                  Volontario
+                </q-item-label>
+              </q-item-section>
+            </template>
             <q-card flat bordered>
               <q-card-section class="q-pa-sm">
                 <div class="row q-col-gutter-sm q-mb-sm">
                   <div class="col-12">
-                    <div class="text-caption text-grey-7">
-                      IBAN
-                    </div>
-                    <div class="text-body2">
-                      {{ props.row.IBAN || '—' }}
-                    </div>
+                    <InlineEditableField
+                      :model-value="props.row.IBAN"
+                      label="IBAN"
+                      :readonly="!authStore.canAdmin"
+                      :saving="savingField === `IBAN_${props.row.id_famiglia}`"
+                      history-collection="Famiglie"
+                      :history-item-id="props.row.id_famiglia"
+                      history-field="IBAN"
+                      :revisions="revisioniFamiglie[props.row.id_famiglia]?.IBAN"
+                      @save="value => handleInlineSave(props.row, 'IBAN', value)"
+                    />
                   </div>
                   <div class="col-12">
-                    <div class="text-caption text-grey-7">
-                      Intestatario CC
-                    </div>
-                    <div class="text-body2">
-                      {{ props.row.Intestatario_CC || '—' }}
-                    </div>
+                    <InlineEditableField
+                      :model-value="props.row.Intestatario_CC"
+                      label="Intestatario CC"
+                      :readonly="!authStore.canAdmin"
+                      :saving="savingField === `Intestatario_CC_${props.row.id_famiglia}`"
+                      history-collection="Famiglie"
+                      :history-item-id="props.row.id_famiglia"
+                      history-field="Intestatario_CC"
+                      :revisions="revisioniFamiglie[props.row.id_famiglia]?.Intestatario_CC"
+                      @save="value => handleInlineSave(props.row, 'Intestatario_CC', value)"
+                    />
                   </div>
                 </div>
 
                 <q-separator class="q-mb-sm" />
-                <div class="text-caption text-grey text-uppercase q-mb-sm">
-                  Contatti
-                </div>
+                <div class="text-caption text-grey-7 q-mb-sm">Contatti</div>
                 <div v-if="expandedLoading && !expandedCache[props.row.id_famiglia]" class="text-center q-py-md">
                   <q-spinner size="sm" /> Caricamento...
                 </div>
-                <div v-else-if="!expandedCache[props.row.id_famiglia] || expandedCache[props.row.id_famiglia].length === 0" class="text-grey q-py-sm">
+                <div
+                  v-else-if="!expandedCache[props.row.id_famiglia] || expandedCache[props.row.id_famiglia].length === 0"
+                  class="text-grey q-py-sm"
+                >
                   Nessun contatto assegnato a questa famiglia.
                 </div>
                 <q-list v-else dense>
@@ -107,12 +129,34 @@
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
-                        <q-item-label caption lines="1">
+                        <q-item-label caption>
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" /><ContactLink type="email" :value="em.email_address" />
-                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                            <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink
+                              type="email"
+                              :value="em.email_address"
+                            />
+                            <q-badge
+                              v-if="em.Primary"
+                              color="primary"
+                              label="Primaria"
+                              size="xs"
+                              class="q-ml-xs q-mr-sm"
+                            />
                           </template>
                         </q-item-label>
+                      </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete"
+                          size="sm"
+                          color="negative"
+                          @click="confirmRemoveContatto(c, props.row)"
+                        >
+                          <q-tooltip>Rimuovi contatto</q-tooltip>
+                        </q-btn>
                       </q-item-section>
                     </q-item>
                   </template>
@@ -125,42 +169,51 @@
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
-                        <q-item-label caption lines="1">
+                        <q-item-label caption>
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" /><ContactLink type="email" :value="em.email_address" />
-                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                            <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink
+                              type="email"
+                              :value="em.email_address"
+                            />
+                            <q-badge
+                              v-if="em.Primary"
+                              color="primary"
+                              label="Primaria"
+                              size="xs"
+                              class="q-ml-xs q-mr-sm"
+                            />
                           </template>
                         </q-item-label>
                       </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete"
+                          size="sm"
+                          color="negative"
+                          @click="confirmRemoveContatto(c, props.row)"
+                        >
+                          <q-tooltip>Rimuovi contatto</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
                     </q-item>
                   </template>
+                  <q-item dense class="q-px-none">
+                    <q-item-section>
+                      <q-btn
+                        flat
+                        dense
+                        icon="person_add"
+                        color="primary"
+                        label="Aggiungi contatto"
+                        @click="openContatti(props.row)"
+                      />
+                    </q-item-section>
+                  </q-item>
                 </q-list>
               </q-card-section>
-              <q-card-actions class="q-pa-sm q-gutter-xs">
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="edit"
-                  size="sm"
-                  data-testid="btn-edit-famiglia"
-                  aria-label="Modifica"
-                  @click="openEdit(props.row)"
-                >
-                  <q-tooltip>Modifica</q-tooltip>
-                </q-btn>
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="contacts"
-                  size="sm"
-                  aria-label="Gestisci contatti"
-                  @click="openContatti(props.row)"
-                >
-                  <q-tooltip>Gestisci contatti</q-tooltip>
-                </q-btn>
-              </q-card-actions>
             </q-card>
           </q-expansion-item>
         </div>
@@ -180,35 +233,48 @@
               <q-tooltip>{{ props.expand ? 'Chiudi' : 'Mostra contatti' }}</q-tooltip>
             </q-btn>
           </q-td>
-          <q-td
-            v-for="col in props.cols"
-            :key="col.name"
-            :props="props"
-          >
-            <template v-if="col.name === 'IBAN'">
-              {{ truncateIban(props.row.IBAN) }}
+          <q-td v-for="col in props.cols" :key="col.name" :props="props">
+            <template v-if="col.name === 'nome'">
+              <InlineEditableField
+                :model-value="props.row.Nome_Famiglia"
+                :readonly="!authStore.canAdmin"
+                :saving="savingField === `nome_${props.row.id_famiglia}`"
+                history-collection="Famiglie"
+                :history-item-id="props.row.id_famiglia"
+                history-field="Nome_Famiglia"
+                :revisions="revisioniFamiglie[props.row.id_famiglia]?.Nome_Famiglia"
+                @save="value => handleInlineSave(props.row, 'Nome_Famiglia', value)"
+              />
             </template>
-            <template v-else-if="col.name === 'azioni'">
-              <q-btn
-                flat
-                round
-                dense
-                icon="edit"
-                data-testid="btn-edit-famiglia"
-                aria-label="Modifica"
-                @click="openEdit(props.row)"
-              >
-                <q-tooltip>Modifica</q-tooltip>
-              </q-btn>
-              <q-btn
-                flat
-                dense
-                icon="contacts"
-                aria-label="Gestisci contatti"
-                @click="openContatti(props.row)"
-              >
-                <q-tooltip>Gestisci contatti</q-tooltip>
-              </q-btn>
+            <template v-else-if="col.name === 'IBAN'">
+              <InlineEditableField
+                :model-value="props.row.IBAN"
+                :readonly="!authStore.canAdmin"
+                :saving="savingField === `IBAN_${props.row.id_famiglia}`"
+                history-collection="Famiglie"
+                :history-item-id="props.row.id_famiglia"
+                history-field="IBAN"
+                :revisions="revisioniFamiglie[props.row.id_famiglia]?.IBAN"
+                @save="value => handleInlineSave(props.row, 'IBAN', value)"
+              />
+            </template>
+            <template v-else-if="col.name === 'intestatario'">
+              <InlineEditableField
+                :model-value="props.row.Intestatario_CC"
+                :readonly="!authStore.canAdmin"
+                :saving="savingField === `Intestatario_CC_${props.row.id_famiglia}`"
+                history-collection="Famiglie"
+                :history-item-id="props.row.id_famiglia"
+                history-field="Intestatario_CC"
+                :revisions="revisioniFamiglie[props.row.id_famiglia]?.Intestatario_CC"
+                @save="value => handleInlineSave(props.row, 'Intestatario_CC', value)"
+              />
+            </template>
+            <template v-else-if="col.name === 'volontario'">
+              <q-badge
+                :color="props.row.HasVolontario ? 'positive' : 'grey-5'"
+                :label="props.row.HasVolontario ? 'Associato' : 'Nessuno'"
+              />
             </template>
             <template v-else>
               {{ col.value }}
@@ -219,21 +285,19 @@
           <q-td colspan="100%">
             <q-card flat bordered class="q-ma-sm">
               <q-card-section>
-                <div class="text-caption text-grey text-uppercase q-mb-sm">
-                  Contatti
-                </div>
+                <div class="text-caption text-grey-7 q-mb-sm">Contatti</div>
                 <div v-if="expandedLoading && !expandedCache[props.row.id_famiglia]" class="text-center q-py-md">
                   <q-spinner size="sm" /> Caricamento...
                 </div>
-                <div v-else-if="!expandedCache[props.row.id_famiglia] || expandedCache[props.row.id_famiglia].length === 0" class="text-grey q-py-sm">
+                <div
+                  v-else-if="!expandedCache[props.row.id_famiglia] || expandedCache[props.row.id_famiglia].length === 0"
+                  class="text-grey q-py-sm"
+                >
                   Nessun contatto assegnato a questa famiglia.
                 </div>
                 <q-list v-else dense>
                   <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id">
-                    <q-item v-if="c.Ruolo_nella_Famiglia === 'Genitore'">
-                      <q-item-section avatar>
-                        <q-icon name="person" size="sm" />
-                      </q-item-section>
+                    <q-item v-if="c.Ruolo_nella_Famiglia === 'Genitore'" dense>
                       <q-item-section>
                         <q-item-label>
                           {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
@@ -241,36 +305,55 @@
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
-                        <q-item-label caption lines="1">
+                        <q-item-label caption>
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" />
+                            <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
                             <ContactLink type="email" :value="em.email_address" />
-                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                            <q-badge
+                              v-if="em.Primary"
+                              color="primary"
+                              label="Primaria"
+                              size="xs"
+                              class="q-ml-xs q-mr-sm"
+                            />
                           </template>
                           <template v-if="c.Contatto?.Numero_di_cellulare">
                             <span class="q-ml-sm">
-                              <q-icon name="smartphone" size="xs" class="q-mr-xs" />
+                              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
                               <ContactLink type="tel" :value="c.Contatto.Numero_di_cellulare" />
                             </span>
                           </template>
                           <template v-if="c.Contatto?.Numero_di_telefono">
                             <span class="q-ml-sm">
-                              <q-icon name="phone" size="xs" class="q-mr-xs" />
+                              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
                               <ContactLink type="tel" :value="c.Contatto.Numero_di_telefono" />
                             </span>
                           </template>
                         </q-item-label>
                       </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete"
+                          size="sm"
+                          color="negative"
+                          @click="confirmRemoveContatto(c, props.row)"
+                        >
+                          <q-tooltip>Rimuovi contatto</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
                     </q-item>
                   </template>
 
-                  <q-separator v-if="expandedCache[props.row.id_famiglia]?.some(c => c.Ruolo_nella_Famiglia !== 'Genitore')" class="q-my-sm" />
+                  <q-separator
+                    v-if="expandedCache[props.row.id_famiglia]?.some(c => c.Ruolo_nella_Famiglia !== 'Genitore')"
+                    class="q-my-sm"
+                  />
 
                   <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id + '-vol'">
-                    <q-item v-if="c.Ruolo_nella_Famiglia !== 'Genitore'">
-                      <q-item-section avatar>
-                        <q-icon name="person" size="sm" />
-                      </q-item-section>
+                    <q-item v-if="c.Ruolo_nella_Famiglia !== 'Genitore'" dense>
                       <q-item-section>
                         <q-item-label>
                           {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
@@ -278,28 +361,59 @@
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
-                        <q-item-label caption lines="1">
+                        <q-item-label caption>
                           <template v-for="em in c._emails" :key="em.email_address">
-                            <q-icon name="email" size="xs" class="q-mr-xs" />
+                            <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
                             <ContactLink type="email" :value="em.email_address" />
-                            <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
+                            <q-badge
+                              v-if="em.Primary"
+                              color="primary"
+                              label="Primaria"
+                              size="xs"
+                              class="q-ml-xs q-mr-sm"
+                            />
                           </template>
                           <template v-if="c.Contatto?.Numero_di_cellulare">
                             <span class="q-ml-sm">
-                              <q-icon name="smartphone" size="xs" class="q-mr-xs" />
+                              <q-icon name="smartphone" size="xs" class="q-mr-xs text-grey-6" />
                               <ContactLink type="tel" :value="c.Contatto.Numero_di_cellulare" />
                             </span>
                           </template>
                           <template v-if="c.Contatto?.Numero_di_telefono">
                             <span class="q-ml-sm">
-                              <q-icon name="phone" size="xs" class="q-mr-xs" />
+                              <q-icon name="phone" size="xs" class="q-mr-xs text-grey-6" />
                               <ContactLink type="tel" :value="c.Contatto.Numero_di_telefono" />
                             </span>
                           </template>
                         </q-item-label>
                       </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete"
+                          size="sm"
+                          color="negative"
+                          @click="confirmRemoveContatto(c, props.row)"
+                        >
+                          <q-tooltip>Rimuovi contatto</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
                     </q-item>
                   </template>
+                  <q-item dense>
+                    <q-item-section>
+                      <q-btn
+                        flat
+                        dense
+                        icon="person_add"
+                        color="primary"
+                        label="Aggiungi contatto"
+                        @click="openContatti(props.row)"
+                      />
+                    </q-item-section>
+                  </q-item>
                 </q-list>
               </q-card-section>
             </q-card>
@@ -308,33 +422,35 @@
       </template>
     </q-table>
 
-    <FamigliaDialog
-      v-model="showDialog"
-      :edit-item="editingItem"
-      @saved="onSaved"
-    />
+    <FamigliaDialog v-model="showDialog" :edit-item="editingItem" @saved="onSaved" />
 
-    <ContattiDialog
-      v-model="showContatti"
-      :famiglia="contattiTarget"
-    />
+    <ContattiDialog v-model="showContatti" :famiglia="contattiTarget" hide-existing />
   </div>
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
 import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
+import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
+import { revisionsService } from 'src/services/revisions.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
 import { useGestioneStore } from 'stores/gestione.store'
 import ContattiDialog from './ContattiDialog.vue'
 import FamigliaDialog from './FamigliaDialog.vue'
 
 const store = useGestioneStore()
+const $q = useQuasar()
+const authStore = useAuthStore()
 
 const search = ref('')
 const volontarioFilter = ref('tutti')
+const revisioniFamiglie = ref({})
+const savingField = ref('')
 const filterOptions = [
   { label: 'Tutti', value: 'tutti' },
   { label: 'Con volontario', value: 'con' },
@@ -359,14 +475,14 @@ const pagination = ref({
   descending: false
 })
 
-watch(showContatti, (val) => {
+watch(showContatti, val => {
   if (val) {
     expandedRows.value = []
     expandedCache.value = {}
   }
 })
 
-watch(volontarioFilter, (val) => {
+watch(volontarioFilter, val => {
   store.volontarioFilter = val
   pagination.value.page = 1
   loadData()
@@ -374,10 +490,9 @@ watch(volontarioFilter, (val) => {
 
 const columns = [
   { name: 'nome', label: 'Nome Famiglia', field: 'Nome_Famiglia', align: 'left', sortable: true },
-  { name: 'volontario', label: 'Volontario', field: 'HasVolontario', align: 'center', format: (val) => val ? '✅' : '❌' },
+  { name: 'volontario', label: 'Volontario', field: 'HasVolontario', align: 'center' },
   { name: 'IBAN', label: 'IBAN', align: 'left' },
-  { name: 'intestatario', label: 'Intestatario CC', field: 'Intestatario_CC', align: 'left' },
-  { name: 'azioni', label: 'Azioni', align: 'center' }
+  { name: 'intestatario', label: 'Intestatario CC', field: 'Intestatario_CC', align: 'left' }
 ]
 
 async function loadData() {
@@ -387,9 +502,7 @@ async function loadData() {
     intestatario: 'Intestatario_CC'
   }
   const sortField = SORT_FIELD_MAP[pagination.value.sortBy] || pagination.value.sortBy
-  const sort = sortField
-    ? (pagination.value.descending ? `-${sortField}` : sortField)
-    : undefined
+  const sort = sortField ? (pagination.value.descending ? `-${sortField}` : sortField) : undefined
   const params = {
     page: pagination.value.page,
     limit: pagination.value.rowsPerPage > 0 ? pagination.value.rowsPerPage : -1,
@@ -398,6 +511,15 @@ async function loadData() {
   }
   await store.fetchAll(params)
   pagination.value.rowsNumber = store.totalFamiglie
+  if (!authStore.canAdmin) return
+  const ids = store.famiglie.map(f => f.id_famiglia).filter(Boolean)
+  if (ids.length === 0) return
+  try {
+    const data = await revisionsService.getBulkRevisions('Famiglie', ids, 100)
+    revisioniFamiglie.value = revisionsService.groupByItemAndField(data, ['Nome_Famiglia', 'IBAN', 'Intestatario_CC'])
+  } catch {
+    revisioniFamiglie.value = {}
+  }
 }
 
 function onSearchChange() {
@@ -419,7 +541,7 @@ onMounted(() => {
 })
 
 async function loadExpanded(row) {
-  if (!row || expandedCache.value[ row.id_famiglia ]) return
+  if (!row || expandedCache.value[row.id_famiglia]) return
   expandedLoading.value = true
   try {
     const res = await gestioneService.getContattiByFamiglia(row.id_famiglia)
@@ -441,18 +563,39 @@ async function loadExpanded(row) {
   }
 }
 
-function truncateIban(iban) {
-  if (!iban || iban.length < 8) return iban || ''
-  return `${iban.slice(0, 4)}...${iban.slice(-4)}`
+async function handleInlineSave(row, field, value) {
+  savingField.value = `${field}_${row.id_famiglia}`
+  try {
+    await gestioneService.updateFamiglia(row.id_famiglia, { [field]: value })
+    row[field] = value
+    notifySuccess($q, 'Campo aggiornato')
+  } catch (error) {
+    notifyError($q, error, 'Errore aggiornamento')
+  } finally {
+    savingField.value = ''
+  }
+}
+
+function confirmRemoveContatto(c, row) {
+  $q.dialog({
+    title: 'Rimuovere contatto?',
+    message: `Rimuovere ${c.Contatto?.Nome || ''} ${c.Contatto?.Cognome || ''} dalla famiglia?`,
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Rimuovi', color: 'negative' },
+    persistent: true
+  }).onOk(async () => {
+    try {
+      await gestioneService.removeFromFamiglia(c.id)
+      loadExpanded(row)
+      notifySuccess($q, 'Contatto rimosso')
+    } catch (error) {
+      notifyError($q, error, 'Errore rimozione contatto')
+    }
+  })
 }
 
 function openCreate() {
   editingItem.value = null
-  showDialog.value = true
-}
-
-function openEdit(row) {
-  editingItem.value = { ...row }
   showDialog.value = true
 }
 

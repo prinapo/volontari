@@ -42,7 +42,7 @@ export async function waitForPatchStato(page, expectedStato, actionFn) {
   page.on('request', handler)
   try {
     if (actionFn) await actionFn()
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
   } finally {
     page.off('request', handler)
   }

@@ -209,7 +209,7 @@ describe('auth store', () => {
   })
 
   describe('fetchUserData and resolveFamiglieAccess', () => {
-    it('clears session when getMe fails', async () => {
+    it('preserves token when getMe fails (non-destructive)', async () => {
       mockGetMe.mockRejectedValue(new Error('boom'))
       localStorage.setItem('access_token', 'tok')
       localStorage.setItem('refresh_token', 'ref')
@@ -219,8 +219,8 @@ describe('auth store', () => {
       store.refreshToken = 'ref'
       await store.fetchUserData()
 
-      expect(store.token).toBeNull()
-      expect(store.refreshToken).toBeNull()
+      expect(store.token).toBe('tok')
+      expect(store.refreshToken).toBe('ref')
       expect(store.user).toBeNull()
       expect(store.contatto).toBeNull()
     })

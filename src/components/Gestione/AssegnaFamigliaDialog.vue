@@ -2,18 +2,15 @@
   <q-dialog v-model="visible" persistent>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Associa a famiglia
-        </div>
+        <div class="text-h6">Associa a famiglia</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -61,12 +58,14 @@
           <template #body-cell-azioni="slotProps">
             <q-td :props="slotProps">
               <q-btn
-                flat
-                dense
-                icon="delete"
-                color="negative"
-                @click="handleRemove(slotProps.row)"
-              >
+flat
+round
+dense
+size="sm"
+icon="delete"
+color="negative"
+aria-label="Rimuovi"
+@click="handleRemove(slotProps.row)">
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>
             </q-td>
@@ -111,7 +110,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Chiudi" />
+        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -153,14 +152,17 @@ const famigliaColumns = [
   { name: 'azioni', label: '', align: 'center' }
 ]
 
-watch(() => props.modelValue, async (val) => {
-  visible.value = val
-  if (val && props.contatto) {
-    await loadFamiglie()
+watch(
+  () => props.modelValue,
+  async val => {
+    visible.value = val
+    if (val && props.contatto) {
+      await loadFamiglie()
+    }
   }
-})
+)
 
-watch(visible, (val) => {
+watch(visible, val => {
   if (!val) emit('update:modelValue', false)
 })
 
@@ -198,11 +200,7 @@ async function filterFamiglie(search, update) {
 
 async function handleAssign() {
   if (!selectedFamiglia.value) return
-  const ok = await store.assignToFamiglia(
-    props.contatto.id_contatto,
-    selectedFamiglia.value,
-    selectedRuolo.value
-  )
+  const ok = await store.assignToFamiglia(props.contatto.id_contatto, selectedFamiglia.value, selectedRuolo.value)
   if (ok) {
     notifySuccess($q, 'Famiglia assegnata')
     selectedFamiglia.value = null
@@ -218,8 +216,7 @@ async function handleRemove(row) {
     notifySuccess($q, 'Famiglia rimossa')
     await loadFamiglie()
   } else if (store.error) {
-    notifyError($q, store.error, "Errore nella rimozione della famiglia")
+    notifyError($q, store.error, 'Errore nella rimozione della famiglia')
   }
 }
 </script>
-

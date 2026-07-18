@@ -6,6 +6,13 @@ import { referentiService } from 'src/services/referenti.service'
 import { usersService } from 'src/services/users.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
 
+function generateSecurePassword() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+  const array = new Uint32Array(16)
+  crypto.getRandomValues(array)
+  return 'Temp_' + Array.from(array, v => chars[v % chars.length]).join('') + '_2026!'
+}
+
 export const useGestioneStore = defineStore('gestione', {
   state: () => ({
     famiglie: [],
@@ -59,7 +66,7 @@ export const useGestioneStore = defineStore('gestione', {
 
       const newUserRes = await usersService.create({
         email,
-        password: 'Temp_' + Math.random().toString(36).slice(2, 10) + '_2026!',
+        password: generateSecurePassword(),
         first_name: contatto.Nome || '',
         last_name: contatto.Cognome || '',
         role: ruoloId

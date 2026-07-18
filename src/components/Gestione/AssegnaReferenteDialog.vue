@@ -2,18 +2,15 @@
   <q-dialog v-model="visible" persistent>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Assegna Referente
-        </div>
+        <div class="text-h6">Assegna Referente</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -25,9 +22,7 @@
           Volontario: <strong>{{ volontario.Nome }} {{ volontario.Cognome }}</strong>
         </div>
 
-        <div class="text-subtitle2 q-mb-sm">
-          Referenti assegnati
-        </div>
+        <div class="text-subtitle2 q-mb-sm">Referenti assegnati</div>
         <div v-if="assignedReferenti.length === 0" class="text-caption text-grey q-mb-sm">
           Nessun referente assegnato
         </div>
@@ -50,9 +45,7 @@
 
         <q-separator class="q-my-md" />
 
-        <div class="text-subtitle2 q-mb-sm">
-          Aggiungi referente
-        </div>
+        <div class="text-subtitle2 q-mb-sm">Aggiungi referente</div>
         <div class="row items-start q-gutter-sm">
           <q-select
             v-model="selectedReferente"
@@ -84,7 +77,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Chiudi" />
+        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -113,12 +106,15 @@ const assignedReferenti = ref([])
 const selectedReferente = ref(null)
 const referenteOptions = ref([])
 
-watch(() => props.modelValue, async (val) => {
-  visible.value = val
-  if (val && props.volontario) {
-    await loadAssigned()
+watch(
+  () => props.modelValue,
+  async val => {
+    visible.value = val
+    if (val && props.volontario) {
+      await loadAssigned()
+    }
   }
-})
+)
 
 async function loadAssigned() {
   if (!props.volontario?.id_contatto) return
@@ -150,7 +146,9 @@ async function filterReferenti(val, update) {
         }))
     })
   } catch {
-    update(() => { referenteOptions.value = [] })
+    update(() => {
+      referenteOptions.value = []
+    })
   }
 }
 
@@ -163,7 +161,7 @@ async function addReferente() {
     await loadAssigned()
     emit('saved')
   } else {
-    notifyError($q, store.error || 'Errore nell\'assegnazione')
+    notifyError($q, store.error || "Errore nell'assegnazione")
   }
 }
 
@@ -178,7 +176,7 @@ async function removeReferente(referente) {
   }
 }
 
-watch(visible, (val) => {
+watch(visible, val => {
   if (!val) emit('update:modelValue', false)
 })
 </script>

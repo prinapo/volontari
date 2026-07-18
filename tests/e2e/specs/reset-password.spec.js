@@ -87,7 +87,7 @@ test.describe('ResetPasswordPage — Full E2E', () => {
     await page.locator('.q-dialog input').fill(authEmailFixture.email)
     await page.locator('.q-dialog button:has-text("Invia link")').click()
     await expect(page.locator('.q-notification')).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // 2. Intercetta email via IMAP ed estrai il token
     const startTime = new Date()
@@ -123,7 +123,7 @@ test.describe('ResetPasswordPage — Full E2E', () => {
     await page.locator('.q-dialog input').fill(authEmailFixture.email)
     await page.locator('.q-dialog button:has-text("Invia link")').click()
     await expect(page.locator('.q-notification')).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // 6. Intercetta seconda email
     let secondLink, token2

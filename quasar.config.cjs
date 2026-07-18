@@ -28,7 +28,11 @@ module.exports = function (ctx) {
         VITE_RESET_URL: ctx.dev
           ? 'http://localhost:9000/reset-password?token='
           : 'https://volontari.sostienilsostegno.com/reset-password?token=',
-        VITE_INVII_PUBBLICI_FOLDER: '25cd095a-20a2-48fd-9827-9b6754b429f6'
+        VITE_INVII_PUBBLICI_FOLDER: '25cd095a-20a2-48fd-9827-9b6754b429f6',
+        VITE_LISTE_PAGAMENTI_FOLDER: ctx.dev
+          ? 'c3e98185-5fcf-466a-9263-aa5515ed65c1'
+          : 'feb802e4-4a55-45d0-aaeb-b24803eca3ed',
+        VITE_GIUSTIFICATIVI_FOLDER: '91a9c958-206f-4e1c-8143-e67f85398d0c'
       }
     },
     devServer: {

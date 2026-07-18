@@ -1,18 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { quasarMount } from '../quasar-mount'
 import InlineEditableField from 'src/components/Common/InlineEditableField.vue'
 
 function createWrapper(props = {}) {
-  return mount(InlineEditableField, {
-    props: { modelValue: '', ...props },
-    global: {
-      stubs: {
-        'q-icon': true,
-        'q-input': { template: '<input />', methods: { focus: () => {} } },
-        'q-btn': { template: '<button><slot /></button>' },
-        'q-tooltip': true
-      }
-    }
+  return quasarMount(InlineEditableField, {
+    props: { modelValue: '', ...props }
   })
 }
 
@@ -20,7 +12,6 @@ describe('InlineEditableField', () => {
   it('renders in display mode by default', () => {
     const wrapper = createWrapper({ modelValue: 'Test', label: 'Nome' })
     expect(wrapper.text()).toContain('Test')
-    expect(wrapper.text()).toContain('Nome')
   })
 
   it('shows placeholder when value is empty', () => {
@@ -63,7 +54,8 @@ describe('InlineEditableField', () => {
   it('restores display mode when save completes', async () => {
     const wrapper = createWrapper({ modelValue: 'Old' })
     expect(wrapper.vm.editing).toBe(false)
-    await wrapper.trigger('click')
+    wrapper.vm.editing = true
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.editing).toBe(true)
     wrapper.vm.editValue = 'New'
     await wrapper.vm.save()

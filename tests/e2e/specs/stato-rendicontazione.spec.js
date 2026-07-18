@@ -74,7 +74,7 @@ test.describe('StatoRendicontazione', () => {
     if (isMobile) {
       // Try search first (force fill)
       await vp.searchFamiglia(prefix)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const items = page.locator('.verifica-table .q-expansion-item')
       const count = await items.count()
       for (let i = 0; i < count; i++) {
@@ -210,7 +210,7 @@ test.describe('StatoRendicontazione', () => {
     const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
     if (await verifyBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await verifyBtn.click()
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
 
     // 3. Verificatore: vede "Pronto" dopo verifica

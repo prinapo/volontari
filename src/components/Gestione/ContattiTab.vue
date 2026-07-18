@@ -7,8 +7,8 @@
         outlined
         placeholder="Cerca per nome..."
         clearable
-        class="col"
-        style="max-width: 320px"
+        debounce="300"
+        class="col-12 col-sm"
         @update:model-value="onSearch"
       >
         <template #prepend>
@@ -37,7 +37,13 @@
 
       <q-space />
 
-      <q-btn color="primary" icon="person_add" label="Aggiungi Contatto" data-testid="btn-aggiungi-contatto" @click="openCreate" />
+      <q-btn
+        color="primary"
+        icon="person_add"
+        label="Aggiungi Contatto"
+        data-testid="btn-aggiungi-contatto"
+        @click="openCreate"
+      />
     </div>
 
     <q-table
@@ -58,60 +64,85 @@
             dense
             dense-toggle
             expand-separator
-            :label="displayNome(props.row)"
-            :caption="props.row.Email?.[0]?.email_address || props.row._emails?.[0]?.email_address || ''"
             header-class="expansion-header"
           >
-            <q-card flat bordered>
-              <q-card-section class="q-pa-sm">
-                <div class="row items-center q-gutter-x-sm q-mb-sm">
-                  <q-badge v-if="props.row.IsReferente" color="primary" class="q-mr-xs">
-                    Referente
-                  </q-badge>
-                  <q-badge v-for="tipo in computedTipi(props.row)" :key="tipo" :color="tipoBadgeColor(tipo)" class="q-mr-xs">
+            <template #header>
+              <q-item-section>
+                <q-item-label>{{ displayNome(props.row) }}</q-item-label>
+                <q-item-label caption>
+                  <q-badge v-if="props.row.IsReferente" color="primary" class="q-mr-xs"> Referente </q-badge>
+                  <q-badge
+                    v-for="tipo in computedTipi(props.row)"
+                    :key="tipo"
+                    :color="tipoBadgeColor(tipo)"
+                    class="q-mr-xs"
+                  >
                     {{ tipo }}
                   </q-badge>
-                  <q-space />
                   <q-badge :color="props.row.user_id?.status === 'suspended' ? 'negative' : 'positive'">
                     {{ props.row.user_id?.status === 'suspended' ? 'Disattivato' : 'Attivo' }}
                   </q-badge>
-                </div>
+                </q-item-label>
+              </q-item-section>
+            </template>
+            <q-card flat bordered>
+              <q-card-section class="q-pa-sm">
                 <q-separator class="q-mb-sm" />
                 <div class="row q-col-gutter-sm">
                   <div class="col-12">
-                    <div class="text-caption text-grey-7">
-                      Email
-                    </div>
-                    <template v-if="props.row.user_id?.email">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                      <ContactLink type="email" :value="props.row.user_id.email" />
-                      <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
-                    </template>
-                    <template v-else-if="props.row._emails?.length">
-                      <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
+                    <div class="text-caption text-grey-7">Email</div>
+                    <div class="row items-center q-gutter-x-xs">
+                      <template v-if="props.row.user_id?.email">
                         <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
-                        <ContactLink type="email" :value="em.email_address" />
-                        <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
-                      </div>
-                    </template>
-                    <span v-else class="text-grey-5">—</span>
+                        <ContactLink type="email" :value="props.row.user_id.email" />
+                        <q-badge color="primary" label="Primaria" size="xs" class="q-ml-xs" />
+                      </template>
+                      <template v-else-if="props.row._emails?.length">
+                        <div v-for="(em, idx) in props.row._emails" :key="idx" class="text-caption q-py-xs">
+                          <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
+                          <ContactLink type="email" :value="em.email_address" />
+                          <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs" />
+                        </div>
+                      </template>
+                      <span v-else class="text-grey-5">—</span>
+                    </div>
                   </div>
                   <div class="col-6">
-                    <div class="text-caption text-grey-7">
-                      Cellulare
+                    <div class="text-caption text-grey-7">Cellulare</div>
+                    <div class="row items-center q-gutter-x-xs">
+                      <ContactLink
+                        v-if="props.row.Numero_di_cellulare"
+                        type="tel"
+                        :value="props.row.Numero_di_cellulare"
+                      /><span v-else class="text-grey-5">—</span>
+                      <FieldHistoryButton
+                        collection="contatti"
+                        :item-id="props.row.id_contatto"
+                        field="Numero_di_cellulare"
+                        label="Cellulare"
+                        :revisions="revisioniContatti[props.row.id_contatto]?.['Numero_di_cellulare'] || []"
+                      />
                     </div>
-                    <div><ContactLink v-if="props.row.Numero_di_cellulare" type="tel" :value="props.row.Numero_di_cellulare" /><span v-else class="text-grey-5">—</span></div>
                   </div>
                   <div class="col-6">
-                    <div class="text-caption text-grey-7">
-                      Telefono
+                    <div class="text-caption text-grey-7">Telefono</div>
+                    <div class="row items-center q-gutter-x-xs">
+                      <ContactLink
+                        v-if="props.row.Numero_di_telefono"
+                        type="tel"
+                        :value="props.row.Numero_di_telefono"
+                      /><span v-else class="text-grey-5">—</span>
+                      <FieldHistoryButton
+                        collection="contatti"
+                        :item-id="props.row.id_contatto"
+                        field="Numero_di_telefono"
+                        label="Telefono"
+                        :revisions="revisioniContatti[props.row.id_contatto]?.['Numero_di_telefono'] || []"
+                      />
                     </div>
-                    <div><ContactLink v-if="props.row.Numero_di_telefono" type="tel" :value="props.row.Numero_di_telefono" /><span v-else class="text-grey-5">—</span></div>
                   </div>
                   <div class="col-12">
-                    <div class="text-caption text-grey-7">
-                      Famiglie
-                    </div>
+                    <div class="text-caption text-grey-7">Famiglie</div>
                     <q-btn
                       v-if="famiglieCount[props.row.id_contatto]"
                       flat
@@ -132,6 +163,7 @@
                   round
                   dense
                   icon="edit"
+color="grey-6"
                   size="sm"
                   data-testid="btn-edit-contatto"
                   aria-label="Modifica"
@@ -196,24 +228,25 @@
 
       <template #body-cell-cellulare="props">
         <q-td :props="props">
-          <ContactLink v-if="props.row.Numero_di_cellulare" type="tel" :value="props.row.Numero_di_cellulare" /><span v-else class="text-grey-5">—</span>
+          <div class="row items-center q-gutter-x-xs no-wrap">
+            <ContactLink v-if="props.row.Numero_di_cellulare" type="tel" :value="props.row.Numero_di_cellulare" /><span v-else class="text-grey-5">—</span>
+            <FieldHistoryButton collection="contatti" :item-id="props.row.id_contatto" field="Numero_di_cellulare" label="Cellulare" :revisions="revisioniContatti[props.row.id_contatto]?.['Numero_di_cellulare'] || []" />
+          </div>
         </q-td>
       </template>
 
       <template #body-cell-telefono="props">
         <q-td :props="props">
-          <ContactLink v-if="props.row.Numero_di_telefono" type="tel" :value="props.row.Numero_di_telefono" /><span v-else class="text-grey-5">—</span>
+          <div class="row items-center q-gutter-x-xs no-wrap">
+            <ContactLink v-if="props.row.Numero_di_telefono" type="tel" :value="props.row.Numero_di_telefono" /><span v-else class="text-grey-5">—</span>
+            <FieldHistoryButton collection="contatti" :item-id="props.row.id_contatto" field="Numero_di_telefono" label="Telefono" :revisions="revisioniContatti[props.row.id_contatto]?.['Numero_di_telefono'] || []" />
+          </div>
         </q-td>
       </template>
 
       <template #body-cell-tipo="props">
         <q-td :props="props">
-          <q-badge
-            v-for="tipo in computedTipi(props.row)"
-            :key="tipo"
-            :color="tipoBadgeColor(tipo)"
-            class="q-mr-xs"
-          >
+          <q-badge v-for="tipo in computedTipi(props.row)" :key="tipo" :color="tipoBadgeColor(tipo)" class="q-mr-xs">
             {{ tipo }}
           </q-badge>
         </q-td>
@@ -222,9 +255,7 @@
       <template #body-cell-stato="props">
         <q-td :props="props">
           <template v-if="props.row.user_id">
-            <q-badge
-              :color="props.row.user_id?.status === 'suspended' ? 'negative' : 'positive'"
-            >
+            <q-badge :color="props.row.user_id?.status === 'suspended' ? 'negative' : 'positive'">
               {{ props.row.user_id?.status === 'suspended' ? 'Disattivato' : 'Attivo' }}
             </q-badge>
           </template>
@@ -254,18 +285,26 @@
             round
             dense
             icon="edit"
+color="grey-6"
             data-testid="btn-edit-contatto"
             aria-label="Modifica"
             @click="openEdit(props.row)"
           >
             <q-tooltip>Modifica</q-tooltip>
           </q-btn>
-          <q-btn flat dense icon="groups" aria-label="Assegna famiglia" @click="openFamiglie(props.row)">
+          <q-btn
+flat
+round
+dense
+icon="groups"
+aria-label="Assegna famiglia"
+@click="openFamiglie(props.row)">
             <q-tooltip>Assegna famiglia</q-tooltip>
           </q-btn>
           <q-btn
             v-if="props.row.IsVolontario"
             flat
+            round
             dense
             icon="person_search"
             color="accent"
@@ -279,11 +318,7 @@
       </template>
     </q-table>
 
-    <ContattoDialog
-      v-model="showDialog"
-      :edit-item="editingItem"
-      @saved="onSaved"
-    />
+    <ContattoDialog v-model="showDialog" :edit-item="editingItem" @saved="onSaved" />
 
     <AssegnaFamigliaDialog
       v-model="showFamiglie"
@@ -291,26 +326,31 @@
       :ruolo="famiglieTarget?.IsVolontario ? 'Volontario' : 'Genitore'"
     />
 
-    <AssegnaReferenteDialog
-      v-model="showReferente"
-      :volontario="referenteTarget"
-    />
+    <AssegnaReferenteDialog v-model="showReferente" :volontario="referenteTarget" />
   </div>
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
 import { ref, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
+import FieldHistoryButton from 'components/Common/FieldHistoryButton.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
+import { revisionsService } from 'src/services/revisions.service'
 import { usersService } from 'src/services/users.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { useAuthStore } from 'stores/auth.store'
 import AssegnaFamigliaDialog from './AssegnaFamigliaDialog.vue'
 import AssegnaReferenteDialog from './AssegnaReferenteDialog.vue'
 import ContattoDialog from './ContattoDialog.vue'
 
+const $q = useQuasar()
+const authStore = useAuthStore()
+
 const rows = ref([])
+const revisioniContatti = ref({})
 const loading = ref(false)
 const totalItems = ref(0)
 const pagination = ref({
@@ -341,8 +381,20 @@ const famiglieCount = ref({})
 let searchTimeout = null
 
 const columns = [
-  { name: 'nome', label: 'Nome e Cognome', field: row => displayNome(row), align: 'left', sortable: true, sort: 'Cognome' },
-  { name: 'email', label: 'Email', field: row => row.user_id?.email || row._emails?.[0]?.email_address || '', align: 'left' },
+  {
+    name: 'nome',
+    label: 'Nome e Cognome',
+    field: row => displayNome(row),
+    align: 'left',
+    sortable: true,
+    sort: 'Cognome'
+  },
+  {
+    name: 'email',
+    label: 'Email',
+    field: row => row.user_id?.email || row._emails?.[0]?.email_address || '',
+    align: 'left'
+  },
   { name: 'cellulare', label: 'Cellulare', field: 'Numero_di_cellulare', align: 'left' },
   { name: 'telefono', label: 'Telefono', field: 'Numero_di_telefono', align: 'left' },
   { name: 'tipo', label: 'Tipo', field: '_tipo', align: 'center' },
@@ -358,8 +410,8 @@ function displayNome(row) {
 
 function tipoBadgeColor(tipo) {
   if (tipo === 'Volontario') return 'primary'
-  if (tipo === 'Genitore') return 'accent'
-  if (tipo === 'Referente') return 'teal'
+  if (tipo === 'Genitore') return 'secondary'
+  if (tipo === 'Referente') return 'accent'
   return 'grey'
 }
 
@@ -378,29 +430,29 @@ function getQueryFilters() {
   let isReferente
 
   switch (tipoFilter.value) {
-  case 'Volontario': {
-    isVolontario = true
-  
-  break;
-  }
-  case 'Genitore': {
-    isGenitore = true
-  
-  break;
-  }
-  case 'Referente': {
-    isReferente = true
-  
-  break;
-  }
-  case 'Contatto': {
-    isVolontario = false
-    isGenitore = false
-    isReferente = false
-  
-  break;
-  }
-  // No default
+    case 'Volontario': {
+      isVolontario = true
+
+      break
+    }
+    case 'Genitore': {
+      isGenitore = true
+
+      break
+    }
+    case 'Referente': {
+      isReferente = true
+
+      break
+    }
+    case 'Contatto': {
+      isVolontario = false
+      isGenitore = false
+      isReferente = false
+
+      break
+    }
+    // No default
   }
 
   return { isVolontario, isGenitore, isReferente }
@@ -434,7 +486,9 @@ async function onRequest(props) {
       const usersRes = await usersService.getByIds([...new Set(userIds)])
       const users = usersRes.data.data || []
       const userMap = {}
-      users.forEach(u => { userMap[u.id] = u })
+      users.forEach(u => {
+        userMap[u.id] = u
+      })
       data.forEach(c => {
         if (c.user_id && userMap[c.user_id]) {
           c.user_id = userMap[c.user_id]
@@ -458,6 +512,19 @@ async function onRequest(props) {
     rows.value = []
   } finally {
     loading.value = false
+    caricaRevisioni()
+  }
+}
+
+async function caricaRevisioni() {
+  if (!authStore.canAdmin) return
+  const ids = rows.value.map(r => r.id_contatto).filter(Boolean)
+  if (ids.length === 0) return
+  try {
+    const data = await revisionsService.getBulkRevisions('contatti', ids, 100)
+    revisioniContatti.value = revisionsService.groupByItemAndField(data, ['Numero_di_cellulare', 'Numero_di_telefono'])
+  } catch {
+    revisioniContatti.value = {}
   }
 }
 
@@ -534,4 +601,3 @@ async function onSaved() {
   })
 }
 </script>
-

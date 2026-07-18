@@ -78,7 +78,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
   test('LB-SS-01: Sidebar volontario screenshot @visual', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await openDrawerIfMobile(page)
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
     await expect(page).toHaveScreenshot('sidebar-volontario.png', { maxDiffPixels: 1500, animations: 'disabled' })

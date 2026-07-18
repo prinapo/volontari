@@ -4,29 +4,22 @@
       <q-page class="q-pa-md submit-page">
         <div class="page-inner page-inner--narrow q-mx-auto">
           <div class="text-center q-mb-lg">
-            <div class="text-h4 text-weight-medium">
-              Invio giustificativi
-            </div>
-            <div class="text-body1 text-grey-7">
-              Questo form è per famiglie senza un volontario assegnato.
-            </div>
+            <div class="text-h4 text-weight-medium">Invio giustificativi</div>
+            <div class="text-body1 text-grey-7">Questo form è per famiglie senza un volontario assegnato.</div>
             <q-btn
-              flat
-              dense
-              color="primary"
-              icon="arrow_back"
-              label="Torna al login"
-              to="/login"
-              class="q-mt-sm"
-            />
+flat
+dense
+color="primary"
+icon="arrow_back"
+label="Torna al login"
+to="/login"
+class="q-mt-sm" />
           </div>
 
           <q-form ref="formRef" class="q-gutter-y-lg" @submit.prevent="handleSubmit">
             <q-card flat bordered>
               <q-card-section>
-                <div class="text-h6">
-                  Chi sei
-                </div>
+                <div class="text-h6">Chi sei</div>
               </q-card-section>
               <q-card-section class="q-gutter-y-md">
                 <div class="row q-col-gutter-md">
@@ -35,6 +28,7 @@
                       v-model="form.nome_richiedente"
                       label="Nome *"
                       outlined
+                      dense
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
                     />
@@ -44,6 +38,7 @@
                       v-model="form.cognome_richiedente"
                       label="Cognome *"
                       outlined
+                      dense
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
                     />
@@ -54,6 +49,7 @@
                   label="Email *"
                   type="email"
                   outlined
+                  dense
                   :rules="[
                     val => !!val || 'Campo obbligatorio',
                     val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email non valida'
@@ -65,6 +61,7 @@
                   label="Telefono *"
                   type="tel"
                   outlined
+                  dense
                   :rules="[val => !!val || 'Campo obbligatorio']"
                   lazy-rules
                 />
@@ -72,14 +69,16 @@
                   v-model="form.iban"
                   label="IBAN *"
                   outlined
+                  dense
                   :rules="[...IBAN_RULES, val => !!val || 'Campo obbligatorio']"
                   lazy-rules
-                  @update:model-value="val => form.iban = sanitizeIBAN(val)"
+                  @update:model-value="val => (form.iban = sanitizeIBAN(val))"
                 />
                 <q-input
                   v-model="form.intestatario"
                   label="Intestatario CC *"
                   outlined
+                  dense
                   :rules="[val => !!val || 'Campo obbligatorio']"
                   lazy-rules
                 />
@@ -88,9 +87,7 @@
 
             <q-card flat bordered>
               <q-card-section>
-                <div class="text-h6">
-                  Beneficiario
-                </div>
+                <div class="text-h6">Beneficiario</div>
               </q-card-section>
               <q-card-section class="q-gutter-y-md">
                 <div class="row q-col-gutter-md">
@@ -99,6 +96,7 @@
                       v-model="form.nome_beneficiario"
                       label="Nome *"
                       outlined
+                      dense
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
                     />
@@ -108,6 +106,7 @@
                       v-model="form.cognome_beneficiario"
                       label="Cognome *"
                       outlined
+                      dense
                       :rules="[val => !!val || 'Campo obbligatorio']"
                       lazy-rules
                     />
@@ -120,9 +119,7 @@
               <q-card flat bordered class="q-mt-md">
                 <q-card-section class="q-gutter-y-md">
                   <div class="row items-center q-mb-sm">
-                    <div class="text-subtitle2 text-grey-8">
-                      Giustificativo #{{ i + 1 }}
-                    </div>
+                    <div class="text-subtitle2 text-grey-8">Giustificativo #{{ i + 1 }}</div>
                     <q-space />
                     <q-btn
                       v-if="giustificativi.length > 1"
@@ -137,24 +134,26 @@
                       <q-tooltip>Rimuovi</q-tooltip>
                     </q-btn>
                   </div>
-                  <q-input
-                    v-model="g.descrizione"
-                    label="Descrizione *"
-                    outlined
-                    type="textarea"
-                    :rules="[val => !!val || 'Campo obbligatorio']"
-                    lazy-rules
-                  />
-                  <div class="row q-col-gutter-md">
-                    <div class="col-12 col-sm-6">
-                      <q-input
-                        v-model="g.importo"
-                        label="Importo (€) *"
-                        type="number"
-                        outlined
-                        step="0.01"
-                        :rules="[val => !!val || 'Campo obbligatorio']"
-                        lazy-rules
+                <q-input
+                  v-model="g.descrizione"
+                  label="Descrizione *"
+                  outlined
+                  dense
+                  type="textarea"
+                  :rules="[val => !!val || 'Campo obbligatorio']"
+                  lazy-rules
+                />
+                <div class="row q-col-gutter-md">
+                  <div class="col-12 col-sm-6">
+                    <q-input
+                      v-model="g.importo"
+                      label="Importo (€) *"
+                      type="number"
+                      outlined
+                      dense
+                      step="0.01"
+                      :rules="[val => !!val || 'Campo obbligatorio']"
+                      lazy-rules
                       />
                     </div>
                     <div class="col-12 col-sm-6">
@@ -171,26 +170,40 @@
                       >
                         <template #append>
                           <q-icon name="event" class="cursor-pointer">
-                            <q-popup-proxy :ref="el => { if (el) g.dateProxy = el }" cover>
-                              <q-date v-model="g.data" mask="YYYY-MM-DD" today-btn @update:model-value="g.dateProxy?.hide()" />
+                            <q-popup-proxy
+                              :ref="
+                                el => {
+                                  if (el) g.dateProxy = el
+                                }
+                              "
+                              cover
+                            >
+                              <q-date
+                                v-model="g.data"
+                                mask="YYYY-MM-DD"
+                                today-btn
+                                @update:model-value="g.dateProxy?.hide()"
+                              />
                             </q-popup-proxy>
                           </q-icon>
                         </template>
                       </q-input>
                     </div>
                   </div>
-                  <GiustificativoFilePicker :ref="el => { if (el) setFilePickerRef(i, el) }" v-model="g.file" />
+                  <GiustificativoFilePicker
+                    :ref="
+                      el => {
+                        if (el) setFilePickerRef(i, el)
+                      }
+                    "
+                    v-model="g.file"
+                  />
                 </q-card-section>
               </q-card>
             </template>
 
             <div class="text-center q-mt-md">
-              <q-btn
-                icon="add"
-                color="secondary"
-                label="Aggiungi giustificativo"
-                @click="addGiustificativo"
-              />
+              <q-btn             icon="add" color="primary" label="Aggiungi giustificativo" @click="addGiustificativo" />
             </div>
 
             <div v-if="giustificativi.length > 0" class="text-center q-mb-xl q-mt-lg">
@@ -298,7 +311,7 @@ async function handleSubmit() {
     } else if (error?.message?.includes('Network Error') || !status) {
       notifyError($q, null, 'Errore di connessione. Controlla la rete e riprova.')
     } else if (status === 403) {
-      notifyError($q, null, 'Permessi insufficienti. Contatta l\'amministratore.')
+      notifyError($q, null, "Permessi insufficienti. Contatta l'amministratore.")
     } else if (status >= 500) {
       notifyError($q, null, 'Errore del server. Riprova più tardi.')
     } else {
@@ -321,4 +334,3 @@ function resetForm() {
   giustificativi.value = []
 }
 </script>
-

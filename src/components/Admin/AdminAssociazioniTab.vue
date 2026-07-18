@@ -1,16 +1,19 @@
 <template>
   <div class="row items-center q-gutter-sm q-mb-md">
     <div>
-      <div class="text-h5 text-weight-medium">
-        Associazioni
-      </div>
-      <div class="text-body2 text-grey-7">
-        Gestisci i budget annuali delle associazioni.
-      </div>
+      <div class="text-h5 text-weight-medium">Associazioni</div>
+      <div class="text-body2 text-grey-7">Gestisci i budget annuali delle associazioni.</div>
     </div>
     <q-space />
     <q-btn color="primary" icon="add" label="Nuova associazione" @click="openNewAssociazioneDialog" />
-    <q-btn flat round icon="refresh" aria-label="Aggiorna" @click="fetchAssociazioni">
+    <q-btn
+flat
+round
+dense
+size="sm"
+icon="refresh"
+aria-label="Aggiorna"
+@click="fetchAssociazioni">
       <q-tooltip>Aggiorna</q-tooltip>
     </q-btn>
   </div>
@@ -28,7 +31,9 @@
     <template #body-cell-budget="props">
       <q-td :props="props">
         <q-input
-          :model-value="assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget"
+          :model-value="
+            assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget
+          "
           outlined
           dense
           type="number"
@@ -42,11 +47,12 @@
       <q-td :props="props">
         <q-btn
           v-if="assocBudgetCache[props.row.id] !== undefined"
-          icon="save"
-          color="positive"
-          round
-          flat
-          size="sm"
+icon="save"
+color="positive"
+round
+flat
+dense
+size="sm"
           :loading="savingAssoc"
           @click="saveAssocBudget(props.row)"
         >
@@ -61,22 +67,25 @@
             <div class="text-weight-medium">{{ props.row.Nome }}</div>
             <div class="row items-center q-gutter-sm q-mt-sm">
               <q-input
-                :model-value="assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget"
+                :model-value="
+                  assocBudgetCache[props.row.id] !== undefined ? assocBudgetCache[props.row.id] : props.row.Budget
+                "
                 outlined
-dense
-type="number"
-min="0"
-step="0.01"
+                dense
+                type="number"
+                min="0"
+                step="0.01"
                 label="Budget (€)"
                 @update:model-value="val => editAssocBudget(props.row, val)"
               />
               <q-btn
                 v-if="assocBudgetCache[props.row.id] !== undefined"
                 icon="save"
-color="positive"
-round
-flat
-size="sm"
+                color="positive"
+                round
+                flat
+                dense
+                size="sm"
                 :loading="savingAssoc"
                 @click="saveAssocBudget(props.row)"
               >
@@ -96,12 +105,12 @@ size="sm"
         <div class="text-h6">Nuova associazione</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi">
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -109,17 +118,16 @@ size="sm"
       <q-card-section>
         <q-input v-model="newAssociazioneNome" label="Nome *" outlined dense class="q-mb-md" />
         <q-input
-          v-model="newAssociazioneBudget"
-          label="Budget (€)"
-          outlined
-          dense
-          type="number"
-          min="0"
-          step="0.01"
-        />
+v-model="newAssociazioneBudget"
+label="Budget (€)"
+outlined
+dense
+type="number"
+min="0"
+step="0.01" />
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Annulla" />
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
         <q-btn
           color="primary"
           label="Crea"
@@ -153,7 +161,9 @@ async function fetchAssociazioni() {
     const { associazioniService } = await import('src/services/associazioni.service')
     const res = await associazioniService.getAll()
     associazioni.value = res.data.data || []
-  } catch { associazioni.value = [] }
+  } catch {
+    associazioni.value = []
+  }
 }
 
 function editAssocBudget(row, val) {
@@ -172,7 +182,9 @@ async function saveAssocBudget(row) {
     await fetchAssociazioni()
   } catch (error) {
     notifyError($q, error, 'Errore aggiornamento budget')
-  } finally { savingAssoc.value = false }
+  } finally {
+    savingAssoc.value = false
+  }
 }
 
 const showNewAssociazioneDialog = ref(false)
@@ -200,8 +212,10 @@ async function createAssociazione() {
     showNewAssociazioneDialog.value = false
     await fetchAssociazioni()
   } catch (error) {
-    notifyError($q, error, "Errore creazione associazione")
-  } finally { savingAssociazione.value = false }
+    notifyError($q, error, 'Errore creazione associazione')
+  } finally {
+    savingAssociazione.value = false
+  }
 }
 
 onMounted(() => {

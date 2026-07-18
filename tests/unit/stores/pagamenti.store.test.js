@@ -187,6 +187,7 @@ describe('pagamenti store', () => {
     mockGetAssociazioni.mockResolvedValue({ data: { data: [{ Nome: 'A', Budget: '1000' }] } })
     mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockGetBatches.mockResolvedValue({ data: { data: [] } })
+    mockGetListe.mockResolvedValue([])
     const store = usePagamentiStore()
     store.budgetMap = { A: 1000 }
     store.batches = []
@@ -208,6 +209,7 @@ describe('pagamenti store', () => {
     })
     mockCreateBatch.mockResolvedValueOnce({ data: { data: { id: 'batch-2' } } })
     mockUpdatePagamento.mockResolvedValue({})
+    mockGetListe.mockResolvedValue([])
     const store = usePagamentiStore()
     store.budgetMap = { A: 1000 }
     const totalsSpy = vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
@@ -249,12 +251,12 @@ describe('pagamenti store', () => {
   it('segnaPagato rejects invalid states and stores update errors', async () => {
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-x', Stato: 'fallito', Progetto: 1 }] } })
     const store = usePagamentiStore()
-    await store.segnaPagato('p-x')
+    await expect(store.segnaPagato('p-x')).rejects.toThrow('Solo pagamenti in_pagamento possono essere segnati come pagati')
     expect(store.error).toBe('Solo pagamenti in_pagamento possono essere segnati come pagati')
 
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-y', Stato: 'in_pagamento', Progetto: 1 }] } })
     mockUpdatePagamento.mockRejectedValueOnce(new Error('update pay fail'))
-    await store.segnaPagato('p-y')
+    await expect(store.segnaPagato('p-y')).rejects.toThrow('update pay fail')
     expect(store.error).toBe('update pay fail')
   })
 
@@ -278,7 +280,7 @@ describe('pagamenti store', () => {
   it('segnaFallito rejects invalid states', async () => {
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'pagato', Progetto: 1 }] } })
     const store = usePagamentiStore()
-    await store.segnaFallito('p-1', 'bad')
+    await expect(store.segnaFallito('p-1', 'bad')).rejects.toThrow('Solo pagamenti in_pagamento possono essere segnati come falliti')
     expect(store.error).toBe('Solo pagamenti in_pagamento possono essere segnati come falliti')
   })
 
@@ -437,7 +439,7 @@ describe('pagamenti store', () => {
     mockGetPagamenti.mockResolvedValueOnce({
       data: { data: [{ id: 'p-3', Stato: 'pagato', Progetto: 9 }] }
     })
-    await store.segnaAnnullato('p-3')
+    await expect(store.segnaAnnullato('p-3')).rejects.toThrow('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
     expect(store.error).toBe('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
   })
 
@@ -527,7 +529,7 @@ describe('pagamenti store', () => {
     expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
 
     mockGetProgettoById.mockRejectedValueOnce(new Error('totali fail'))
-    await store.ricalcolaTotaliProgetto(100)
+    await expect(store.ricalcolaTotaliProgetto(100)).rejects.toThrow('totali fail')
     expect(store.error).toBe('totali fail')
   })
 
@@ -594,14 +596,14 @@ describe('pagamenti store', () => {
     expect(mockDeleteLista).toHaveBeenCalledWith('lista-1')
 
     mockDeleteLista.mockRejectedValueOnce(new Error('delete fail'))
-    await store.eliminaLista('lista-2')
+    await expect(store.eliminaLista('lista-2')).rejects.toThrow('delete fail')
     expect(store.error).toBe('delete fail')
   })
 
   it('chiudiProgetto handles error', async () => {
     mockUpdateProgettoStats.mockRejectedValue(new Error('fail'))
     const store = usePagamentiStore()
-    await store.chiudiProgetto(1, { automatica: false })
+    await expect(store.chiudiProgetto(1, { automatica: false })).rejects.toThrow('fail')
     expect(store.error).toBe('fail')
   })
 })

@@ -1,9 +1,7 @@
 <template>
   <q-page class="q-pa-md crea-progetto-page">
-    <div class="page-inner" style="max-width: 800px">
-      <div class="text-h5 text-weight-medium q-mb-md">
-        Crea progetto di test
-      </div>
+    <div class="page-inner" style="max-width: 960px">
+      <div class="text-h5 text-weight-medium q-mb-md">Crea progetto di test</div>
 
       <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded>
         {{ error }}
@@ -12,9 +10,7 @@
       <q-form ref="formRef" class="q-gutter-y-md" @submit.prevent="handleSubmit">
         <q-card flat bordered>
           <q-card-section>
-            <div class="text-h6">
-              Dati anagrafici
-            </div>
+            <div class="text-h6">Dati anagrafici</div>
           </q-card-section>
 
           <q-card-section class="q-gutter-y-md">
@@ -22,6 +18,7 @@
               v-model="form.Famiglia"
               label="Famiglia *"
               outlined
+              dense
               use-input
               input-debounce="300"
               :options="famigliaOptions"
@@ -41,6 +38,7 @@
                   v-model="form.Cognome_Beneficiario"
                   label="Cognome beneficiario *"
                   outlined
+                  dense
                   :rules="[val => !!val || 'Campo obbligatorio']"
                   lazy-rules
                 />
@@ -50,6 +48,7 @@
                   v-model="form.Nome_Beneficiario"
                   label="Nome beneficiario *"
                   outlined
+                  dense
                   :rules="[val => !!val || 'Campo obbligatorio']"
                   lazy-rules
                 />
@@ -58,72 +57,47 @@
 
             <div class="row q-col-gutter-md">
               <div class="col-12 col-sm-4">
-                <q-input
-                  v-model="form.AnnoBando"
-                  label="Anno bando"
-                  outlined
-                  type="number"
-                />
+                <q-input v-model="form.AnnoBando" label="Anno bando" outlined dense type="number" />
               </div>
               <div class="col-12 col-sm-4">
                 <q-input
-                  v-model="form.Allocato"
-                  label="Allocato (€)"
-                  outlined
-                  type="number"
-                  step="0.01"
-                />
+v-model="form.Allocato"
+label="Allocato (€)"
+outlined
+dense
+type="number"
+step="0.01" />
               </div>
               <div class="col-12 col-sm-4">
-                <q-input
-                  v-model="form.Eta"
-                  label="Età"
-                  outlined
-                />
+                <q-input v-model="form.Eta" label="Età" outlined dense />
               </div>
             </div>
 
             <div class="row q-col-gutter-md">
               <div class="col-12 col-sm-6">
-                <q-input
-                  v-model="form.Data_Inizio_Progetto"
-                  label="Data inizio progetto"
-                  outlined
-                  type="date"
-                />
+                <q-input v-model="form.Data_Inizio_Progetto" label="Data inizio progetto" outlined dense type="date" />
               </div>
               <div class="col-12 col-sm-6">
-                <q-input
-                  v-model="form.Data_Fine_Progetto"
-                  label="Data fine progetto"
-                  outlined
-                  type="date"
-                />
+                <q-input v-model="form.Data_Fine_Progetto" label="Data fine progetto" outlined dense type="date" />
               </div>
             </div>
 
-            <q-input
-              v-model="form.Titolo_Progetto"
-              label="Titolo progetto"
-              outlined
-            />
+            <q-input v-model="form.Titolo_Progetto" label="Titolo progetto" outlined dense />
 
-            <q-input
-              v-model="form.Ambito"
-              label="Ambito"
-              outlined
-            />
+            <q-input v-model="form.Ambito" label="Ambito" outlined dense />
 
             <q-input
               v-model="form.Relazione_con_il_soggetto_richiedente"
               label="Relazione con il richiedente"
               outlined
+              dense
             />
 
             <q-input
               v-model="form.Descrizione_Progetto"
               label="Descrizione progetto"
               outlined
+              dense
               type="textarea"
               rows="3"
             />
@@ -132,25 +106,24 @@
               v-model="form.Descrizione_Condizione"
               label="Descrizione condizione"
               outlined
+              dense
               type="textarea"
               rows="2"
             />
 
             <q-input
-              v-model="form.Dettaglio_Costi"
-              label="Dettaglio costi"
-              outlined
-              type="textarea"
-              rows="2"
-            />
+v-model="form.Dettaglio_Costi"
+label="Dettaglio costi"
+outlined
+dense
+type="textarea"
+rows="2" />
           </q-card-section>
         </q-card>
 
         <q-card flat bordered>
           <q-card-section>
-            <div class="text-h6">
-              Allegati
-            </div>
+            <div class="text-h6">Allegati</div>
           </q-card-section>
 
           <q-card-section class="q-gutter-y-md">
@@ -159,6 +132,7 @@
               data-testid="file-allegato-progetto"
               label="Allegato progetto"
               outlined
+              dense
               clearable
             >
               <template #prepend>
@@ -167,12 +141,12 @@
             </q-file>
 
             <q-file
-              v-model="allegati.ISEE"
-              data-testid="file-allegato-isee"
-              label="Allegato ISEE"
-              outlined
-              clearable
-            >
+v-model="allegati.ISEE"
+data-testid="file-allegato-isee"
+label="Allegato ISEE"
+outlined
+dense
+clearable>
               <template #prepend>
                 <q-icon name="attach_file" />
               </template>
@@ -183,6 +157,7 @@
               data-testid="file-allegato-giustificativi"
               label="Allegato giustificativi"
               outlined
+              dense
               clearable
             >
               <template #prepend>
@@ -201,12 +176,7 @@
             :loading="saving"
             icon="save"
           />
-          <q-btn
-            flat
-            color="primary"
-            label="Annulla"
-            :to="{ name: 'Admin' }"
-          />
+          <q-btn flat color="primary" label="Annulla" :to="{ name: 'Admin' }" />
         </div>
       </q-form>
     </div>

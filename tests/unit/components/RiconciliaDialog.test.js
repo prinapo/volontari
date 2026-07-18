@@ -3,14 +3,15 @@ import { nextTick } from 'vue'
 import { quasarMount } from '../quasar-mount'
 import RiconciliaDialog from 'src/components/RiconciliaDialog.vue'
 
+const mockNotifySuccess = vi.fn()
+const mockNotifyError = vi.fn()
+const mockDialog = vi.fn()
+
 const mockUpdateProgetto = vi.fn()
 const mockFindProgettoByFamiglia = vi.fn()
 const mockResolveSubmissionContext = vi.fn()
 const mockLoadFamigliaContacts = vi.fn()
 const mockReconcileUpdateField = vi.fn()
-const mockNotifySuccess = vi.fn()
-const mockNotifyError = vi.fn()
-const mockDialog = vi.fn()
 
 const verificaState = {
   resolveSubmissionContext: (...args) => mockResolveSubmissionContext(...args),
@@ -182,8 +183,7 @@ describe('RiconciliaDialog', () => {
     expect(mockNotifySuccess).toHaveBeenCalled()
   })
 
-  it('copies and saves a contact field through confirmation dialog', async () => {
-    mockDialog.mockReturnValueOnce(okDialog(callback => callback()))
+  it('copies and saves a contact field', async () => {
     const wrapper = mountDialog()
     wrapper.vm.contattoIdRef = 'cont-1'
     wrapper.vm.famigliaIdRef = 'fam-1'
@@ -191,7 +191,6 @@ describe('RiconciliaDialog', () => {
     wrapper.vm.copyField('Telefono')
     await flushAll()
 
-    expect(mockDialog).toHaveBeenCalledWith(expect.objectContaining({ title: 'Salva il dato' }))
     expect(mockReconcileUpdateField).toHaveBeenCalledWith('cont-1', 'fam-1', 'Telefono', '+39123')
   })
 

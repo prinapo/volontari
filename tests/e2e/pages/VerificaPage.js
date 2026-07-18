@@ -70,7 +70,6 @@ export class VerificaPage {
     }
 
     // Wait for Quasar debounce and search API call(s) to complete
-    await this.page.waitForTimeout(1500)
     await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
     await this.page.waitForFunction(searchText => {
       const table = document.querySelector('.verifica-table')
@@ -109,7 +108,7 @@ export class VerificaPage {
           console.log('[VerificaPage] expandable-content not found within timeout')
         })
     } else {
-      await this.page.waitForTimeout(1000)
+      await this.page.locator('.q-expansion-item--expanded').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     }
   }
 

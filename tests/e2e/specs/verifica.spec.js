@@ -27,11 +27,11 @@ test.beforeAll(async () => {
 async function selectFirstProgetto(page) {
   const select = page.locator('.q-select').first()
   await select.click()
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState("networkidle").catch(() => {})
   const firstOption = page.locator('[role="option"]').first()
   if (await firstOption.isVisible({ timeout: 5000 }).catch(() => false)) {
     await firstOption.click()
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     return true
   }
   return false
@@ -53,7 +53,7 @@ test.describe('VerificaPage', () => {
     test('VR-01: Accesso verificatore apre VerificaPage @smoke', async ({ page }) => {
       await loginAs(page, 'manager', auth)
       await page.goto('/verifica')
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     })
 
@@ -61,7 +61,7 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'volontario', auth)
 
       await page.goto('/verifica')
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const currentUrl = page.url()
       expect(currentUrl).not.toContain('/verifica')
@@ -78,7 +78,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         await expect(expItem).toBeVisible()
         const cardText = await expItem.innerText()
         expect(cardText).toMatch(/Dati bancari|Rimborsabile|Completi/)
@@ -111,7 +111,7 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'manager', auth)
       await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     test('FL-01: Tabella mostra progetti con righe @smoke', async ({ page }) => {
@@ -126,14 +126,14 @@ test.describe('VerificaPage', () => {
     test('FL-06: Filtro anno bando @crud', async ({ page }) => {
       const annoSelect = page.locator('.q-select:has(.q-field__label:has-text("Anno bando"))')
       await annoSelect.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       let firstOption = page.locator('[role="option"]').first()
       if ((await firstOption.count()) === 0) {
         firstOption = page.locator('.q-dialog .q-item').first()
       }
 
       await firstOption.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const viewport = await page.viewportSize()
       const isMobile = viewport && viewport.width < 600
       const rows = isMobile
@@ -151,7 +151,7 @@ test.describe('VerificaPage', () => {
 
         const firstFamiglia = await page.locator('.q-item__label').first().innerText()
         await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
-        await page.waitForTimeout(4000)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const filteredCount = await expItems.count()
         expect(filteredCount).toBeGreaterThanOrEqual(0)
       } else {
@@ -159,7 +159,7 @@ test.describe('VerificaPage', () => {
 
         const firstFamiglia = await page.locator('.verifica-table .text-weight-medium').first().innerText()
         await page.locator('input[aria-label="Cerca famiglia"]').fill(firstFamiglia)
-        await page.waitForTimeout(4000)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const filteredCount = await allRows.count()
         expect(filteredCount).toBeGreaterThanOrEqual(0)
       }
@@ -171,7 +171,7 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'manager', auth)
       await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     test('ER-03: Expand row mostra sezione contatti @smoke', async ({ page }) => {
@@ -182,7 +182,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expect(expItem).toBeVisible({ timeout: 5000 })
         await expItem.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const hasContacts =
           (await expItem.innerText()).toLowerCase().includes('genitori') ||
           (await expItem.innerText()).toLowerCase().includes('volontari')
@@ -192,7 +192,7 @@ test.describe('VerificaPage', () => {
 
         const expandBtn = page.locator('[data-testid="expand-row"]').first()
         await expandBtn.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const expandedContent = page.locator('.expandable-content').first()
         await expect(expandedContent).toBeVisible({ timeout: 3000 })
         const genitoriHeader = expandedContent.locator('text=Genitori')
@@ -210,7 +210,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expect(expItem).toBeVisible({ timeout: 5000 })
         await expItem.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const hasGiust = (await expItem.innerText()).toLowerCase().includes('giustificativi')
         expect(hasGiust).toBe(true)
       } else {
@@ -218,7 +218,7 @@ test.describe('VerificaPage', () => {
 
         const expandBtn = page.locator('[data-testid="expand-row"]').first()
         await expandBtn.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const expandedContent = page.locator('.expandable-content').first()
         await expect(expandedContent).toBeVisible({ timeout: 3000 })
         const hasGiustHeader = (await expandedContent.locator('text=Giustificativi').count()) > 0
@@ -237,7 +237,7 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'manager', auth)
       await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     test('DB-V1: Badge dati bancari Completi/Da completare presenti @smoke', async ({ page }) => {
@@ -247,12 +247,12 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
       } else {
         const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
         if ((await expandBtn.count()) > 0) {
           await expandBtn.click()
-          await page.waitForTimeout(500)
+          await page.waitForLoadState("networkidle").catch(() => {})
         }
       }
       const badges = page.locator(
@@ -289,12 +289,12 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
       } else {
         const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
         if ((await expandBtn.count()) > 0) {
           await expandBtn.click()
-          await page.waitForTimeout(800)
+          await page.waitForLoadState("networkidle").catch(() => {})
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
@@ -313,12 +313,12 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
       } else {
         const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
         if ((await expandBtn.count()) > 0) {
           await expandBtn.click()
-          await page.waitForTimeout(800)
+          await page.waitForLoadState("networkidle").catch(() => {})
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
@@ -338,12 +338,12 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
       } else {
         const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
         if ((await expandBtn.count()) > 0) {
           await expandBtn.click()
-          await page.waitForTimeout(800)
+          await page.waitForLoadState("networkidle").catch(() => {})
         }
       }
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
@@ -391,11 +391,11 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'manager', auth)
       await vp.goto()
       await vp.waitForTable()
-      await page.waitForTimeout(3000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const rowCount = await vp.getRowCount()
       expect(rowCount).toBeGreaterThanOrEqual(1)
       await vp.expandRow(0)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
       await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
@@ -413,7 +413,7 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'manager', auth)
       await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     test('SR-02: Stato Da verificare visibile quando presente @smoke', async ({ page }) => {
@@ -424,14 +424,14 @@ test.describe('VerificaPage', () => {
       await loginVolontarioConFamiglia(page, nomeFam)
 
       // Crea e invia giustificativo
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const giustDesc = `TEST_SR-02 ${Date.now()}`
       const aggiungi = page.locator('button:has-text("Aggiungi")')
 
       await aggiungi.scrollIntoViewIfNeeded()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await aggiungi.dispatchEvent('click')
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const dialog = page.locator('.q-dialog').filter({ hasText: 'Giustificativo' })
       await dialog.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
       await dialog.locator('[data-testid="giustform-descrizione"]').fill(giustDesc)
@@ -454,7 +454,7 @@ test.describe('VerificaPage', () => {
       const sendBtn = page.locator('.q-card').filter({ hasText: giustDesc }).locator('button:has-text("Invia")').first()
       if (await sendBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
         await sendBtn.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
       }
 
       await page.evaluate(() => {
@@ -467,7 +467,7 @@ test.describe('VerificaPage', () => {
       }
       const vp = new VerificaPage(page)
       await vp.waitForTable()
-      await page.waitForTimeout(3000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const viewport = await page.viewportSize()
       const isMobile = viewport && viewport.width < 600
       if (isMobile) {
@@ -495,7 +495,7 @@ test.describe('VerificaPage', () => {
       })
 
       await page.goto('/verifica')
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const errorBanner = page.locator('.q-banner')
       await expect(errorBanner).toBeVisible({ timeout: 5000 })
@@ -506,7 +506,7 @@ test.describe('VerificaPage', () => {
     test.setTimeout(90000)
     await loginAs(page, 'manager', auth)
     await page.goto('/verifica')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.text-caption:has-text("Famiglie/progetti")')).toBeVisible({ timeout: 5000 })
     await expect(page).toHaveScreenshot('verifica-page.png', {
@@ -525,7 +525,7 @@ test.describe('VerificaPage', () => {
       await loginAs(page, 'manager', auth)
       await page.goto('/verifica')
       await expect(page.locator('.verifica-table')).toBeVisible({ timeout: 15000 })
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     test.afterEach(async () => {
@@ -540,7 +540,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const btn = page.locator('button[aria-label="Dettaglio progetto"]').first()
         await expect(btn).toBeVisible({ timeout: 5000 })
       } else {
@@ -557,7 +557,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
         await expect(detailBtn).toBeVisible({ timeout: 5000 })
         famigliaCell = await expItem.locator('.q-item__label').first().innerText()
@@ -601,7 +601,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
       } else {
         detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
@@ -634,7 +634,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
       } else {
         detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
@@ -661,7 +661,7 @@ test.describe('VerificaPage', () => {
         const expItem = page.locator('.q-expansion-item').first()
         await expItem.waitFor({ state: 'attached', timeout: 15000 })
         await expItem.click()
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         detailBtn = page.locator('button[aria-label="Dettaglio progetto"]').first()
       } else {
         detailBtn = page.locator('[data-testid="btn-detail-row"]').first()
@@ -692,7 +692,7 @@ test.describe('VerificaPage', () => {
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, vcpIds)
       vcpIds.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createGiustificativoViaDialog(page, {
         descrizione: `TEST_VCP_${Date.now()}`,
         importo: 50
@@ -711,7 +711,7 @@ test.describe('VerificaPage', () => {
           await vp.searchFamiglia(vcpIds.nomeFam)
         }
         await vp.expandRow(0)
-        await page.waitForTimeout(500)
+        await page.waitForLoadState("networkidle").catch(() => {})
       }
     }
 
@@ -721,7 +721,7 @@ test.describe('VerificaPage', () => {
       await vp.goto()
       await vp.waitForTable()
       await cercaEEspandiFamiglia(page, vp, vcpIds)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const lockBtn = page.locator('button[aria-label="Chiudi progetto"]').first()
       await lockBtn.scrollIntoViewIfNeeded()
@@ -738,7 +738,7 @@ test.describe('VerificaPage', () => {
       await vp.goto()
       await vp.waitForTable()
       await cercaEEspandiFamiglia(page, vp, vcpIds)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const lockBtn = page.locator('button[aria-label="Chiudi progetto"]').first()
       await lockBtn.scrollIntoViewIfNeeded()
@@ -759,7 +759,7 @@ test.describe('VerificaPage', () => {
       await vp.goto()
       await vp.waitForTable()
       await cercaEEspandiFamiglia(page, vp, vcpIds)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const lockBtn = page.locator('button[aria-label="Chiudi progetto"]').first()
       await lockBtn.scrollIntoViewIfNeeded()

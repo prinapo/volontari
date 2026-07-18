@@ -6,13 +6,9 @@
       </div>
 
       <div v-if="genitori.length > 0" class="q-mt-md q-gutter-y-sm">
-        <div class="text-caption text-grey text-uppercase">
-          Genitori
-        </div>
+        <div class="text-caption text-grey text-uppercase">Genitori</div>
         <div v-for="g in genitori" :key="g.id_contatto" class="q-py-xs">
-          <div class="text-body1">
-            {{ g.Nome }} {{ g.Cognome }}
-          </div>
+          <div class="text-body1">{{ g.Nome }} {{ g.Cognome }}</div>
           <div class="text-body2 text-grey">
             <div v-for="em in g._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
@@ -32,13 +28,9 @@
       </div>
 
       <div v-if="altriVolontari.length > 0" class="q-mt-md q-gutter-y-sm">
-        <div class="text-caption text-grey text-uppercase">
-          Altri volontari
-        </div>
+        <div class="text-caption text-grey text-uppercase">Altri volontari</div>
         <div v-for="v in altriVolontari" :key="v.id_contatto" class="q-py-xs">
-          <div class="text-body1">
-            {{ v.Nome }} {{ v.Cognome }}
-          </div>
+          <div class="text-body1">{{ v.Nome }} {{ v.Cognome }}</div>
           <div class="text-body2 text-grey">
             <div v-for="em in v._emails" :key="em.email_address" class="q-py-xs">
               <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" />
@@ -54,9 +46,9 @@
               <ContactLink type="tel" :value="v.Numero_di_telefono" />
             </template>
             <template v-if="v._referenti?.length">
-              <div v-for="ref in v._referenti" :key="ref.id_contatto" class="q-py-xs">
+              <div v-for="r in v._referenti" :key="r.id_contatto" class="q-py-xs">
                 <q-icon name="person" size="xs" class="q-mr-xs text-grey-6" />
-                <span class="text-caption text-secondary">Referente: {{ ref.Nome }} {{ ref.Cognome }}</span>
+                <span class="text-caption text-secondary">Referente: {{ r.Nome }} {{ r.Cognome }}</span>
               </div>
             </template>
           </div>
@@ -77,12 +69,20 @@
             label="IBAN"
             :readonly="props.saving"
             :rules="IBAN_RULES"
+            history-collection="Famiglie"
+            :history-item-id="famiglieStore.famiglia?.id_famiglia"
+            history-field="IBAN"
+            :revisions="storiaRevisioni"
             @save="newIBAN => handleIBANSave(sanitizeIBAN(newIBAN))"
           />
           <InlineEditableField
             :model-value="famiglieStore.intestatarioCC"
             label="Intestatario CC"
             :readonly="props.saving"
+            history-collection="Famiglie"
+            :history-item-id="famiglieStore.famiglia?.id_famiglia"
+            history-field="Intestatario_CC"
+            :revisions="storiaRevisioni"
             @save="handleIntestatarioSave"
           />
         </q-card-section>
@@ -93,18 +93,35 @@
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import { revisionsService } from 'src/services/revisions.service'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
 import { useFamiglieStore } from 'stores/famiglie.store'
 
 const $q = useQuasar()
 const famiglieStore = useFamiglieStore()
+const authStore = useAuthStore()
 
 const genitori = computed(() => famiglieStore.genitori)
 const altriVolontari = computed(() => famiglieStore.altriVolontari)
+const storiaRevisioni = ref([])
+
+onMounted(async () => {
+  if (!authStore.canAdmin) return
+  const id = famiglieStore.famiglia?.id_famiglia
+  if (id) {
+    try {
+      const data = await revisionsService.getRevisions('Famiglie', id, 30)
+      storiaRevisioni.value = data
+    } catch {
+      // revisioni non disponibili
+    }
+  }
+})
 
 const props = defineProps({
   famigliaName: { type: String, default: '' },

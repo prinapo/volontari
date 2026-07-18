@@ -27,5 +27,5 @@ const props = defineProps({
   }
 })
 
-const href = computed(() => props.type === 'email' ? `mailto:${props.value}` : `tel:${props.value}`)
+const href = computed(() => (props.type === 'email' ? `mailto:${props.value}` : `tel:${props.value}`))
 </script>

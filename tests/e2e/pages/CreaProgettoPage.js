@@ -38,10 +38,12 @@ export class CreaProgettoPage {
   async fillFamiglia(nomeFamiglia) {
     const select = this._selectByLabel('Famiglia *')
     await select.locator('.q-field__control').click()
-    await this.page.waitForTimeout(300)
     const searchInput = select.locator('input').first()
     await searchInput.fill(nomeFamiglia)
-    await this.page.waitForTimeout(800)
+    await this.page.waitForResponse(
+      resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET',
+      { timeout: 10000 }
+    ).catch(() => {})
 
     const item = this.page.locator('.q-menu .q-item, .q-dialog .q-item').filter({ hasText: nomeFamiglia }).first()
     if (await item.count()) {
@@ -49,7 +51,7 @@ export class CreaProgettoPage {
     } else {
       await this.page.locator('[role="option"]').first().click({ force: true })
     }
-    await this.page.waitForTimeout(300)
+    await this.page.waitForLoadState('networkidle')
   }
 
   async fillForm(data) {
@@ -83,7 +85,6 @@ export class CreaProgettoPage {
     await this._fileInputByTestId('file-allegato-giustificativi').setInputFiles(
       attachments.giustificativi || DEFAULT_ATTACHMENT_PATH
     )
-    await this.page.waitForTimeout(300)
   }
 
   async submit() {
@@ -98,7 +99,6 @@ export class CreaProgettoPage {
     const progettoId = body?.data?.id_progetto
 
     await this.page.waitForURL(/\/admin/, { timeout: 20000 }).catch(() => {})
-    await this.page.waitForTimeout(800)
 
     return progettoId
   }

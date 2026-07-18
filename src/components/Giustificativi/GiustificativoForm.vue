@@ -2,18 +2,15 @@
   <q-dialog v-model="model" persistent>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Nuovo giustificativo
-        </div>
+        <div class="text-h6">Nuovo giustificativo</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -40,7 +37,10 @@
               dense
               data-testid="giustform-importo"
               step="0.01"
-              :rules="[val => !!val || 'Campo obbligatorio', val => Number.parseFloat(val) > 0 || 'Importo maggiore di 0']"
+              :rules="[
+                val => !!val || 'Campo obbligatorio',
+                val => Number.parseFloat(val) > 0 || 'Importo maggiore di 0'
+              ]"
               lazy-rules
             />
             <q-input
@@ -51,7 +51,10 @@
               dense
               readonly
               data-testid="giustform-data"
-              :rules="[val => !!val || 'Campo obbligatorio', val => /^\d{4}-\d{2}-\d{2}$/.test(val) || 'Formato data non valido']"
+              :rules="[
+                val => !!val || 'Campo obbligatorio',
+                val => /^\d{4}-\d{2}-\d{2}$/.test(val) || 'Formato data non valido'
+              ]"
               lazy-rules
               @click="dateProxy?.show()"
             >
@@ -79,13 +82,26 @@
         </q-form>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn v-close-popup data-testid="form-annulla" flat label="Annulla" />
         <q-btn
-          color="accent"
+v-close-popup
+data-testid="form-annulla"
+flat
+dense
+size="sm"
+label="Annulla" />
+        <q-btn
+          color="primary"
           label="Salva"
           data-testid="giustform-salva"
           :loading="saving"
-          :disable="!form.Descrizione || !form.Importo || Number.parseFloat(form.Importo || 0) <= 0 || !form.File || !form.Data || saving"
+          :disable="
+            !form.Descrizione ||
+            !form.Importo ||
+            Number.parseFloat(form.Importo || 0) <= 0 ||
+            !form.File ||
+            !form.Data ||
+            saving
+          "
           @click="handleSave"
         />
       </q-card-actions>
@@ -109,7 +125,7 @@ const emit = defineEmits(['update:modelValue', 'save'])
 
 const model = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: val => emit('update:modelValue', val)
 })
 
 const formRef = ref(null)

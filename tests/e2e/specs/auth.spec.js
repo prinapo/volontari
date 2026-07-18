@@ -63,7 +63,7 @@ test.describe('Pagine Pubbliche', () => {
     await page.goto('/login')
     await expect(page.locator('.login-card').first()).toBeVisible({ timeout: 10000 })
     await expect(page.getByRole('button', { name: 'Accedi' })).toBeVisible()
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page).toHaveScreenshot('login-page.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 })
@@ -76,7 +76,7 @@ test.describe('Route Guards', () => {
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
 
     await page.goto('/gestione')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/gestione')
   })
 
@@ -87,7 +87,7 @@ test.describe('Route Guards', () => {
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
 
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/admin')
   })
 
@@ -98,7 +98,7 @@ test.describe('Route Guards', () => {
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
 
     await page.goto('/verifica')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/verifica')
   })
 
@@ -130,7 +130,7 @@ test.describe('Route Guards', () => {
 
     // L'admin viene reindirizzato a /gestione (ha anche canManager)
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const currentUrl = page.url()
 
     if (currentUrl.includes('/login')) {

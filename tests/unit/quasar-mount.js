@@ -16,6 +16,12 @@ const QUASAR_STUBS = {
     props: ['modelValue', 'label', 'type'],
     methods: { validate: () => true, focus: () => {}, resetValidation: () => {} }
   },
+  'q-field': {
+    name: 'QField',
+    template: '<div><slot name="control" /><slot name="append" /><slot /></div>',
+    props: ['modelValue', 'label'],
+    methods: { validate: () => true, focus: () => {}, resetValidation: () => {} }
+  },
   'q-file': {
     name: 'QFile',
     template: '<div><slot /><slot name="prepend" /></div>',
@@ -87,6 +93,12 @@ const QUASAR_STUBS = {
   'router-view': { template: '<div />' }
 }
 
+const $qMock = {
+  platform: { is: { mobile: false } },
+  screen: { width: 1024, sm: true, md: true, gt: { sm: true }, lt: { sm: false } },
+  dialog: vi.fn()
+}
+
 export function quasarMount(component, options = {}) {
   const mergedStubs = { ...QUASAR_STUBS, ...(options.global?.stubs || {}) }
 
@@ -102,11 +114,7 @@ export function quasarMount(component, options = {}) {
       },
       config: {
         globalProperties: {
-          $q: {
-            platform: { is: { mobile: false } },
-            lang: { isoName: 'it' },
-            screen: { width: 1024, sm: true, md: true, gt: { sm: true }, lt: { sm: false } }
-          },
+          $q: $qMock,
           $route: { name: '' },
           $router: { push: () => {} }
         }

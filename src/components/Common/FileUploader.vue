@@ -12,9 +12,7 @@
     <template #prepend>
       <q-icon name="attach_file" />
     </template>
-    <template #hint>
-      Formati: {{ accept }}
-    </template>
+    <template #hint> Formati: {{ accept }} </template>
   </q-file>
 </template>
 

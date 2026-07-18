@@ -1,24 +1,14 @@
 <template>
   <div v-if="!store.loading && store.users.length === 0 && !store.error" class="text-center text-grey-5 q-py-xl">
     <q-icon name="admin_panel_settings" size="64px" />
-    <div class="text-h6 q-mt-md">
-      Nessun utente trovato
-    </div>
-    <div class="text-body2">
-      Verifica i permessi API di Directus.
-    </div>
+    <div class="text-h6 q-mt-md">Nessun utente trovato</div>
+    <div class="text-body2">Verifica i permessi API di Directus.</div>
   </div>
 
+  <div class="text-h5 text-weight-medium">User Admin</div>
+  <div class="text-body2 text-grey-7 q-mb-md">Gestisci utenti, ruoli e invii comunicazioni.</div>
+
   <div class="row items-center q-gutter-sm q-mb-md">
-    <div>
-      <div class="text-h5 text-weight-medium">
-        User Admin
-      </div>
-      <div class="text-body2 text-grey-7">
-        Gestisci utenti, ruoli e invii comunicazioni.
-      </div>
-    </div>
-    <q-space />
     <q-input
       v-model="usersSearch"
       dense
@@ -26,20 +16,21 @@
       placeholder="Cerca utente per nome o email..."
       clearable
       class="col"
-      style="max-width: 320px"
     >
       <template #prepend>
         <q-icon name="search" />
       </template>
     </q-input>
+    <q-space />
     <q-btn
-      flat
-      round
-      icon="refresh"
-      :loading="store.loading"
-      aria-label="Aggiorna"
-      @click="store.fetchAll"
-    >
+flat
+round
+dense
+size="sm"
+icon="refresh"
+:loading="store.loading"
+aria-label="Aggiorna"
+@click="store.fetchAll">
       <q-tooltip>Aggiorna</q-tooltip>
     </q-btn>
     <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
@@ -48,8 +39,6 @@
   <q-banner v-if="store.error" class="bg-red-1 text-negative q-mb-md" rounded>
     {{ store.error }}
   </q-banner>
-
-
 
   <!-- User table -->
   <q-table
@@ -67,21 +56,13 @@
       <div class="q-pa-xs col-12">
         <q-card flat bordered>
           <q-card-section class="q-py-sm">
-            <div class="text-weight-medium">
-              {{ props.row.first_name }} {{ props.row.last_name }}
-            </div>
-            <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
-              —
-            </div>
+            <div class="text-weight-medium">{{ props.row.first_name }} {{ props.row.last_name }}</div>
+            <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">—</div>
             <div class="text-caption">
               {{ props.row.email }}
             </div>
             <div class="row items-center q-gutter-xs q-mt-xs">
-              <q-badge
-                :color="roleColor(props.row.role?.name)"
-                outline
-                class="q-px-sm q-py-xs"
-              >
+              <q-badge :color="roleColor(props.row.role?.name)" outline class="q-px-sm q-py-xs">
                 {{ props.row.role?.name || 'Nessun ruolo' }}
               </q-badge>
               <q-space />
@@ -97,7 +78,7 @@
                 map-options
                 class="admin-role-select select-min-width"
                 :loading="store.saving"
-                @update:model-value="(val) => handleRoleChange(props.row.id, val)"
+                @update:model-value="val => handleRoleChange(props.row.id, val)"
               >
                 <template #selected-item="opt">
                   <div class="text-caption">
@@ -106,10 +87,11 @@
                 </template>
               </q-select>
               <q-btn
-                flat
-                dense
-                icon="theater_comedy"
-                color="purple"
+flat
+round
+dense
+              icon="theater_comedy"
+                color="grey-6"
                 size="sm"
                 aria-label="Impersona utente"
                 @click="store.startImpersonation(props.row.id)"
@@ -118,9 +100,10 @@
               </q-btn>
               <q-btn
                 flat
+                round
                 dense
                 icon="lock_reset"
-                color="warning"
+                color="grey-6"
                 size="sm"
                 aria-label="Reset password"
                 @click="openResetPasswordDialog(props.row)"
@@ -135,12 +118,8 @@
 
     <template #body-cell-name="props">
       <q-td :props="props">
-        <div class="text-weight-medium">
-          {{ props.row.first_name }} {{ props.row.last_name }}
-        </div>
-        <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">
-          —
-        </div>
+        <div class="text-weight-medium">{{ props.row.first_name }} {{ props.row.last_name }}</div>
+        <div v-if="!props.row.first_name && !props.row.last_name" class="text-grey-5">—</div>
       </q-td>
     </template>
 
@@ -152,11 +131,7 @@
 
     <template #body-cell-role="props">
       <q-td :props="props">
-        <q-badge
-          :color="roleColor(props.row.role?.name)"
-          outline
-          class="q-px-sm q-py-xs"
-        >
+        <q-badge :color="roleColor(props.row.role?.name)" outline class="q-px-sm q-py-xs">
           {{ props.row.role?.name || 'Nessun ruolo' }}
         </q-badge>
       </q-td>
@@ -177,7 +152,7 @@
             map-options
             class="admin-role-select"
             :loading="store.saving"
-            @update:model-value="(val) => handleRoleChange(props.row.id, val)"
+            @update:model-value="val => handleRoleChange(props.row.id, val)"
           >
             <template #selected-item="opt">
               <div class="text-caption">
@@ -186,10 +161,11 @@
             </template>
           </q-select>
           <q-btn
-            flat
-            dense
-            icon="theater_comedy"
-            color="purple"
+flat
+round
+dense
+icon="theater_comedy"
+            color="grey-6"
             size="sm"
             aria-label="Impersona utente"
             @click="store.startImpersonation(props.row.id)"
@@ -197,13 +173,13 @@
             <q-tooltip>Impersona {{ props.row.first_name || props.row.email }}</q-tooltip>
           </q-btn>
           <q-btn
-            flat
-            dense
-            icon="lock_reset"
-            color="warning"
-            size="sm"
-            @click="openResetPasswordDialog(props.row)"
-          >
+flat
+round
+dense
+icon="lock_reset"
+color="grey-6"
+size="sm"
+@click="openResetPasswordDialog(props.row)">
             <q-tooltip>Reset password</q-tooltip>
           </q-btn>
         </div>
@@ -215,18 +191,15 @@
   <q-dialog v-model="showCreateDialog" persistent maximized>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Aggiungi utente
-        </div>
+        <div class="text-h6">Aggiungi utente</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -242,7 +215,7 @@
           <div class="col-auto">
             <q-btn
               label="Cerca contatto"
-              color="secondary"
+              color="primary"
               :disable="!searchEmail || userCreated"
               :loading="store.loading"
               @click="handleSearchContatto"
@@ -296,9 +269,7 @@
       <template v-if="userCreated">
         <q-separator />
         <q-card-section>
-          <div class="text-h6 text-positive q-mb-sm">
-            <q-icon name="check_circle" /> Utente creato con successo
-          </div>
+          <div class="text-h6 text-positive q-mb-sm"><q-icon name="check_circle" /> Utente creato con successo</div>
           <div class="text-body2 q-mb-sm">
             Email: <strong>{{ searchEmail }}</strong>
           </div>
@@ -306,7 +277,7 @@
       </template>
 
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Chiudi" />
+        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -315,18 +286,15 @@
   <q-dialog v-model="showResetDialog" persistent>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Reset password
-        </div>
+        <div class="text-h6">Reset password</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -352,7 +320,7 @@
         </q-input>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Annulla" />
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
         <q-btn
           color="primary"
           label="Salva password"
@@ -379,10 +347,11 @@ const usersSearch = ref('')
 const filteredUsers = computed(() => {
   const q = usersSearch.value.toLowerCase().trim()
   if (!q) return store.users
-  return store.users.filter(u =>
-    (u.first_name || '').toLowerCase().includes(q) ||
-    (u.last_name || '').toLowerCase().includes(q) ||
-    (u.email || '').toLowerCase().includes(q)
+  return store.users.filter(
+    u =>
+      (u.first_name || '').toLowerCase().includes(q) ||
+      (u.last_name || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q)
   )
 })
 
@@ -393,10 +362,8 @@ const userColumns = [
   { name: 'actions', label: 'Azioni', align: 'center' }
 ]
 
-
-
 const roleOptions = computed(() => store.roles)
-const roleColor = (name) => {
+const roleColor = name => {
   const n = (name || '').toLowerCase()
   if (n.includes('admin') || n.includes('administrator')) return 'negative'
   if (n.includes('manager') || n.includes('verifica') || n.includes('valid')) return 'primary'
@@ -411,7 +378,6 @@ const newFirstName = ref('')
 const newLastName = ref('')
 const newRole = ref(null)
 const userCreated = ref(false)
-
 
 function openCreateDialog() {
   searchEmail.value = ''
@@ -432,12 +398,7 @@ async function handleSearchContatto() {
 }
 
 async function handleCreateUser() {
-  const ok = await store.createUser(
-    searchEmail.value,
-    newRole.value,
-    newFirstName.value,
-    newLastName.value
-  )
+  const ok = await store.createUser(searchEmail.value, newRole.value, newFirstName.value, newLastName.value)
   if (ok) {
     notifySuccess($q, 'Utente creato con successo')
     userCreated.value = true

@@ -99,7 +99,7 @@ test.describe('CreaProgettoPage', () => {
     })
 
     await cp.submitButton.click()
-    await page.waitForTimeout(1500)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     expect(projectPostCount).toBe(0)
     await expect(page.locator('.text-h5:has-text("Crea progetto di test")')).toBeVisible()

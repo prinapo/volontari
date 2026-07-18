@@ -1,17 +1,9 @@
 @import 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap';
 
 :root {
-  --color-primary: #2e5d6e;
   --color-primary-dark: #1e3d4e;
-  --color-accent: #d4956a;
-  --color-bg-page: #f5f0e8;
-  --color-bg-card: #ffffff;
-  --color-text-main: #1a1a2e;
-  --color-text-secondary: #6b6b7b;
-  --color-success: #4a7c59;
-  --color-error: #c0503a;
-  --color-warning: #e8b86d;
-  --color-border: #e2dbd0;
+  --color-bg-page: #f5f0e9;
+  --color-border: #e0e0e0;
 }
 
 * {
@@ -23,14 +15,14 @@
 }
 
 .q-card {
-  background: var(--color-bg-card);
+  background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
   border: none !important;
 }
 
 .q-btn.bg-primary {
-  background: var(--color-primary) !important;
+  background: var(--q-primary) !important;
   border-radius: 8px;
   box-shadow: none;
 }
@@ -40,14 +32,50 @@
 }
 
 .q-btn.q-btn--outline {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--q-primary);
+  color: var(--q-primary);
   border-radius: 8px;
 }
 
 .q-field__control {
   border-radius: 8px;
   border-color: var(--color-border);
+}
+
+.q-field.q-field--outlined .q-field__control {
+  background: #ffffff;
+}
+
+.q-table {
+  background: #ffffff;
+}
+
+.q-table td .q-field--dense .q-field__native,
+.q-table td .q-field--dense .q-field__input {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 2px 0;
+  min-height: unset;
+}
+
+.q-table td .text-body1 {
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.q-tab__label {
+  font-size: 13px;
+}
+
+.q-badge {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.q-item-label caption .q-icon,
+.contatto-info-line .q-icon {
+  color: #9e9e9e;
 }
 
 .q-header {
@@ -74,12 +102,6 @@
   color: white;
 }
 
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text-main);
-}
-
 .expansion-header {
   border-radius: 12px;
 }
@@ -104,26 +126,9 @@
   max-width: 640px;
 }
 
-.inline-editable-field .text-caption {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 .text-pre-wrap {
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
 }
 
-.inline-edit-enter-active,
-.inline-edit-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.inline-edit-enter-from,
-.inline-edit-leave-to {
-  opacity: 0;
-}

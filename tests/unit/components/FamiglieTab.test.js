@@ -161,18 +161,11 @@ describe('FamiglieTab', () => {
     expect(wrapper.vm.expandedCache['fam-err']).toEqual([])
     expect(wrapper.vm.expandedLoading).toBe(false)
 
-    expect(wrapper.vm.truncateIban('IT60X0542811101000000123456')).toBe('IT60...3456')
-    expect(wrapper.vm.truncateIban('IT12')).toBe('IT12')
-    expect(wrapper.vm.truncateIban(null)).toBe('')
-
     wrapper.vm.openCreate()
     expect(wrapper.vm.showDialog).toBe(true)
     expect(wrapper.vm.editingItem).toBe(null)
 
     const row = { id_famiglia: 'fam-1', Nome_Famiglia: 'Famiglia Uno' }
-    wrapper.vm.openEdit(row)
-    expect(wrapper.vm.editingItem).toEqual(row)
-
     wrapper.vm.openContatti(row)
     expect(wrapper.vm.showContatti).toBe(true)
     expect(wrapper.vm.contattiTarget).toEqual(row)

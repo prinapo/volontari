@@ -1,13 +1,21 @@
 <template>
   <q-dialog v-model="model" persistent>
     <q-card>
-      <q-card-section>
-        <div class="text-h6">
-          Modifica dati bancari
+      <q-card-section class="row items-center">
+        <div>
+          <div class="text-h6">Modifica dati bancari</div>
+          <div class="text-caption text-grey-7">{{ famigliaName }}{{ beneficiario ? ` — ${beneficiario}` : '' }}</div>
         </div>
-        <div class="text-caption text-grey-7">
-          {{ famigliaName }}{{ beneficiario ? ` — ${beneficiario}` : '' }}
-        </div>
+        <q-space />
+        <q-btn
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
 
       <q-separator />
@@ -21,7 +29,7 @@
           data-testid="bancari-iban"
           class="q-mb-md"
           :rules="IBAN_RULES"
-          @update:model-value="val => localIban = sanitizeIBAN(val)"
+          @update:model-value="val => (localIban = sanitizeIBAN(val))"
         />
         <q-input
           v-model="localIntestatario"
@@ -33,12 +41,18 @@
       </q-card-section>
 
       <q-card-actions align="right" class="q-pa-md">
-        <q-btn v-close-popup flat label="Annulla" color="negative" />
         <q-btn
-          flat
+v-close-popup
+flat
+dense
+size="sm"
+label="Annulla" />
+        <q-btn
           label="Salva"
           color="primary"
           :loading="saving"
+          dense
+          size="sm"
           :disable="!hasChanges || (!!localIban && !IBAN_REGEX.test(localIban))"
           @click="handleSave"
         />
@@ -64,22 +78,24 @@ const emit = defineEmits(['update:modelValue', 'save'])
 
 const model = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: val => emit('update:modelValue', val)
 })
 
 const localIban = ref(props.initialIban)
 const localIntestatario = ref(props.initialIntestatario)
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    localIban.value = props.initialIban
-    localIntestatario.value = props.initialIntestatario
+watch(
+  () => props.modelValue,
+  val => {
+    if (val) {
+      localIban.value = props.initialIban
+      localIntestatario.value = props.initialIntestatario
+    }
   }
-})
+)
 
-const hasChanges = computed(() =>
-  localIban.value !== props.initialIban ||
-  localIntestatario.value !== props.initialIntestatario
+const hasChanges = computed(
+  () => localIban.value !== props.initialIban || localIntestatario.value !== props.initialIntestatario
 )
 
 function handleSave() {

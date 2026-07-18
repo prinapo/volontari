@@ -97,7 +97,7 @@ test.describe('Bug: Invalida giustificativo aggiorna totali', () => {
     // Login admin e naviga a /famiglie
     await loginAs(page, 'admin', auth)
     await page.goto('/famiglie')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Forza il caricamento dei dati: setta direttamente lo store Pinia
     await page.evaluate(
@@ -125,7 +125,7 @@ test.describe('Bug: Invalida giustificativo aggiorna totali', () => {
     )
 
     // Attendi che Vue processi i cambiamenti
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Helper: legge totale dal DOM
     async function getTotale() {
@@ -160,7 +160,7 @@ test.describe('Bug: Invalida giustificativo aggiorna totali', () => {
         console.error(e)
       }
     }, invId)
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Verifica totale = 500
     let totale2 = await getTotale()

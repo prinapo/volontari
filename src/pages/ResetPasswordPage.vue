@@ -5,9 +5,7 @@
         <q-card class="login-card full-width" flat bordered>
           <template v-if="!token">
             <q-card-section class="text-center q-pt-xl q-px-xl">
-              <div class="text-h6 text-negative">
-                Link non valido
-              </div>
+              <div class="text-h6 text-negative">Link non valido</div>
               <div class="text-body2 text-grey q-mt-sm">
                 Il link per il reset della password non è valido o è scaduto.
               </div>
@@ -19,23 +17,15 @@
 
           <template v-else-if="success">
             <q-card-section class="text-center q-pt-xl q-px-xl">
-              <div class="text-h6 text-positive">
-                Password aggiornata
-              </div>
-              <div class="text-body2 text-grey q-mt-sm">
-                Reindirizzamento al login...
-              </div>
+              <div class="text-h6 text-positive">Password aggiornata</div>
+              <div class="text-body2 text-grey q-mt-sm">Reindirizzamento al login...</div>
             </q-card-section>
           </template>
 
           <template v-else>
             <q-card-section class="text-center q-pt-xl">
-              <div class="text-h6 text-primary">
-                Reimposta password
-              </div>
-              <div class="text-caption text-grey q-mt-sm">
-                Scegli una nuova password per il tuo account
-              </div>
+              <div class="text-h6 text-primary">Reimposta password</div>
+              <div class="text-caption text-grey q-mt-sm">Scegli una nuova password per il tuo account</div>
             </q-card-section>
 
             <q-card-section class="q-px-xl q-pb-xl">
@@ -144,4 +134,3 @@ async function handleReset() {
   }
 }
 </script>
-

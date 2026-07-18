@@ -6,7 +6,7 @@ test.describe('Bug: assetUrl genera URL validi', () => {
   test('BUG-ASSET-01: assetUrl non produce [object Object] su riconciliazione @regression', async ({ page }) => {
     await loginAs(page, 'manager', auth)
     await page.goto('/riconciliazione')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Cerca tutti i link con href contenente /assets/
     const allegati = page.locator('a[href*="/assets/"]')

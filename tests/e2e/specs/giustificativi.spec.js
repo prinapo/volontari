@@ -65,7 +65,7 @@ test.describe('Giustificativi', () => {
         .first()
         .waitFor({ state: 'visible', timeout: 15000 })
         .catch(() => {})
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     test.afterEach(async () => {
@@ -132,7 +132,7 @@ test.describe('Giustificativi', () => {
       await expect(salvaBtn).toBeEnabled()
 
       await dialog.locator('button[aria-label="Rimuovi file"]').click()
-      await page.waitForTimeout(300)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       await expect(salvaBtn).toBeDisabled()
       await expect(dialog.locator('text=Campo obbligatorio')).toBeVisible()
@@ -179,7 +179,7 @@ test.describe('Giustificativi', () => {
 
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 10000 })
     })
 
@@ -238,7 +238,7 @@ test.describe('Giustificativi', () => {
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
       ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_IE')
       if (draft) ids.giustificativi.push(draft.id)
     })
@@ -280,7 +280,7 @@ test.describe('Giustificativi', () => {
 
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(page.locator(`text=${newDesc}`)).toBeVisible({ timeout: 10000 })
     })
 
@@ -295,7 +295,7 @@ test.describe('Giustificativi', () => {
       await expect(input).toBeVisible({ timeout: 3000 })
       await input.fill(`TEST_CANCEL_${Date.now()}`)
       await descField.locator('[data-testid="inline-cancel"]').click()
-      await page.waitForTimeout(300)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const displayText = (await descField.locator('.text-body1').innerText()).trim()
       expect(displayText).toBe(originalText)
@@ -340,7 +340,7 @@ test.describe('Giustificativi', () => {
       const commaImporto = savedImporto.replace('.', ',')
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(page.getByText(commaImporto).first()).toBeVisible({ timeout: 10000 })
     })
 
@@ -355,7 +355,7 @@ test.describe('Giustificativi', () => {
       await expect(input).toBeVisible({ timeout: 3000 })
       await input.fill('999.99')
       await importoField.locator('[data-testid="inline-cancel"]').click()
-      await page.waitForTimeout(300)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const displayText = (await importoField.locator('.text-body1').innerText()).trim()
       expect(displayText).toBe(originalText)
@@ -395,7 +395,7 @@ test.describe('Giustificativi', () => {
 
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(dataFieldById).toContainText('15/06/2025', { timeout: 10000 })
     })
 
@@ -413,7 +413,7 @@ test.describe('Giustificativi', () => {
         el.dispatchEvent(new Event('input', { bubbles: true }))
       })
       await dataField.locator('[data-testid="inline-cancel"]').click()
-      await page.waitForTimeout(300)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const displayText = (await dataField.locator('.text-body1').innerText()).trim()
       expect(displayText).toBe(originalText)
@@ -433,7 +433,7 @@ test.describe('Giustificativi', () => {
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
       ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_AL')
       if (draft) ids.giustificativi.push(draft.id)
     })
@@ -571,7 +571,7 @@ test.describe('Giustificativi', () => {
 
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const cardAfter = page.locator('.q-card').filter({ hasText: testDesc })
       await expect(cardAfter).toBeVisible({ timeout: 5000 })
     })
@@ -590,7 +590,7 @@ test.describe('Giustificativi', () => {
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
       ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_EL')
       if (draft) ids.giustificativi.push(draft.id)
     })
@@ -669,7 +669,7 @@ test.describe('Giustificativi', () => {
         .catch(() => {})
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       await expect(page.locator(`text=${descText}`)).not.toBeVisible({ timeout: 5000 })
     })
   })
@@ -688,7 +688,7 @@ test.describe('Giustificativi', () => {
       const r = await creaFamigliaVolontarioProgetto(page, ids)
       nomeFam = r.nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_SU')
       if (draft) ids.giustificativi.push(draft.id)
     })
@@ -764,7 +764,7 @@ test.describe('Giustificativi', () => {
         })
         .catch(() => {})
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const cardAfter = page.locator('.q-card').filter({ hasText: cleanDesc }).first()
       await expect(cardAfter.locator('.q-badge').first()).toHaveText('Inviato', { timeout: 10000 })
     })
@@ -782,7 +782,7 @@ test.describe('Giustificativi', () => {
       await loginGestore(page)
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
       await loginVolontarioConFamiglia(page, nomeFam)
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_RO')
       if (draft) {
         ids.giustificativi.push(draft.id)
@@ -850,7 +850,7 @@ test.describe('GiustificativoForm — Screenshot', () => {
       .first()
       .waitFor({ state: 'visible', timeout: 15000 })
       .catch(() => {})
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
   })
 
   test.afterEach(async () => {
@@ -866,7 +866,7 @@ test.describe('GiustificativoForm — Screenshot', () => {
     const sshotDialog = page.locator('.q-dialog')
     await sshotDialog.locator('[data-testid="giustform-descrizione"]').fill('Spesa test screenshot')
     await sshotDialog.locator('[data-testid="giustform-importo"]').fill('50.00')
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page).toHaveScreenshot('giustificativo-form.png', { maxDiffPixels: 1500, animations: 'disabled' })
   })
 })

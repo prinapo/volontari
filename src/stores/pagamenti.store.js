@@ -102,6 +102,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async ricalcolaPropostiDaProgetti(progetti) {
+      this.error = null
       if (!progetti?.length) return
       const aperti = progetti.filter(r => r.statoProgetto !== 'chiuso')
       if (!aperti.length) return
@@ -142,6 +143,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async fetchAssociazioni() {
+      this.error = null
       try {
         const res = await associazioniService.getAll()
         this.associazioni = res.data.data || []
@@ -157,6 +159,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async fetchProposti() {
+      this.error = null
       try {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_eq]': STATO_PAGAMENTO.PROPOSTO,
@@ -173,6 +176,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async fetchInCorso() {
+      this.error = null
       try {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_in]': `${STATO_PAGAMENTO.IN_PAGAMENTO},${STATO_PAGAMENTO.PAGATO}`,
@@ -190,6 +194,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async fetchFalliti() {
+      this.error = null
       try {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_eq]': STATO_PAGAMENTO.FALLITO,
@@ -205,6 +210,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async fetchBatches() {
+      this.error = null
       try {
         const res = await pagamentiService.getBatches({
           fields: '*',
@@ -219,6 +225,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     },
 
     async ricalcolaProposta(progettoId, { iban, intestatario } = {}) {
+      this.error = null
       try {
         const progRes = await progettiService.getById(progettoId)
         const progetto = progRes.data.data
@@ -272,23 +279,27 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchProposti()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       }
     },
 
     async ricalcolaTotaliProgetto(progettoId) {
+      this.error = null
       try {
-        const progRes = await progettiService.getById(progettoId)
+        const id = typeof progettoId === 'object' ? (progettoId?.id_progetto || progettoId?.id) : progettoId
+        if (!id) return
+        const progRes = await progettiService.getById(id)
         const progetto = progRes.data.data
         if (!progetto) return
 
-        const giustRes = await verificaService.getGiustificativiByProgetto(progettoId)
+        const giustRes = await verificaService.getGiustificativiByProgetto(id)
         const giustificativi = giustRes.data.data || []
         const totaleVerificato = giustificativi
           .filter(g => g.Stato === 'verificato')
           .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
 
         const pagamentiRes = await pagamentiService.getPagamenti({
-          'filter[Progetto][_eq]': progettoId,
+          'filter[Progetto][_eq]': id,
           limit: -1
         })
         const tutti = pagamentiRes.data.data || []
@@ -304,7 +315,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const totaleProposto = proposto ? Number.parseFloat(proposto.Importo) || 0 : 0
         const residuo = allocato - (totaleProposto + inPagamento + pagato)
 
-        await progettiService.updateStats(progettoId, {
+        await progettiService.updateStats(id, {
           TotaleVerificato: totaleVerificato,
           TotaleProposto: totaleProposto,
           TotaleInPagamento: inPagamento,
@@ -313,14 +324,16 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
 
         if (pagato >= allocato && progetto.StatoProgetto === STATO_PROGETTO.APERTO) {
-          await this.chiudiProgetto(progettoId, { automatica: true })
+          await this.chiudiProgetto(id, { automatica: true })
         }
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       }
     },
 
-    async _aggiornaListaBatch(batchId) {
+    async _aggiornaListaBatch(batchId, batchNome) {
+      this.error = null
       try {
         const pagamentiRes = await pagamentiService.getPagamenti({
           'filter[Batch][_eq]': batchId,
@@ -331,9 +344,14 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         const pagamenti = pagamentiRes.data.data || []
 
-        const batch = this.batches.find(b => b.id === batchId)
-        if (!batch) return
-        const nome = batch.Nome
+        let nome
+        if (batchNome) {
+          nome = batchNome
+        } else {
+          const batch = this.batches.find(b => b.id === batchId)
+          if (!batch) return
+          nome = batch.Nome
+        }
 
         const allListe = await listePagamentiService.getAll()
         const existingLista = allListe.find(l => l.Nome === `${nome} (batch)`)
@@ -345,6 +363,17 @@ export const usePagamentiStore = defineStore('pagamenti', {
           }
           await this.fetchListe()
           return
+        }
+
+        // Valida nomi famiglia per CSV
+        const nomiInvalidi = pagamenti
+          .map(p => p.Famiglia?.Nome_Famiglia || '')
+          .filter(n => n && /[\n\r";]/.test(n))
+        if (nomiInvalidi.length > 0) {
+          throw new Error(
+            `Impossibile generare CSV: ${nomiInvalidi.length} famiglia/e hanno caratteri non consentiti nel nome.\n` +
+              nomiInvalidi.map(n => `"${n}"`).join(', ')
+          )
         }
 
         const csvHeader = 'Famiglia,Importo,IBAN,Intestatario'
@@ -376,11 +405,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchListe()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore aggiornamento lista batch'
+        throw error
       }
     },
 
     async ripristinaProposto(pagamentoId) {
       this.loading = true
+      this.error = null
       try {
         const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
           .data?.[0]
@@ -393,6 +424,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchProposti()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       } finally {
         this.loading = false
       }
@@ -431,33 +463,17 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         const batchId = batchRes.data.data?.id
 
-        for (const p of pagamenti) {
-          await pagamentiService.updatePagamento(p.id, {
-            Stato: STATO_PAGAMENTO.IN_PAGAMENTO,
-            Batch: batchId
-          })
-          await this.ricalcolaTotaliProgetto(p.Progetto)
-        }
+        await Promise.all(
+          pagamenti.map(p =>
+            pagamentiService.updatePagamento(p.id, {
+              Stato: STATO_PAGAMENTO.IN_PAGAMENTO,
+              Batch: batchId
+            })
+          )
+        )
+        await Promise.all(pagamenti.map(p => this.ricalcolaTotaliProgetto(p.Progetto)))
 
-        // Genera CSV del batch e salva in Liste esportazione
-        const csvHeader = 'Famiglia,Importo,IBAN,Intestatario'
-        const csvRows = pagamenti.map(p => {
-          const importo = (Number.parseFloat(p.Importo) || 0).toFixed(2).replace('.', ',')
-          return `"${p.Famiglia?.Nome_Famiglia || ''}","${importo}","${p.IBAN || ''}","${p.Intestatario || ''}"`
-        })
-        const csv = [csvHeader, ...csvRows].join('\n')
-        try {
-          const fileId = await listePagamentiService.uploadCsv(csv, nome)
-          await listePagamentiService.create({
-            Nome: `${nome} (batch)`,
-            File: fileId,
-            Totale: totale,
-            ConteggioRighe: pagamenti.length,
-            DataCreazione: new Date().toISOString()
-          })
-        } catch {
-          // Se fallisce la generazione CSV, il batch è comunque creato
-        }
+        await this._aggiornaListaBatch(batchId, nome)
 
         await this.init()
         return batchId
@@ -471,6 +487,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
     async segnaPagato(pagamentoId) {
       this.loading = true
+      this.error = null
       try {
         const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
           .data?.[0]
@@ -486,12 +503,14 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       } finally {
         this.loading = false
       }
     },
 
     async segnaFallito(pagamentoId, note) {
+      this.error = null
       this.loading = true
       try {
         const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
@@ -508,6 +527,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       } finally {
         this.loading = false
       }
@@ -515,6 +535,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
     async segnaAnnullato(pagamentoId) {
       this.loading = true
+      this.error = null
       try {
         const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
           .data?.[0]
@@ -536,6 +557,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       } finally {
         this.loading = false
       }
@@ -543,6 +565,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
     async correggiDati(pagamentoId, { iban, intestatario }) {
       this.loading = true
+      this.error = null
       try {
         const pagamento = (await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })).data
           .data?.[0]
@@ -570,6 +593,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       }
     },
 
@@ -582,6 +606,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
       }
     },
 
@@ -646,6 +671,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchListe()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore eliminazione lista'
+        throw error
       } finally {
         this.loading = false
       }

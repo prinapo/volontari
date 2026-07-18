@@ -14,9 +14,7 @@
           <q-tooltip>Menu</q-tooltip>
         </q-btn>
 
-        <q-toolbar-title>
-          Portale Volontario
-        </q-toolbar-title>
+        <q-toolbar-title> Portale Volontario </q-toolbar-title>
 
         <template v-if="authStore.isAuthenticated">
           <q-btn-dropdown flat :label="authStore.userName">
@@ -28,9 +26,7 @@
               </q-item>
               <q-item v-close-popup clickable @click="handleLogout">
                 <q-item-section>
-                  <q-item-label class="text-negative">
-                    Esci
-                  </q-item-label>
+                  <q-item-label class="text-negative"> Esci </q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -39,16 +35,9 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-if="authStore.isAuthenticated"
-      v-model="drawerOpen"
-      show-if-above
-      :width="240"
-    >
+    <q-drawer v-if="authStore.isAuthenticated" v-model="drawerOpen" show-if-above :width="240">
       <q-list padding>
-        <q-item-label header>
-          Navigazione
-        </q-item-label>
+        <q-item-label header> Navigazione </q-item-label>
         <q-item
           v-if="authStore.hasFamiglieAccess"
           v-ripple
@@ -119,9 +108,7 @@
           <q-item-section>Gestione</q-item-section>
         </q-item>
 
-        <q-item-label v-if="authStore.canAdmin" header class="q-mt-md">
-          Amministrazione
-        </q-item-label>
+        <q-item-label v-if="authStore.canAdmin" header class="q-mt-md"> Amministrazione </q-item-label>
 
         <q-item
           v-if="authStore.canAdmin"
@@ -139,11 +126,7 @@
       </q-list>
     </q-drawer>
 
-    <q-banner
-      v-if="authStore.isImpersonating"
-      class="bg-purple-8 text-white text-center q-py-sm"
-      rounded
-    >
+    <q-banner v-if="authStore.isImpersonating" class="bg-purple-8 text-white text-center q-py-sm" rounded>
       <template #avatar>
         <q-icon name="theater_comedy" />
       </template>
@@ -160,18 +143,15 @@
     <q-dialog v-model="showChangePassword" persistent>
       <q-card>
         <q-card-section class="row items-center">
-          <div class="text-h6">
-            Cambia password
-          </div>
+          <div class="text-h6">Cambia password</div>
           <q-space />
           <q-btn
-            v-close-popup
-            icon="close"
-            flat
-            round
-            dense
-            aria-label="Chiudi"
-          >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
             <q-tooltip>Chiudi</q-tooltip>
           </q-btn>
         </q-card-section>
@@ -190,17 +170,14 @@
             v-model="confirmPassword"
             type="password"
             label="Conferma password"
-            :rules="[
-              val => !!val || 'Campo obbligatorio',
-              val => val === newPassword || 'Le password non coincidono'
-            ]"
+            :rules="[val => !!val || 'Campo obbligatorio', val => val === newPassword || 'Le password non coincidono']"
             outlined
             dense
             lazy-rules
           />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn v-close-popup flat label="Annulla" />
+          <q-btn v-close-popup flat dense size="sm" label="Annulla" />
           <q-btn
             color="primary"
             label="Salva"
@@ -254,5 +231,4 @@ async function handleChangePassword() {
     notifyError($q, error, 'Errore nel cambio password')
   }
 }
-
 </script>

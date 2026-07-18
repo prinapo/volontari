@@ -27,9 +27,9 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   await expect(aggiungiBtn).toBeEnabled({ timeout: 15000 })
 
   await aggiungiBtn.scrollIntoViewIfNeeded()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
   await aggiungiBtn.dispatchEvent('click')
-  await page.waitForTimeout(1500)
+  await page.waitForLoadState("networkidle").catch(() => {})
   const dialog = page.locator('.q-dialog:visible')
   await dialog.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
 
@@ -64,7 +64,7 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   const giustId = created?.data?.id
 
   if (data.submitAfter && giustId) {
-    await page.waitForTimeout(1500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const sendBtn = page.locator('[data-testid="giustificativo-card-' + giustId + '"] button:has-text("Invia")')
     if (await sendBtn.count().then(c => c > 0)) {
       const [patchResp] = await Promise.all([
@@ -72,7 +72,7 @@ export async function createGiustificativoViaDialog(page, data = {}) {
         sendBtn.click()
       ])
     }
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
   }
 
   return { id: giustId, desc: testDesc }

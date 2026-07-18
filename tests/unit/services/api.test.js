@@ -101,6 +101,7 @@ describe('api.js', () => {
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: {
+        hostname: 'localhost',
         pathname: '/area-riservata',
         assign: assignSpy
       }
@@ -113,7 +114,8 @@ describe('api.js', () => {
     expect(api).toBe(apiInstance)
     expect(mockCreate).toHaveBeenCalledWith({
       baseURL: expect.any(String),
-      timeout: 30000
+      timeout: 30000,
+      withCredentials: true
     })
     expect(typeof requestInterceptor).toBe('function')
     expect(typeof responseSuccessHandler).toBe('function')
@@ -159,7 +161,7 @@ describe('api.js', () => {
     localStorage.setItem('access_token', 'old-access')
     const error = makeInvalidTokenError()
 
-    await expect(responseErrorHandler(error)).rejects.toBe(error)
+    await expect(responseErrorHandler(error)).rejects.toThrow('No refresh token')
 
     expect(mockAuthPatch).toHaveBeenCalledWith({
       token: null,
@@ -204,7 +206,7 @@ describe('api.js', () => {
     mockAxiosPost.mockRejectedValueOnce(new Error('refresh failed'))
     const error = makeInvalidTokenError()
 
-    await expect(responseErrorHandler(error)).rejects.toBe(error)
+    await expect(responseErrorHandler(error)).rejects.toThrow('refresh failed')
 
     expect(mockAuthPatch).toHaveBeenCalled()
     expect(assignSpy).toHaveBeenCalledWith('/login')

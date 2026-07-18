@@ -33,12 +33,10 @@
         <q-tooltip>Rimuovi file</q-tooltip>
       </q-btn>
     </div>
-    <div v-if="modelValue" class="text-caption text-green q-mt-xs">
+    <div v-if="modelValue" class="text-caption text-positive q-mt-xs">
       {{ modelValue.name }}
     </div>
-    <div v-else-if="internalTouched && !modelValue" class="text-caption text-negative q-mt-xs">
-      Campo obbligatorio
-    </div>
+    <div v-else-if="internalTouched && !modelValue" class="text-caption text-negative q-mt-xs">Campo obbligatorio</div>
   </div>
 </template>
 

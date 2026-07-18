@@ -253,17 +253,15 @@ describe('RendicontazioneTab', () => {
     expect(wrapper.vm.rejectDialog).toBe(true)
     expect(wrapper.vm.rejectProgettoId).toBe('p1')
 
-    await wrapper.vm.confirmReject()
+    await wrapper.vm.confirmReject('')
     expect(mockRejectGiustificativo).not.toHaveBeenCalled()
 
-    wrapper.vm.rejectNota = 'non valido'
-    await wrapper.vm.confirmReject()
+    await wrapper.vm.confirmReject('non valido')
     expect(mockRejectGiustificativo).toHaveBeenCalledWith('p1', 'g1', 'non valido')
     expect(mockQNotify).toHaveBeenCalledWith({ type: 'warning', message: 'Giustificativo rifiutato' })
 
     wrapper.vm.handleReject('p2', { id: 'g2' })
-    wrapper.vm.rejectNota = 'errore'
-    await wrapper.vm.confirmReject()
+    await wrapper.vm.confirmReject('errore')
     expect(mockNotifyError).toHaveBeenCalled()
 
     await wrapper.vm.handleFieldSave('p1', { id: 'g3' }, 'Descrizione', 'Nuova')

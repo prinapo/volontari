@@ -30,7 +30,7 @@ export class RiconciliazionePage {
       const exp = document.querySelector('.q-expansion-item')
       return !!(tr || exp)
     }, { timeout: 30000 }).catch(() => {})
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForLoadState('networkidle')
   }
 
   get dialog() {
@@ -59,7 +59,7 @@ export class RiconciliazionePage {
     const isExpanded = await row.evaluate(el => el.classList.contains('q-expansion-item--expanded'))
     if (!isExpanded) {
       await row.click()
-      await this.page.waitForTimeout(500)
+      await this.page.waitForLoadState('networkidle')
     }
   }
 
@@ -73,7 +73,7 @@ export class RiconciliazionePage {
     const nextBtn = this.page.locator('button[aria-label="Pagina successiva"]')
     if (await nextBtn.isEnabled().catch(() => false)) {
       await nextBtn.click()
-      await this.page.waitForTimeout(1000)
+      await this.page.waitForLoadState('networkidle')
       return true
     }
     return false
@@ -83,11 +83,11 @@ export class RiconciliazionePage {
     const btn = this.page.locator('.q-table__bottom-item:has(.q-select)')
     if (await btn.isVisible().catch(() => false)) {
       await btn.click()
-      await this.page.waitForTimeout(300)
+      await this.page.locator('[role="option"]').filter({ hasText: String(count) }).first().waitFor({ timeout: 3000 })
       const option = this.page.locator('[role="option"]').filter({ hasText: String(count) })
       if ((await option.count()) > 0) {
         await option.click()
-        await this.page.waitForTimeout(500)
+        await this.page.waitForLoadState('networkidle')
       }
     }
   }

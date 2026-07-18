@@ -11,16 +11,21 @@
             {{ message }}
           </div>
         </div>
+        <q-space />
+        <q-btn
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn v-close-popup flat :label="cancelLabel" />
-        <q-btn
-          :color="confirmColor"
-          :label="confirmLabel"
-          :loading="loading"
-          @click="$emit('confirm')"
-        />
+        <q-btn v-close-popup flat dense size="sm" :label="cancelLabel" />
+        <q-btn :color="confirmColor" :label="confirmLabel" :loading="loading" @click="$emit('confirm')" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -45,6 +50,6 @@ const emit = defineEmits(['update:modelValue', 'confirm'])
 
 const model = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: val => emit('update:modelValue', val)
 })
 </script>

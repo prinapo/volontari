@@ -2,19 +2,16 @@
   <q-page class="q-pa-md">
     <div v-if="!authStore.initialized" class="text-center q-mt-xl">
       <q-spinner size="lg" />
-      <div class="q-mt-sm">
-        Caricamento...
-      </div>
+      <div class="q-mt-sm">Caricamento...</div>
     </div>
 
     <q-inner-loading :showing="loading && authStore.initialized" />
 
     <template v-if="authStore.initialized">
-      <div class="q-gutter-y-md q-mx-auto" style="max-width: 960px">
-
+      <div class="q-gutter-y-md page-inner q-mx-auto">
         <!-- Selettore famiglia (sempre visibile se multi-famiglia, anche senza famiglia caricata) -->
-        <div v-if="famiglieStore.famiglieContatti.length > 1" class="row">
-          <div class="col-sm-4 col-md-3">
+        <div v-if="famiglieStore.famiglieContatti.length > 1" class="row justify-center">
+          <div class="col-12 col-sm-6 col-md-4">
             <q-select
               :model-value="famiglieStore.selectedFamigliaId"
               :options="famiglieStore.famigliaOptions"
@@ -47,24 +44,22 @@
             <q-card flat bordered class="q-mb-md">
               <q-card-section class="row items-center q-gutter-x-lg q-gutter-y-sm">
                 <div>
-                  <div class="text-caption text-grey">
-                    Totale Giustificativi
-                  </div>
+                  <div class="text-caption text-grey">Totale Giustificativi</div>
                   <div class="text-h6 text-primary">
                     {{ formatCurrency(totaleGiustificativi) }}
                   </div>
                 </div>
                 <div>
-                  <div class="text-caption text-grey">
-                    Totale Rimborsabile
-                  </div>
+                  <div class="text-caption text-grey">Totale Rimborsabile</div>
                   <div class="text-h6 text-positive">
                     {{ formatCurrency(totaleRimborsabile) }}
                   </div>
                 </div>
                 <q-space />
                 <div class="text-caption text-grey">
-                  Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{ formatCurrency(allocato) }})
+                  Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{
+                    formatCurrency(allocato)
+                  }})
                 </div>
               </q-card-section>
             </q-card>
@@ -86,27 +81,15 @@
         <!-- Nessuna famiglia e utente ha accesso a verifica -->
         <div v-else-if="!loading && authStore.canManager" class="text-center q-mt-xl">
           <q-icon name="fact_check" size="lg" color="primary" />
-          <div class="q-mt-sm text-h6">
-            Area verifica disponibile
-          </div>
-          <div class="q-mt-xs text-grey-7">
-            Questo utente non e' collegato a famiglie come volontario.
-          </div>
-          <q-btn
-            class="q-mt-md"
-            color="primary"
-            icon="fact_check"
-            label="Vai a Verifica"
-            to="/verifica"
-          />
+          <div class="q-mt-sm text-h6">Area verifica disponibile</div>
+          <div class="q-mt-xs text-grey-7">Questo utente non e' collegato a famiglie come volontario.</div>
+          <q-btn class="q-mt-md" color="primary" icon="fact_check" label="Vai a Verifica" to="/verifica" />
         </div>
 
         <!-- Nessuna famiglia e nessun accesso -->
         <div v-else-if="!loading" class="text-center text-grey q-mt-xl">
           <q-icon name="info" size="lg" />
-          <div class="q-mt-sm">
-            Nessun dato disponibile
-          </div>
+          <div class="q-mt-sm">Nessun dato disponibile</div>
         </div>
       </div>
     </template>
@@ -144,11 +127,15 @@ const totaleRimborsabile = computed(() => {
   return Math.min(ottantaPct, allocato.value)
 })
 
-watch(() => authStore.contattoId, (id) => {
-  if (id) {
-    famiglieStore.init(id)
-  }
-}, { immediate: true })
+watch(
+  () => authStore.contattoId,
+  id => {
+    if (id) {
+      famiglieStore.init(id)
+    }
+  },
+  { immediate: true }
+)
 
 function handleFamigliaChange(famigliaId) {
   famiglieStore.selectFamiglia(famigliaId)

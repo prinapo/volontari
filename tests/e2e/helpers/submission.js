@@ -12,11 +12,11 @@ export async function createTestSubmission(page, { email, descrizione } = {}) {
     await page.goto('/login')
     await page.evaluate(() => localStorage.clear())
   }
-  await page.waitForTimeout(500)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   const submitPage = new SubmitPage(page)
   await submitPage.goto()
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   await submitPage.fillForm({
     nome_richiedente: 'Test',
@@ -30,7 +30,7 @@ export async function createTestSubmission(page, { email, descrizione } = {}) {
   })
 
   await submitPage.clickAddGiustificativo()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   await submitPage.fillGiustificativo(0, {
     descrizione: testDescrizione,

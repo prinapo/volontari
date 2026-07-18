@@ -17,7 +17,7 @@ test.describe('Route Guards', () => {
     await loginAs(page, 'manager', auth)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/admin')
   })
 
@@ -25,7 +25,7 @@ test.describe('Route Guards', () => {
     await loginAs(page, 'volontario', auth)
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
     await page.goto('/gestione')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/gestione')
   })
 
@@ -33,7 +33,7 @@ test.describe('Route Guards', () => {
     await loginAs(page, 'manager', auth)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/admin')
   })
 
@@ -41,7 +41,7 @@ test.describe('Route Guards', () => {
     await loginAs(page, 'volontario', auth)
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
     await page.goto('/verifica')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/verifica')
   })
 })
@@ -82,7 +82,7 @@ test.describe('Pagamenti Tab Accesso', () => {
   test('PER-08: Volontario non vede pagina Pagamenti @regression', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await page.goto('/pagamenti')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/pagamenti')
   })
 })
@@ -92,14 +92,14 @@ test.describe('ErrorLog Accesso', () => {
     await loginAs(page, 'manager', auth)
     await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/admin')
   })
 
   test('PER-10: Verificatore non accede a /admin @smoke', async ({ page }) => {
     await loginAs(page, 'manager', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     expect(page.url()).not.toContain('/admin')
   })
 })

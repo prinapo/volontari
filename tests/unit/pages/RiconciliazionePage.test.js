@@ -214,7 +214,7 @@ describe('RiconciliazionePage', () => {
     await wrapper.vm.handleRipristina({ id: 'sub-1' })
 
     expect(mockRipristinaSubmission).toHaveBeenCalledWith('sub-1')
-    expect(wrapper.vm.cardStateColor('linked', 'in_attesa')).toBe('#4A7C59')
-    expect(wrapper.vm.cardStateColor('whatever', 'scartato')).toBe('#9E9E9E')
+    expect(wrapper.vm.cardStateColor('linked', 'in_attesa')).toBe('var(--q-positive)')
+    expect(wrapper.vm.cardStateColor('whatever', 'scartato')).toBe('#bdbdbd')
   })
 })

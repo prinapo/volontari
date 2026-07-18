@@ -42,14 +42,14 @@ test.describe('Error Log', () => {
     test.setTimeout(45000)
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     await expect(page.locator('.q-page')).toBeVisible({ timeout: 5000 })
 
     const erroriTab = page.locator('.q-tab').filter({ hasText: /errori/i })
     await expect(erroriTab).toBeVisible({ timeout: 5000 })
     await erroriTab.click()
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     await expect(page.locator('.q-tab--active')).toBeVisible({ timeout: 3000 })
     const label = await page.locator('.q-tab--active').innerText()
@@ -91,17 +91,17 @@ test.describe('Error Log', () => {
 
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Aspetta che l'errore venga loggato (POST a /items/ErrorLog)
     // L'admin ha i permessi per scrivere su ErrorLog
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Vai al tab Errori
     const erroriTab = page.locator('.q-tab').filter({ hasText: /errori/i })
     await expect(erroriTab).toBeVisible({ timeout: 5000 })
     await erroriTab.click()
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Verifica che la tabella errori sia visibile
     await expect(page.locator('.q-tab--active')).toBeVisible({ timeout: 3000 })

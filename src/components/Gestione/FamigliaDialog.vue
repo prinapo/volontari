@@ -7,13 +7,12 @@
         </div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -41,7 +40,7 @@
             class="q-mb-md"
             :rules="IBAN_RULES"
             lazy-rules
-            @update:model-value="val => form.IBAN = sanitizeIBAN(val)"
+            @update:model-value="val => (form.IBAN = sanitizeIBAN(val))"
           />
           <q-input
             v-model="form.Intestatario_CC"
@@ -55,7 +54,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Annulla" />
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
         <q-btn
           color="primary"
           label="Salva"
@@ -95,20 +94,23 @@ const form = ref({
 
 const isEdit = computed(() => !!props.editItem)
 
-watch(() => props.modelValue, (val) => {
-  visible.value = val
-  if (val && props.editItem) {
-    form.value.Nome_Famiglia = props.editItem.Nome_Famiglia || ''
-    form.value.IBAN = props.editItem.IBAN || ''
-    form.value.Intestatario_CC = props.editItem.Intestatario_CC || ''
-  } else if (val) {
-    form.value.Nome_Famiglia = ''
-    form.value.IBAN = ''
-    form.value.Intestatario_CC = ''
+watch(
+  () => props.modelValue,
+  val => {
+    visible.value = val
+    if (val && props.editItem) {
+      form.value.Nome_Famiglia = props.editItem.Nome_Famiglia || ''
+      form.value.IBAN = props.editItem.IBAN || ''
+      form.value.Intestatario_CC = props.editItem.Intestatario_CC || ''
+    } else if (val) {
+      form.value.Nome_Famiglia = ''
+      form.value.IBAN = ''
+      form.value.Intestatario_CC = ''
+    }
   }
-})
+)
 
-watch(visible, (val) => {
+watch(visible, val => {
   if (!val) emit('update:modelValue', false)
 })
 
@@ -126,7 +128,7 @@ async function handleSave() {
       emit('saved')
       visible.value = false
     } else if (store.error) {
-      notifyError($q, store.error, "Errore nella modifica della famiglia")
+      notifyError($q, store.error, 'Errore nella modifica della famiglia')
     }
   } else {
     const ok = await store.createFamiglia({
@@ -139,7 +141,7 @@ async function handleSave() {
       emit('saved')
       visible.value = false
     } else if (store.error) {
-      notifyError($q, store.error, "Errore nella creazione della famiglia")
+      notifyError($q, store.error, 'Errore nella creazione della famiglia')
     }
   }
 }

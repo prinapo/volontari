@@ -9,7 +9,9 @@ import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
 
 function generatePassword(length = 16) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  const array = new Uint32Array(length)
+  crypto.getRandomValues(array)
+  return Array.from(array, v => chars[v % chars.length]).join('')
 }
 
 export const useAdminStore = defineStore('admin', {
@@ -144,7 +146,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         const resolvedBody = body
           .replaceAll('{email}', to)
-          .replaceAll('{link_login}', window.location.origin + '/login')
+          .replaceAll('{link_login}', globalThis.location.origin + '/login')
         await adminService.sendEmail({
           to,
           subject,
@@ -359,7 +361,7 @@ export const useAdminStore = defineStore('admin', {
         localStorage.setItem('impersonating_user_id', userId)
         localStorage.setItem('access_token', uuid)
         localStorage.removeItem('refresh_token')
-        window.location.reload()
+        globalThis.location.reload()
       } catch (error) {
         this.error =
           error.response?.data?.errors?.[0]?.message || error.message || "Errore nell'avvio dell'impersonazione"
@@ -382,7 +384,7 @@ export const useAdminStore = defineStore('admin', {
           sessionStorage.removeItem('admin_refresh')
         }
         localStorage.removeItem('impersonating_user_id')
-        window.location.reload()
+        globalThis.location.reload()
       } catch (error) {
         this.error =
           error.response?.data?.errors?.[0]?.message || error.message || "Errore nel termine dell'impersonazione"

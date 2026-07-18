@@ -7,6 +7,8 @@ import { STORAGE_KEYS } from 'src/utils/constants'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 
+const AUTH_MODE = typeof globalThis !== 'undefined' && globalThis.location.hostname === 'localhost' ? 'json' : 'cookie'
+
 function normalizeRoleName(role) {
   if (!role) return ''
   const roleName = typeof role === 'string' ? role : role.name
@@ -28,7 +30,7 @@ function decodeJwtPayload(token) {
     if (!base64Url) return null
     const base64 = base64Url.replaceAll('-', '+').replaceAll('_', '/')
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
-    return JSON.parse(window.atob(padded))
+    return JSON.parse(globalThis.atob(padded))
   } catch {
     return null
   }
@@ -86,23 +88,23 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async initFromStorage() {
-      try {
-        const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-        const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-        const adminJwt = sessionStorage.getItem('admin_jwt')
-        if (adminJwt) {
-          this.isImpersonating = true
-        }
-        if (token) {
-          this.token = token
-          if (refreshToken) this.refreshToken = refreshToken
-          await this.fetchUserData()
-        }
-      } catch {
-        this.logout()
-      } finally {
-        this.initialized = true
+      const adminJwt = sessionStorage.getItem('admin_jwt')
+      if (adminJwt) {
+        this.isImpersonating = true
       }
+      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+      if (token) {
+        this.token = token
+        if (AUTH_MODE === 'json') {
+          this.refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+        }
+        try {
+          await this.fetchUserData()
+        } catch {
+          // fetchUserData già gestisce l'errore impostando this.error
+        }
+      }
+      this.initialized = true
     },
 
     async login(email, password) {
@@ -112,9 +114,11 @@ export const useAuthStore = defineStore('auth', {
         const res = await authService.login(email, password)
         const tokens = res.data.data
         this.token = tokens.access_token
-        this.refreshToken = tokens.refresh_token
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token)
-        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token)
+        if (AUTH_MODE === 'json') {
+          this.refreshToken = tokens.refresh_token
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token)
+        }
         await this.fetchUserData()
         return true
       } catch (error) {
@@ -133,13 +137,7 @@ export const useAuthStore = defineStore('auth', {
 
         if (!this.user?.id) return
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
-        this.token = null
-        this.refreshToken = null
-        this.user = null
-        this.contatto = null
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore recupero utente'
         return
       }
 
@@ -292,11 +290,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const refreshToken = this.refreshToken || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+      const refreshToken = AUTH_MODE === 'json' ? (this.refreshToken || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)) : null
       try {
-        if (refreshToken) {
-          await authService.logout(refreshToken)
-        }
+        await authService.logout(refreshToken)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
       } finally {
@@ -306,7 +302,7 @@ export const useAuthStore = defineStore('auth', {
         this.contatto = null
         this.hasFamiglieAccess = false
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+        if (AUTH_MODE === 'json') localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
       }
     }
   }

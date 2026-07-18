@@ -1,16 +1,18 @@
 import api from './api'
 
+const AUTH_MODE = typeof globalThis !== 'undefined' && globalThis.location.hostname === 'localhost' ? 'json' : 'cookie'
+
 export const authService = {
   login(email, password) {
-    return api.post('/auth/login', { email, password })
-  },
-
-  refresh(refreshToken) {
-    return api.post('/auth/refresh', { refresh_token: refreshToken })
+    return api.post('/auth/login', { email, password, mode: AUTH_MODE })
   },
 
   logout(refreshToken) {
-    return api.post('/auth/logout', { refresh_token: refreshToken })
+    const data = { mode: AUTH_MODE }
+    if (AUTH_MODE === 'json' && refreshToken) {
+      data.refresh_token = refreshToken
+    }
+    return api.post('/auth/logout', data)
   },
 
   getMe() {

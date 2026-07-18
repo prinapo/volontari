@@ -1,5 +1,9 @@
 <template>
   <div>
+    <q-inner-loading :showing="loadingVerifica">
+      <q-spinner size="40px" color="primary" />
+      <div class="q-mt-sm text-body2 text-grey-7">Caricamento progetti...</div>
+    </q-inner-loading>
     <div class="row items-center q-gutter-sm q-mb-md">
       <q-tabs
         v-model="subTab"
@@ -38,7 +42,10 @@
           label="Crea gruppo di pagamento"
           :disable="selected.length === 0 || !batchAssociazione"
           @click="openCreaBatch"
-        />
+        >
+          <q-tooltip v-if="!batchAssociazione">Seleziona un'associazione</q-tooltip>
+          <q-tooltip v-else-if="selected.length === 0">Seleziona almeno un pagamento</q-tooltip>
+        </q-btn>
         <q-btn
           flat
           dense
@@ -56,6 +63,7 @@
     <template v-if="subTab === 'proposti'">
       <q-table
         v-model:selected="selected"
+        v-model:pagination="paginationProposti"
         :rows="store.proposti"
         :columns="propostiColumns"
         row-key="id"
@@ -66,8 +74,6 @@
         :loading="store.loading"
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
-        :pagination="{ rowsPerPage: 0 }"
-        hide-pagination
       >
         <template #body-cell-importo="props">
           <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
@@ -79,8 +85,15 @@
           <div class="q-pa-xs col-12">
             <q-card flat bordered>
               <q-card-section>
-                <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
-                <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
+                <div class="row items-center q-gutter-sm q-mb-sm">
+                  <q-checkbox v-model="selected" :val="props.row" dense />
+                  <div>
+                    <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
+                    <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
+                  </div>
+                </div>
+                <div class="text-caption q-mt-xs">{{ props.row.IBAN || '—' }}</div>
+                <div class="text-caption">{{ props.row.Intestatario || '—' }}</div>
               </q-card-section>
             </q-card>
           </div>
@@ -100,25 +113,51 @@
           :options="batchOptions"
           label="Filtra per gruppo"
           dense
-outlined
+          outlined
           clearable
           class="col-auto"
           style="min-width: 250px"
           emit-value
-map-options
+          map-options
         />
+        <template v-if="selectedInCorso.length > 0">
+          <q-space />
+          <span class="text-caption">{{ selectedInCorso.length }} selezionati</span>
+          <q-btn
+color="positive"
+icon="check_circle"
+label="Segna pagato"
+size="sm"
+:disable="!allInPagamento"
+@click="handleBatchPagato" />
+          <q-btn
+color="negative"
+icon="cancel"
+label="Segna fallito"
+size="sm"
+:disable="!allInPagamento"
+@click="handleBatchFallito" />
+          <q-btn
+color="grey"
+icon="block"
+label="Rimuovi dal gruppo"
+size="sm"
+:disable="!allInPagamento"
+@click="handleBatchAnnullato" />
+        </template>
       </div>
 
       <q-table
+        v-model:selected="selectedInCorso"
+        v-model:pagination="paginationInCorso"
         :rows="filteredInCorso"
         :columns="incorsoColumns"
         row-key="id"
         flat
         bordered
         class="bg-white"
+        selection="multiple"
         :loading="store.loading"
-        :pagination="{ rowsPerPage: 0 }"
-        hide-pagination
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
       >
@@ -129,36 +168,42 @@ map-options
           <q-td :props="props">
             <div class="row q-gutter-xs no-wrap">
               <q-btn
-v-if="props.row.Stato === 'in_pagamento'"
-flat
-dense
-icon="check_circle"
-color="positive"
-size="sm"
-aria-label="Segna pagato"
-@click="handlePagato(props.row)">
+                v-if="props.row.Stato === 'in_pagamento'"
+                flat
+                round
+                dense
+                icon="check_circle"
+                color="positive"
+                size="sm"
+                aria-label="Segna pagato"
+                @click="handlePagato(props.row)"
+              >
                 <q-tooltip>Pagato</q-tooltip>
               </q-btn>
               <q-btn
-v-if="props.row.Stato === 'in_pagamento'"
-flat
-dense
-icon="cancel"
-color="negative"
-size="sm"
-aria-label="Segna fallito"
-@click="handleFallito(props.row)">
+                v-if="props.row.Stato === 'in_pagamento'"
+                flat
+                round
+                dense
+                icon="cancel"
+                color="negative"
+                size="sm"
+                aria-label="Segna fallito"
+                @click="handleFallito(props.row)"
+              >
                 <q-tooltip>Fallito</q-tooltip>
               </q-btn>
               <q-btn
-v-if="props.row.Stato === 'in_pagamento'"
-flat
-dense
-icon="block"
-color="grey"
-size="sm"
-aria-label="Rimuovi dal gruppo"
-@click="handleAnnullato(props.row)">
+                v-if="props.row.Stato === 'in_pagamento'"
+                flat
+                round
+                dense
+                icon="block"
+                color="grey"
+                size="sm"
+                aria-label="Rimuovi dal gruppo"
+                @click="handleAnnullato(props.row)"
+              >
                 <q-tooltip>Rimuovi dal gruppo</q-tooltip>
               </q-btn>
               <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
@@ -169,34 +214,50 @@ aria-label="Rimuovi dal gruppo"
           <div class="q-pa-xs col-12">
             <q-card flat bordered>
               <q-card-section>
-                <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
-                <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
+                <div class="row items-center q-gutter-sm q-mb-sm">
+                  <q-checkbox v-model="selectedInCorso" :val="props.row" dense />
+                  <div>
+                    <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
+                    <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
+                  </div>
+                </div>
+                <div class="text-caption q-mt-xs">Gruppo: {{ props.row.Batch?.Nome || '—' }}</div>
+                <div class="text-caption">IBAN: {{ props.row.IBAN || '—' }}</div>
                 <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
                 <div v-else class="row q-gutter-xs q-mt-sm">
                   <q-btn
- flat
- dense
- icon="check_circle"
- color="positive"
- size="sm"
- aria-label="Segna pagato"
- @click="handlePagato(props.row)"><q-tooltip>Pagato</q-tooltip></q-btn>
+                    flat
+                    round
+                    dense
+                    icon="check_circle"
+                    color="positive"
+                    size="sm"
+                    aria-label="Segna pagato"
+                    @click="handlePagato(props.row)"
+                    ><q-tooltip>Pagato</q-tooltip></q-btn
+                  >
                   <q-btn
- flat
- dense
- icon="cancel"
- color="negative"
- size="sm"
- aria-label="Segna fallito"
- @click="handleFallito(props.row)"><q-tooltip>Fallito</q-tooltip></q-btn>
+                    flat
+                    round
+                    dense
+                    icon="cancel"
+                    color="negative"
+                    size="sm"
+                    aria-label="Segna fallito"
+                    @click="handleFallito(props.row)"
+                    ><q-tooltip>Fallito</q-tooltip></q-btn
+                  >
                   <q-btn
- flat
- dense
- icon="block"
- color="grey"
- size="sm"
- aria-label="Rimuovi dal gruppo"
- @click="handleAnnullato(props.row)"><q-tooltip>Rimuovi dal gruppo</q-tooltip></q-btn>
+                    flat
+                    round
+                    dense
+                    icon="block"
+                    color="grey"
+                    size="sm"
+                    aria-label="Rimuovi dal gruppo"
+                    @click="handleAnnullato(props.row)"
+                    ><q-tooltip>Rimuovi dal gruppo</q-tooltip></q-btn
+                  >
                 </div>
               </q-card-section>
             </q-card>
@@ -209,6 +270,7 @@ aria-label="Rimuovi dal gruppo"
     <template v-if="subTab === 'falliti'">
       <q-table
         v-model:selected="selectedFalliti"
+        v-model:pagination="paginationFalliti"
         :rows="store.falliti"
         :columns="fallitiColumns"
         row-key="id"
@@ -217,19 +279,28 @@ aria-label="Rimuovi dal gruppo"
         class="bg-white"
         selection="multiple"
         :loading="store.loading"
-        :pagination="{ rowsPerPage: 0 }"
-        hide-pagination
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
       >
         <template #body-cell-iban="props">
           <q-td :props="props">
-            <q-input :model-value="props.row.IBAN" dense outlined :rules="IBAN_RULES" @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))" />
+            <q-input
+              :model-value="props.row.IBAN"
+              dense
+              outlined
+              :rules="IBAN_RULES"
+              @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))"
+            />
           </q-td>
         </template>
         <template #body-cell-intestatario="props">
           <q-td :props="props">
-            <q-input :model-value="props.row.Intestatario" dense outlined @update:model-value="val => editFallito(props.row, 'Intestatario', val)" />
+            <q-input
+              :model-value="props.row.Intestatario"
+              dense
+              outlined
+              @update:model-value="val => editFallito(props.row, 'Intestatario', val)"
+            />
           </q-td>
         </template>
         <template #body-cell-importo="props">
@@ -243,15 +314,25 @@ aria-label="Rimuovi dal gruppo"
                   <q-checkbox v-model="selectedFalliti" :val="props.row" dense />
                   <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
                 </div>
+                <div class="text-caption text-weight-medium q-mb-xs">€{{ formatNumber(props.row.Importo) }}</div>
                 <q-input
- :model-value="props.row.IBAN"
- label="IBAN"
- dense
- outlined
- class="q-mb-sm"
- :rules="IBAN_RULES"
- @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))" />
-                <q-input :model-value="props.row.Intestatario" label="Intestatario" dense outlined @update:model-value="val => editFallito(props.row, 'Intestatario', val)" />
+                  :model-value="props.row.IBAN"
+                  label="IBAN"
+                  dense
+                  outlined
+                  class="q-mb-sm"
+                  :rules="IBAN_RULES"
+                  @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))"
+                />
+                <q-input
+                  :model-value="props.row.Intestatario"
+                  label="Intestatario"
+                  dense
+                  outlined
+                  class="q-mb-sm"
+                  @update:model-value="val => editFallito(props.row, 'Intestatario', val)"
+                />
+                <div v-if="props.row.NoteEsito" class="text-caption text-grey-7">Note: {{ props.row.NoteEsito }}</div>
               </q-card-section>
             </q-card>
           </div>
@@ -325,17 +406,18 @@ aria-label="Rimuovi dal gruppo"
               <q-card-section>
                 <div class="text-weight-medium">{{ props.row.Nome || '—' }}</div>
                 <div class="text-caption">{{ formatDate(props.row.DataCreazione) }}</div>
+                <div class="text-caption">Righe: {{ props.row.ConteggioRighe || 0 }}</div>
                 <div class="row items-center q-gutter-sm q-mt-sm">
                   <span>€{{ formatNumber(props.row.Totale) }}</span>
                   <q-btn
                     flat
-round
-dense
-icon="download"
-color="primary"
-size="sm"
+                    round
+                    dense
+                    icon="download"
+                    color="primary"
+                    size="sm"
                     type="a"
-aria-label="Scarica CSV"
+                    aria-label="Scarica CSV"
                     :disable="!props.row.File"
                     :href="assetUrl(props.row.File, true)"
                     :download="`${(props.row.Nome || '').replaceAll(/[^\w-]/g, '_')}.csv`"
@@ -345,11 +427,11 @@ aria-label="Scarica CSV"
                   </q-btn>
                   <q-btn
                     flat
-round
-dense
-icon="delete"
-color="negative"
-size="sm"
+                    round
+                    dense
+                    icon="delete"
+                    color="negative"
+                    size="sm"
                     aria-label="Elimina lista"
                     @click="confermaEliminaLista(props.row)"
                   >
@@ -384,12 +466,10 @@ aria-label="Chiudi">
           <div class="text-caption q-mt-sm">
             {{ selected.length }} pagamenti selezionati, totale €{{ formatNumber(selectedTotal) }}
           </div>
-          <div class="text-caption text-grey-7">
-            Associazione: {{ batchAssociazioneLabel }}
-          </div>
+          <div class="text-caption text-grey-7">Associazione: {{ batchAssociazioneLabel }}</div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn v-close-popup flat label="Annulla" />
+          <q-btn v-close-popup flat dense size="sm" label="Annulla" />
           <q-btn color="primary" label="Conferma" :disable="!batchNome" :loading="store.loading" @click="creaBatch" />
         </q-card-actions>
       </q-card>
@@ -399,7 +479,7 @@ aria-label="Chiudi">
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatDate } from 'src/utils/formatters'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
@@ -413,34 +493,37 @@ const verificaStore = useVerificaStore()
 
 const subTab = ref('proposti')
 const selected = ref([])
+const selectedInCorso = ref([])
 const selectedFalliti = ref([])
+const paginationProposti = ref({ rowsPerPage: 25 })
+const paginationInCorso = ref({ rowsPerPage: 25 })
+const paginationFalliti = ref({ rowsPerPage: 25 })
 const batchAssociazione = ref(null)
 const batchFilter = ref(null)
 const batchNome = ref('')
 const showBatchDialog = ref(false)
 const editingFalliti = ref({})
+const loadingVerifica = ref(false)
 
-const assocOptions = computed(() =>
-  store.associazioni.map(a => ({ label: a.Nome, value: a.Nome }))
-)
+const assocOptions = computed(() => store.associazioni.map(a => ({ label: a.Nome, value: a.Nome })))
 
-const batchOptions = computed(() =>
-  store.batches.map(b => ({ label: b.Nome, value: b.id }))
-)
+const batchOptions = computed(() => store.batches.map(b => ({ label: b.Nome, value: b.id })))
 
 const batchAssociazioneLabel = computed(() => {
   const a = store.associazioni.find(a => a.Nome === batchAssociazione.value)
   return a?.Nome || ''
 })
 
-const selectedTotal = computed(() =>
-  selected.value.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
-)
+const selectedTotal = computed(() => selected.value.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0))
 
 const filteredInCorso = computed(() => {
   if (!batchFilter.value) return store.inCorso
   return store.inCorso.filter(p => (p.Batch?.id || p.Batch) === batchFilter.value)
 })
+
+const allInPagamento = computed(() =>
+  selectedInCorso.value.length > 0 && selectedInCorso.value.every(p => p.Stato === 'in_pagamento')
+)
 
 const propostiColumns = [
   { name: 'famiglia', label: 'Famiglia', align: 'left' },
@@ -474,17 +557,30 @@ const listeColumns = [
   { name: 'azioni', label: 'Azioni', align: 'center' }
 ]
 
-function formatNumber(v) { return (Number.parseFloat(v) || 0).toFixed(2) }
+function formatNumber(v) {
+  return (Number.parseFloat(v) || 0).toFixed(2)
+}
 
-function residuo(nome) { return store.residuoAssociazione(nome) }
+function residuo(nome) {
+  return store.residuoAssociazione(nome)
+}
 
 async function ricalcolaProposte() {
   if (verificaStore.rows.length === 0) {
-    notifyError($q, null, 'Nessun progetto caricato. Apri prima la tabella Rendicontazione.')
-    return
+    loadingVerifica.value = true
+    try {
+      await verificaStore.fetchAllPages()
+    } catch (error) {
+      notifyError($q, error, 'Errore caricamento progetti')
+      return
+    } finally {
+      loadingVerifica.value = false
+    }
   }
-  await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
-  if (store.error) notifyError($q, store.error, 'Errore ricalcolo')
+  if (verificaStore.rows.length > 0) {
+    await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
+    if (store.error) notifyError($q, store.error, 'Errore ricalcolo')
+  }
 }
 
 function openCreaBatch() {
@@ -549,7 +645,7 @@ async function handleFallito(pagamento) {
     cancel: { label: 'Annulla', flat: true },
     ok: { label: 'Conferma', color: 'negative' },
     persistent: true
-  }).onOk(async (note) => {
+  }).onOk(async note => {
     if (!note) {
       notifyError($q, new Error('Il motivo è obbligatorio'), 'Errore')
       return
@@ -572,11 +668,81 @@ async function handleAnnullato(pagamento) {
   }
 }
 
+async function handleBatchPagato() {
+  let successi = 0
+  let errori = 0
+  for (const p of selectedInCorso.value) {
+    try {
+      await store.segnaPagato(p.id)
+      successi++
+    } catch {
+      errori++
+    }
+  }
+  if (errori > 0) {
+    notifyError($q, null, `${successi} pagamenti segnati, ${errori} errori`)
+  } else {
+    notifySuccess($q, `${selectedInCorso.value.length} pagamenti segnati come pagati`)
+  }
+  selectedInCorso.value = []
+}
+
+async function handleBatchFallito() {
+  $q.dialog({
+    title: 'Segna come fallito',
+    message: 'Motivo del fallimento per tutti i selezionati:',
+    prompt: { model: '', type: 'text' },
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Conferma', color: 'negative' },
+    persistent: true
+  }).onOk(async note => {
+    if (!note) {
+      notifyError($q, new Error('Il motivo è obbligatorio'), 'Errore')
+      return
+    }
+    let successi = 0
+    let errori = 0
+    for (const p of selectedInCorso.value) {
+      try {
+        await store.segnaFallito(p.id, note)
+        successi++
+      } catch {
+        errori++
+      }
+    }
+    if (errori > 0) {
+      notifyError($q, null, `${successi} segnati, ${errori} errori`)
+    } else {
+      notifySuccess($q, `${selectedInCorso.value.length} pagamenti segnati come falliti`)
+    }
+    selectedInCorso.value = []
+  })
+}
+
+async function handleBatchAnnullato() {
+  let successi = 0
+  let errori = 0
+  for (const p of selectedInCorso.value) {
+    try {
+      await store.segnaAnnullato(p.id)
+      successi++
+    } catch {
+      errori++
+    }
+  }
+  if (errori > 0) {
+    notifyError($q, null, `${successi} rimossi, ${errori} errori`)
+  } else {
+    notifySuccess($q, `${selectedInCorso.value.length} pagamenti rimossi dal gruppo`)
+  }
+  selectedInCorso.value = []
+}
+
 async function confermaEliminaLista(row) {
   $q.dialog({
     title: 'Elimina lista',
     message: `Eliminare la lista "${row.Nome || ''}"?`,
-    cancel: true,
+    cancel: { label: 'Annulla', flat: true },
     persistent: true
   }).onOk(async () => {
     try {
@@ -591,18 +757,19 @@ async function confermaEliminaLista(row) {
 onMounted(async () => {
   await store.init()
   if (store.proposti.length === 0) {
-    // Attendi che la verifica store abbia caricato i progetti
-    if (verificaStore.rows.length === 0) {
-      await new Promise(resolve => {
-        const unwatch = watch(() => verificaStore.rows.length, val => {
-          if (val > 0) {
-            unwatch()
-            resolve()
-          }
-        })
-      })
+    loadingVerifica.value = true
+    try {
+      if (verificaStore.rows.length === 0) {
+        await verificaStore.fetchAllPages()
+      }
+      if (verificaStore.rows.length > 0) {
+        await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
+      }
+    } catch (error) {
+      notifyError($q, error, 'Errore caricamento progetti')
+    } finally {
+      loadingVerifica.value = false
     }
-    await ricalcolaProposte()
   }
 })
 </script>

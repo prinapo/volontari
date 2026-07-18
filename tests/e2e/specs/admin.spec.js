@@ -8,9 +8,9 @@ test.describe('Admin Page', () => {
     test.setTimeout(30000)
 
     await loginAs(page, 'admin', auth)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
   })
 
   test('AD-01: Pagina admin caricata @smoke', async ({ page }) => {
@@ -21,12 +21,12 @@ test.describe('Admin Page', () => {
     const tab = page.locator('.q-tab:has-text("Errori")')
     if (await tab.isVisible({ timeout: 3000 }).catch(() => false)) {
       await tab.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
   })
 
   test('AD-SS-01: Admin page screenshot @visual', async ({ page }) => {
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page).toHaveScreenshot('admin-page.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
@@ -51,23 +51,23 @@ test.describe('Admin Page', () => {
   })
 
   test('ADU-02: Ricerca utenti filtra tabella @smoke', async ({ page }) => {
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const searchInput = page.locator('input[aria-label="Cerca utenti"]')
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       await searchInput.fill(auth.admin.email)
-      await page.waitForTimeout(500)
+      await page.waitForLoadState("networkidle").catch(() => {})
       const rows = page.locator('.q-table tbody tr')
       expect(await rows.count()).toBeGreaterThanOrEqual(1)
     }
   })
 
   test('ADU-03: Aggiungi utente apre dialog @smoke', async ({ page }) => {
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const addBtn = page.locator('button:has-text("Aggiungi utente")')
     await expect(addBtn).toBeVisible({ timeout: 10000 })
     await addBtn.click()
     await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const closeBtn = page.locator('.q-dialog button:has-text("Annulla"), .q-dialog button[aria-label="Chiudi"]').first()
     await expect(closeBtn).toBeVisible({ timeout: 5000 })
     await closeBtn.click()
@@ -76,7 +76,7 @@ test.describe('Admin Page', () => {
 
   test('ADA-01: Tab Associazioni mostra tabella budget @smoke', async ({ page }) => {
     await page.locator('.q-tab:has-text("Associazioni")').click()
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await page
       .waitForFunction(
         () => {
@@ -109,9 +109,9 @@ test.describe('Admin — Associazioni CRUD', () => {
   test('ADA-02: Bottone Nuova associazione apre dialog @smoke', async ({ page }) => {
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await page.locator('.q-tab:has-text("Associazioni")').click()
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const addBtn = page.locator('button:has-text("Nuova associazione")')
     await expect(addBtn).toBeVisible({ timeout: 10000 })
@@ -128,9 +128,9 @@ test.describe('Admin — Associazioni CRUD', () => {
 
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await page.locator('.q-tab:has-text("Associazioni")').click()
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     await page.locator('button:has-text("Nuova associazione")').click()
     await expect(page.locator('.q-dialog:visible')).toBeVisible({ timeout: 5000 })
@@ -142,7 +142,7 @@ test.describe('Admin — Associazioni CRUD', () => {
     await expect(page.locator('.q-dialog:visible')).not.toBeVisible({ timeout: 15000 })
 
     // Verifica che l'associazione sia visibile (table mode o grid mode)
-    await page.waitForTimeout(1500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page.locator(`text="${nome}"`).first()).toBeVisible({ timeout: 10000 })
 
     // Salva ID per cleanup
@@ -162,7 +162,7 @@ test.describe('Admin — Impersonazione', () => {
   test('AD-IMP-01: Pulsante Impersona visibile su utenti @smoke', async ({ page }) => {
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page.locator('button[aria-label="Impersona utente"]').first()).toBeVisible({ timeout: 10000 })
   })
 
@@ -171,7 +171,7 @@ test.describe('Admin — Impersonazione', () => {
 
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Legge il primo userId dalla tabella utenti per cleanup
     targetUserId = await page
@@ -190,7 +190,7 @@ test.describe('Admin — Impersonazione', () => {
     const impBtn = page.locator('button[aria-label="Impersona utente"]').first()
     await expect(impBtn).toBeVisible({ timeout: 10000 })
     await Promise.all([page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {}), impBtn.click()])
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Verifica che il banner di impersonazione sia visibile
     const banner = page.locator('.bg-purple-8')
@@ -200,9 +200,9 @@ test.describe('Admin — Impersonazione', () => {
     // Torna a admin
     await page.locator('button:has-text("Torna a Admin")').click()
     await page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {})
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await page.goto('/admin', { timeout: 15000 }).catch(() => {})
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // Verifica di essere tornato alla pagina admin
     await expect(page.locator('.admin-page')).toBeVisible({ timeout: 15000 })
@@ -221,7 +221,7 @@ test.describe('Admin — Impersonazione', () => {
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
     await page.locator('.q-tab:has-text("Check")').click()
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await expect(page.locator('.q-banner').first()).toBeVisible({ timeout: 15000 })
   })
 
@@ -242,7 +242,7 @@ test.describe('Admin — Impersonazione', () => {
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
     await page.locator('.q-tab:has-text("Check")').click()
-    await page.waitForTimeout(5000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     // The contact should appear in either the senzaUtente list or "Nessuna anomalia"
     const senzaUtenteSection = page.locator('text=Senza utente Directus').first()
@@ -265,7 +265,7 @@ test.describe('Admin — Impersonazione', () => {
     await page.setViewportSize({ width: 375, height: 667 })
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const impBtn = page.locator('[aria-label="Impersona utente"]').first()
     await expect(impBtn).toBeVisible({ timeout: 10000 })
   })

@@ -1,26 +1,16 @@
 <template>
   <div>
     <div class="row items-center q-mb-md">
-      <div class="text-h6">
-        Giustificativi
-      </div>
+      <div class="text-h6">Giustificativi</div>
       <q-space />
-      <q-btn
-        color="accent"
-        icon="add"
-        label="Aggiungi"
-        :disable="!progettoId"
-        @click="showForm = true"
-      />
+      <q-btn color="primary" icon="add" label="Aggiungi" :disable="!progettoId" @click="showForm = true" />
     </div>
 
     <q-inner-loading :showing="loading" />
 
     <template v-if="items.length === 0 && !loading">
       <q-card flat bordered>
-        <q-card-section class="text-center text-grey">
-          Nessun giustificativo presente
-        </q-card-section>
+        <q-card-section class="text-center text-grey"> Nessun giustificativo presente </q-card-section>
       </q-card>
     </template>
 
@@ -66,18 +56,20 @@ const props = defineProps({
 const showForm = ref(false)
 
 const items = computed(() => {
-  return [...giustificativiStore.items]
-    .filter(i => !i.Invalidato)
-    .sort((a, b) => new Date(b.Data) - new Date(a.Data))
+  return [...giustificativiStore.items].filter(i => !i.Invalidato).sort((a, b) => new Date(b.Data) - new Date(a.Data))
 })
 const loading = computed(() => giustificativiStore.loading)
 const saving = computed(() => giustificativiStore.saving)
 
-watch(() => props.progettoId, (id) => {
-  if (id) {
-    giustificativiStore.fetchByProgetto(id)
-  }
-}, { immediate: true })
+watch(
+  () => props.progettoId,
+  id => {
+    if (id) {
+      giustificativiStore.fetchByProgetto(id)
+    }
+  },
+  { immediate: true }
+)
 
 async function handleCreate(formData) {
   const ok = await giustificativiStore.createGiustificativo(formData, formData.File)

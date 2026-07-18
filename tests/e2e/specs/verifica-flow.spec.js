@@ -22,7 +22,7 @@ async function createGiustificativoViaVerificatore(page) {
   const vp = new VerificaPage(page)
   await vp.goto()
   await vp.waitForTable()
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   const addBtn = page.locator('[data-testid="btn-add-giust"], button[aria-label="Aggiungi giustificativo"]').first()
   if ((await addBtn.count()) === 0) return null
@@ -31,7 +31,7 @@ async function createGiustificativoViaVerificatore(page) {
   if (isMobile) {
     const expItem = page.locator('.q-expansion-item').first()
     await expItem.click()
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
   }
   await addBtn.click()
   await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
@@ -78,21 +78,21 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (result1?.id) ids.giustificativi.push(result1.id)
 
     // Invia il giustificativo esplicitamente
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const inviaBtn = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
     await inviaBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     if ((await inviaBtn.count()) > 0) {
       await inviaBtn.click()
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
 
     const vp = new VerificaPage(page)
     await loginAs(page, 'manager', auth)
     await vp.goto()
     await vp.waitForTable()
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await vp.searchFamiglia(nomeFam)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const rowCount = await vp.getRowCount()
     if (rowCount === 0) {
     }
@@ -107,7 +107,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (foundRow === -1) {
     }
     await vp.expandRow(foundRow)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const patches = await waitForPatchStato(page, 'verificato', async () => {
       const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
@@ -115,7 +115,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
         console.log('[VF-01] btn-verify not visible after expand')
       }
       await verifyBtn.click()
-      await page.waitForTimeout(3000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     logApiCalls(apiCalls)
@@ -139,12 +139,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (result2?.id) ids.giustificativi.push(result2.id)
 
     // Invia il giustificativo
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     const inviaBtn2 = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
     await inviaBtn2.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     if ((await inviaBtn2.count()) > 0) {
       await inviaBtn2.click()
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
 
     const vp = new VerificaPage(page)
@@ -152,18 +152,18 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(nomeFam)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     if ((await vp.getRowCount()) === 0) {
     }
     await vp.expandRow(0)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const patches = await waitForPatchStato(page, 'rifiutato', async () => {
       const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
       if (!(await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
       }
       await rejectBtn.click()
-      await page.waitForTimeout(1500)
+      await page.waitForLoadState("networkidle").catch(() => {})
 
       const rejectDialog = page.locator('.q-dialog:visible').last()
       if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
@@ -174,7 +174,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
           .filter({ hasText: /rifiut|conferma/i })
           .last()
           .click()
-        await page.waitForTimeout(3000)
+        await page.waitForLoadState("networkidle").catch(() => {})
       }
     })
 
@@ -204,18 +204,18 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(nomeFam)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     if ((await vp.getRowCount()) === 0) {
     }
     await vp.expandRow(0)
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const patches = await waitForPatchStato(page, 'inviato', async () => {
       const sendBtn = page.locator('[data-testid="btn-send"]').first()
       if (!(await sendBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
       }
       await sendBtn.click()
-      await page.waitForTimeout(3000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     })
 
     logApiCalls(apiCalls)
@@ -263,12 +263,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     // Cerca il giustificativo appena creato
     const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
     await searchInput.fill(nomeFam)
-    await page.waitForTimeout(4000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const expandBtn = page.locator('[data-testid="expand-row"]').first()
     if (await expandBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await expandBtn.click()
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
 
     // Verifica
@@ -276,7 +276,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
       if (await verifyBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await verifyBtn.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState("networkidle").catch(() => {})
       }
     })
 
@@ -289,7 +289,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
       if (await rejectBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await rejectBtn.click()
-        await page.waitForTimeout(1500)
+        await page.waitForLoadState("networkidle").catch(() => {})
         const rejectDialog = page.locator('.q-dialog:visible').last()
         if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
           const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
@@ -299,7 +299,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
             .filter({ hasText: /rifiut|conferma/i })
             .last()
             .click()
-          await page.waitForTimeout(3000)
+          await page.waitForLoadState("networkidle").catch(() => {})
         }
       }
     })

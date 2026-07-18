@@ -1,35 +1,26 @@
 <template>
   <div class="row items-center q-gutter-sm q-mb-md">
     <div>
-      <div class="text-h5 text-weight-medium">
-        Verifica rendicontazione
-      </div>
-      <div class="text-body2 text-grey-7">
-        Controllo importi rimborsabili e verifica giustificativi.
-      </div>
+      <div class="text-h5 text-weight-medium">Verifica rendicontazione</div>
+      <div class="text-body2 text-grey-7">Controllo importi rimborsabili e verifica giustificativi.</div>
     </div>
     <q-space />
     <q-btn
-      flat
-      round
-      icon="refresh"
-      :loading="store.loading"
-      aria-label="Aggiorna dati"
-      @click="loadData"
-    >
+flat
+round
+dense
+size="sm"
+icon="refresh"
+:loading="store.loading"
+aria-label="Aggiorna dati"
+@click="loadData">
       <q-tooltip>Aggiorna dati</q-tooltip>
     </q-btn>
   </div>
 
   <div class="row q-col-gutter-md q-mb-md">
     <div class="col-12 col-sm-6 col-md-4">
-      <q-input
-        v-model="search"
-        outlined
-        dense
-        debounce="300"
-        label="Cerca famiglia"
-      >
+      <q-input v-model="search" outlined dense debounce="300" label="Cerca famiglia">
         <template #prepend>
           <q-icon name="search" />
         </template>
@@ -104,9 +95,7 @@
             <q-card-section class="q-pa-sm">
               <div class="row q-col-gutter-md q-mb-md">
                 <div class="col-12 col-sm-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">
-                    Dati bancari
-                  </div>
+                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Dati bancari</div>
                   <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
                     Intestatario: {{ props.row.intestatario }}
                   </div>
@@ -130,9 +119,7 @@
                   </div>
                 </div>
                 <div class="col-12 col-sm-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">
-                    Rimborsabile 80%
-                  </div>
+                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile 80%</div>
                   <div class="text-positive text-weight-medium">
                     {{ formatCurrency(props.row.totaleRimborsabile) }}
                   </div>
@@ -153,13 +140,14 @@
                 </q-badge>
               </div>
               <q-separator class="q-mb-md" />
-              <div class="text-subtitle2 text-grey-8 q-mb-xs">
-                Genitori
-              </div>
+              <div class="text-subtitle2 text-grey-8 q-mb-xs">Genitori</div>
               <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
                 <q-spinner size="xs" /> Caricamento...
               </div>
-              <div v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
+              <div
+                v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0"
+                class="text-caption text-grey"
+              >
                 Nessun genitore assegnato.
               </div>
               <q-list v-else dense class="q-mb-sm">
@@ -167,13 +155,14 @@
                   <q-item-section><ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []" /></q-item-section>
                 </q-item>
               </q-list>
-              <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">
-                Volontari
-              </div>
+              <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">Volontari</div>
               <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
                 <q-spinner size="xs" /> Caricamento...
               </div>
-              <div v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
+              <div
+                v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0"
+                class="text-caption text-grey"
+              >
                 Nessun volontario assegnato.
               </div>
               <q-list v-else dense class="q-mb-sm">
@@ -184,9 +173,7 @@
               <q-separator />
             </q-card-section>
             <q-card-section class="q-pa-sm">
-              <div class="text-subtitle2 text-grey-8 q-mb-sm">
-                Giustificativi — {{ props.row.annoBando || 'N/A' }}
-              </div>
+              <div class="text-subtitle2 text-grey-8 q-mb-sm">Giustificativi — {{ props.row.annoBando || 'N/A' }}</div>
               <template v-if="props.row.giustificativi?.length > 0">
                 <div v-for="g in props.row.giustificativi || []" :key="g.id" class="q-mb-sm">
                   <q-card flat bordered>
@@ -199,7 +186,7 @@
                             type="text"
                             :readonly="!canVerifica || g.Stato !== 'inviato'"
                             :saving="savingField === `${g.id}-Descrizione`"
-                            @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
+                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
                           />
                           <div v-if="g.NotaVolontario" class="text-caption text-grey-6 ellipsis-2">
                             {{ g.NotaVolontario }}
@@ -211,9 +198,9 @@
                             label="Importo"
                             type="number"
                             :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :format-display="(v) => formatCurrency(v)"
+                            :format-display="v => formatCurrency(v)"
                             :saving="savingField === `${g.id}-Importo`"
-                            @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
+                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
                           />
                         </div>
                         <div class="col-6 col-sm-3">
@@ -222,15 +209,13 @@
                             label="Data"
                             type="date"
                             :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :format-display="(v) => formatDate(v) || '—'"
+                            :format-display="v => formatDate(v) || '—'"
                             :saving="savingField === `${g.id}-Data`"
-                            @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
+                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
                           />
                         </div>
                         <div class="col-6 col-sm-3">
-                          <div class="text-caption text-grey">
-                            Allegato
-                          </div>
+                          <div class="text-caption text-grey">Allegato</div>
                           <div v-if="g.Allegato" class="row q-gutter-x-xs">
                             <q-btn
                               :href="assetUrl(g.Allegato)"
@@ -258,9 +243,7 @@
                               <q-tooltip>Scarica allegato</q-tooltip>
                             </q-btn>
                           </div>
-                          <div v-else class="text-grey-5">
-                            —
-                          </div>
+                          <div v-else class="text-grey-5">—</div>
                         </div>
                         <div class="col-3 col-sm-1">
                           <q-badge :color="statoColor(g.Stato)" outline>
@@ -274,7 +257,7 @@
                               flat
                               icon="check_circle"
                               color="primary"
-                              size="md"
+                              size="sm"
                               data-testid="btn-verify"
                               aria-label="Verifica"
                               :loading="verifyingId === g.id"
@@ -287,9 +270,10 @@
                               flat
                               icon="cancel"
                               color="negative"
-                              size="md"
+                              size="sm"
                               data-testid="btn-reject"
                               aria-label="Rifiuta"
+                              :loading="verifyingId === g.id"
                               @click="handleReject(props.row.idProgetto, g)"
                             >
                               <q-tooltip>Rifiuta</q-tooltip>
@@ -311,8 +295,8 @@
                               dense
                               flat
                               icon="send"
-                              color="secondary"
-                              size="md"
+                              color="primary"
+                              size="sm"
                               data-testid="btn-send"
                               aria-label="Invia"
                               :loading="verifyingId === g.id"
@@ -327,9 +311,7 @@
                   </q-card>
                 </div>
               </template>
-              <div v-else class="text-caption text-grey">
-                Nessun giustificativo presente.
-              </div>
+              <div v-else class="text-caption text-grey">Nessun giustificativo presente.</div>
             </q-card-section>
             <q-card-actions class="q-pa-sm q-gutter-xs">
               <q-btn
@@ -337,8 +319,8 @@
                 flat
                 round
                 dense
-                icon="add_circle"
-                color="secondary"
+                icon="add"
+                color="primary"
                 size="sm"
                 aria-label="Aggiungi giustificativo"
                 @click="addingForRow = props.row"
@@ -424,9 +406,7 @@
             <div class="text-weight-medium">
               {{ formatCurrency(props.row.totaleRendicontato) }}
             </div>
-            <div class="text-caption text-grey-7">
-              {{ totalGiustificativi(props.row) }} giustificativi
-            </div>
+            <div class="text-caption text-grey-7">{{ totalGiustificativi(props.row) }} giustificativi</div>
           </template>
 
           <template v-else-if="col.name === 'stato'">
@@ -451,8 +431,8 @@
               flat
               round
               dense
-              icon="add_circle"
-              color="secondary"
+              icon="add"
+              color="primary"
               data-testid="btn-add-giust"
               aria-label="Aggiungi giustificativo"
               @click="addingForRow = props.row"
@@ -508,9 +488,7 @@
             <div class="q-px-md q-pt-md q-pb-xs">
               <div class="row q-col-gutter-md q-mb-md">
                 <div class="col-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">
-                    Dati bancari
-                  </div>
+                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Dati bancari</div>
                   <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
                     Intestatario: {{ props.row.intestatario }}
                   </div>
@@ -534,22 +512,21 @@
                   </div>
                 </div>
                 <div class="col-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">
-                    Rimborsabile 80%
-                  </div>
+                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile 80%</div>
                   <div class="text-positive text-weight-medium">
                     {{ formatCurrency(props.row.totaleRimborsabile) }}
                   </div>
                 </div>
               </div>
               <q-separator class="q-mb-md" />
-              <div class="text-subtitle2 text-grey-8 q-mb-xs">
-                Genitori
-              </div>
+              <div class="text-subtitle2 text-grey-8 q-mb-xs">Genitori</div>
               <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
                 <q-spinner size="xs" /> Caricamento...
               </div>
-              <div v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
+              <div
+                v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0"
+                class="text-caption text-grey"
+              >
                 Nessun genitore assegnato.
               </div>
               <q-list v-else dense class="q-mb-sm">
@@ -559,13 +536,14 @@
                   </q-item-section>
                 </q-item>
               </q-list>
-              <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">
-                Volontari
-              </div>
+              <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">Volontari</div>
               <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
                 <q-spinner size="xs" /> Caricamento...
               </div>
-              <div v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0" class="text-caption text-grey">
+              <div
+                v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0"
+                class="text-caption text-grey"
+              >
                 Nessun volontario assegnato.
               </div>
               <q-list v-else dense class="q-mb-sm">
@@ -582,11 +560,7 @@
             </div>
 
             <q-list v-if="props.row.giustificativi.length > 0" dense separator class="giust-sub-list">
-              <q-item
-                v-for="g in props.row.giustificativi"
-                :key="g.id"
-                class="giust-item"
-              >
+              <q-item v-for="g in props.row.giustificativi" :key="g.id" class="giust-item">
                 <q-item-section class="col-3">
                   <InlineEditableField
                     :model-value="g.Descrizione"
@@ -594,7 +568,7 @@
                     type="text"
                     :readonly="!canVerifica || g.Stato !== 'inviato'"
                     :saving="savingField === `${g.id}-Descrizione`"
-                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
+                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
                   />
                   <div v-if="g.NotaVolontario" class="text-caption text-grey-6 q-mt-xs ellipsis-2">
                     {{ g.NotaVolontario }}
@@ -607,9 +581,9 @@
                     label="Importo"
                     type="number"
                     :readonly="!canVerifica || g.Stato !== 'inviato'"
-                    :format-display="(v) => formatCurrency(v)"
+                    :format-display="v => formatCurrency(v)"
                     :saving="savingField === `${g.id}-Importo`"
-                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
+                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
                   />
                 </q-item-section>
 
@@ -619,9 +593,9 @@
                     label="Data"
                     type="date"
                     :readonly="!canVerifica || g.Stato !== 'inviato'"
-                    :format-display="(v) => formatDate(v) || '—'"
+                    :format-display="v => formatDate(v) || '—'"
                     :saving="savingField === `${g.id}-Data`"
-                    @save="(val) => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
+                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
                   />
                 </q-item-section>
 
@@ -653,9 +627,7 @@
                       <q-tooltip>Scarica allegato</q-tooltip>
                     </q-btn>
                   </div>
-                  <div v-else class="text-grey-5 text-body2">
-                    —
-                  </div>
+                  <div v-else class="text-grey-5 text-body2">—</div>
                 </q-item-section>
 
                 <q-item-section class="col-1">
@@ -664,14 +636,14 @@
                   </q-badge>
                 </q-item-section>
 
-                <q-item-section class="col-2">
+                  <q-item-section class="col-2">
                   <div v-if="g.Stato === 'inviato'" class="row q-gutter-xs">
                     <q-btn
                       dense
                       flat
                       icon="check_circle"
                       color="primary"
-                      size="md"
+                      size="sm"
                       data-testid="btn-verify"
                       aria-label="Verifica"
                       :loading="verifyingId === g.id"
@@ -684,7 +656,7 @@
                       flat
                       icon="cancel"
                       color="negative"
-                      size="md"
+                      size="sm"
                       data-testid="btn-reject"
                       aria-label="Rifiuta"
                       @click="handleReject(props.row.idProgetto, g)"
@@ -693,12 +665,12 @@
                     </q-btn>
                   </div>
                   <div v-else-if="g.Stato === 'verificato'" class="text-positive row items-center q-gutter-xs">
-                    <q-icon name="check_circle" size="md" />
+                    <q-icon name="check_circle" size="sm" />
                     <span class="text-body2">Verificato</span>
                   </div>
                   <div v-else-if="g.Stato === 'rifiutato'">
                     <div class="text-negative row items-center q-gutter-xs">
-                      <q-icon name="cancel" size="md" />
+                      <q-icon name="cancel" size="sm" />
                       <span class="text-body2">Rifiutato</span>
                     </div>
                     <div v-if="g.NotaRifiuto" class="text-caption text-grey-7 q-mt-xs">
@@ -710,8 +682,8 @@
                       dense
                       flat
                       icon="send"
-                      color="secondary"
-                      size="md"
+                      color="primary"
+                      size="sm"
                       data-testid="btn-send"
                       aria-label="Invia"
                       :loading="verifyingId === g.id"
@@ -724,9 +696,7 @@
               </q-item>
             </q-list>
 
-            <div v-else class="q-pa-md text-grey-5 text-center">
-              Nessun giustificativo per questo progetto.
-            </div>
+            <div v-else class="q-pa-md text-grey-5 text-center">Nessun giustificativo per questo progetto.</div>
           </div>
         </q-td>
       </q-tr>
@@ -749,18 +719,18 @@
         <div class="text-h6">Chiudi progetto</div>
         <q-space />
         <q-btn
-          v-close-popup
-          flat
-          round
-          dense
-          icon="close"
-          aria-label="Chiudi"
-        />
+v-close-popup
+flat
+round
+dense
+icon="close"
+aria-label="Chiudi" />
       </q-card-section>
       <q-separator />
       <q-card-section>
         <div class="text-body2 q-mb-sm">
-          Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong>?
+          Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong
+          >?
         </div>
         <div class="text-caption text-grey-7 q-mb-md">
           Una volta chiuso, non verranno più generate nuove proposte di pagamento.
@@ -775,52 +745,18 @@
         />
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Annulla" />
-        <q-btn
-          color="warning"
-          label="Chiudi progetto"
-          :loading="savingChiudiProgetto"
-          @click="handleChiudiProgetto"
-        />
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+        <q-btn color="warning" label="Chiudi progetto" :loading="savingChiudiProgetto" @click="handleChiudiProgetto" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="rejectDialog" persistent>
-    <q-card class="q-pa-lg">
-      <q-card-section>
-        <div class="text-h6">
-          Rifiuta giustificativo
-        </div>
-        <div class="text-caption text-grey-7">
-          {{ rejectItem?.Descrizione || '' }}
-        </div>
-      </q-card-section>
-
-      <q-card-section class="q-pt-none">
-        <q-input
-          v-model="rejectNota"
-          outlined
-          dense
-          label="Motivazione del rifiuto *"
-          type="textarea"
-          :rules="[val => !!val || 'Inserisci una motivazione']"
-        />
-      </q-card-section>
-
-      <q-card-actions align="right" class="q-pa-md">
-        <q-btn v-close-popup flat label="Annulla" color="negative" />
-        <q-btn
-          flat
-          label="Rifiuta"
-          color="negative"
-          :disable="!rejectNota"
-          :loading="rejectingId === rejectItem?.id"
-          @click="confirmReject"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <RifiutaGiustificativoDialog
+    v-model="rejectDialog"
+    :item="rejectItem"
+    :saving="rejectingId === rejectItem?.id"
+    @confirm="confirmReject"
+  />
 
   <GiustificativoForm
     v-model="showAddForm"
@@ -830,10 +766,7 @@
     @save="handleAddSave"
   />
 
-  <ProgettoDetailDialog
-    v-model="detailDialog"
-    :progetto="selectedProgettoRow"
-  />
+  <ProgettoDetailDialog v-model="detailDialog" :progetto="selectedProgettoRow" />
 </template>
 
 <script setup>
@@ -849,6 +782,7 @@ import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/fo
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
+import RifiutaGiustificativoDialog from './RifiutaGiustificativoDialog.vue'
 
 const $q = useQuasar()
 const store = useVerificaStore()
@@ -862,7 +796,9 @@ const savingField = ref(null)
 const addingForRow = ref(null)
 const showAddForm = computed({
   get: () => addingForRow.value !== null,
-  set: (val) => { if (!val) addingForRow.value = null }
+  set: val => {
+    if (!val) addingForRow.value = null
+  }
 })
 
 const bancariDialog = ref(false)
@@ -873,7 +809,6 @@ const contattiLoading = ref(false)
 const savingBancari = ref(false)
 
 const rejectDialog = ref(false)
-const rejectNota = ref('')
 const rejectItem = ref(null)
 const rejectProgettoId = ref(null)
 
@@ -885,9 +820,7 @@ const savingChiudiProgetto = ref(false)
 const selectedProgetto = ref(null)
 const detailDialog = ref(false)
 
-const selectedProgettoRow = computed(() =>
-  filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {}
-)
+const selectedProgettoRow = computed(() => filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {})
 
 const pagination = ref({
   sortBy: 'famiglia',
@@ -896,10 +829,12 @@ const pagination = ref({
   rowsPerPage: 25
 })
 
-const annoOptions = computed(() => store.anniBando.map(anno => ({
-  label: String(anno),
-  value: anno
-})))
+const annoOptions = computed(() =>
+  store.anniBando.map(anno => ({
+    label: String(anno),
+    value: anno
+  }))
+)
 
 const canVerifica = computed(() => authStore.canManager)
 
@@ -916,16 +851,23 @@ const columns = [
 const filteredRows = computed(() => store.rows)
 
 const selectedTotals = computed(() => {
-  return filteredRows.value.reduce((totals, row) => {
-    totals.rendicontato += Number(row.totaleRendicontato) || 0
-    totals.rimborsabile += Number(row.totaleRimborsabile) || 0
-    return totals
-  }, { rendicontato: 0, rimborsabile: 0 })
+  return filteredRows.value.reduce(
+    (totals, row) => {
+      totals.rendicontato += Number(row.totaleRendicontato) || 0
+      totals.rimborsabile += Number(row.totaleRimborsabile) || 0
+      return totals
+    },
+    { rendicontato: 0, rimborsabile: 0 }
+  )
 })
 
 const prontiCount = computed(() => {
-  return filteredRows.value.filter(row =>
-    row.totaleRimborsabile > 0 && row.iban && row.intestatario && (!row.giustificativi || !row.giustificativi.some(g => g.Stato === 'inviato'))
+  return filteredRows.value.filter(
+    row =>
+      row.totaleRimborsabile > 0 &&
+      row.iban &&
+      row.intestatario &&
+      (!row.giustificativi || !row.giustificativi.some(g => g.Stato === 'inviato'))
   ).length
 })
 
@@ -1100,7 +1042,6 @@ async function handleSendDraft(progettoId, item) {
 function handleReject(progettoId, item) {
   rejectProgettoId.value = progettoId
   rejectItem.value = item
-  rejectNota.value = ''
   rejectDialog.value = true
 }
 
@@ -1128,11 +1069,11 @@ async function handleAddSave(formData) {
   }
 }
 
-async function confirmReject() {
-  if (!rejectNota.value || !rejectItem.value) return
+async function confirmReject(nota) {
+  if (!nota || !rejectItem.value) return
   rejectingId.value = rejectItem.value.id
   try {
-    await store.rejectGiustificativo(rejectProgettoId.value, rejectItem.value.id, rejectNota.value)
+    await store.rejectGiustificativo(rejectProgettoId.value, rejectItem.value.id, nota)
     $q.notify({ type: 'warning', message: 'Giustificativo rifiutato' })
     rejectDialog.value = false
   } catch (error) {

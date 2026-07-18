@@ -21,7 +21,7 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
 
   // Click selettore per aprire menu/dialog
   await famSelector.click()
-  await page.waitForTimeout(500)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   // Cerca le opzioni nel menu (desktop) o nel dialog (mobile)
   const options = page.locator('[role="option"]')
@@ -55,12 +55,12 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
 
 export async function apriFamiglieESelezionaFamiglia(page, nomeFamiglia) {
   await page.goto('/famiglie', { timeout: 15000 }).catch(() => {})
-  await page.waitForTimeout(1000)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   if (nomeFamiglia) {
     await selezionaFamiglia(page, nomeFamiglia)
     await page.keyboard.press('Escape').catch(() => {})
-    await page.waitForTimeout(300)
+    await page.waitForLoadState("networkidle").catch(() => {})
   }
 
   await page
@@ -92,7 +92,7 @@ export async function selezionaProgetto(page, index = 0) {
   }
 
   await progettoSelect.click()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState("networkidle").catch(() => {})
 
   const items = page.locator('[role="option"]')
   if ((await items.count()) <= index) {
@@ -101,5 +101,5 @@ export async function selezionaProgetto(page, index = 0) {
   }
 
   await items.nth(index).click()
-  await page.waitForTimeout(500)
+  await page.waitForLoadState("networkidle").catch(() => {})
 }

@@ -1,8 +1,6 @@
 <template>
   <span class="contatto-info-line">
-    <span v-if="contact" class="text-body2">
-      {{ contact.Nome || '' }} {{ contact.Cognome || '' }}
-    </span>
+    <span v-if="contact" class="text-body2"> {{ contact.Nome || '' }} {{ contact.Cognome || '' }} </span>
     <template v-for="em in emails" :key="em.email_address">
       <q-icon name="email" size="xs" class="q-ml-sm q-mr-xs text-grey-6" />
       <ContactLink type="email" :value="em.email_address" />

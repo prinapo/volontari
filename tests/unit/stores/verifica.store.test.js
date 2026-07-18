@@ -633,7 +633,7 @@ describe('verifica store', () => {
       IBAN: 'IT60X',
       Intestatario_CC: 'Mario Rossi'
     })
-    expect(mockUpdateFolder).toHaveBeenCalledWith('file-9', undefined)
+    expect(mockUpdateFolder).toHaveBeenCalledWith('file-9', '91a9c958-206f-4e1c-8143-e67f85398d0c')
     expect(mockRenameFile).toHaveBeenCalledWith('file-9', 'FamigliaNove_doc.pdf')
     expect(mockCreateGiust).toHaveBeenCalledWith(
       expect.objectContaining({ Allegato: 'file-9', Progetto: 9, Famiglia: 'fam-9', AnnoBando: 2026 })

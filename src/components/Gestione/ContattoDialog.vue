@@ -7,13 +7,12 @@
         </div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -64,14 +63,16 @@
             />
           </div>
 
-          <q-toggle v-model="form.IsReferente" label="Referente" data-testid="contatto-referente" class="q-mb-md" dense />
+          <q-toggle
+            v-model="form.IsReferente"
+            label="Referente"
+            data-testid="contatto-referente"
+            class="q-mb-md"
+            dense
+          />
 
-          <div class="text-subtitle2 q-mb-sm">
-            Email
-          </div>
-          <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">
-            Nessuna email associata
-          </div>
+          <div class="text-subtitle2 q-mb-sm">Email</div>
+          <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">Nessuna email associata</div>
           <div v-for="(em, idx) in emails" :key="idx" class="row items-center q-gutter-xs q-mb-xs">
             <q-input
               v-model="em.email_address"
@@ -98,7 +99,7 @@
             >
               <q-tooltip>Imposta come primaria</q-tooltip>
             </q-btn>
-            <q-badge v-else color="primary" label="Primaria" size="sm" />
+            <q-badge v-else color="primary" label="Primaria" size="xs" />
             <q-btn
               flat
               round
@@ -129,12 +130,14 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Annulla" />
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
         <q-btn
           color="primary"
           label="Salva"
           :loading="store.saving"
-          :disable="!form.Nome || !form.Cognome || (!!form.Numero_di_cellulare && !/[\d+]/.test(form.Numero_di_cellulare))"
+          :disable="
+            !form.Nome || !form.Cognome || (!!form.Numero_di_cellulare && !/[\d+]/.test(form.Numero_di_cellulare))
+          "
           @click="handleSave"
         />
       </q-card-actions>
@@ -181,34 +184,41 @@ const form = ref({
 const isEdit = computed(() => !!props.editItem)
 const hasAccount = computed(() => !!props.editItem?.user_id)
 
-watch(() => props.modelValue, async (val) => {
-  visible.value = val
-  if (val && props.editItem) {
-    form.value.Nome = props.editItem.Nome || ''
-    form.value.Cognome = props.editItem.Cognome || ''
-    form.value.Numero_di_cellulare = props.editItem.Numero_di_cellulare || ''
-    form.value.Numero_di_telefono = props.editItem.Numero_di_telefono || ''
-    form.value.IsReferente = props.editItem.IsReferente || false
-    await loadEmails(props.editItem.id_contatto)
-  } else if (val && props.initialData) {
-    form.value.Nome = props.initialData.Nome || ''
-    form.value.Cognome = props.initialData.Cognome || ''
-    form.value.Numero_di_cellulare = props.initialData.Numero_di_cellulare || ''
-    form.value.Numero_di_telefono = props.initialData.Numero_di_telefono || ''
-    emails.value = props.initialData.Email
-      ? [{ email_address: props.initialData.Email.toLowerCase(), Primary: true }]
-      : []
-  } else if (val) {
-    form.value.Nome = ''
-    form.value.Cognome = ''
-    form.value.Numero_di_cellulare = ''
-    form.value.Numero_di_telefono = ''
-    emails.value = []
+watch(
+  () => props.modelValue,
+  async val => {
+    visible.value = val
+    if (val && props.editItem) {
+      form.value.Nome = props.editItem.Nome || ''
+      form.value.Cognome = props.editItem.Cognome || ''
+      form.value.Numero_di_cellulare = props.editItem.Numero_di_cellulare || ''
+      form.value.Numero_di_telefono = props.editItem.Numero_di_telefono || ''
+      form.value.IsReferente = props.editItem.IsReferente || false
+      await loadEmails(props.editItem.id_contatto)
+    } else if (val && props.initialData) {
+      form.value.Nome = props.initialData.Nome || ''
+      form.value.Cognome = props.initialData.Cognome || ''
+      form.value.Numero_di_cellulare = props.initialData.Numero_di_cellulare || ''
+      form.value.Numero_di_telefono = props.initialData.Numero_di_telefono || ''
+      emails.value = props.initialData.Email
+        ? [{ email_address: props.initialData.Email.toLowerCase(), Primary: true }]
+        : []
+    } else if (val) {
+      form.value.Nome = ''
+      form.value.Cognome = ''
+      form.value.Numero_di_cellulare = ''
+      form.value.Numero_di_telefono = ''
+      emails.value = []
+    }
   }
-})
+)
 
 async function loadEmails(contattoId) {
-  if (!contattoId) { emails.value = []; originalEmailIds.value = []; return }
+  if (!contattoId) {
+    emails.value = []
+    originalEmailIds.value = []
+    return
+  }
   try {
     const res = await emailService.getAllByContatto(contattoId)
     emails.value = (res.data.data || []).map(e => ({
@@ -235,7 +245,9 @@ function removeEmail(idx) {
 }
 
 function setPrimary(idx) {
-  emails.value.forEach((e, i) => { e.Primary = i === idx })
+  emails.value.forEach((e, i) => {
+    e.Primary = i === idx
+  })
 }
 
 async function onEmailBlur(em, _idx) {
@@ -260,7 +272,7 @@ async function onEmailBlur(em, _idx) {
   }
 }
 
-watch(visible, (val) => {
+watch(visible, val => {
   if (!val) emit('update:modelValue', false)
 })
 

@@ -1,21 +1,20 @@
 <template>
   <div class="row items-center q-gutter-sm q-mb-md">
     <div>
-      <div class="text-h5 text-weight-medium">
-        Errori
-      </div>
-      <div class="text-body2 text-grey-7">
-        Errori API registrati dalle richieste del frontend.
-      </div>
+      <div class="text-h5 text-weight-medium">Errori</div>
+      <div class="text-body2 text-grey-7">Errori API registrati dalle richieste del frontend.</div>
     </div>
     <q-space />
     <q-btn
       flat
       round
+      dense
+      size="sm"
       icon="refresh"
       aria-label="Aggiorna"
       :loading="errorLogStore.loading"
-      @click="errorLogStore.fetchAll">
+      @click="errorLogStore.fetchAll"
+    >
       <q-tooltip>Aggiorna</q-tooltip>
     </q-btn>
   </div>
@@ -57,6 +56,7 @@
         <q-btn
           v-if="!props.value"
           flat
+          round
           dense
           icon="mark_email_read"
           size="sm"
@@ -66,19 +66,21 @@
         >
           <q-tooltip>Segna come letto</q-tooltip>
         </q-btn>
-        <q-icon v-else name="check" color="positive" size="sm" />
+        <q-icon v-else name="check_circle" color="positive" size="sm" />
       </q-td>
     </template>
     <template #body-cell-actions="props">
       <q-td :props="props">
         <q-btn
           flat
+          round
           dense
           icon="delete"
           color="negative"
           size="sm"
           aria-label="Elimina"
-          @click="errorLogStore.delete(props.row.id)">
+          @click="errorLogStore.delete(props.row.id)"
+        >
           <q-tooltip>Elimina</q-tooltip>
         </q-btn>
       </q-td>
@@ -94,14 +96,21 @@
               <q-btn
                 v-if="!props.row.read"
                 flat
+                round
                 dense
                 icon="mark_email_read"
                 size="sm"
-                @click="errorLogStore.markAsRead(props.row.id)"><q-tooltip>Segna letto</q-tooltip></q-btn>
+                @click="errorLogStore.markAsRead(props.row.id)"
+                ><q-tooltip>Segna come letto</q-tooltip></q-btn
+              >
             </div>
             <div class="text-caption q-mt-xs">{{ props.row.method }} {{ props.row.status }}</div>
             <div class="text-body2 q-mt-xs">{{ props.row.message }}</div>
-            <div v-if="props.row.responseBody" class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders" style="max-height: 100px; overflow: auto; white-space: pre-wrap; font-family: monospace; font-size: 11px;">
+            <div
+              v-if="props.row.responseBody"
+              class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders"
+              style="max-height: 100px; overflow: auto; white-space: pre-wrap"
+            >
               {{ props.row.responseBody }}
             </div>
           </q-card-section>
@@ -114,26 +123,24 @@
   <q-dialog v-model="errorDetail.visible">
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Dettaglio errore
-        </div>
+        <div class="text-h6">Dettaglio errore</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi">
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
       <q-separator />
-      <q-card-section class="q-pt-none text-body2" style="white-space: pre-wrap; word-break: break-word;">
+      <q-card-section class="q-pt-none text-body2 text-pre-wrap">
         {{ errorDetail.text }}
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Chiudi" />
+        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
       </q-card-actions>
     </q-card>
   </q-dialog>

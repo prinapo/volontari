@@ -35,9 +35,9 @@ test.describe('Gestione Fixes', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.famiglieTab.click()
-    await page.waitForTimeout(1500)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await gestionePage.searchFamiglie(ids.prefix + 'Fam')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const clicked = await gestionePage.clickContactsOnFamiglia(ids.prefix + 'Fam')
     if (!clicked) throw new Error('clickContactsOnFamiglia fallito')
@@ -76,7 +76,7 @@ test.describe('Gestione Fixes', () => {
 
     const submitPage = new SubmitPage(page)
     await submitPage.goto()
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     await submitPage.fillForm({
       nome_richiedente: 'TEST_NoEsiste',
@@ -90,7 +90,7 @@ test.describe('Gestione Fixes', () => {
     })
 
     await submitPage.clickAddGiustificativo()
-    await page.waitForTimeout(500)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     await submitPage.fillGiustificativo(0, {
       descrizione: 'TEST_Giustificativo',
@@ -99,7 +99,7 @@ test.describe('Gestione Fixes', () => {
     })
 
     await submitPage.clickSubmit()
-    await page.waitForTimeout(5000)
+    await page.waitForLoadState("networkidle").catch(() => {})
 
     const submissionCreated = networkLog.some(
       e =>
@@ -136,7 +136,7 @@ test.describe('Gestione Fixes', () => {
     const refreshBtn = page.locator('button[aria-label="Aggiorna"]')
     if (await refreshBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
       await refreshBtn.click()
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState("networkidle").catch(() => {})
     }
 
     const rows = riconcPage.rowLocator
@@ -185,7 +185,7 @@ test.describe('Gestione Fixes', () => {
   test('GF-04: Tabella famiglie si carica con righe @smoke', async ({ page }) => {
     await loginAs(page, 'manager', auth)
     await page.goto('/gestione')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     // Cerca il contenuto della tabella: q-table su desktop, q-expansion-item su mobile grid
     const table = page.locator('.q-table')
     const gridContent = page.locator('.q-expansion-item')
@@ -206,9 +206,9 @@ test.describe('Gestione Fixes', () => {
   test('GF-05: Tabella contatti si carica con righe @smoke', async ({ page }) => {
     await loginAs(page, 'manager', auth)
     await page.goto('/gestione')
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     await page.locator('.q-tab:has-text("Contatti")').click()
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState("networkidle").catch(() => {})
     // Tab attivo
     await expect(page.locator('.q-tab--active:has-text("Contatti")')).toBeVisible({ timeout: 10000 })
   })

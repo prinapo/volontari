@@ -2,28 +2,24 @@
   <q-dialog v-model="visible" persistent>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">
-          Contatti di {{ famiglia?.Nome_Famiglia }}
-        </div>
+        <div class="text-h6">Contatti di {{ famiglia?.Nome_Famiglia }}</div>
         <q-space />
         <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
+v-close-popup
+icon="close"
+flat
+round
+dense
+aria-label="Chiudi">
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
 
       <q-separator />
 
-      <q-card-section>
-        <div class="text-subtitle1 q-mb-sm">
-          Volontari assegnati
-        </div>
+      <template v-if="!hideExisting">
+        <q-card-section>
+          <div class="text-subtitle1 q-mb-sm">Volontari assegnati</div>
         <q-table
           :rows="volontari"
           :columns="contattoColumns"
@@ -42,21 +38,25 @@
                   </div>
                   <div class="text-caption q-mt-xs">
                     <template v-for="em in slotPropsV.row._emails" :key="em.email_address">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink type="email" :value="em.email_address" />
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink
+                        type="email"
+                        :value="em.email_address"
+                      />
                       <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                     </template>
                     <span v-if="!slotPropsV.row._emails?.length" class="text-grey-5">—</span>
                   </div>
                   <div class="text-caption text-grey-7">
                     <template v-if="slotPropsV.row.Contatto?.Numero_di_cellulare">
-                      <ContactLink type="tel" :value="slotPropsV.row.Contatto?.Numero_di_cellulare" />
-                    </template><template v-if="slotPropsV.row.Contatto?.Numero_di_telefono">
+                      <ContactLink type="tel" :value="slotPropsV.row.Contatto?.Numero_di_cellulare" /> </template
+                    ><template v-if="slotPropsV.row.Contatto?.Numero_di_telefono">
                       <ContactLink type="tel" :value="slotPropsV.row.Contatto?.Numero_di_telefono" />
                     </template>
                   </div>
                   <div class="row q-mt-sm justify-end">
                     <q-btn
                       flat
+                      round
                       dense
                       icon="delete"
                       color="negative"
@@ -85,6 +85,7 @@
             <q-td :props="slotPropsV">
               <q-btn
                 flat
+                round
                 dense
                 icon="delete"
                 color="negative"
@@ -97,9 +98,7 @@
           </template>
         </q-table>
 
-        <div class="text-subtitle1 q-mb-sm">
-          Genitori assegnati
-        </div>
+        <div class="text-subtitle1 q-mb-sm">Genitori assegnati</div>
         <q-table
           :rows="genitori"
           :columns="contattoColumns"
@@ -118,27 +117,30 @@
                   </div>
                   <div class="text-caption q-mt-xs">
                     <template v-for="em in slotPropsG.row._emails" :key="em.email_address">
-                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink type="email" :value="em.email_address" />
+                      <q-icon name="email" size="xs" class="q-mr-xs text-grey-6" /><ContactLink
+                        type="email"
+                        :value="em.email_address"
+                      />
                       <q-badge v-if="em.Primary" color="primary" label="Primaria" size="xs" class="q-ml-xs q-mr-sm" />
                     </template>
                     <span v-if="!slotPropsG.row._emails?.length" class="text-grey-5">—</span>
                   </div>
                   <div class="text-caption text-grey-7">
                     <template v-if="slotPropsG.row.Contatto?.Numero_di_cellulare">
-                      <ContactLink type="tel" :value="slotPropsG.row.Contatto?.Numero_di_cellulare" />
-                    </template><template v-if="slotPropsG.row.Contatto?.Numero_di_telefono">
+                      <ContactLink type="tel" :value="slotPropsG.row.Contatto?.Numero_di_cellulare" /> </template
+                    ><template v-if="slotPropsG.row.Contatto?.Numero_di_telefono">
                       <ContactLink type="tel" :value="slotPropsG.row.Contatto?.Numero_di_telefono" />
                     </template>
                   </div>
                   <div class="row q-mt-sm justify-end">
                     <q-btn
-                      flat
-                      dense
-                      icon="delete"
-                      color="negative"
-                      size="sm"
-                      @click="handleRemove(slotPropsG.row)"
-                    >
+flat
+round
+dense
+icon="delete"
+color="negative"
+size="sm"
+@click="handleRemove(slotPropsG.row)">
                       <q-tooltip>Rimuovi</q-tooltip>
                     </q-btn>
                   </div>
@@ -159,104 +161,85 @@
           <template #body-cell-azioni="slotPropsG">
             <q-td :props="slotPropsG">
               <q-btn
-                flat
-                dense
-                icon="delete"
-                color="negative"
-                @click="handleRemove(slotPropsG.row)"
-              >
+flat
+round
+dense
+icon="delete"
+color="negative"
+@click="handleRemove(slotPropsG.row)">
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>
             </q-td>
           </template>
         </q-table>
+      </q-card-section>
+      </template>
 
-        <div class="row items-start q-mt-lg q-gutter-sm">
-          <q-select
-            v-model="selectedContatto"
-            :options="contattoOptions"
-            option-label="label"
-            option-value="id"
-            emit-value
-            map-options
-            dense
-            outlined
-            use-input
-            input-debounce="300"
-            label="Cerca contatto..."
-            clearable
-            class="col-12 col-sm"
-            @filter="filterContatti"
+      <q-card-section>
+        <q-select
+          v-model="selectedContatto"
+          :options="contattoOptions"
+          option-label="label"
+          option-value="id"
+          emit-value
+          map-options
+          dense
+          outlined
+          use-input
+          input-debounce="300"
+          label="Cerca contatto..."
+          clearable
+          @filter="filterContatti"
+        />
+        <div class="row q-gutter-sm q-mt-sm">
+          <q-btn
+            outline
+            color="secondary"
+            icon="person_add"
+            label="Genitore"
+            size="md"
+            :disable="!selectedContatto"
+            @click="() => handleAssign('Genitore')"
           />
-          <div class="row q-gutter-xs q-mt-sm-sm">
-            <q-btn
-              color="secondary"
-              icon="person_add"
-              label="Genitore"
-              size="sm"
-              :disable="!selectedContatto"
-              @click="() => handleAssign('Genitore')"
-            />
-            <q-btn
-              color="primary"
-              icon="badge"
-              label="Volontario"
-              size="sm"
-              :disable="!selectedContatto"
-              @click="() => handleAssign('Volontario')"
-            />
-            <q-btn
-              flat
-              color="accent"
-              icon="person_add"
-              label="Crea contatto"
-              size="sm"
-              @click="showNewContatto = true"
-            />
-          </div>
+          <q-btn
+            outline
+            color="primary"
+            icon="badge"
+            label="Volontario"
+            size="md"
+            :disable="!selectedContatto"
+            @click="() => handleAssign('Volontario')"
+          />
+          <q-btn
+            outline
+            color="accent"
+            icon="person_add"
+            label="Crea contatto"
+            size="md"
+            @click="showNewContatto = true"
+          />
         </div>
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Chiudi" />
+        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 
-  <ContattoDialog
-    v-model="showNewContatto"
-    @saved="onNewContattoSaved"
-  />
+  <ContattoDialog v-model="showNewContatto" @saved="onNewContattoSaved" />
 
   <q-dialog v-model="showRoleDialog" persistent>
     <q-card>
       <q-card-section class="text-center">
-        <div class="text-h6 q-mb-md">
-          Associare {{ newContattoNome }} alla famiglia?
-        </div>
+        <div class="text-h6 q-mb-md">Associare {{ newContattoNome }} alla famiglia?</div>
         <div class="text-body2 text-grey q-mb-lg">
           Scegli come aggiungere il contatto alla famiglia {{ famiglia?.Nome_Famiglia }}
         </div>
         <div class="row q-gutter-sm justify-center">
-          <q-btn
-            color="primary"
-            icon="badge"
-            label="Volontario"
-            @click="assignNewContatto('Volontario')"
-          />
-          <q-btn
-            color="secondary"
-            icon="person_add"
-            label="Genitore"
-            @click="assignNewContatto('Genitore')"
-          />
-          <q-btn
-            flat
-            color="grey"
-            icon="person_off"
-            label="Solo contatto"
-            @click="showRoleDialog = false"
-          />
+          <q-btn color="primary" icon="badge" label="Volontario" @click="assignNewContatto('Volontario')" />
+          <q-btn color="secondary" icon="person_add" label="Genitore" @click="assignNewContatto('Genitore')" />
+          <q-btn flat color="grey" icon="person_off" label="Solo contatto" @click="showRoleDialog = false" />
         </div>
       </q-card-section>
     </q-card>
@@ -279,7 +262,8 @@ const $q = useQuasar()
 
 const props = defineProps({
   modelValue: Boolean,
-  famiglia: { type: Object, default: null }
+  famiglia: { type: Object, default: null },
+  hideExisting: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -305,22 +289,35 @@ function getEmailLabel(c) {
 }
 
 const contattoColumns = [
-  { name: 'nome', label: 'Nome', field: row => `${row.Contatto?.Nome || ''} ${row.Contatto?.Cognome || ''}`, align: 'left' },
-  { name: 'email', label: 'Email', field: row => row._emails?.map(e => e.email_address).join(', ') || '', align: 'left' },
+  {
+    name: 'nome',
+    label: 'Nome',
+    field: row => `${row.Contatto?.Nome || ''} ${row.Contatto?.Cognome || ''}`,
+    align: 'left'
+  },
+  {
+    name: 'email',
+    label: 'Email',
+    field: row => row._emails?.map(e => e.email_address).join(', ') || '',
+    align: 'left'
+  },
   { name: 'cellulare', label: 'Cellulare', field: row => row.Contatto?.Numero_di_cellulare || '', align: 'left' },
   { name: 'telefono', label: 'Telefono', field: row => row.Contatto?.Numero_di_telefono || '', align: 'left' },
   { name: 'azioni', label: '', align: 'center' }
 ]
 
-watch(() => props.modelValue, async (val) => {
-  visible.value = val
-  if (val && props.famiglia) {
-    await loadContatti()
-    await preloadOptions()
+watch(
+  () => props.modelValue,
+  async val => {
+    visible.value = val
+    if (val && props.famiglia) {
+      await loadContatti()
+      await preloadOptions()
+    }
   }
-})
+)
 
-watch(visible, (val) => {
+watch(visible, val => {
   if (!val) emit('update:modelValue', false)
 })
 
@@ -430,7 +427,7 @@ async function handleRemove(row) {
     await loadContatti()
     await preloadOptions()
   } else if (store.error) {
-    notifyError($q, store.error, "Errore nella rimozione del contatto")
+    notifyError($q, store.error, 'Errore nella rimozione del contatto')
   }
 }
 </script>
