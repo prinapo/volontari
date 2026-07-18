@@ -179,7 +179,7 @@ describe('auth store', () => {
 
       expect(result).toBe(true)
       expect(store.token).toBe('new-token')
-      expect(store.refreshToken).toBe('new-refresh')
+      expect(store.refreshToken).toBeNull()
       expect(store.user.id).toBe('user-1')
       expect(store.contatto.Nome).toBe('Mario')
       expect(store.loading).toBe(false)
@@ -259,7 +259,7 @@ describe('auth store', () => {
 
       await store.logout()
 
-      expect(mockLogout).toHaveBeenCalledWith('def')
+      expect(mockLogout).toHaveBeenCalledWith(null)
       expect(store.token).toBeNull()
       expect(store.refreshToken).toBeNull()
       expect(store.user).toBeNull()

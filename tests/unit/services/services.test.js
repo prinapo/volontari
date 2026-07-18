@@ -43,9 +43,9 @@ describe('services', () => {
   it('auth.service', async () => {
     const { authService } = await import('src/services/auth.service')
     await authService.login('a@b.it', 'pwd')
-    expect(mockPost).toHaveBeenCalledWith('/auth/login', { email: 'a@b.it', password: 'pwd', mode: 'json' })
+    expect(mockPost).toHaveBeenCalledWith('/auth/login', { email: 'a@b.it', password: 'pwd', mode: 'cookie' })
     await authService.logout('rtok')
-    expect(mockPost).toHaveBeenCalledWith('/auth/logout', { refresh_token: 'rtok', mode: 'json' })
+    expect(mockPost).toHaveBeenCalledWith('/auth/logout', { mode: 'cookie' })
     await authService.getMe()
     expect(mockGet).toHaveBeenCalledWith('/users/me', expect.any(Object))
     await authService.getRole('r-1')

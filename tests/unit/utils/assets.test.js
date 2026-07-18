@@ -1,27 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { assetUrl } from 'src/utils/assets'
 
 describe('assetUrl', () => {
-  beforeEach(() => {
-    localStorage.clear()
-  })
-
-  it('returns URL with fileId and access token', () => {
-    localStorage.setItem('access_token', 'my-token')
+  it('returns URL with fileId (no token, uses cookie)', () => {
     const url = assetUrl('file-1')
-    expect(url).toContain('/assets/file-1')
-    expect(url).toContain('access_token=my-token')
-    expect(url).not.toContain('download=1')
+    expect(url).toBe('http://localhost:9000/assets/file-1')
   })
 
   it('adds download param when requested', () => {
-    localStorage.setItem('access_token', 'my-token')
     const url = assetUrl('file-1', true)
     expect(url).toContain('download=1')
   })
 
-  it('works with null token', () => {
-    const url = assetUrl('file-1')
-    expect(url).toContain('access_token=null')
+  it('returns empty for null fileId', () => {
+    expect(assetUrl(null)).toBe('')
   })
 })

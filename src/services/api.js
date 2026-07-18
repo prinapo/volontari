@@ -5,7 +5,7 @@ import { errorLogService } from './error-log.service'
 
 const API_URL = ENV_API_URL
 
-const AUTH_MODE = import.meta !== undefined && import.meta.env.DEV ? 'json' : 'cookie'
+const AUTH_MODE = 'cookie'
 
 let isRefreshing = false
 let failedQueue = []

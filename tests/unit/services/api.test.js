@@ -156,12 +156,13 @@ describe('api.js', () => {
     expect(responseSuccessHandler(response)).toBe(response)
   })
 
-  it('clears session and redirects to login when token is invalid and refresh token is missing', async () => {
+  it('clears session and redirects to login when token is invalid and refresh via cookie fails', async () => {
     await loadApiModule()
     localStorage.setItem('access_token', 'old-access')
+    mockAxiosPost.mockRejectedValueOnce(new Error('refresh failed'))
     const error = makeInvalidTokenError()
 
-    await expect(responseErrorHandler(error)).rejects.toThrow('No refresh token')
+    await expect(responseErrorHandler(error)).rejects.toThrow('refresh failed')
 
     expect(mockAuthPatch).toHaveBeenCalledWith({
       token: null,
@@ -176,7 +177,6 @@ describe('api.js', () => {
 
   it('refreshes token and retries the original request when refresh succeeds', async () => {
     await loadApiModule()
-    localStorage.setItem('refresh_token', 'refresh-123')
     mockAxiosPost.mockResolvedValueOnce({
       data: {
         data: {
@@ -189,11 +189,12 @@ describe('api.js', () => {
     const error = makeInvalidTokenError()
     const result = await responseErrorHandler(error)
 
-    expect(mockAxiosPost).toHaveBeenCalledWith(expect.stringMatching(/\/auth\/refresh$/), {
-      refresh_token: 'refresh-123'
-    })
+    expect(mockAxiosPost).toHaveBeenCalledWith(
+      expect.stringMatching(/\/auth\/refresh$/),
+      { mode: 'cookie' },
+      { withCredentials: true }
+    )
     expect(localStorage.getItem('access_token')).toBe('new-access')
-    expect(localStorage.getItem('refresh_token')).toBe('new-refresh')
     expect(error.config._retry).toBe(true)
     expect(error.config.headers.Authorization).toBe('Bearer new-access')
     expect(apiInstance).toHaveBeenCalledWith(error.config)

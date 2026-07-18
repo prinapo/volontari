@@ -1,6 +1,6 @@
 import api from './api'
 
-const AUTH_MODE = import.meta !== undefined && import.meta.env.DEV ? 'json' : 'cookie'
+const AUTH_MODE = 'cookie'
 
 export const authService = {
   login(email, password) {
