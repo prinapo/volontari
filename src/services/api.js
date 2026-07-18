@@ -2,6 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from 'src/stores/auth.store'
 import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
 import { errorLogService } from './error-log.service'
+import { logSessionEvent } from 'src/utils/session-log'
 
 const API_URL = ENV_API_URL
 
@@ -32,7 +33,8 @@ function getErrorMessage(error) {
   return error.message || 'Errore sconosciuto'
 }
 
-function clearSessionAndRedirectToLogin() {
+function clearSessionAndRedirectToLogin(reason = 'Sconosciuto') {
+  logSessionEvent('logout_forzato', reason)
   const authStore = useAuthStore()
   authStore.$patch({
     token: null,
@@ -152,7 +154,7 @@ api.interceptors.response.use(
         return api(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError, null)
-        clearSessionAndRedirectToLogin()
+        clearSessionAndRedirectToLogin('refresh_fallito: ' + (refreshError.message || ''))
         throw refreshError
       } finally {
         isRefreshing = false
@@ -160,7 +162,7 @@ api.interceptors.response.use(
     }
 
     if (isInvalidTokenError(error) && !isAuthRequest) {
-      clearSessionAndRedirectToLogin()
+      clearSessionAndRedirectToLogin('token_invalido_senza_refresh: ' + getErrorMessage(error))
     }
 
     logErrorResponse(error)

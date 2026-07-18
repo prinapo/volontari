@@ -717,20 +717,18 @@ async function handleBatchAnnullato() {
 
 onMounted(async () => {
   await store.init()
-  if (store.proposti.length === 0) {
-    loadingVerifica.value = true
-    try {
-      if (verificaStore.rows.length === 0) {
-        await verificaStore.fetchAllPages()
-      }
-      if (verificaStore.rows.length > 0) {
-        await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
-      }
-    } catch (error) {
-      notifyError($q, error, 'Errore caricamento progetti')
-    } finally {
-      loadingVerifica.value = false
+  loadingVerifica.value = true
+  try {
+    if (verificaStore.rows.length === 0) {
+      await verificaStore.fetchAllPages()
     }
+    if (verificaStore.rows.length > 0) {
+      await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
+    }
+  } catch (error) {
+    notifyError($q, error, 'Errore caricamento progetti')
+  } finally {
+    loadingVerifica.value = false
   }
 })
 </script>

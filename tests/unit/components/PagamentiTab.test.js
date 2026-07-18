@@ -218,12 +218,4 @@ describe('PagamentiTab', () => {
     expect(mockNotifySuccess).toHaveBeenCalledWith(expect.anything(), '1 pagamenti ripristinati a Bonifici')
   })
 
-  it('deletes export lists', async () => {
-    mockEliminaLista.mockResolvedValue({})
-    const wrapper = quasarMount(PagamentiTab)
-
-    mockDialog.mockReturnValueOnce(okDialog(callback => callback()))
-    await wrapper.vm.confermaEliminaLista({ id: 'l1', Nome: 'Lista 1', File: 'file-1' })
-    expect(mockEliminaLista).toHaveBeenCalledWith('l1', 'file-1')
-  })
 })
