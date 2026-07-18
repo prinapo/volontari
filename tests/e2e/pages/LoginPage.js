@@ -12,6 +12,8 @@ export class LoginPage {
       localStorage.clear()
       sessionStorage.clear()
     })
+    // Cookie mode: elimina anche i cookie di sessione Directus
+    await this.page.context().clearCookies()
     await this.page.goto('/login', { timeout: 20000 })
     await this.emailInput.waitFor({ state: 'visible', timeout: 10000 })
   }
