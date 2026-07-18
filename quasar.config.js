@@ -1,6 +1,9 @@
-/* eslint-env node */
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-module.exports = function (ctx) {
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+export default function (ctx) {
   return {
     boot: ['axios', 'auth'],
     css: ['app.scss'],
@@ -8,19 +11,23 @@ module.exports = function (ctx) {
     build: {
       distDir: 'dist/spa',
       vueRouterMode: 'history',
-      vitePlugins: [
-        [
-          'rollup-plugin-visualizer',
-          {
-            filename: 'dist/bundle-report.html',
-            template: 'treemap',
-            gzipSize: true,
-            brotliSize: true,
-            open: false
-          },
-          { client: true, server: false }
-        ]
-      ],
+      extendViteConf(viteConf) {
+        viteConf.resolve = viteConf.resolve || {}
+        viteConf.resolve.alias = {
+          ...viteConf.resolve.alias,
+          src: resolve(__dirname, 'src'),
+          stores: resolve(__dirname, 'src/stores'),
+          components: resolve(__dirname, 'src/components'),
+          pages: resolve(__dirname, 'src/pages'),
+          boot: resolve(__dirname, 'src/boot'),
+          utils: resolve(__dirname, 'src/utils'),
+          services: resolve(__dirname, 'src/services'),
+          layouts: resolve(__dirname, 'src/layouts'),
+          router: resolve(__dirname, 'src/router'),
+          assets: resolve(__dirname, 'src/assets')
+        }
+      },
+      vitePlugins: [],
       env: {
         VITE_API_URL: ctx.dev
           ? 'http://localhost:9000'
