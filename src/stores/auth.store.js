@@ -7,7 +7,7 @@ import { STORAGE_KEYS } from 'src/utils/constants'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 
-const AUTH_MODE = typeof globalThis !== 'undefined' && globalThis.location.hostname === 'localhost' ? 'json' : 'cookie'
+const AUTH_MODE = import.meta.env.DEV ? 'json' : 'cookie'
 
 function normalizeRoleName(role) {
   if (!role) return ''

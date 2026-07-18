@@ -9,8 +9,7 @@ export function assetUrl(fileId, download = false) {
   const id = typeof fileId === 'object' ? fileId?.id : fileId
   if (!id) return ''
   const base = `${API_URL}/assets/${id}`
-  const isLocalhost = typeof globalThis !== 'undefined' && globalThis.location.hostname === 'localhost'
-  if (isLocalhost) {
+  if (import.meta.env.DEV) {
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
     return download ? `${base}?access_token=${token}&download=1` : `${base}?access_token=${token}`
   }
