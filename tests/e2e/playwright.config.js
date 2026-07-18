@@ -14,7 +14,7 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 1,
   reporter: [['list'], [resolve(__dirname, 'helpers/results-reporter.cjs')]],
   use: {
-    baseURL: 'http://localhost:9000',
+    baseURL: 'https://development.sostienilsostegno.com',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     permissions: ['clipboard-read', 'clipboard-write'],
