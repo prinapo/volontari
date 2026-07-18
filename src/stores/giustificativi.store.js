@@ -57,7 +57,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         })
 
         const created = createRes.data.data
-        return !(created && created.Descrizione !== data.Descrizione)
+        return !created || created.Descrizione === data.Descrizione
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione'
         return false

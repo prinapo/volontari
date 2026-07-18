@@ -17,7 +17,7 @@
 .q-card {
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 4px rgb(0, 0, 0, 0.08) !important;
   border: none !important;
 }
 
@@ -91,14 +91,14 @@
 }
 
 .q-drawer .q-item {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(255, 255, 255, 0.8);
   border-radius: 8px;
   margin: 4px 8px;
 }
 
 .q-drawer .q-item--active,
 .q-drawer .q-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255, 255, 255, 0.1);
   color: white;
 }
 
@@ -128,7 +128,7 @@
 
 .text-pre-wrap {
   white-space: pre-wrap;
-  word-break: break-word;
+  word-break: break-all;
   overflow-wrap: break-word;
 }
 
