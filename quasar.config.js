@@ -1,5 +1,6 @@
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -27,7 +28,15 @@ export default function (ctx) {
           assets: resolve(__dirname, 'src/assets')
         }
       },
-      vitePlugins: [],
+      vitePlugins: [
+        [ 'rollup-plugin-visualizer', {
+          filename: 'dist/bundle-report.html',
+          template: 'treemap',
+          gzipSize: true,
+          brotliSize: true,
+          open: false
+        } ]
+      ],
       env: {
         VITE_API_URL: ctx.dev
           ? 'http://localhost:9000'
