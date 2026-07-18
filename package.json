@@ -94,7 +94,7 @@
     "@vue/devtools-api": "^8.1.5",
     "axios": "^1.6.0",
     "eslint-plugin-import-x": "^4.17.1",
-    "quasar": "^2.14.0",
+    "quasar": "^2.21.4",
     "register-service-worker": "^1.7.2",
     "vue": "^3.4.0",
     "vue-router": "^4.3.0"
