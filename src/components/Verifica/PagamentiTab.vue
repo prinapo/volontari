@@ -715,22 +715,6 @@ async function handleBatchAnnullato() {
   selectedInCorso.value = []
 }
 
-async function confermaEliminaLista(row) {
-  $q.dialog({
-    title: 'Elimina lista',
-    message: `Eliminare la lista "${row.Nome || ''}"?`,
-    cancel: { label: 'Annulla', flat: true },
-    persistent: true
-  }).onOk(async () => {
-    try {
-      await store.eliminaLista(row.id, row.File)
-      notifySuccess($q, 'Lista eliminata')
-    } catch (error) {
-      notifyError($q, error, 'Errore eliminazione')
-    }
-  })
-}
-
 onMounted(async () => {
   await store.init()
   if (store.proposti.length === 0) {
