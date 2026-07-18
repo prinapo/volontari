@@ -130,7 +130,7 @@
     "pinia": "^4.0.2",
     "prettier": "^3.9.5",
     "stylelint": "^16.26.1",
-    "stylelint-config-standard-scss": "^13.1.0",
+    "stylelint-config-standard-scss": "^17.0.0",
     "vitest": "^4.1.10",
     "workbox-build": "^7.4.1",
     "workbox-cacheable-response": "^7.4.1",
