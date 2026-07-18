@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STORAGE_KEYS } from 'src/utils/constants'
+import { API_URL, STORAGE_KEYS } from 'src/utils/constants'
 import { logSessionEvent } from 'src/utils/session-log'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
@@ -100,12 +101,21 @@ export const useAuthStore = defineStore('auth', {
           this.refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
         }
       }
-      // In cookie mode, prova sempre a caricare l'utente via cookie anche senza token in localStorage
-      if (token || AUTH_MODE === 'cookie') {
+      // Cookie mode: prova a ottenere un token via refresh cookie
+      if (!this.token && AUTH_MODE === 'cookie') {
+        try {
+          const { data } = await axios.post(`${API_URL}/auth/refresh`, { mode: 'cookie' }, { withCredentials: true })
+          this.token = data.data.access_token
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, this.token)
+        } catch {
+          // Nessun cookie valido — l'utente non è autenticato
+        }
+      }
+      if (this.token) {
         try {
           await this.fetchUserData()
         } catch {
-          // fetchUserData già gestisce l'errore impostando this.error
+          // fetchUserData già gestisce l'errore
         }
       }
       this.initialized = true
