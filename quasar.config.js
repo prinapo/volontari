@@ -39,7 +39,7 @@ export default function (ctx) {
       ],
       env: {
         VITE_API_URL: ctx.dev
-          ? 'http://localhost:9000'
+          ? 'https://api-dev.sostienilsostegno.com'
           : 'https://app.sostienilsostegno.com',
         VITE_RESET_URL: ctx.dev
           ? 'http://localhost:9000/reset-password?token='

@@ -1,6 +1,6 @@
 import api from './api'
 
-const AUTH_MODE = typeof globalThis !== 'undefined' && globalThis.location.hostname === 'localhost' ? 'json' : 'cookie'
+const AUTH_MODE = import.meta !== undefined && import.meta.env.DEV ? 'json' : 'cookie'
 
 export const authService = {
   login(email, password) {
