@@ -40,7 +40,10 @@ export default function (ctx) {
       defineEnv: {
         VITE_API_URL: ctx.dev
           ? 'https://api-dev.sostienilsostegno.com'
-          : 'https://app.sostienilsostegno.com'
+          : 'https://app.sostienilsostegno.com',
+        VITE_APP_TITLE: ctx.dev
+          ? 'Portale Volontario - Development'
+          : 'Portale Volontario'
       },
       env: {
         VITE_RESET_URL: ctx.dev
