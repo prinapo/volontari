@@ -387,17 +387,6 @@ size="sm"
             >
               <q-tooltip>Scarica CSV</q-tooltip>
             </q-btn>
-            <q-btn
-              flat
-              round
-              dense
-              icon="delete"
-              color="negative"
-              aria-label="Elimina lista"
-              @click="confermaEliminaLista(props.row)"
-            >
-              <q-tooltip>Elimina lista</q-tooltip>
-            </q-btn>
           </q-td>
         </template>
         <template #item="props">
@@ -424,18 +413,6 @@ size="sm"
                     target="_blank"
                   >
                     <q-tooltip>Scarica CSV</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    icon="delete"
-                    color="negative"
-                    size="sm"
-                    aria-label="Elimina lista"
-                    @click="confermaEliminaLista(props.row)"
-                  >
-                    <q-tooltip>Elimina lista</q-tooltip>
                   </q-btn>
                 </div>
               </q-card-section>
