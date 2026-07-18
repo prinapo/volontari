@@ -14,7 +14,10 @@
           <q-tooltip>Menu</q-tooltip>
         </q-btn>
 
-        <q-toolbar-title> Portale Volontario </q-toolbar-title>
+        <q-toolbar-title>
+          Portale Volontario
+          <q-badge v-if="isDev" color="orange-9" class="q-ml-sm" label="DEV" />
+        </q-toolbar-title>
 
         <template v-if="authStore.isAuthenticated">
           <q-btn-dropdown flat :label="authStore.userName">

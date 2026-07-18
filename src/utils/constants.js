@@ -1,5 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL
-  || (import.meta.env.DEV ? 'https://api-dev.sostienilsostegno.com' : 'https://app.sostienilsostegno.com')
+export const API_URL = import.meta.env.VITE_API_URL || 'https://app.sostienilsostegno.com'
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
