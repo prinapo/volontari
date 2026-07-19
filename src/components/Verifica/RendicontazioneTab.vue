@@ -279,12 +279,18 @@ aria-label="Aggiorna dati"
                               <q-tooltip>Rifiuta</q-tooltip>
                             </q-btn>
                           </div>
-                          <div v-else-if="g.Stato === 'verificato'" class="text-positive row items-center q-gutter-xs">
-                            <q-icon name="check_circle" size="md" /><span class="text-body2">Verificato</span>
+                          <div v-else-if="g.Stato === 'verificato'" class="row items-center q-gutter-xs">
+                            <q-icon name="check_circle" size="md" color="positive" /><span class="text-body2 text-positive">Verificato</span>
+                            <q-btn flat dense round size="sm" icon="undo" color="grey" aria-label="Ripristina" @click="handleRevert(props.row.idProgetto, g)">
+                              <q-tooltip>Ripristina come 'inviato'</q-tooltip>
+                            </q-btn>
                           </div>
                           <div v-else-if="g.Stato === 'rifiutato'">
-                            <div class="text-negative row items-center q-gutter-xs">
-                              <q-icon name="cancel" size="md" /><span class="text-body2">Rifiutato</span>
+                            <div class="row items-center q-gutter-xs">
+                              <q-icon name="cancel" size="md" color="negative" /><span class="text-body2 text-negative">Rifiutato</span>
+                              <q-btn flat dense round size="sm" icon="undo" color="grey" aria-label="Ripristina" @click="handleRevert(props.row.idProgetto, g)">
+                                <q-tooltip>Ripristina come 'inviato'</q-tooltip>
+                              </q-btn>
                             </div>
                             <div v-if="g.NotaRifiuto" class="text-caption text-grey">
                               {{ g.NotaRifiuto }}
@@ -1013,6 +1019,26 @@ async function handleRiapriProgetto(row) {
   } finally {
     savingRiapriProgetto.value = false
   }
+}
+
+async function handleRevert(progettoId, item) {
+  $q.dialog({
+    title: 'Ripristina giustificativo',
+    message: 'Ripristinare il giustificativo allo stato "inviato"?',
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Ripristina', color: 'primary' },
+    persistent: true
+  }).onOk(async () => {
+    verifyingId.value = item.id
+    try {
+      await store.updateGiustificativoField(progettoId, item.id, 'Stato', 'inviato')
+      notifySuccess($q, 'Giustificativo ripristinato')
+    } catch (error) {
+      notifyError($q, error, 'Errore nel ripristino')
+    } finally {
+      verifyingId.value = null
+    }
+  })
 }
 
 async function handleVerify(progettoId, item) {
