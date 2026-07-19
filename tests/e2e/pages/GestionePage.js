@@ -158,20 +158,29 @@ export class GestionePage {
   }
 
   /**
-   * Clicca icona contacts sulla riga famiglia nella q-table delle Famiglie.
-   * Supporta desktop (tbody tr) e mobile (espansione card).
+   * Apre i contatti per una famiglia espandendo la riga e cliccando "Aggiungi contatto".
+   * Supporta desktop (q-table expand row) e mobile (expansion item).
+   * Salta le righe expand (colspan) che hanno solo 1 cella.
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Desktop: cerca in tutte le righe della tabella
-    const desktopRows = this.page.locator('.q-table tbody tr')
-    const desktopCount = await desktopRows.count()
-    for (let i = 0; i < desktopCount; i++) {
-      const cellText = await desktopRows.nth(i).locator('td').nth(1).innerText()
+    // Desktop: cerca la riga con almeno 2 td (riga dati, NON expand row)
+    const allRows = this.page.locator('.q-table tbody tr')
+    const allCount = await allRows.count()
+    for (let i = 0; i < allCount; i++) {
+      const tdCount = await allRows.nth(i).locator('td').count()
+      if (tdCount < 2) continue // salta expand row (ha 1 td con colspan)
+      const cellText = await allRows.nth(i).locator('td').nth(1).innerText()
       if (cellText.trim().includes(nomeFamiglia)) {
-        const actionCell = desktopRows.nth(i).locator('td').last()
-        const contactsBtn = actionCell.locator('.q-btn[aria-label="Gestisci contatti"]')
-        if ((await contactsBtn.count()) > 0) {
-          await contactsBtn.click()
+        // Espandi la riga cliccando il toggle nella prima cella
+        const expandBtn = allRows.nth(i).locator('td').first().locator('.q-btn')
+        if ((await expandBtn.count()) > 0) {
+          await expandBtn.click()
+          await this.page.waitForLoadState('networkidle')
+        }
+        // Cerca "Aggiungi contatto" nella riga espansa (subito dopo)
+        const addBtn = allRows.nth(i + 1).locator('button:has-text("Aggiungi contatto")')
+        if ((await addBtn.count()) > 0) {
+          await addBtn.click()
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true
         }
@@ -189,20 +198,30 @@ export class GestionePage {
         .innerText()
         .catch(() => '')
       if (label.includes(nomeFamiglia)) {
-        // Espandi se non già espanso
         if ((await expItems.nth(i).locator('.q-expansion-item--expanded').count()) === 0) {
           await expItems.nth(i).click()
           await this.page.waitForLoadState('networkidle')
         }
-        const contactsBtn = expItems.nth(i).locator('[aria-label="Gestisci contatti"]')
-        if ((await contactsBtn.count()) > 0) {
-          await contactsBtn.click()
+        const addBtn = expItems.nth(i).locator('button:has-text("Aggiungi contatto")')
+        if ((await addBtn.count()) > 0) {
+          await addBtn.click()
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true
         }
       }
     }
     return false
+  }
+
+  async _getRowIndex(rows, text) {
+    const count = await rows.count()
+    for (let i = 0; i < count; i++) {
+      try {
+        const t = await rows.nth(i).innerText()
+        if (t.includes(text)) return i
+      } catch { /* skip */ }
+    }
+    return -1
   }
 
   /**
