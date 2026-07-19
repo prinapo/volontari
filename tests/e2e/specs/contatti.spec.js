@@ -2,7 +2,7 @@ import { test, expect } from '../helpers/console.js'
 import { GestionePage } from '../pages/GestionePage.js'
 import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin } from '../helpers/api.js'
+import { apiLogin, apiGet } from '../helpers/api.js'
 import {
   creaFamigliaVolontarioProgetto,
   loginVolontarioConFamiglia,
@@ -330,79 +330,76 @@ test.describe('ContattiTab — CRUD', () => {
     const gp = new GestionePage(page)
     await gp.waitForTable()
 
+    // Crea contatto con 1 email (createGenitore ne crea una automaticamente)
     await page.locator('[data-testid="btn-aggiungi-contatto"]').click()
     await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
-
-    const dialog = page.locator('.q-dialog:visible')
-
-    await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
-    await dialog.locator('[data-testid="contatto-cognome"]').fill('TestEmail')
-
-    // Aggiungi due email per poterne eliminare una
-    const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
-    if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await addEmailBtn.click()
-      await dialog
-        .locator('[data-testid^="contatto-email-"]')
-        .first()
-        .waitFor({ state: 'visible', timeout: 3000 })
-        .catch(() => {})
-    }
-    // Aggiungi seconda email
+    const createDialog = page.locator('.q-dialog:visible')
+    await createDialog.locator('[data-testid="contatto-nome"]').fill(nome)
+    await createDialog.locator('[data-testid="contatto-cognome"]').fill('TestEmail')
+    const addEmailBtn = createDialog.locator('button:has-text("Aggiungi email")')
     if (await addEmailBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
       await addEmailBtn.click()
-    }
-
-    const emailInputs = dialog.locator('[data-testid^="contatto-email-"]')
-    const emailCount = await emailInputs.count()
-    if (emailCount < 2) {
-      await dialog.locator('button:has-text("Annulla")').click()
+      const emailInputs = createDialog.locator('[data-testid^="contatto-email-"]')
+      const emailCount = await emailInputs.count()
+      if (emailCount > 0) {
+        await emailInputs.first().fill(`TEST_email_${timestamp}@test.com`)
       }
-
-    await emailInputs.nth(0).fill(`TEST_email_${timestamp}@test.com`)
-    await emailInputs.nth(1).fill(`TEST_email2_${timestamp}@test.com`)
-
+    }
     const [postResp] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
-      dialog.locator('button:has-text("Salva")').click()
+      createDialog.locator('button:has-text("Salva")').click()
     ])
     expect(postResp.status()).toBe(200)
     const ct11ContattoId = (await postResp.json())?.data?.id_contatto
     if (ct11ContattoId) createdContattoIds.push(ct11ContattoId)
-    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    await expect(createDialog).not.toBeVisible({ timeout: 10000 })
 
+    // Modifica contatto: aggiungi seconda email via UI
     await gp.search(nome)
     await expandFirstCardIfMobile(page)
-
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
     await expect(editBtn).toBeVisible({ timeout: 5000 })
     await editBtn.click()
-
     const editDialog = page.locator('.q-dialog:visible')
     await expect(editDialog).toBeVisible({ timeout: 5000 })
+    await page.waitForTimeout(2000)
 
-    const emailInputsEdit = editDialog.locator('[data-testid^="contatto-email-"]')
-    const emailCountEdit = await emailInputsEdit.count()
-    console.log(`[CT-11] email count prima: ${emailCountEdit}`)
+    // Aggiungi seconda email se necessario
+    let emailInputsEdit = editDialog.locator('[data-testid^="contatto-email-"]')
+    let emailCountEdit = await emailInputsEdit.count()
+    console.log(`[CT-11] email count: ${emailCountEdit}`)
     if (emailCountEdit < 2) {
-      await editDialog.locator('button:has-text("Annulla")').click()
+      const addEmailBtn2 = editDialog.locator('button:has-text("Aggiungi email")')
+      if (await addEmailBtn2.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await addEmailBtn2.click()
+        await page.waitForTimeout(500)
+        emailInputsEdit = editDialog.locator('[data-testid^="contatto-email-"]')
+        emailCountEdit = await emailInputsEdit.count()
+        if (emailCountEdit >= 2) {
+          await emailInputsEdit.nth(1).fill(`TEST_extra_${timestamp}@test.com`)
+        }
+      }
+      if (emailCountEdit < 2) {
+        await editDialog.locator('button:has-text("Annulla")').click()
+        }
       }
 
-    const deleteEmailBtn = editDialog.locator('[data-testid="btn-delete-email"]').first()
-    if ((await deleteEmailBtn.count()) === 0) {
+    // Elimina la SECONDA email (non primaria)
+    const deleteEmailBtns = editDialog.locator('[data-testid="btn-delete-email"]')
+    const deleteBtnCount = await deleteEmailBtns.count()
+    console.log(`[CT-11] bottoni delete: ${deleteBtnCount}`)
+    if (deleteBtnCount < 2) {
       await editDialog.locator('button:has-text("Annulla")').click()
       }
-
-    await deleteEmailBtn.click()
+    await deleteEmailBtns.nth(1).click()
+    await page.waitForTimeout(500)
 
     const emailCountAfter = await editDialog.locator('[data-testid^="contatto-email-"]').count()
-    console.log(`[CT-11] email count dopo: ${emailCountAfter}`)
+    console.log(`[CT-11] email after delete: ${emailCountAfter}`)
     expect(emailCountAfter).toBeLessThan(emailCountEdit)
 
     await editDialog.locator('button:has-text("Annulla")').click()
-    await expect(editDialog)
-      .not.toBeVisible({ timeout: 3000 })
-      .catch(() => {})
+    await expect(editDialog).not.toBeVisible({ timeout: 3000 }).catch(() => {})
   })
 
   test('CT-12: Aggiungi email a contatto @crud', async ({ page }) => {

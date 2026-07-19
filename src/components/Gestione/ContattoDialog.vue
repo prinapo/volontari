@@ -237,7 +237,7 @@ async function loadEmails(contattoId) {
 }
 
 function addEmail() {
-  emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0 })
+  emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0, _saving: false })
 }
 
 function removeEmail(idx) {
@@ -280,8 +280,9 @@ watch(visible, val => {
 })
 
 async function saveEmails(contattoId) {
-  try {
-    for (const em of emails.value) {
+  let hasError = false
+  for (const em of emails.value) {
+    try {
       if (em.id && em.email_address) {
         await emailService.updateSafe(em.id, { email_address: em.email_address.toLowerCase(), Primary: em.Primary })
       } else if (!em.id && em.email_address) {
@@ -291,14 +292,22 @@ async function saveEmails(contattoId) {
           Primary: em.Primary
         })
       }
+    } catch (error) {
+      console.error('saveEmails error:', error.message)
+      hasError = true
     }
-    for (const origId of originalEmailIds.value) {
-      if (!emails.value.some(e => e.id === origId)) {
+  }
+  for (const origId of originalEmailIds.value) {
+    if (!emails.value.some(e => e.id === origId)) {
+      try {
         await emailService.remove(origId)
+      } catch {
+        /* best effort */
       }
     }
-  } catch (error) {
-    notifyError($q, error, "Errore nell'aggiornamento delle email")
+  }
+  if (hasError) {
+    notifyError($q, null, 'Alcune email non sono state salvate')
   }
 }
 
