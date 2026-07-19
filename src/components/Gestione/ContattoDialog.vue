@@ -20,7 +20,7 @@ aria-label="Chiudi">
       <q-separator />
 
       <q-card-section>
-        <q-form @submit.prevent="handleSave">
+        <q-form ref="formRef" @submit.prevent="handleSave">
           <div class="row q-col-gutter-sm q-mb-md">
             <q-input
               v-model="form.Nome"
@@ -83,6 +83,8 @@ aria-label="Chiudi">
               class="col"
               :data-testid="`contatto-email-${idx}`"
               :disable="hasAccount"
+              :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Inserisci un indirizzo email valido']"
+              lazy-rules
               @blur="onEmailBlur(em, idx)"
             />
             <q-btn
@@ -169,6 +171,7 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 const $q = useQuasar()
 const store = useGestioneStore()
 
+const formRef = ref(null)
 const visible = ref(false)
 const emails = ref([])
 const originalEmailIds = ref([])
@@ -335,7 +338,8 @@ async function handleSaveCreate() {
 }
 
 async function handleSave() {
-  if (!form.value.Nome || !form.value.Cognome) return
+  const isValid = formRef.value?.validate()
+  if (!isValid) return
   if (isEdit.value) return handleSaveEdit()
   return handleSaveCreate()
 }
