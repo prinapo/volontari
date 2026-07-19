@@ -22,40 +22,42 @@
 
       <!-- Indicatori capienza -->
       <template v-if="subTab === 'proposti'">
-        <q-select
-          v-model="batchAssociazione"
-          :options="assocOptions"
-          label="Associazione"
-          dense
-          outlined
-          class="col-auto"
-          style="min-width: 200px"
-          emit-value
-          map-options
-        />
-        <div v-if="batchAssociazione" class="text-caption q-mr-md">
-          €{{ formatNumber(residuo(batchAssociazione)) }} disponibili
+        <div class="row items-center q-gutter-sm" :class="$q.screen.lt.sm ? 'full-width q-mt-sm' : 'col-auto'">
+          <q-select
+            v-model="batchAssociazione"
+            :options="assocOptions"
+            label="Associazione"
+            dense
+            outlined
+            class="col-12 col-sm-auto"
+            style="min-width: 200px"
+            emit-value
+            map-options
+          />
+          <div v-if="batchAssociazione" class="text-caption q-mr-md">
+            €{{ formatNumber(residuo(batchAssociazione)) }} disponibili
+          </div>
+          <q-btn
+            color="primary"
+            icon="playlist_add"
+            label="Crea gruppo di pagamento"
+            :disable="selected.length === 0 || !batchAssociazione"
+            @click="openCreaBatch"
+          >
+            <q-tooltip v-if="!batchAssociazione">Seleziona un'associazione</q-tooltip>
+            <q-tooltip v-else-if="selected.length === 0">Seleziona almeno un pagamento</q-tooltip>
+          </q-btn>
+          <q-btn
+            flat
+            dense
+            icon="refresh"
+            size="sm"
+            color="primary"
+            label="Ricalcola proposte"
+            :loading="store.loading"
+            @click="ricalcolaProposte"
+          />
         </div>
-        <q-btn
-          color="primary"
-          icon="playlist_add"
-          label="Crea gruppo di pagamento"
-          :disable="selected.length === 0 || !batchAssociazione"
-          @click="openCreaBatch"
-        >
-          <q-tooltip v-if="!batchAssociazione">Seleziona un'associazione</q-tooltip>
-          <q-tooltip v-else-if="selected.length === 0">Seleziona almeno un pagamento</q-tooltip>
-        </q-btn>
-        <q-btn
-          flat
-          dense
-          icon="refresh"
-          size="sm"
-          color="primary"
-          label="Ricalcola proposte"
-          :loading="store.loading"
-          @click="ricalcolaProposte"
-        />
       </template>
     </div>
 
@@ -107,45 +109,46 @@
 
     <!-- Sotto-vista: In corso / Da riscontrare -->
     <template v-if="subTab === 'incorso'">
-      <div class="row items-center q-gutter-sm q-mb-md">
-        <q-select
-          v-model="batchFilter"
-          :options="batchOptions"
-          label="Filtra per gruppo"
-          dense
-          outlined
-          clearable
-          class="col-auto"
-          style="min-width: 250px"
-          emit-value
-          map-options
-        />
-        <template v-if="selectedInCorso.length > 0">
-          <q-space />
-          <span class="text-caption">{{ selectedInCorso.length }} selezionati</span>
-          <q-btn
+      <div>
+        <div class="row items-center q-gutter-sm q-mb-md">
+          <q-select
+            v-model="batchFilter"
+            :options="batchOptions"
+            label="Filtra per gruppo"
+            dense
+            outlined
+            clearable
+            :class="$q.screen.lt.sm ? 'col-12' : 'col-auto'"
+            style="min-width: 250px"
+            emit-value
+            map-options
+          />
+          <template v-if="selectedInCorso.length > 0">
+            <q-space />
+            <span class="text-caption">{{ selectedInCorso.length }} selezionati</span>
+            <q-btn
 color="positive"
 icon="check_circle"
 label="Segna pagato"
 size="sm"
 :disable="!allInPagamento"
 @click="handleBatchPagato" />
-          <q-btn
+            <q-btn
 color="negative"
 icon="cancel"
 label="Segna fallito"
 size="sm"
 :disable="!allInPagamento"
 @click="handleBatchFallito" />
-          <q-btn
+            <q-btn
 color="grey"
 icon="block"
 label="Rimuovi dal gruppo"
 size="sm"
 :disable="!allInPagamento"
 @click="handleBatchAnnullato" />
-        </template>
-      </div>
+          </template>
+        </div>
 
       <q-table
         v-model:selected="selectedInCorso"
