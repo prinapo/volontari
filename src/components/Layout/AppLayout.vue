@@ -22,9 +22,9 @@
         <template v-if="authStore.isAuthenticated">
           <q-btn-dropdown flat :label="authStore.userName">
             <q-list>
-              <q-item v-close-popup clickable @click="showChangePassword = true">
+              <q-item v-close-popup clickable to="/impostazioni">
                 <q-item-section>
-                  <q-item-label>Cambia password</q-item-label>
+                  <q-item-label>Impostazioni</q-item-label>
                 </q-item-section>
               </q-item>
               <q-item v-close-popup clickable @click="handleLogout">
@@ -111,6 +111,13 @@
           <q-item-section>Gestione</q-item-section>
         </q-item>
 
+        <q-item v-ripple clickable :active="$route.name === 'Impostazioni'" active-class="text-white" to="/impostazioni">
+          <q-item-section avatar>
+            <q-icon name="settings" />
+          </q-item-section>
+          <q-item-section>Impostazioni</q-item-section>
+        </q-item>
+
         <q-item-label v-if="authStore.canAdmin" header class="q-mt-md"> Amministrazione </q-item-label>
 
         <q-item
@@ -143,53 +150,6 @@
       <router-view />
     </q-page-container>
 
-    <q-dialog v-model="showChangePassword" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
-          <div class="text-h6">Cambia password</div>
-          <q-space />
-          <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-            <q-tooltip>Chiudi</q-tooltip>
-          </q-btn>
-        </q-card-section>
-        <q-separator />
-        <q-card-section>
-          <q-input
-            v-model="newPassword"
-            type="password"
-            label="Nuova password"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            outlined
-            dense
-            lazy-rules
-          />
-          <q-input
-            v-model="confirmPassword"
-            type="password"
-            label="Conferma password"
-            :rules="[val => !!val || 'Campo obbligatorio', val => val === newPassword || 'Le password non coincidono']"
-            outlined
-            dense
-            lazy-rules
-          />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-          <q-btn
-            color="primary"
-            label="Salva"
-            :disable="!newPassword || newPassword !== confirmPassword"
-            @click="handleChangePassword"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-layout>
 </template>
 
@@ -197,8 +157,6 @@ aria-label="Chiudi">
 import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService } from 'src/services/auth.service'
-import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
 
@@ -209,9 +167,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const drawerOpen = ref(false)
-const showChangePassword = ref(false)
-const newPassword = ref('')
-const confirmPassword = ref('')
 
 async function handleLogout() {
   await authStore.logout()
@@ -221,17 +176,5 @@ async function handleLogout() {
 function stopImpersonation() {
   const adminStore = useAdminStore()
   adminStore.stopImpersonation()
-}
-
-async function handleChangePassword() {
-  try {
-    await authService.changePassword(newPassword.value)
-    notifySuccess($q, 'Password cambiata con successo')
-    showChangePassword.value = false
-    newPassword.value = ''
-    confirmPassword.value = ''
-  } catch (error) {
-    notifyError($q, error, 'Errore nel cambio password')
-  }
 }
 </script>

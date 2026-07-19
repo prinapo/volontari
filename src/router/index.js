@@ -62,6 +62,11 @@ const routes = [
         meta: { requiredRole: ROUTE_ROLES.MANAGER }
       },
       {
+        path: 'impostazioni',
+        name: 'Impostazioni',
+        component: () => import('pages/ImpostazioniPage.vue')
+      },
+      {
         path: 'admin',
         name: 'Admin',
         component: () => import('pages/AdminPage.vue'),

@@ -46,5 +46,9 @@ export const authService = {
 
   changePassword(newPassword) {
     return api.patch('/users/me', { password: newPassword })
+  },
+
+  updateMe(data) {
+    return api.patch('/users/me', data)
   }
 }
