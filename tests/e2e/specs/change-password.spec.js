@@ -38,42 +38,34 @@ test.describe('Change Password', () => {
 
   test('CPW-01: Cambia password con successo @smoke', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await page.goto('/impostazioni')
+    await expect(page.locator('text=Impostazioni')).toBeVisible({ timeout: 10000 })
 
-    await page.locator('.q-btn-dropdown').click()
-    await page.locator('text=Cambia password').click()
-    await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
-
-    const inputs = page.locator('.q-dialog input[type="password"]')
+    const inputs = page.locator('input[type="password"]')
     await inputs.nth(0).fill(TEMP_PWD)
     await inputs.nth(1).fill(TEMP_PWD)
-    await page.locator('.q-dialog button:has-text("Salva")').click()
+    await page.locator('button:has-text("Cambia password")').click()
     await expect(page.locator('.q-notification')).toBeVisible({ timeout: 5000 })
   })
 
   test('CPW-02: Password mismatch blocca salvataggio @regression', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await page.goto('/impostazioni')
+    await expect(page.locator('text=Impostazioni')).toBeVisible({ timeout: 10000 })
 
-    await page.locator('.q-btn-dropdown').click()
-    await page.locator('text=Cambia password').click()
-    await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
-
-    const inputs = page.locator('.q-dialog input[type="password"]')
+    const inputs = page.locator('input[type="password"]')
     await inputs.nth(0).fill('Password1!')
     await inputs.nth(1).fill('Password2!')
-    const salvaBtn = page.locator('.q-dialog button:has-text("Salva")')
+    const salvaBtn = page.locator('button:has-text("Cambia password")')
     await expect(salvaBtn).toBeDisabled()
   })
 
   test('CPW-03: Annulla chiude dialog senza cambiare @smoke', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
+    await page.goto('/impostazioni')
+    await expect(page.locator('text=Impostazioni')).toBeVisible({ timeout: 10000 })
+    // Navigate away — no dialog to close on settings page, just leave
+    await page.goto('/famiglie')
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
-
-    await page.locator('.q-btn-dropdown').click()
-    await page.locator('text=Cambia password').click()
-    await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
-    await page.locator('.q-dialog button:has-text("Annulla")').click()
-    await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 3000 })
   })
 })

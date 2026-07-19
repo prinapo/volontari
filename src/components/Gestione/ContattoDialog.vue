@@ -338,8 +338,9 @@ async function handleSaveCreate() {
 }
 
 async function handleSave() {
+  if (!form.value.Nome || !form.value.Cognome) return
   const isValid = formRef.value?.validate()
-  if (!isValid) return
+  if (isValid === false) return
   if (isEdit.value) return handleSaveEdit()
   return handleSaveCreate()
 }

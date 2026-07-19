@@ -31,7 +31,7 @@ test.describe('Admin Page', () => {
   })
 
   test('ADU-01: Tabella utenti si carica con colonne @smoke', async ({ page }) => {
-    await expect(page.locator('.text-h5:has-text("User Admin")')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.text-h5:has-text("Admin")')).toBeVisible({ timeout: 15000 })
     // Attendi che la tabella o il contenuto utenti sia caricato (mobile: grid mode)
     await page
       .waitForFunction(

@@ -338,6 +338,7 @@ test.describe('ContattiTab — CRUD', () => {
     await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
     await dialog.locator('[data-testid="contatto-cognome"]').fill('TestEmail')
 
+    // Aggiungi due email per poterne eliminare una
     const addEmailBtn = dialog.locator('button:has-text("Aggiungi email")')
     if (await addEmailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await addEmailBtn.click()
@@ -347,13 +348,19 @@ test.describe('ContattiTab — CRUD', () => {
         .waitFor({ state: 'visible', timeout: 3000 })
         .catch(() => {})
     }
+    // Aggiungi seconda email
+    if (await addEmailBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await addEmailBtn.click()
+    }
 
-    const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
-    if ((await emailInput.count()) === 0) {
+    const emailInputs = dialog.locator('[data-testid^="contatto-email-"]')
+    const emailCount = await emailInputs.count()
+    if (emailCount < 2) {
       await dialog.locator('button:has-text("Annulla")').click()
       }
 
-    await emailInput.fill(`TEST_email_${timestamp}@test.com`)
+    await emailInputs.nth(0).fill(`TEST_email_${timestamp}@test.com`)
+    await emailInputs.nth(1).fill(`TEST_email2_${timestamp}@test.com`)
 
     const [postResp] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
@@ -374,10 +381,10 @@ test.describe('ContattiTab — CRUD', () => {
     const editDialog = page.locator('.q-dialog:visible')
     await expect(editDialog).toBeVisible({ timeout: 5000 })
 
-    const emailInputs = editDialog.locator('[data-testid^="contatto-email-"]')
-    const emailCount = await emailInputs.count()
-    console.log(`[CT-11] email count prima: ${emailCount}`)
-    if (emailCount === 0) {
+    const emailInputsEdit = editDialog.locator('[data-testid^="contatto-email-"]')
+    const emailCountEdit = await emailInputsEdit.count()
+    console.log(`[CT-11] email count prima: ${emailCountEdit}`)
+    if (emailCountEdit < 2) {
       await editDialog.locator('button:has-text("Annulla")').click()
       }
 
@@ -390,7 +397,7 @@ test.describe('ContattiTab — CRUD', () => {
 
     const emailCountAfter = await editDialog.locator('[data-testid^="contatto-email-"]').count()
     console.log(`[CT-11] email count dopo: ${emailCountAfter}`)
-    expect(emailCountAfter).toBeLessThan(emailCount)
+    expect(emailCountAfter).toBeLessThan(emailCountEdit)
 
     await editDialog.locator('button:has-text("Annulla")').click()
     await expect(editDialog)
