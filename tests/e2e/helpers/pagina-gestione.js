@@ -172,6 +172,8 @@ export async function assegnaContattoAFamigliaViaUI(
   await page.waitForLoadState("networkidle").catch(() => {})
 
   await gp.famiglieSearch.fill(famigliaNome)
+  // Attende il debounce di 300ms + chiamata API
+  await page.waitForTimeout(400)
   await page.waitForLoadState("networkidle").catch(() => {})
 
   const found = await gp.clickContactsOnFamiglia(famigliaNome)
@@ -211,6 +213,7 @@ export async function rimuoviContattoDaFamigliaViaUI(page, { famigliaNome, fullN
   await page.waitForLoadState("networkidle").catch(() => {})
 
   await gp.famiglieSearch.fill(famigliaNome)
+  await page.waitForTimeout(400)
   await page.waitForLoadState("networkidle").catch(() => {})
   const famTable = page.locator('.q-table')
   const famRow = famTable.locator('td').filter({ hasText: famigliaNome }).first()

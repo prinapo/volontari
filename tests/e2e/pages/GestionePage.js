@@ -163,43 +163,19 @@ export class GestionePage {
    * Salta le righe expand (colspan) che hanno solo 1 cella.
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Desktop: trova la riga col nome famiglia e clicca expand
-    const dataRow = this.page.locator('.q-table tbody tr').filter({ hasText: nomeFamiglia }).first()
-    if (await dataRow.isVisible({ timeout: 5000 }).catch(() => false)) {
-      const tdCount = await dataRow.locator('td').count()
-      if (tdCount >= 2) {
-        // Espandi la riga
-        const expandBtn = dataRow.locator('td').first().locator('.q-btn')
-        if ((await expandBtn.count()) > 0) {
-          await expandBtn.click()
-          await this.page.waitForLoadState('networkidle')
-        }
-        // Cerca "Aggiungi contatto" nella riga espansa (subito dopo)
-        const allRows = this.page.locator('.q-table tbody tr')
-        const idx = await allRows.count()
-        for (let j = 0; j < idx; j++) {
-          const text = await allRows.nth(j).innerText().catch(() => '')
-          if (text.includes(nomeFamiglia) && text.includes('Aggiungi contatto')) {
-            const addBtn = allRows.nth(j).locator('button:has-text("Aggiungi contatto")')
-            if ((await addBtn.count()) > 0) {
-              await addBtn.click()
-              await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
-              return true
-            }
-          }
-        }
-      }
-    }
-
-    // Fallback mobile: cerca expansion item
-    const expItem = this.page.locator('.q-expansion-item').filter({ hasText: nomeFamiglia }).first()
-    if (await expItem.isVisible({ timeout: 3000 }).catch(() => false)) {
-      if ((await expItem.locator('.q-expansion-item--expanded').count()) === 0) {
-        await expItem.click()
+    // Desktop: trova la riga del nome famiglia, espandi, clicca Aggiungi contatto
+    // Cerca la cella col nome famiglia (colonna Nome Famiglia, la seconda td)
+    const nomeCell = this.page.locator('.q-table td').filter({ hasText: nomeFamiglia }).first()
+    if (await nomeCell.isVisible({ timeout: 5000 }).catch(() => false)) {
+      const dataRow = nomeCell.locator('..')
+      const expandBtn = dataRow.locator('td').first().locator('.q-btn')
+      if ((await expandBtn.count()) > 0) {
+        await expandBtn.click()
         await this.page.waitForLoadState('networkidle')
       }
-      const addBtn = expItem.locator('button:has-text("Aggiungi contatto")')
-      if ((await addBtn.count()) > 0) {
+      // Cerca "Aggiungi contatto" nella riga espansa (la prossima nel DOM)
+      const addBtn = this.page.locator('.q-table tbody tr button:has-text("Aggiungi contatto")').first()
+      if (await addBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await addBtn.click()
         await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
         return true
