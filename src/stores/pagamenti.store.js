@@ -563,6 +563,20 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
+    async ripristinaInPagamento(pagamentoId) {
+      this.loading = true
+      this.error = null
+      try {
+        await pagamentiService.updatePagamento(pagamentoId, { Stato: STATO_PAGAMENTO.IN_PAGAMENTO, NoteEsito: null })
+        await this.init()
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
     async correggiDati(pagamentoId, { iban, intestatario }) {
       this.loading = true
       this.error = null

@@ -220,6 +220,19 @@ size="sm"
                 <q-tooltip>Rimuovi dal gruppo</q-tooltip>
               </q-btn>
               <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
+              <q-btn
+                v-if="props.row.Stato === 'pagato' || props.row.Stato === 'fallito'"
+                flat
+                round
+                dense
+                icon="undo"
+                color="grey"
+                size="sm"
+                aria-label="Ripristina"
+                @click="handleRipristina(props.row)"
+              >
+                <q-tooltip>Ripristina come 'in pagamento'</q-tooltip>
+              </q-btn>
             </div>
           </q-td>
         </template>
@@ -236,7 +249,12 @@ size="sm"
                 </div>
                 <div class="text-caption q-mt-xs">Gruppo: {{ props.row.Batch?.Nome || '—' }}</div>
                 <div class="text-caption">IBAN: {{ props.row.IBAN || '—' }}</div>
-                <q-badge v-if="props.row.Stato === 'pagato'" color="positive">Pagato</q-badge>
+                <div v-if="props.row.Stato === 'pagato'" class="row items-center q-gutter-xs q-mt-sm">
+                  <q-badge color="positive">Pagato</q-badge>
+                  <q-btn flat round dense icon="undo" color="grey" size="sm" aria-label="Ripristina" @click="handleRipristina(props.row)">
+                    <q-tooltip>Ripristina come 'in pagamento'</q-tooltip>
+                  </q-btn>
+                </div>
                 <div v-else class="row q-gutter-xs q-mt-sm">
                   <q-btn
                     flat
@@ -616,6 +634,23 @@ async function handleRipristinaProposti() {
   } catch (error) {
     notifyError($q, error, 'Errore ripristino')
   }
+}
+
+async function handleRipristina(pagamento) {
+  $q.dialog({
+    title: 'Ripristina pagamento',
+    message: `Ripristinare il pagamento da €${formatNumber(pagamento.Importo)} come 'in pagamento'?`,
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Ripristina', color: 'primary' },
+    persistent: true
+  }).onOk(async () => {
+    try {
+      await store.ripristinaInPagamento(pagamento.id)
+      notifySuccess($q, 'Pagamento ripristinato')
+    } catch (error) {
+      notifyError($q, error, 'Errore ripristino')
+    }
+  })
 }
 
 async function handlePagato(pagamento) {
