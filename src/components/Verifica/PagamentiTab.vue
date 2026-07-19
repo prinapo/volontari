@@ -127,27 +127,36 @@
           <template v-if="selectedInCorso.length > 0">
             <q-space />
             <span class="text-caption">{{ selectedInCorso.length }} selezionati</span>
-            <q-btn
+          <q-btn
 color="positive"
 icon="check_circle"
 label="Segna pagato"
 size="sm"
 :disable="!allInPagamento"
-@click="handleBatchPagato" />
-            <q-btn
+@click="handleBatchPagato">
+            <q-tooltip>Segna come pagati tutti i selezionati</q-tooltip>
+          </q-btn>
+          <q-btn
 color="negative"
 icon="cancel"
 label="Segna fallito"
 size="sm"
 :disable="!allInPagamento"
-@click="handleBatchFallito" />
-            <q-btn
+@click="handleBatchFallito">
+            <q-tooltip>Segna come falliti tutti i selezionati</q-tooltip>
+          </q-btn>
+          <q-btn
 color="grey"
 icon="block"
 label="Rimuovi dal gruppo"
 size="sm"
 :disable="!allInPagamento"
-@click="handleBatchAnnullato" />
+@click="handleBatchAnnullato">
+            <q-tooltip>Rimuovi dal gruppo tutti i selezionati</q-tooltip>
+          </q-btn>
+          <div v-if="selectedInCorso.length > 0 && !allInPagamento" class="text-negative text-caption q-ml-sm">
+            Alcuni selezionati hanno stato diverso da 'in pagamento' e non possono essere elaborati.
+          </div>
           </template>
         </div>
 
