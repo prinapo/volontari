@@ -59,7 +59,6 @@ aria-label="Chiudi">
                       round
                       dense
                       icon="delete"
-                      color="negative"
                       size="sm"
                       aria-label="Rimuovi"
                       @click="handleRemove(slotPropsV.row)"
@@ -88,7 +87,6 @@ aria-label="Chiudi">
                 round
                 dense
                 icon="delete"
-                color="negative"
                 aria-label="Rimuovi"
                 @click="handleRemove(slotPropsV.row)"
               >
@@ -138,7 +136,6 @@ flat
 round
 dense
 icon="delete"
-color="negative"
 size="sm"
 @click="handleRemove(slotPropsG.row)">
                       <q-tooltip>Rimuovi</q-tooltip>
@@ -165,7 +162,6 @@ flat
 round
 dense
 icon="delete"
-color="negative"
 @click="handleRemove(slotPropsG.row)">
                 <q-tooltip>Rimuovi</q-tooltip>
               </q-btn>

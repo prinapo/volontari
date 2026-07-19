@@ -105,7 +105,6 @@ aria-label="Chiudi">
               round
               dense
               icon="delete"
-              color="negative"
               size="sm"
               data-testid="btn-delete-email"
               aria-label="Elimina email"
