@@ -162,7 +162,6 @@ test.describe('Giustificativi', () => {
 
       await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
       await dialog.locator('[data-testid="giustform-importo"]').fill(testImporto)
-      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
       const [postResp] = await Promise.all([
         page.waitForResponse(
           resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'
