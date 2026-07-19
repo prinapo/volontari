@@ -295,6 +295,7 @@ size="sm"
           </div>
         </template>
       </q-table>
+    </div>
     </template>
 
     <!-- Sotto-vista: Falliti -->
