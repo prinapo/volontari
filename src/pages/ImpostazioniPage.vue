@@ -45,7 +45,7 @@
         <q-input v-model="passwordForm.newPassword" label="Nuova password" type="password" dense outlined class="q-mb-sm" :rules="[val => !!val || 'Obbligatorio']" lazy-rules />
         <q-input v-model="passwordForm.confirmPassword" label="Conferma password" type="password" dense outlined :rules="[val => val === passwordForm.newPassword || 'Le password non coincidono']" lazy-rules />
         <div class="row q-mt-md">
-          <q-btn color="primary" label="Cambia password" :loading="savingPassword" @click="savePassword" />
+          <q-btn color="primary" label="Cambia password" :loading="savingPassword" :disable="!passwordForm.newPassword || !passwordForm.confirmPassword || passwordForm.newPassword !== passwordForm.confirmPassword" @click="savePassword" />
         </div>
       </q-card-section>
     </q-card>

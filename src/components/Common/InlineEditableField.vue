@@ -1,7 +1,8 @@
 <template>
-  <div class="inline-editable-field" data-testid="inline-editable-field">
   <q-field
     v-if="!editing"
+    class="inline-editable-field"
+    data-testid="inline-editable-field"
     :label="label"
     stack-label
     dense
@@ -38,7 +39,7 @@
     </template>
   </q-field>
 
-  <div v-else>
+  <div v-else class="inline-editable-field" data-testid="inline-editable-field">
     <div v-if="type === 'date'" class="row items-center q-gutter-xs">
       <q-input
         ref="inputRef"
@@ -131,7 +132,6 @@
         </template>
       </q-input>
     </div>
-  </div>
   </div>
 </template>
 

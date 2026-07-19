@@ -276,8 +276,8 @@ test.describe('Giustificativi', () => {
           resp => resp.url().includes('/items/Giustificativi/') && resp.request().method() === 'PATCH'
         ),
         (async () => {
-          await descField.click()
-          const input = descField.locator('input')
+          await descField.locator('[aria-label="Modifica"]').click()
+          const input = card.locator('[data-testid="inline-editable-field"]').first().locator('input')
           await expect(input).toBeVisible({ timeout: 3000 })
           await input.fill(newDesc)
           await descField.locator('[data-testid="inline-save"]').click()
@@ -299,11 +299,11 @@ test.describe('Giustificativi', () => {
       const descField = card.locator('[data-testid="inline-editable-field"]').first()
       const originalText = (await descField.locator('.text-body1').innerText()).trim()
 
-      await descField.click()
-      const input = descField.locator('input')
-      await expect(input).toBeVisible({ timeout: 3000 })
-      await input.fill(`TEST_CANCEL_${Date.now()}`)
-      await descField.locator('[data-testid="inline-cancel"]').click()
+      await descField.locator('[aria-label="Modifica"]').click()
+      const editInput = card.locator('[data-testid="inline-editable-field"]').first().locator('input')
+      await expect(editInput).toBeVisible({ timeout: 3000 })
+      await editInput.fill(`TEST_CANCEL_${Date.now()}`)
+      await card.locator('[data-testid="inline-editable-field"]').first().locator('[data-testid="inline-cancel"]').click()
       await page.waitForLoadState("networkidle").catch(() => {})
 
       const displayText = (await descField.locator('.text-body1').innerText()).trim()
@@ -314,10 +314,10 @@ test.describe('Giustificativi', () => {
       const card = await findDraftCard(page)
 
       const descField = card.locator('[data-testid="inline-editable-field"]').first()
-      await descField.click()
-      await expect(descField.locator('input')).toBeVisible({ timeout: 3000 })
-      await descField.locator('[data-testid="inline-save"]').click()
-      await expect(descField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
+      await descField.locator('[aria-label="Modifica"]').click()
+      await expect(card.locator('[data-testid="inline-editable-field"]').first().locator('input')).toBeVisible({ timeout: 3000 })
+      await card.locator('[data-testid="inline-editable-field"]').first().locator('[data-testid="inline-save"]').click()
+      await expect(card.locator('[data-testid="inline-editable-field"]').first().locator('.text-body1')).toBeVisible({ timeout: 3000 })
     })
 
     test('IE-04: Importo modifica con ✓ salva e persiste dopo reload @crud', async ({ page }) => {
@@ -333,11 +333,11 @@ test.describe('Giustificativi', () => {
           resp => resp.url().includes('/items/Giustificativi/') && resp.request().method() === 'PATCH'
         ),
         (async () => {
-          await importoField.click()
-          const input = importoField.locator('input')
-          await expect(input).toBeVisible({ timeout: 3000 })
-          await input.fill(newImporto)
-          await importoField.locator('[data-testid="inline-save"]').click()
+          await importoField.locator('[aria-label="Modifica"]').click()
+          const impInput = card.locator('[data-testid="inline-editable-field"]').nth(1).locator('input')
+          await expect(impInput).toBeVisible({ timeout: 3000 })
+          await impInput.fill(newImporto)
+          await card.locator('[data-testid="inline-editable-field"]').nth(1).locator('[data-testid="inline-save"]').click()
         })()
       ])
 
@@ -359,11 +359,11 @@ test.describe('Giustificativi', () => {
       const importoField = card.locator('[data-testid="inline-editable-field"]').nth(1)
       const originalText = (await importoField.locator('.text-body1').innerText()).trim()
 
-      await importoField.click()
-      const input = importoField.locator('input')
-      await expect(input).toBeVisible({ timeout: 3000 })
-      await input.fill('999.99')
-      await importoField.locator('[data-testid="inline-cancel"]').click()
+      await importoField.locator('[aria-label="Modifica"]').click()
+      const impInput = card.locator('[data-testid="inline-editable-field"]').nth(1).locator('input')
+      await expect(impInput).toBeVisible({ timeout: 3000 })
+      await impInput.fill('999.99')
+      await card.locator('[data-testid="inline-editable-field"]').nth(1).locator('[data-testid="inline-cancel"]').click()
       await page.waitForLoadState("networkidle").catch(() => {})
 
       const displayText = (await importoField.locator('.text-body1').innerText()).trim()
@@ -383,14 +383,14 @@ test.describe('Giustificativi', () => {
           resp => resp.url().includes('/items/Giustificativi/') && resp.request().method() === 'PATCH'
         ),
         (async () => {
-          await dataField.click()
-          const input = dataField.locator('input')
-          await expect(input).toBeVisible({ timeout: 3000 })
-          await input.evaluate(el => {
+          await dataField.locator('[aria-label="Modifica"]').click()
+          const dtInput = card.locator('[data-testid="inline-editable-field"]').nth(2).locator('input')
+          await expect(dtInput).toBeVisible({ timeout: 3000 })
+          await dtInput.evaluate(el => {
             el.value = '2025-06-15'
             el.dispatchEvent(new Event('input', { bubbles: true }))
           })
-          await dataField.locator('[data-testid="inline-save"]').click()
+          await card.locator('[data-testid="inline-editable-field"]').nth(2).locator('[data-testid="inline-save"]').click()
         })()
       ])
 
@@ -414,14 +414,14 @@ test.describe('Giustificativi', () => {
       const dataField = card.locator('[data-testid="inline-editable-field"]').nth(2)
       const originalText = (await dataField.locator('.text-body1').innerText()).trim()
 
-      await dataField.click()
-      const input = dataField.locator('input')
-      await expect(input).toBeVisible({ timeout: 3000 })
-      await input.evaluate(el => {
+      await dataField.locator('[aria-label="Modifica"]').click()
+      const dtInput = card.locator('[data-testid="inline-editable-field"]').nth(2).locator('input')
+      await expect(dtInput).toBeVisible({ timeout: 3000 })
+      await dtInput.evaluate(el => {
         el.value = '2024-01-01'
         el.dispatchEvent(new Event('input', { bubbles: true }))
       })
-      await dataField.locator('[data-testid="inline-cancel"]').click()
+      await card.locator('[data-testid="inline-editable-field"]').nth(2).locator('[data-testid="inline-cancel"]').click()
       await page.waitForLoadState("networkidle").catch(() => {})
 
       const displayText = (await dataField.locator('.text-body1').innerText()).trim()
