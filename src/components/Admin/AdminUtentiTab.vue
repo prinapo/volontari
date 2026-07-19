@@ -5,7 +5,7 @@
     <div class="text-body2">Verifica i permessi API di Directus.</div>
   </div>
 
-  <div class="text-h5 text-weight-medium">User Admin</div>
+  <div class="text-h5 text-weight-medium">Admin</div>
   <div class="text-body2 text-grey-7 q-mb-md">Gestisci utenti, ruoli e invii comunicazioni.</div>
 
   <div class="row items-center q-gutter-sm q-mb-md">

@@ -2,6 +2,7 @@
   <q-field
     v-if="!editing"
     class="inline-editable-field"
+    data-testid="inline-editable-field"
     :label="label"
     stack-label
     dense
