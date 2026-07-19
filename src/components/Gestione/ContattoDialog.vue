@@ -101,6 +101,7 @@ aria-label="Chiudi">
             </q-btn>
             <q-badge v-else color="primary" label="Primaria" size="xs" />
             <q-btn
+              v-if="emails.length > 1"
               flat
               round
               dense
