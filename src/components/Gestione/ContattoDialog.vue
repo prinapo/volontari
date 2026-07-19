@@ -109,10 +109,10 @@ aria-label="Chiudi">
               size="sm"
               data-testid="btn-delete-email"
               aria-label="Elimina email"
-              :disable="hasAccount"
+              :disable="hasAccount || em.Primary"
               @click="removeEmail(idx)"
             >
-              <q-tooltip>Elimina email</q-tooltip>
+              <q-tooltip>{{ em.Primary ? 'Imposta un\'altra email come primaria prima di eliminare' : 'Elimina email' }}</q-tooltip>
             </q-btn>
           </div>
           <q-btn
