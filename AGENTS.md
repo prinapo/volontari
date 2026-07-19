@@ -93,6 +93,10 @@ Regola: **se il ruolo non ha permessi di lettura su una collection, l'app non de
 - Path: `tests/unit/`
 - Utils coverage: 100%, Stores: 82%, Services: 78%
 
+## Regola fondamentale
+
+**Non esiste "pre-esistente".** Questo software è stato sviluppato dall'utente con le mie indicazioni. Ogni bug, test fallito, o comportamento inaspettato è stato introdotto da noi in qualche sessione. Va investigato e risolto, non archiviato come "pre-esistente".
+
 ## E2E testing (Playwright)
 
 - Run: `npm run test:e2e` (needs Directus accessible)

@@ -76,6 +76,8 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
   const id_famiglia = data?.data?.id_famiglia
 
   await dialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+  // Aspetta che la tabella si aggiorni col nuovo record
+  await page.waitForLoadState('networkidle')
   if (!id_famiglia) {
     console.error(`[createFamigliaViaUI] WARNING: id_famiglia non trovato per "${nomeFamiglia}"`)
   }
