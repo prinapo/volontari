@@ -119,7 +119,7 @@
                 >
                   Nessun contatto assegnato a questa famiglia.
                 </div>
-                <q-list v-else dense>
+                <q-list v-if="expandedCache[props.row.id_famiglia]?.length" dense>
                   <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id">
                     <q-item v-if="c.Ruolo_nella_Famiglia === 'Genitore'" dense class="q-px-none">
                       <q-item-section>
@@ -200,19 +200,16 @@
                       </q-item-section>
                     </q-item>
                   </template>
-                  <q-item dense class="q-px-none">
-                    <q-item-section>
-                      <q-btn
-                        flat
-                        dense
-                        icon="person_add"
-                        color="primary"
-                        label="Aggiungi contatto"
-                        @click="openContatti(props.row)"
-                      />
-                    </q-item-section>
-                  </q-item>
                 </q-list>
+                <q-btn
+                  flat
+                  dense
+                  icon="person_add"
+                  color="primary"
+                  label="Aggiungi contatto"
+                  @click="openContatti(props.row)"
+                  class="q-mt-sm"
+                />
               </q-card-section>
             </q-card>
           </q-expansion-item>
@@ -295,7 +292,7 @@
                 >
                   Nessun contatto assegnato a questa famiglia.
                 </div>
-                <q-list v-else dense>
+                <q-list v-if="expandedCache[props.row.id_famiglia]?.length" dense>
                   <template v-for="c in expandedCache[props.row.id_famiglia]" :key="c.id">
                     <q-item v-if="c.Ruolo_nella_Famiglia === 'Genitore'" dense>
                       <q-item-section>
@@ -402,19 +399,16 @@
                       </q-item-section>
                     </q-item>
                   </template>
-                  <q-item dense>
-                    <q-item-section>
-                      <q-btn
-                        flat
-                        dense
-                        icon="person_add"
-                        color="primary"
-                        label="Aggiungi contatto"
-                        @click="openContatti(props.row)"
-                      />
-                    </q-item-section>
-                  </q-item>
                 </q-list>
+                <q-btn
+                  flat
+                  dense
+                  icon="person_add"
+                  color="primary"
+                  label="Aggiungi contatto"
+                  @click="openContatti(props.row)"
+                  class="q-mt-sm"
+                />
               </q-card-section>
             </q-card>
           </q-td>
