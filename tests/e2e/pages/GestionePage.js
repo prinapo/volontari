@@ -163,18 +163,18 @@ export class GestionePage {
    * Salta le righe expand (colspan) che hanno solo 1 cella.
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Desktop: trova la riga del nome famiglia, espandi, clicca Aggiungi contatto
-    // Cerca la cella col nome famiglia (colonna Nome Famiglia, la seconda td)
-    const nomeCell = this.page.locator('.q-table td').filter({ hasText: nomeFamiglia }).first()
-    if (await nomeCell.isVisible({ timeout: 5000 }).catch(() => false)) {
-      const dataRow = nomeCell.locator('..')
-      const expandBtn = dataRow.locator('td').first().locator('.q-btn')
-      if ((await expandBtn.count()) > 0) {
+    // Desktop: trova la riga col nome famiglia, clicca expand, poi Aggiungi contatto
+    // Cerca la riga nella tabella che contiene il nome famiglia
+    const famigliaRow = this.page.locator('.q-table tbody tr').filter({ hasText: nomeFamiglia }).first()
+    if (await famigliaRow.isVisible({ timeout: 8000 }).catch(() => false)) {
+      // Clicca expand nella prima cella
+      const expandBtn = famigliaRow.locator('button').first()
+      if (await expandBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await expandBtn.click()
         await this.page.waitForLoadState('networkidle')
       }
-      // Cerca "Aggiungi contatto" nella riga espansa (la prossima nel DOM)
-      const addBtn = this.page.locator('.q-table tbody tr button:has-text("Aggiungi contatto")').first()
+      // Trova il bottone Aggiungi contatto nella riga espansa successiva
+      const addBtn = this.page.locator('button:has-text("Aggiungi contatto")').first()
       if (await addBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await addBtn.click()
         await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
