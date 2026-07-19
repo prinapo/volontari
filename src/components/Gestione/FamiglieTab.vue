@@ -8,7 +8,7 @@
         placeholder="Cerca per nome famiglia..."
         clearable
         debounce="300"
-        class="col"
+        class="col-12 col-sm"
         @update:model-value="onSearchChange"
       >
         <template #prepend>
