@@ -163,17 +163,16 @@ export class GestionePage {
    * Salta le righe expand (colspan) che hanno solo 1 cella.
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Desktop: trova la riga col nome famiglia, clicca expand, poi Aggiungi contatto
-    // Cerca la riga nella tabella che contiene il nome famiglia
+    // Desktop: trova la riga col nome famiglia, espandi, clicca Aggiungi contatto
     const famigliaRow = this.page.locator('.q-table tbody tr').filter({ hasText: nomeFamiglia }).first()
     if (await famigliaRow.isVisible({ timeout: 8000 }).catch(() => false)) {
-      // Clicca expand nella prima cella
-      const expandBtn = famigliaRow.locator('button').first()
-      if (await expandBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      // Prova ad espandere solo se NON già espansa
+      const expandBtn = famigliaRow.locator('button[aria-label="Mostra contatti"]')
+      if (await expandBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await expandBtn.click()
         await this.page.waitForLoadState('networkidle')
       }
-      // Trova il bottone Aggiungi contatto nella riga espansa successiva
+      // Cerca Aggiungi contatto (nella riga espansa subito dopo)
       const addBtn = this.page.locator('button:has-text("Aggiungi contatto")').first()
       if (await addBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await addBtn.click()
