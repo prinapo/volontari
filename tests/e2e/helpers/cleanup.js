@@ -105,6 +105,18 @@ async function deleteProjectAttachments(junctionCollection, progettoId) {
 export async function deleteProgetti(...ids) {
   for (const id of ids) {
     if (!id) continue
+    // Sicurezza: verifica che il progetto sia stato creato dal test (cognome contiene TEST)
+    try {
+      const check = await apiGet('Progetti/' + id, { fields: 'Cognome_Beneficiario' })
+      const cognome = check?.data?.Cognome_Beneficiario || ''
+      if (!cognome.includes('TEST')) {
+        console.warn('[CLEANUP] SKIP delete progetto', id, '— cognome non contiene TEST:', cognome)
+        continue
+      }
+    } catch {
+      console.warn('[CLEANUP] Failed to check progetto', id, '— skipping delete')
+      continue
+    }
     await deleteProjectAttachments('Progetti_files', id)
     await deleteProjectAttachments('Progetti_files_1', id)
     await deleteProjectAttachments('Progetti_files_2', id)
@@ -130,6 +142,18 @@ export async function invalidateGiustificativi(...ids) {
 export async function deleteFamiglie(...ids) {
   for (const id of ids) {
     if (!id) continue
+    // Sicurezza: verifica che la famiglia sia stata creata dal test (nome contiene TEST)
+    try {
+      const check = await apiGet('Famiglie/' + id, { fields: 'Nome_Famiglia' })
+      const nome = check?.data?.Nome_Famiglia || ''
+      if (!nome.includes('TEST')) {
+        console.warn('[CLEANUP] SKIP delete famiglia', id, '— nome non contiene TEST:', nome)
+        continue
+      }
+    } catch {
+      console.warn('[CLEANUP] Failed to check famiglia', id, '— skipping delete')
+      continue
+    }
     try {
       const fcRecords = await apiGet('Famiglie_Contatti', {
         filter: JSON.stringify({ Famiglia: { _eq: id } }),
@@ -173,6 +197,18 @@ export async function deleteFamiglie(...ids) {
 export async function deleteContatti(...ids) {
   for (const id of ids) {
     if (!id) continue
+    // Sicurezza: verifica che il contatto sia stato creato dal test (cognome contiene TEST)
+    try {
+      const check = await apiGet('contatti/' + id, { fields: 'Cognome' })
+      const cognome = check?.data?.Cognome || ''
+      if (!cognome.includes('TEST')) {
+        console.warn('[CLEANUP] SKIP delete contatto', id, '— cognome non contiene TEST:', cognome)
+        continue
+      }
+    } catch {
+      console.warn('[CLEANUP] Failed to check contatto', id, '— skipping delete')
+      continue
+    }
     await deleteDirectusUser(id)
     await deleteEmailByContatto(id)
     try {
