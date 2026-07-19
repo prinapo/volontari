@@ -9,7 +9,7 @@ import {
   loginGestore,
   pulisciIds
 } from '../helpers/setup-atomico.js'
-import { apriFamiglieESelezionaFamiglia } from '../helpers/pagina-famiglie.js'
+import { apriFamiglieESelezionaFamiglia, selezionaProgetto } from '../helpers/pagina-famiglie.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -32,6 +32,11 @@ async function createBozzaViaUI(page, descPrefix, ids = {}) {
   await page.reload()
   if (ids.nomeFam) {
     await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
+  }
+  // Seleziona il progetto dopo il reload per far caricare i giustificativi
+  if (ids.progetto) {
+    await selezionaProgetto(page, 0).catch(() => {})
+    await page.waitForLoadState("networkidle").catch(() => {})
   }
   // Attendi che la tabella dei giustificativi si carichi
   await page.waitForLoadState("networkidle").catch(() => {})
@@ -237,7 +242,22 @@ test.describe('Giustificativi', () => {
     })
 
     async function findDraftCard(page) {
-      const draftCards = page.locator('.q-card').filter({ has: page.locator('.q-badge:has-text("Bozza")') })
+      // Debug: conta elementi sulla pagina
+      const cardCount = await page.locator('[data-testid^="giustificativo-card-"]').count()
+      const badges = await page.locator('.q-badge').allTextContents()
+      console.log(`[findDraftCard] card count: ${cardCount}, badges: ${badges}`)
+      if (cardCount === 0) {
+        // Fallback: cerca qualsiasi card con badge Bozza
+        const allCards = page.locator('.q-card')
+        const allCardCount = await allCards.count()
+        console.log(`[findDraftCard] total .q-card: ${allCardCount}`)
+        const bozzaCards = allCards.filter({ has: page.locator('.q-badge:has-text("Bozza")') })
+        const bozzaCount = await bozzaCards.count()
+        console.log(`[findDraftCard] .q-card with Bozza badge: ${bozzaCount}`)
+      }
+      const draftCards = page.locator('[data-testid^="giustificativo-card-"]').filter({
+        has: page.locator('.q-badge:has-text("Bozza")')
+      })
       await expect(draftCards.first()).toBeVisible({ timeout: 10000 })
       return draftCards.first()
     }

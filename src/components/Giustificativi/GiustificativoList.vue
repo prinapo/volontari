@@ -72,7 +72,9 @@ watch(
 )
 
 async function handleCreate(formData) {
+  console.log('[DEBUG GiustificativoList] handleCreate formData:', JSON.stringify({ ...formData, File: formData.File?.name || formData.File }))
   const ok = await giustificativiStore.createGiustificativo(formData, formData.File)
+  console.log('[DEBUG GiustificativoList] handleCreate result:', ok)
   if (ok) {
     notifySuccess($q, 'Giustificativo creato')
     showForm.value = false

@@ -141,9 +141,12 @@ const form = reactive({
   File: null
 })
 async function handleSave() {
+  console.log('[DEBUG GiustificativoForm] handleSave called, form.File:', form.File?.name || form.File, 'form.Importo:', form.Importo)
   filePickerRef.value?.touch()
   const isValid = await formRef.value?.validate()
+  console.log('[DEBUG GiustificativoForm] isValid:', isValid)
   if (!isValid) return
+  console.log('[DEBUG GiustificativoForm] emitting save event')
   emit('save', {
     ...form,
     Stato: 'draft',

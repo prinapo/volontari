@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-editable-field">
+  <div class="inline-editable-field" data-testid="inline-editable-field">
   <q-field
     v-if="!editing"
     :label="label"

@@ -4,11 +4,11 @@
       <q-spinner size="40px" color="primary" />
       <div class="q-mt-sm text-body2 text-grey-7">Caricamento progetti...</div>
     </q-inner-loading>
-    <div class="row no-wrap items-center q-mb-md">
+    <div class="row items-center q-gutter-sm q-mb-md">
       <q-tabs
         v-model="subTab"
         dense
-        class="text-grey col"
+        class="text-grey"
         active-color="primary"
         indicator-color="primary"
         narrow-indicator

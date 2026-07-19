@@ -39,12 +39,17 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.saving = true
       this.error = null
       try {
+        console.log('[DEBUG createGiustificativo] data:', JSON.stringify({ ...data, File: file ? file.name : null }), 'famiglia:', data.Famiglia, 'progetto:', data.Progetto)
         const rendicontazioneId = await this.ensureRendicontazione(data)
+        console.log('[DEBUG createGiustificativo] rendicontazioneId:', rendicontazioneId)
         let fileId = null
         if (file) {
+          console.log('[DEBUG createGiustificativo] uploading file...')
           fileId = await uploadAndPrefixFile(file, data.Famiglia, FOLDERS.GIUSTIFICATIVI)
+          console.log('[DEBUG createGiustificativo] fileId:', fileId)
         }
 
+        console.log('[DEBUG createGiustificativo] creating giustificativo...')
         const createRes = await giustificativiService.create({
           Progetto: data.Progetto,
           Descrizione: data.Descrizione,
@@ -57,8 +62,10 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         })
 
         const created = createRes.data.data
+        console.log('[DEBUG createGiustificativo] created:', created?.id)
         return !created || created.Descrizione === data.Descrizione
       } catch (error) {
+        console.log('[DEBUG createGiustificativo] ERROR:', error.message, error.response?.data?.errors?.[0]?.message)
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione'
         return false
       } finally {
