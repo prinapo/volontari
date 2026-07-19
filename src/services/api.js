@@ -102,6 +102,8 @@ function logErrorResponse(error) {
   if (!error?.response || !error?.config) return
   const status = error.response.status
   if (status < 400 || status >= 500) return
+  // Evita loop infinito: non loggare errori della ErrorLog
+  if (error.config.url?.includes('/ErrorLog')) return
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
   if (!token) return
 

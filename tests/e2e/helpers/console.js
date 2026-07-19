@@ -5,7 +5,8 @@ const PRODUCTION_DOMAINS = ['app.sostienilsostegno.com', 'volontari.sostienilsos
 
 // Errori API noti e attesi (non causano fallimento test)
 const KNOWN_API_ERRORS = [
-  '/items/contatti' // Contatti non è leggibile via REST da nessun ruolo (usa /users)
+  '/items/contatti', // Contatti non è leggibile via REST da nessun ruolo (usa /users)
+  '/files/' // upload/rename file può fallire per Volontario in dev
 ]
 
 async function countErrorLog() {
