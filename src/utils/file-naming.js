@@ -10,8 +10,9 @@ import { filesService } from 'src/services/files.service'
  */
 export async function uploadAndPrefixFile(file, famigliaId, folder) {
   const uploadRes = await filesService.upload(file, folder)
-  const fileId = uploadRes.data.data.id
-  if (famigliaId) {
+  const files = uploadRes.data.data
+  const fileId = Array.isArray(files) ? files[0]?.id : files?.id
+  if (famigliaId && fileId) {
     const famRes = await famiglieService.getFamiglieBatch([famigliaId])
     const nomeFamiglia = famRes.data.data?.[0]?.Nome_Famiglia || ''
     if (nomeFamiglia) {

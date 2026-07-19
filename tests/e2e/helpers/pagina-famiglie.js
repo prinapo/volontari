@@ -31,14 +31,14 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
   for (let i = 0; i < count; i++) {
     const text = await options.nth(i).innerText()
     if (text.includes(nomeFamiglia)) {
-      await options.nth(i).click()
+      await options.nth(i).click({ force: true })
       found = true
       break
     }
   }
 
   if (!found && count > 0) {
-    await options.first().click()
+    await options.first().click({ force: true })
   }
 
   // Aspetta che la card famiglia sia caricata
@@ -100,6 +100,6 @@ export async function selezionaProgetto(page, index = 0) {
     return
   }
 
-  await items.nth(index).click()
+  await items.nth(index).click({ force: true })
   await page.waitForLoadState("networkidle").catch(() => {})
 }

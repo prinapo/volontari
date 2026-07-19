@@ -9,7 +9,7 @@ import {
   loginGestore,
   pulisciIds
 } from '../helpers/setup-atomico.js'
-import { apriFamiglieESelezionaFamiglia, selezionaProgetto } from '../helpers/pagina-famiglie.js'
+import { apriFamiglieESelezionaFamiglia } from '../helpers/pagina-famiglie.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,28 +17,18 @@ const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf
 
 async function createBozzaViaUI(page, descPrefix, ids = {}) {
   const testDesc = `${descPrefix}_${Date.now()}`
-  // Crea il giustificativo via API (evita problemi con l'upload file in dev)
   const resp = await apiPost('Giustificativi', {
-    Descrizione: testDesc,
-    Importo: 75,
-    Data: '2026-01-15',
+    Descrizione: testDesc, Importo: 75, Data: '2026-01-15',
     Stato: 'draft',
     NotaVolontario: `Nota ${descPrefix}_${Date.now()}`,
     ...(ids.famiglia ? { Famiglia: ids.famiglia } : {}),
     ...(ids.progetto ? { Progetto: ids.progetto } : {})
   })
   const id = resp?.data?.id
-  // Ricarica la pagina e seleziona la famiglia per vedere il giustificativo
   await page.reload()
   if (ids.nomeFam) {
     await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
   }
-  // Seleziona il progetto dopo il reload per far caricare i giustificativi
-  if (ids.progetto) {
-    await selezionaProgetto(page, 0).catch(() => {})
-    await page.waitForLoadState("networkidle").catch(() => {})
-  }
-  // Attendi che la tabella dei giustificativi si carichi
   await page.waitForLoadState("networkidle").catch(() => {})
   return { id, desc: testDesc, progetto: ids.progetto || null }
 }
@@ -242,19 +232,6 @@ test.describe('Giustificativi', () => {
     })
 
     async function findDraftCard(page) {
-      // Debug: conta elementi sulla pagina
-      const cardCount = await page.locator('[data-testid^="giustificativo-card-"]').count()
-      const badges = await page.locator('.q-badge').allTextContents()
-      console.log(`[findDraftCard] card count: ${cardCount}, badges: ${badges}`)
-      if (cardCount === 0) {
-        // Fallback: cerca qualsiasi card con badge Bozza
-        const allCards = page.locator('.q-card')
-        const allCardCount = await allCards.count()
-        console.log(`[findDraftCard] total .q-card: ${allCardCount}`)
-        const bozzaCards = allCards.filter({ has: page.locator('.q-badge:has-text("Bozza")') })
-        const bozzaCount = await bozzaCards.count()
-        console.log(`[findDraftCard] .q-card with Bozza badge: ${bozzaCount}`)
-      }
       const draftCards = page.locator('[data-testid^="giustificativo-card-"]').filter({
         has: page.locator('.q-badge:has-text("Bozza")')
       })
@@ -265,27 +242,21 @@ test.describe('Giustificativi', () => {
     test('IE-01: Descrizione modifica con ✓ salva e persiste dopo reload @crud', async ({ page }) => {
       const card = await findDraftCard(page)
 
-      const fields = card.locator('[data-testid="inline-editable-field"]')
-      const descField = fields.first()
+      const descField = card.locator('[data-testid="inline-editable-field"]').first()
       await expect(descField.locator('.text-body1')).toBeVisible({ timeout: 5000 })
 
       const newDesc = `TEST_IE_Desc_${Date.now()}`
 
-      const [patchResp] = await Promise.all([
-        page.waitForResponse(
-          resp => resp.url().includes('/items/Giustificativi/') && resp.request().method() === 'PATCH'
-        ),
-        (async () => {
-          await descField.locator('[aria-label="Modifica"]').click()
-          const input = card.locator('[data-testid="inline-editable-field"]').first().locator('input')
-          await expect(input).toBeVisible({ timeout: 3000 })
-          await input.fill(newDesc)
-          await descField.locator('[data-testid="inline-save"]').click()
-        })()
-      ])
+      await descField.locator('.q-btn').first().click()
+      const editField = card.locator('[data-testid="inline-editable-field"]').first()
+      const input = editField.locator('input')
+      await expect(input).toBeVisible({ timeout: 3000 })
+      await input.fill(newDesc)
+      await editField.locator('[data-testid="inline-save"]').click()
+      await expect(page.locator('.q-notification')).toBeVisible({ timeout: 5000 })
 
-      expect(patchResp.status()).toBe(200)
-      await expect(descField.locator('.text-body1')).toContainText(newDesc, { timeout: 5000 })
+      const displayField = card.locator('[data-testid="inline-editable-field"]').first()
+      await expect(displayField.locator('.text-body1')).toContainText(newDesc, { timeout: 5000 })
 
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)

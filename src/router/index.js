@@ -91,34 +91,29 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(to => {
   const authStore = useAuthStore()
 
-  // Attendi l'inizializzazione dell'auth store (cookie mode)
   if (!authStore.initialized && to.meta.requiresAuth && AUTH_MODE === 'cookie') {
-    // L'inizializzazione è async, riprova al prossimo tick
-    setTimeout(() => next(), 0)
     return
   }
 
   if (authStore.isAuthenticated && to.meta.public) {
-    if (authStore.canManager) return next('/gestione')
-    return next('/famiglie')
+    return authStore.canManager ? '/gestione' : '/famiglie'
   }
 
   if (authStore.isAuthenticated && to.path === '/' && authStore.canManager) {
-    return next('/gestione')
+    return '/gestione'
   }
 
   if (!authStore.isAuthenticated && to.meta.requiresAuth) {
-    return next('/login')
+    return '/login'
   }
 
   if (to.meta.requiredRole) {
-    if (to.meta.requiredRole === ROUTE_ROLES.MANAGER && !authStore.canManager) return next('/famiglie')
-    if (to.meta.requiredRole === ROUTE_ROLES.ADMIN && !authStore.canAdmin) return next('/famiglie')
+    if (to.meta.requiredRole === ROUTE_ROLES.MANAGER && !authStore.canManager) return '/famiglie'
+    if (to.meta.requiredRole === ROUTE_ROLES.ADMIN && !authStore.canAdmin) return '/famiglie'
   }
-  next()
 })
 
 export default router
