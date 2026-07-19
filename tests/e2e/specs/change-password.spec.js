@@ -39,7 +39,7 @@ test.describe('Change Password', () => {
   test('CPW-01: Cambia password con successo @smoke', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await page.goto('/impostazioni')
-    await expect(page.locator('text=Impostazioni')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.text-h5:has-text("Impostazioni")')).toBeVisible({ timeout: 10000 })
 
     const inputs = page.locator('input[type="password"]')
     await inputs.nth(0).fill(TEMP_PWD)
@@ -51,7 +51,7 @@ test.describe('Change Password', () => {
   test('CPW-02: Password mismatch blocca salvataggio @regression', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await page.goto('/impostazioni')
-    await expect(page.locator('text=Impostazioni')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.text-h5:has-text("Impostazioni")')).toBeVisible({ timeout: 10000 })
 
     const inputs = page.locator('input[type="password"]')
     await inputs.nth(0).fill('Password1!')
@@ -63,7 +63,7 @@ test.describe('Change Password', () => {
   test('CPW-03: Annulla chiude dialog senza cambiare @smoke', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await page.goto('/impostazioni')
-    await expect(page.locator('text=Impostazioni')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.text-h5:has-text("Impostazioni")')).toBeVisible({ timeout: 10000 })
     // Navigate away — no dialog to close on settings page, just leave
     await page.goto('/famiglie')
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
