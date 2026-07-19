@@ -163,66 +163,52 @@ export class GestionePage {
    * Salta le righe expand (colspan) che hanno solo 1 cella.
    */
   async clickContactsOnFamiglia(nomeFamiglia) {
-    // Desktop: cerca la riga con almeno 2 td (riga dati, NON expand row)
-    const allRows = this.page.locator('.q-table tbody tr')
-    const allCount = await allRows.count()
-    for (let i = 0; i < allCount; i++) {
-      const tdCount = await allRows.nth(i).locator('td').count()
-      if (tdCount < 2) continue // salta expand row (ha 1 td con colspan)
-      const cellText = await allRows.nth(i).locator('td').nth(1).innerText()
-      if (cellText.trim().includes(nomeFamiglia)) {
-        // Espandi la riga cliccando il toggle nella prima cella
-        const expandBtn = allRows.nth(i).locator('td').first().locator('.q-btn')
+    // Desktop: trova la riga col nome famiglia e clicca expand
+    const dataRow = this.page.locator('.q-table tbody tr').filter({ hasText: nomeFamiglia }).first()
+    if (await dataRow.isVisible({ timeout: 5000 }).catch(() => false)) {
+      const tdCount = await dataRow.locator('td').count()
+      if (tdCount >= 2) {
+        // Espandi la riga
+        const expandBtn = dataRow.locator('td').first().locator('.q-btn')
         if ((await expandBtn.count()) > 0) {
           await expandBtn.click()
           await this.page.waitForLoadState('networkidle')
         }
         // Cerca "Aggiungi contatto" nella riga espansa (subito dopo)
-        const addBtn = allRows.nth(i + 1).locator('button:has-text("Aggiungi contatto")')
-        if ((await addBtn.count()) > 0) {
-          await addBtn.click()
-          await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
-          return true
+        const allRows = this.page.locator('.q-table tbody tr')
+        const idx = await allRows.count()
+        for (let j = 0; j < idx; j++) {
+          const text = await allRows.nth(j).innerText().catch(() => '')
+          if (text.includes(nomeFamiglia) && text.includes('Aggiungi contatto')) {
+            const addBtn = allRows.nth(j).locator('button:has-text("Aggiungi contatto")')
+            if ((await addBtn.count()) > 0) {
+              await addBtn.click()
+              await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+              return true
+            }
+          }
         }
       }
     }
 
     // Fallback mobile: cerca expansion item
-    const expItems = this.page.locator('.q-expansion-item')
-    const expCount = await expItems.count()
-    for (let i = 0; i < expCount; i++) {
-      const label = await expItems
-        .nth(i)
-        .locator('.q-item__label')
-        .first()
-        .innerText()
-        .catch(() => '')
-      if (label.includes(nomeFamiglia)) {
-        if ((await expItems.nth(i).locator('.q-expansion-item--expanded').count()) === 0) {
-          await expItems.nth(i).click()
-          await this.page.waitForLoadState('networkidle')
-        }
-        const addBtn = expItems.nth(i).locator('button:has-text("Aggiungi contatto")')
-        if ((await addBtn.count()) > 0) {
-          await addBtn.click()
-          await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
-          return true
-        }
+    const expItem = this.page.locator('.q-expansion-item').filter({ hasText: nomeFamiglia }).first()
+    if (await expItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if ((await expItem.locator('.q-expansion-item--expanded').count()) === 0) {
+        await expItem.click()
+        await this.page.waitForLoadState('networkidle')
+      }
+      const addBtn = expItem.locator('button:has-text("Aggiungi contatto")')
+      if ((await addBtn.count()) > 0) {
+        await addBtn.click()
+        await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+        return true
       }
     }
     return false
   }
 
-  async _getRowIndex(rows, text) {
-    const count = await rows.count()
-    for (let i = 0; i < count; i++) {
-      try {
-        const t = await rows.nth(i).innerText()
-        if (t.includes(text)) return i
-      } catch { /* skip */ }
-    }
-    return -1
-  }
+
 
   /**
    * Assegna un contatto come Genitore tramite ContattiDialog.
