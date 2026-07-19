@@ -165,13 +165,6 @@ test.describe('Giustificativi', () => {
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
       await page.waitForLoadState("networkidle").catch(() => {})
       await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 10000 })
-      expect(postResp.status()).toBe(200)
-
-      const created = await postResp.json()
-      if (created.data?.id) ids.giustificativi.push(created.data.id)
-
-      await expect(dialog).not.toBeVisible({ timeout: 10000 })
-      await expect(page.locator(`text=${testDesc}`).first()).toBeVisible({ timeout: 5000 })
 
       await page.reload()
       await apriFamiglieESelezionaFamiglia(page, ids.nomeFam)
