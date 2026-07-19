@@ -12,6 +12,7 @@ export function assetUrl(fileId, download = false) {
   const base = `${API_URL}/assets/${id}`
   const params = []
   if (token) params.push(`access_token=${token}`)
+  params.push(`_t=${Date.now()}`)
   if (download) params.push('download=1')
-  return params.length > 0 ? `${base}?${params.join('&')}` : base
+  return `${base}?${params.join('&')}`
 }
