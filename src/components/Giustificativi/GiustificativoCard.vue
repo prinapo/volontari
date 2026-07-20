@@ -61,6 +61,7 @@ label="Elimina"
         <div class="text-caption text-grey q-mb-xs">Allegato</div>
         <div class="row items-center q-gutter-sm">
           <template v-if="item.Allegato">
+            <span class="text-caption text-grey-7 q-mr-xs">{{ item.Allegato.filename_download || 'File' }}</span>
             <q-btn
               :href="allegatoUrl(item.Allegato)"
               target="_blank"

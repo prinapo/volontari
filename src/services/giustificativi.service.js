@@ -7,7 +7,7 @@ export const giustificativiService = {
         'filter[Progetto][_eq]': progettoId,
         sort: '-Data',
         limit: -1,
-        fields: ['*', 'Rendicontazione'].join(',')
+        fields: ['*', 'Rendicontazione', 'Allegato.filename_download'].join(',')
       }
     })
   },

@@ -5,6 +5,7 @@
     dense
     :accept="FILE_ACCEPT"
     :max-file-size="FILE_MAX_SIZE"
+    label="Allega file"
     @update:model-value="$emit('update:modelValue', $event)"
     @rejected="onRejected"
   >
