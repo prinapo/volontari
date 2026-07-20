@@ -3,6 +3,8 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { apiLogin, apiPost } from '../helpers/api.js'
+import fs from 'fs'
+import crypto from 'crypto'
 import {
   creaFamigliaVolontarioProgetto,
   loginVolontarioConFamiglia,
@@ -554,6 +556,76 @@ test.describe('Giustificativi', () => {
       await page.waitForLoadState("networkidle").catch(() => {})
       const cardAfter = page.locator('.q-card').filter({ hasText: testDesc })
       await expect(cardAfter).toBeVisible({ timeout: 5000 })
+    })
+
+    test('AL-07: Upload file → CRC match on download, change file → CRC match again @crud', async ({ page }) => {
+      test.setTimeout(120000)
+      const testDesc = `TEST_CRC_${Date.now()}`
+      const originalPdf = fs.readFileSync(FIXTURE_PDF)
+      const originalHash = crypto.createHash('sha256').update(originalPdf).digest('hex')
+
+      // Crea giustificativo via UI con file
+      await page.locator('button:has-text("Aggiungi")').click()
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
+      const dialog = page.locator('.q-dialog')
+      await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
+      await dialog.locator('[data-testid="giustform-importo"]').fill('30.00')
+      await dialog.locator('[data-testid="giustform-data"]').evaluate((el) => {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+        setter.call(el, '2026-06-15')
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+      })
+      await dialog.locator('input[type="file"]').first().setInputFiles(FIXTURE_PDF)
+      const [postResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
+        dialog.locator('[data-testid="giustform-salva"]').click()
+      ])
+      expect(postResp.status()).toBe(200)
+      await expect(dialog).not.toBeVisible({ timeout: 10000 })
+      const created = await postResp.json()
+      const giustId = created?.data?.id
+      if (giustId) ids.giustificativi.push(giustId)
+
+      // Trova la card e scarica il file
+      const card = page.locator(`[data-testid="giustificativo-card-${giustId}"]`)
+      await expect(card).toBeVisible({ timeout: 5000 })
+      const scaricaBtn = card.locator('a[aria-label="Scarica allegato"]')
+      await expect(scaricaBtn).toBeVisible({ timeout: 3000 })
+
+      const [download1] = await Promise.all([
+        page.waitForEvent('download', { timeout: 10000 }),
+        scaricaBtn.click()
+      ])
+      const dl1Path = await download1.path()
+      const dl1Buffer = fs.readFileSync(dl1Path)
+      const dl1Hash = crypto.createHash('sha256').update(dl1Buffer).digest('hex')
+      expect(dl1Hash).toBe(originalHash)
+      console.log(`[AL-07] Upload → download CRC OK: ${dl1Hash.slice(0, 12)}...`)
+
+      // Cambia file con un secondo PDF
+      const secondPdfPath = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
+      const secondPdf = fs.readFileSync(secondPdfPath)
+      const secondHash = crypto.createHash('sha256').update(secondPdf).digest('hex')
+      // Nota: se il secondo file è uguale al primo, l'hash sarà uguale; ok lo stesso
+
+      const cambiaInput = card.locator('input[type="file"]').first()
+      const [patchResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH'),
+        cambiaInput.setInputFiles(secondPdfPath)
+      ])
+      expect(patchResp.status()).toBe(200)
+      await page.waitForLoadState("networkidle").catch(() => {})
+
+      // Scarica di nuovo e verifica CRC
+      const [download2] = await Promise.all([
+        page.waitForEvent('download', { timeout: 10000 }),
+        scaricaBtn.click()
+      ])
+      const dl2Path = await download2.path()
+      const dl2Buffer = fs.readFileSync(dl2Path)
+      const dl2Hash = crypto.createHash('sha256').update(dl2Buffer).digest('hex')
+      expect(dl2Hash).toBe(secondHash)
+      console.log(`[AL-07] Change file → download CRC OK: ${dl2Hash.slice(0, 12)}...`)
     })
   })
 
