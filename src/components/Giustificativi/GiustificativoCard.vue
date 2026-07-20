@@ -61,7 +61,7 @@ label="Elimina"
         <div class="text-caption text-grey q-mb-xs">Allegato</div>
         <div class="row items-center q-gutter-sm">
           <template v-if="item.Allegato">
-            <span class="text-caption text-grey-7 q-mr-xs">{{ item.Allegato.filename_download || 'File' }}</span>
+            <span class="text-caption text-grey-7">{{ item.Allegato.filename_download || 'File' }}</span>
             <q-btn
               :href="allegatoUrl(item.Allegato)"
               target="_blank"
@@ -88,13 +88,13 @@ label="Elimina"
               <q-tooltip>Scarica allegato</q-tooltip>
             </q-btn>
           </template>
-          <span v-else class="text-grey-5 text-italic">Nessun allegato</span>
 
           <GiustificativoFilePicker
             v-if="canEdit"
             v-model="newFile"
             @update:model-value="onFileChange"
           />
+          <span v-if="!item.Allegato && !canEdit" class="text-grey-5 text-italic">Nessun allegato</span>
         </div>
       </div>
       <div
