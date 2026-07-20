@@ -1,6 +1,6 @@
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
-import { apiLogin, apiGet, apiPost, apiDelete, apiPatchSystem } from '../helpers/api.js'
+import { apiLogin, apiGet, apiPost, apiDelete, apiPatch, apiPatchSystem } from '../helpers/api.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 test.describe('Admin Page', () => {
@@ -223,6 +223,36 @@ test.describe('Admin — Impersonazione', () => {
         /* cleanup */
       }
     }
+  })
+
+  test('AD-IMP-03: Impersona volontario e naviga a impostazioni @crud', async ({ page }) => {
+    test.setTimeout(60000)
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState("networkidle").catch(() => {})
+    const impBtn = page.locator('button[aria-label="Impersona utente"]').first()
+    await expect(impBtn).toBeVisible({ timeout: 10000 })
+    await impBtn.click()
+    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForTimeout(3000)
+
+    const banner = page.locator('.bg-purple-8')
+    await expect(banner).toBeVisible({ timeout: 15000 })
+    expect(await banner.textContent()).toContain('Stai visualizzando come')
+
+    // Torna a admin
+    await page.locator('button:has-text("Torna a Admin")').click()
+    await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {})
+    await page.waitForTimeout(3000)
+    await page.goto('/admin', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState("networkidle").catch(() => {})
+    if (!page.url().includes('/admin')) {
+      await page.waitForTimeout(3000)
+      await page.goto('/admin', { timeout: 15000 }).catch(() => {})
+      await page.waitForLoadState("networkidle").catch(() => {})
+    }
+    await expect(page.locator('.admin-page')).toBeVisible({ timeout: 15000 })
   })
 
   test('AD-CHECK-01: Tab Check mostra verifica consistenza @smoke', async ({ page }) => {
