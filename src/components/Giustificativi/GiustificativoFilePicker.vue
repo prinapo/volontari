@@ -1,41 +1,30 @@
 <template>
   <q-file
-    v-model="internalFile"
-    :accept="FILE_ACCEPT"
-    :max-file-size="FILE_MAX_SIZE"
+    :model-value="modelValue"
     outlined
     dense
-    clearable
-    label="Allega file"
-    aria-label="Allega file"
-    @update:model-value="onFileChange"
+    :accept="FILE_ACCEPT"
+    :max-file-size="FILE_MAX_SIZE"
+    @update:model-value="$emit('update:modelValue', $event)"
     @rejected="onRejected"
-  />
+  >
+    <template v-slot:prepend>
+      <q-icon name="attach_file" />
+    </template>
+  </q-file>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref } from 'vue'
 import { FILE_ACCEPT, FILE_MAX_SIZE } from 'src/utils/constants'
 
 const $q = useQuasar()
 
-const props = defineProps({
+defineProps({
   modelValue: { type: File, default: null }
 })
 
-const emit = defineEmits(['update:modelValue'])
-
-const internalFile = ref(null)
-const internalTouched = ref(false)
-
-function onFileChange(file) {
-  if (file) {
-    emit('update:modelValue', file)
-    internalTouched.value = true
-  }
-  internalFile.value = null
-}
+defineEmits(['update:modelValue'])
 
 function onRejected() {
   $q.notify({
@@ -45,9 +34,7 @@ function onRejected() {
   })
 }
 
-function touch() {
-  internalTouched.value = true
-}
+function touch() {}
 
 defineExpose({ touch })
 </script>

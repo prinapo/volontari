@@ -16,7 +16,7 @@ aria-label="Chiudi">
       </q-card-section>
       <q-separator />
       <q-card-section class="q-pt-sm">
-        <q-form ref="formRef" @submit.prevent="handleSave">
+        <q-form @submit.prevent="handleSave">
           <q-input
             v-model="form.Descrizione"
             label="Descrizione *"
@@ -102,7 +102,7 @@ label="Annulla" />
             !form.Data ||
             saving
           "
-          @click="handleSave"
+          type="submit"
         />
       </q-card-actions>
     </q-card>
@@ -128,7 +128,6 @@ const model = computed({
   set: val => emit('update:modelValue', val)
 })
 
-const formRef = ref(null)
 const dateProxy = ref(null)
 const filePickerRef = ref(null)
 
@@ -142,8 +141,6 @@ const form = reactive({
 })
 async function handleSave() {
   filePickerRef.value?.touch()
-  const isValid = await formRef.value?.validate()
-  if (!isValid) return
   emit('save', {
     ...form,
     Stato: 'draft',

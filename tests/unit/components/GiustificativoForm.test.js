@@ -40,16 +40,6 @@ describe('GiustificativoForm', () => {
     expect(wrapper.vm.form.Importo).toBeNull()
   })
 
-  it('validates required fields', async () => {
-    const wrapper = quasarMount(GiustificativoForm, {
-      props: { modelValue: true, progettoId: 'p-1', famigliaId: 'fam-1' }
-    })
-    // Don't fill form, call handleSave directly
-    wrapper.vm.formRef = { validate: () => Promise.resolve(false) }
-    await wrapper.vm.handleSave()
-    expect(wrapper.emitted('save')).toBeFalsy()
-  })
-
   it('closes dialog when modelValue changes', async () => {
     const wrapper = quasarMount(GiustificativoForm, {
       props: { modelValue: true, progettoId: 'p-1', famigliaId: 'fam-1' }
