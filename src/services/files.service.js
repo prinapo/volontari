@@ -8,7 +8,7 @@ export const filesService = {
     const formData = new FormData()
     if (folder) formData.append('folder', folder)
     formData.append('file', file)
-    return api.post('/files', formData)
+    return api.post('/files/', formData)
   },
 
   updateMeta(id, meta) {
