@@ -16,7 +16,7 @@ aria-label="Chiudi">
       </q-card-section>
       <q-separator />
       <q-card-section class="q-pt-sm">
-        <q-form @submit.prevent="handleSave">
+        <q-form @submit="handleSave">
           <q-input
             v-model="form.Descrizione"
             label="Descrizione *"
@@ -79,32 +79,12 @@ aria-label="Chiudi">
             rows="2"
           />
           <GiustificativoFilePicker ref="filePickerRef" v-model="form.File" />
+          <q-card-actions align="right" class="q-px-none q-mt-sm">
+            <q-btn v-close-popup data-testid="form-annulla" flat dense size="sm" label="Annulla" />
+            <q-btn color="primary" label="Salva" data-testid="giustform-salva" :loading="saving" :disable="!form.Descrizione || !form.Importo || Number.parseFloat(form.Importo || 0) <= 0 || !form.File || !form.Data || saving" type="submit" />
+          </q-card-actions>
         </q-form>
       </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-v-close-popup
-data-testid="form-annulla"
-flat
-dense
-size="sm"
-label="Annulla" />
-        <q-btn
-          color="primary"
-          label="Salva"
-          data-testid="giustform-salva"
-          :loading="saving"
-          :disable="
-            !form.Descrizione ||
-            !form.Importo ||
-            Number.parseFloat(form.Importo || 0) <= 0 ||
-            !form.File ||
-            !form.Data ||
-            saving
-          "
-          type="submit"
-        />
-      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>

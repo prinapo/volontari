@@ -89,21 +89,9 @@ label="Elimina"
           </template>
           <span v-else class="text-grey-5 text-italic">Nessun allegato</span>
 
-          <q-btn
+          <GiustificativoFilePicker
             v-if="canEdit"
-            icon="attach_file"
-            flat
-            dense
-            size="sm"
-            color="grey"
-            label="Cambia file"
-            @click="$refs.fileInput.pickFiles()"
-          />
-          <q-file
-            v-show="false"
-            ref="fileInput"
             v-model="newFile"
-            :accept="FILE_ACCEPT"
             @update:model-value="onFileChange"
           />
         </div>
@@ -125,6 +113,7 @@ label="Elimina"
 import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import GiustificativoFilePicker from './GiustificativoFilePicker.vue'
 import { assetUrl } from 'src/utils/assets'
 import { FILE_ACCEPT } from 'src/utils/constants'
 import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
