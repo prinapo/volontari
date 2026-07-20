@@ -302,7 +302,7 @@ test.describe('Famiglie Page — Gruppo 4', () => {
     await loginVolontarioConFamiglia(page, d.nome)
 
     // PS-01+PS-04: chip progetto selezionato visibile con formato corretto
-    const chip = page.locator('.q-select .q-field__native').first()
+    const chip = page.locator('.q-select').filter({ hasText: /€/ }).first().locator('.q-field__native')
     await expect(chip).toBeVisible({ timeout: 5000 })
     const chipText = await chip.innerText()
     expect(chipText).toMatch(/€/)
