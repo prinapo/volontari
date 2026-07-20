@@ -95,6 +95,7 @@ export default [
       'unicorn/no-top-level-side-effects': 'off',
       'unicorn/no-unsafe-string-replacement': 'off',
       'unicorn/prefer-ternary': 'off',
+      'unicorn/prefer-dom-node-text-content': 'off',
       'unicorn/prefer-iterator-to-array': 'off',
 
       'vuejs-accessibility/click-events-have-key-events': 'off',
