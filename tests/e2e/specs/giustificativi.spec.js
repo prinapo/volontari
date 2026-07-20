@@ -676,7 +676,7 @@ test.describe('Giustificativi', () => {
 
     test('EL-02: Elimina dialog Annulla card resta @crud', async ({ page }) => {
       const card = page
-        .locator('.q-card')
+        .locator('[data-testid^="giustificativo-card-"]')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
 
@@ -693,10 +693,11 @@ test.describe('Giustificativi', () => {
 
     test('EL-03: Elimina conferma card sparisce dalla lista @crud', async ({ page }) => {
       const draftCard = page
-        .locator('.q-card')
+        .locator('[data-testid^="giustificativo-card-"]')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
 
+      const targetId = await draftCard.getAttribute('data-testid')
       const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
 
       const [patchResp] = await Promise.all([
@@ -711,12 +712,12 @@ test.describe('Giustificativi', () => {
       ])
 
       expect(patchResp.status()).toBe(200)
-      await expect(page.locator(`text=${descText}`)).not.toBeVisible({ timeout: 5000 })
+      await expect(page.locator(`[data-testid="${targetId}"]`)).not.toBeVisible({ timeout: 5000 })
     })
 
     test('EL-04: Elimina reload card ancora sparita @crud', async ({ page }) => {
       const draftCard = page
-        .locator('.q-card')
+        .locator('[data-testid^="giustificativo-card-"]')
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
 
@@ -750,6 +751,7 @@ test.describe('Giustificativi', () => {
       await loginGestore(page)
       const r = await creaFamigliaVolontarioProgetto(page, ids)
       nomeFam = r.nomeFam
+      ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_SU', ids)
@@ -828,7 +830,7 @@ test.describe('Giustificativi', () => {
         .catch(() => {})
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForLoadState("networkidle").catch(() => {})
-      const cardAfter = page.locator('.q-card').filter({ hasText: cleanDesc }).first()
+      const cardAfter = page.locator(`[data-testid="${targetId}"]`)
       await expect(cardAfter.locator('.q-badge').first()).toHaveText('Inviato', { timeout: 10000 })
     })
   })
@@ -844,13 +846,14 @@ test.describe('Giustificativi', () => {
     test.beforeEach(async ({ page }) => {
       await loginGestore(page)
       const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      ids.nomeFam = nomeFam
       await loginVolontarioConFamiglia(page, nomeFam)
       await page.waitForLoadState("networkidle").catch(() => {})
       const draft = await createBozzaViaUI(page, 'TEST_RO', ids)
       if (draft) {
         ids.giustificativi.push(draft.id)
         const draftCard = page
-          .locator('.q-card')
+          .locator('[data-testid^="giustificativo-card-"]')
           .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
           .first()
         if ((await draftCard.count()) > 0) {
@@ -871,7 +874,7 @@ test.describe('Giustificativi', () => {
 
     test('RO-01: Card inviata click campo NON entra in edit @crud', async ({ page }) => {
       const inviatoCard = page
-        .locator('.q-card')
+        .locator('[data-testid^="giustificativo-card-"]')
         .filter({ has: page.locator('.q-badge:has-text("Inviato")') })
         .first()
 
@@ -882,7 +885,7 @@ test.describe('Giustificativi', () => {
 
     test('RO-02: Card inviata Apri e Scarica ancora funzionanti @smoke', async ({ page }) => {
       const inviatoCard = page
-        .locator('.q-card')
+        .locator('[data-testid^="giustificativo-card-"]')
         .filter({ has: page.locator('.q-badge:has-text("Inviato")') })
         .first()
 
