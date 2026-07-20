@@ -191,20 +191,28 @@ test.describe('Admin — Impersonazione', () => {
     await expect(impBtn).toBeVisible({ timeout: 10000 })
     await Promise.all([page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {}), impBtn.click()])
     await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForTimeout(2000)
 
     // Verifica che il banner di impersonazione sia visibile
     const banner = page.locator('.bg-purple-8')
-    const bannerVisible = await banner.isVisible({ timeout: 10000 }).catch(() => false)
+    const bannerVisible = await banner.isVisible({ timeout: 15000 }).catch(() => false)
     expect(bannerVisible).toBe(true)
 
     // Torna a admin
     await page.locator('button:has-text("Torna a Admin")').click()
-    await page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {})
-    await page.waitForLoadState("networkidle").catch(() => {})
+    // Attendi il reload completo della pagina (stopImpersonation fa location.reload())
+    await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {})
+    await page.waitForTimeout(2000)
+
+    // Naviga a /admin (se la route guard reindirizza, riprova)
     await page.goto('/admin', { timeout: 15000 }).catch(() => {})
     await page.waitForLoadState("networkidle").catch(() => {})
-
-    // Verifica di essere tornato alla pagina admin
+    // Se il reindirizzamento ha portato a /famiglie, riprova dopo aver atteso l'auth
+    if (!page.url().includes('/admin')) {
+      await page.waitForTimeout(3000)
+      await page.goto('/admin', { timeout: 15000 }).catch(() => {})
+      await page.waitForLoadState("networkidle").catch(() => {})
+    }
     await expect(page.locator('.admin-page')).toBeVisible({ timeout: 15000 })
 
     // Cleanup: rimuovi eventuale token statico

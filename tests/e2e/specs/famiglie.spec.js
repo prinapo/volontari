@@ -222,22 +222,32 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     const originalValue = (await ibanField.locator('.text-body1').innerText()).trim()
     const notif = page.locator('.q-notification')
 
-    // NT-01
-    await ibanField.click()
-    await ibanField.locator('input').fill(originalValue)
-    await ibanField.locator('[data-testid="inline-save"]').click()
-    await expect(notif).toBeVisible({ timeout: 5000 })
-    await expect(notif).toContainText('IBAN aggiornato')
-
-    // NT-02
+    // NT-01: modifica IBAN e verifica notifica
     const testIBAN = `IT60X${String(Date.now()).slice(-10).padStart(22, '0')}`
-    await ibanField.click()
-    await ibanField.locator('input').fill(testIBAN)
+    await ibanField.locator('[aria-label="Modifica"]').click()
+    const editField = page.locator('.inline-editable-field').nth(0)
+    await editField.locator('input').fill(testIBAN)
     const [r] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'),
-      ibanField.locator('[data-testid="inline-save"]').click()
+      editField.locator('[data-testid="inline-save"]').click()
     ])
     expect(r.status()).toBe(200)
+    await expect(notif).toBeVisible({ timeout: 5000 })
+    await expect(notif).toContainText('IBAN aggiornato')
+    await page.waitForLoadState("networkidle").catch(() => {})
+    await expect(notif).not.toBeVisible({ timeout: 10000 })
+
+    // NT-02: modifica con un secondo IBAN e verifica notifica
+    const testIBAN2 = `IT60X${String(Date.now()).slice(-10).padStart(22, '0')}`
+    const editField2 = page.locator('.inline-editable-field').nth(0)
+    await editField2.locator('[aria-label="Modifica"]').click()
+    const editField3 = page.locator('.inline-editable-field').nth(0)
+    await editField3.locator('input').fill(testIBAN2)
+    const [r2] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/items/Famiglie/') && resp.request().method() === 'PATCH'),
+      editField3.locator('[data-testid="inline-save"]').click()
+    ])
+    expect(r2.status()).toBe(200)
     await expect(notif).toBeVisible({ timeout: 5000 })
     await expect(notif).toContainText('IBAN aggiornato')
     await page.waitForLoadState("networkidle").catch(() => {})
