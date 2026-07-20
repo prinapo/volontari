@@ -275,7 +275,7 @@ test.describe('Giustificativi', () => {
       const card = await findDraftCard(page)
 
       const descField = card.locator('.inline-editable-field').first()
-      const originalText = (await descField.locator('.text-body1').innerText()).trim()
+      const originalText = (await descField.locator('.text-body1').textContent).trim()
 
       await descField.locator('[aria-label="Modifica"]').click()
       const editInput = card.locator('.inline-editable-field').first().locator('input')
@@ -284,7 +284,7 @@ test.describe('Giustificativi', () => {
       await card.locator('.inline-editable-field').first().locator('[data-testid="inline-cancel"]').click()
       await page.waitForLoadState("networkidle").catch(() => {})
 
-      const displayText = (await descField.locator('.text-body1').innerText()).trim()
+      const displayText = (await descField.locator('.text-body1').textContent).trim()
       expect(displayText).toBe(originalText)
     })
 
@@ -335,7 +335,7 @@ test.describe('Giustificativi', () => {
       const card = await findDraftCard(page)
 
       const importoField = card.locator('.inline-editable-field').nth(1)
-      const originalText = (await importoField.locator('.text-body1').innerText()).trim()
+      const originalText = (await importoField.locator('.text-body1').textContent).trim()
 
       await importoField.locator('[aria-label="Modifica"]').click()
       const impInput = card.locator('.inline-editable-field').nth(1).locator('input')
@@ -344,7 +344,7 @@ test.describe('Giustificativi', () => {
       await card.locator('.inline-editable-field').nth(1).locator('[data-testid="inline-cancel"]').click()
       await page.waitForLoadState("networkidle").catch(() => {})
 
-      const displayText = (await importoField.locator('.text-body1').innerText()).trim()
+      const displayText = (await importoField.locator('.text-body1').textContent).trim()
       expect(displayText).toBe(originalText)
     })
 
@@ -390,7 +390,7 @@ test.describe('Giustificativi', () => {
       const card = await findDraftCard(page)
 
       const dataField = card.locator('.inline-editable-field').nth(2)
-      const originalText = (await dataField.locator('.text-body1').innerText()).trim()
+      const originalText = (await dataField.locator('.text-body1').textContent).trim()
 
       await dataField.locator('[aria-label="Modifica"]').click()
       const dtInput = card.locator('.inline-editable-field').nth(2).locator('input')
@@ -402,7 +402,7 @@ test.describe('Giustificativi', () => {
       await card.locator('.inline-editable-field').nth(2).locator('[data-testid="inline-cancel"]').click()
       await page.waitForLoadState("networkidle").catch(() => {})
 
-      const displayText = (await dataField.locator('.text-body1').innerText()).trim()
+      const displayText = (await dataField.locator('.text-body1').textContent).trim()
       expect(displayText).toBe(originalText)
     })
   })
@@ -523,7 +523,7 @@ test.describe('Giustificativi', () => {
         if ((await card.locator('a[href*="/assets/"]').count()) > 0) {
           targetCard = card
           targetId = await card.getAttribute('data-testid')
-          testDesc = await card.locator('.inline-editable-field').first().locator('.text-body1').innerText()
+          testDesc = await card.locator('.inline-editable-field').first().locator('.text-body1').textContent
           break
         }
       }
@@ -685,14 +685,14 @@ test.describe('Giustificativi', () => {
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
 
-      const descBefore = await card.locator('.inline-editable-field').first().locator('.text-body1').innerText()
+      const descBefore = await card.locator('.inline-editable-field').first().locator('.text-body1').textContent
 
       await card.locator('button:has-text("Elimina")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
       await page.locator('.q-dialog button:has-text("Annulla")').click()
       await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 3000 })
 
-      const descAfter = await card.locator('.inline-editable-field').first().locator('.text-body1').innerText()
+      const descAfter = await card.locator('.inline-editable-field').first().locator('.text-body1').textContent
       expect(descAfter).toBe(descBefore)
     })
 
@@ -703,7 +703,7 @@ test.describe('Giustificativi', () => {
         .first()
 
       const targetId = await draftCard.getAttribute('data-testid')
-      const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
+      const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').textContent
 
       const [patchResp] = await Promise.all([
         page.waitForResponse(
@@ -726,7 +726,7 @@ test.describe('Giustificativi', () => {
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
 
-      const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
+      const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').textContent
 
       await draftCard.locator('button:has-text("Elimina")').click()
       await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
@@ -773,7 +773,7 @@ test.describe('Giustificativi', () => {
         .filter({ has: page.locator('.q-badge:has-text("Bozza")') })
         .first()
 
-      const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').innerText()
+      const descText = await draftCard.locator('.inline-editable-field').first().locator('.text-body1').textContent
       const cleanDesc = descText.replace(/\s*edit\s*$/, '')
 
       const targetId = await draftCard.getAttribute('data-testid')

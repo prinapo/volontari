@@ -60,7 +60,7 @@ test.describe('Famiglie Page — Gruppo 1', () => {
     const d = await famigliaSetup(page, 'GR1', ids)
     await loginVolontarioConFamiglia(page, d.nome)
 
-    const famigliaName = await page.locator('.text-h6').first().innerText()
+    const famigliaName = await page.locator('.text-h6').first().textContent
     expect(famigliaName.trim()).toBeTruthy()
     await expect(page.locator('.q-select').first()).toBeVisible()
     await expect(page.locator('text=Dati bancari')).toBeVisible()
@@ -141,11 +141,11 @@ test.describe('Famiglie Page — Gruppo 2', () => {
     await expect(ibanField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
 
     // IB-02
-    const originalIBAN = (await ibanField.locator('.text-body1').innerText()).trim()
+    const originalIBAN = (await ibanField.locator('.text-body1').textContent).trim()
     await ibanField.locator('[aria-label="Modifica"]').click()
     await ibanField.locator('input').fill(`TEST_CANCEL_${Date.now()}`)
     await ibanField.locator('[data-testid="inline-cancel"]').click()
-    expect((await ibanField.locator('.text-body1').innerText()).trim()).toBe(originalIBAN)
+    expect((await ibanField.locator('.text-body1').textContent).trim()).toBe(originalIBAN)
 
     // IB-01
     const testIBAN = `IT60X${String(Date.now()).slice(-10).padStart(22, '0')}`
@@ -219,7 +219,7 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     await page.waitForLoadState("networkidle").catch(() => {})
     const ibanField = page.locator('.inline-editable-field').nth(0)
     await expect(ibanField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
-    const originalValue = (await ibanField.locator('.text-body1').innerText()).trim()
+    const originalValue = (await ibanField.locator('.text-body1').textContent).trim()
     const notif = page.locator('.q-notification')
 
     // NT-01: modifica IBAN e verifica notifica
@@ -304,19 +304,19 @@ test.describe('Famiglie Page — Gruppo 4', () => {
     // PS-01+PS-04: chip progetto selezionato visibile con formato corretto
     const chip = page.locator('.q-select').filter({ hasText: /€/ }).first().locator('.q-field__native')
     await expect(chip).toBeVisible({ timeout: 5000 })
-    const chipText = await chip.innerText()
+    const chipText = await chip.textContent
     expect(chipText).toMatch(/€/)
     expect(chipText).toMatch(/—/)
 
     // PS-02/03: totali
     await expect(page.locator('text=Totale Giustificativi')).toBeVisible({ timeout: 8000 })
     await expect(page.getByText('Totale Rimborsabile', { exact: true })).toBeVisible()
-    const t1 = await page.locator('text=Totale Giustificativi').locator('..').locator('.text-h6').innerText()
+    const t1 = await page.locator('text=Totale Giustificativi').locator('..').locator('.text-h6').textContent
     const t2 = await page
       .getByText('Totale Rimborsabile', { exact: true })
       .locator('..')
       .locator('.text-h6')
-      .innerText()
+      .textContent
     expect(parseFloat(t1.replace(/[€\s.]/g, '').replace(',', '.'))).toBeGreaterThanOrEqual(0)
     expect(parseFloat(t2.replace(/[€\s.]/g, '').replace(',', '.'))).toBeGreaterThanOrEqual(0)
 
