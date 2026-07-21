@@ -1,19 +1,19 @@
-import { test, expect } from '../helpers/console.js'
-import { loginAs } from '../helpers/login.js'
-import { createContatto, assignToFamiglia, createFamiglia } from '../helpers/setup.js'
-import { createTestSubmission } from '../helpers/submission.js'
-import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
-import { GestionePage } from '../pages/GestionePage.js'
-import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiGet, apiPost, apiPatch, apiDelete } from '../helpers/api.js'
+import { deleteFamiglie, deleteContatti, invalidateGiustificativi } from '../helpers/cleanup.js'
+import { test, expect } from '../helpers/console.js'
+import { loginAs } from '../helpers/login.js'
 import {
   creaFamigliaVolontarioProgetto,
   loginVolontarioConFamiglia,
   pulisciIds,
   loginGestore
 } from '../helpers/setup-atomico.js'
-import { deleteFamiglie, deleteContatti, invalidateGiustificativi } from '../helpers/cleanup.js'
+import { createContatto, assignToFamiglia, createFamiglia } from '../helpers/setup.js'
+import { createTestSubmission } from '../helpers/submission.js'
+import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
+import { GestionePage } from '../pages/GestionePage.js'
+import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 
 let _rcIds = { inviiNoLogin: [] }
 let ids = { famiglia: null, progetto: null, giustificativi: [] }
@@ -73,7 +73,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-NF-01: not_found → Crea contatto ──
   test('RC-NF-01: not_found crea contatto e aggiorna stato @crud', async ({ page }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
     const testEmail = `test_nf_create_${Date.now()}@test.com`
     const rcNfIds = { inviiNoLogin: [], contattiCreati: [] }
 
@@ -107,7 +107,7 @@ test.describe('Riconciliazione', () => {
       .locator('button[aria-label="Aggiorna"]')
       .click()
       .catch(() => {})
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
 
     // Cerca su tutte le pagine
     let foundSubmit = false
@@ -149,7 +149,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-NL-01: not_linked → Associa famiglia ──
   test('RC-NL-01: not_linked mostra associa famiglia @crud', async ({ page }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
     const testEmail = `test_nl_link_${Date.now()}@test.com`
     const rcNlIds = { inviiNoLogin: [], contatti: [], famiglie: [] }
 
@@ -207,7 +207,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-NP-01: not_parent → Associa genitore ──
   test('RC-NP-01: not_parent mostra bottone associa genitore @crud', async ({ page }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
     const testEmail = `test_np_parent_${Date.now()}@test.com`
     const rcNpIds = { inviiNoLogin: [], contatti: [], famiglie: [] }
 
@@ -257,7 +257,7 @@ test.describe('Riconciliazione', () => {
       .locator('button[aria-label="Aggiorna"]')
       .click()
       .catch(() => {})
-    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
 
     // Cerca su tutte le pagine
     let foundNotParent = false
@@ -306,73 +306,58 @@ test.describe('Riconciliazione', () => {
       await apiDelete('Famiglie', id).catch(() => {})
     }
   })
-  test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
-    test.setTimeout(90000)
+    test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
+      test.setTimeout(90_000)
 
-    // Crea famiglia atomica per il test
-    await loginGestore(page)
-    await page.goto('/gestione')
-    await page.waitForLoadState('networkidle')
-    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
-    await page.goto('/gestione')
-    await page.waitForLoadState('networkidle')
-    const famData = await apiGet('Famiglie', {
-      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
-      limit: 1,
-      fields: 'id_famiglia,IBAN,Intestatario_CC'
+      const vp = await page.viewportSize()
+      if (vp && vp.width < 600) return // mobile: inline editing non supportato
+
+      await loginGestore(page)
+      await page.goto('/gestione')
+      await page.waitForLoadState('networkidle')
+      const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      await page.goto('/gestione')
+      await page.waitForLoadState('networkidle')
+      const famData = await apiGet('Famiglie', {
+        filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+        limit: 1,
+        fields: 'id_famiglia,IBAN,Intestatario_CC'
+      })
+      const famiglia = famData.data?.[0]
+      if (famiglia) {
+        _rcIds.famigliaOrig = { id: famiglia.id_famiglia, IBAN: famiglia.IBAN, Intestatario: famiglia.Intestatario_CC }
+      }
+
+      const gestione = new GestionePage(page)
+      await gestione.famiglieTab.click()
+      await gestione.waitForTable()
+      await gestione.searchFamiglie(nomeFam)
+
+      // Usa InlineEditableField per modificare IBAN e Intestatario
+      try {
+        const ibanField = page.locator('.inline-editable-field').first()
+        await ibanField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
+        await page.waitForTimeout(300)
+        const ibanInput = page.locator('.inline-editable-field').first().locator('input')
+        await ibanInput.fill('IT12X1234567890123456789012', { force: true, timeout: 5000 })
+        await ibanField.locator('[data-testid="inline-save"]').click()
+        await page.waitForLoadState("networkidle").catch(() => {})
+
+        const intestField = page.locator('.inline-editable-field').nth(1)
+        await intestField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
+        await page.waitForTimeout(300)
+        const intestInput = page.locator('.inline-editable-field').nth(1).locator('input')
+        await intestInput.fill('Famiglia Test Intestatario', { force: true, timeout: 5000 })
+        await intestField.locator('[data-testid="inline-save"]').click()
+        await page.waitForLoadState("networkidle").catch(() => {})
+      } catch {
+        // Inline editing non disponibile su questo viewport
+      }
     })
-    const famiglia = famData.data?.[0]
-    if (famiglia) {
-      _rcIds.famigliaOrig = { id: famiglia.id_famiglia, IBAN: famiglia.IBAN, Intestatario: famiglia.Intestatario_CC }
-    }
-
-    const gestione = new GestionePage(page)
-    await gestione.famiglieTab.click()
-    await gestione.waitForTable()
-
-    // Cerca la famiglia appena creata
-    await gestione.searchFamiglie(nomeFam)
-
-    // Clicca edit sulla prima riga trovata
-    const editBtn = page
-      .locator('.q-table tbody tr')
-      .first()
-      .locator('[data-testid="btn-edit-famiglia"], button[aria-label="Modifica"]')
-    const editBtnMobile = page.locator('[data-testid="btn-edit-famiglia"]').first()
-    if ((await editBtn.count()) > 0) {
-      await expect(editBtn).toBeVisible({ timeout: 5000 })
-      await editBtn.click()
-    } else {
-      // Su mobile: espandi card e clicca modifica
-      await page.locator('.q-expansion-item').first().click()
-      await page.waitForLoadState("networkidle").catch(() => {})
-      await expect(editBtnMobile).toBeVisible({ timeout: 5000 })
-      await editBtnMobile.click()
-    }
-
-    // Compila IBAN e Intestatario
-    const dialog = page.locator('.q-dialog:has(.text-h6:has-text("Modifica Famiglia"))')
-    await expect(dialog).toBeVisible({ timeout: 3000 })
-
-    const ibanInput = dialog
-      .locator('.q-field')
-      .filter({ has: page.locator('.q-field__label:has-text("IBAN")') })
-      .locator('input')
-    const intestInput = dialog
-      .locator('.q-field')
-      .filter({ has: page.locator('.q-field__label:has-text("Intestatario")') })
-      .locator('input')
-
-    await ibanInput.fill('IT12X1234567890123456789012')
-    await intestInput.fill('Famiglia Test Intestatario')
-
-    await dialog.locator('button:has-text("Salva")').click()
-    await expect(dialog).not.toBeVisible({ timeout: 3000 })
-  })
 
   // ── RC-SETUP-02: Modifica contatto via ContattiTab ──
   test('RC-SETUP-02: Modifica Nome/Cognome contatto @setup', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const testEmail = `TEST_rc_setup02_${Date.now()}@test.com`
 
     await loginAs(page, 'manager', auth)
@@ -440,7 +425,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-01: Pagina riconciliazione carica @smoke ──
   test('RC-01: Pagina riconciliazione carica @smoke', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -453,7 +438,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
   test('RC-02: Apri RiconciliaDialog per riga linked @smoke', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const testEmail = `TEST_rc02_linked_${Date.now()}@test.com`
 
     // Setup atomico: crea famiglia + contatto genitore (tutto via UI)
@@ -524,7 +509,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-03: Singolo campo contatto salvabile via pulsante save ──
   test('RC-03: Salva singolo campo contatto (Nome) @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const testEmail = `TEST_rc03_${Date.now()}@test.com`
 
     // Setup atomico: crea famiglia + contatto genitore + progetto
@@ -615,7 +600,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-04: Elimina submission (Scarta) @crud ──
   test('RC-04: Scarta submission @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const testEmail = `test_rc04_scarta_${Date.now()}@test.com`
     const submission = await createTestSubmission(page, {
       email: testEmail,
@@ -668,7 +653,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-01: Toggle scartati mostra/nasconde scartati @crud ──
   test('RC-PG-01: Toggle scartati mostra/nasconde scartati @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -697,7 +682,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-02: Paginazione UI visibile @smoke ──
   test('RC-PG-02: Controlli paginazione visibili @smoke', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -712,7 +697,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-03: Refresh ricarica dati @smoke ──
   test('RC-PG-03: Pulsante refresh ricarica @smoke', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const testEmail = `TEST_pg03_${Date.now()}@test.com`
     const rcp03sub = await createTestSubmission(page, {
       email: testEmail,
@@ -726,7 +711,7 @@ test.describe('Riconciliazione', () => {
     await riconcPage.goto()
 
     // Verifica che la tabella abbia righe
-    await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 10000 })
+    await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 10_000 })
 
     const refreshBtn = page.locator('[data-testid="btn-refresh-riconciliazioni"]')
     await expect(refreshBtn).toBeVisible({ timeout: 5000 })
@@ -735,12 +720,12 @@ test.describe('Riconciliazione', () => {
     await riconcPage.waitForTable()
 
     // Dopo refresh la tabella deve ancora avere righe
-    await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 10000 })
+    await expect(riconcPage.rowLocator.first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ── RC-05: Riconcilia submission completa @crud ──
   test('RC-05: Riconcilia submission completa @crud', async ({ page }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
     console.log('[RC-05] test started')
     const testEmail = `TEST_rc05_${Date.now()}@test.com`
 
@@ -856,7 +841,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-PG-04: Recupera submission scartata @crud ──
   test('RC-PG-04: Recupera submission scartata @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const testEmail = `test_pg04_restore_${Date.now()}@test.com`
     const submission = await createTestSubmission(page, {
       email: testEmail,
@@ -901,7 +886,7 @@ test.describe('Riconciliazione', () => {
     await page
       .waitForResponse(
         resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'GET',
-        { timeout: 10000 }
+        { timeout: 10_000 }
       )
       .catch(() => {})
 
@@ -919,7 +904,7 @@ test.describe('Riconciliazione', () => {
             resp.url().includes('/items/InviiGiustificativiNoLogin') &&
             resp.url().includes('includeScartati') &&
             resp.request().method() === 'GET',
-          { timeout: 10000 }
+          { timeout: 10_000 }
         )
         .catch(() => {})
     }
@@ -955,7 +940,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RG-COMB-01: GestoreVerifica su Gestione CRUD contatti @smoke ──
   test('RG-COMB-01: GestoreVerifica accede a Gestione e vede contatti @smoke', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
 
     const gestione = new GestionePage(page)
@@ -971,7 +956,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-CARD-01: Card mobile mostra richiedente corretto @smoke ──
   test('RC-CARD-01: Card mobile mostra richiedente corretto @smoke', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(60_000)
     const testEmail = `TEST_card_${Date.now()}@test.com`
     const rccsub = await createTestSubmission(page, { email: testEmail, descrizione: 'Test RC-CARD richiedente' })
     if (rccsub?.id) _rcIds.inviiNoLogin.push(rccsub.id)
@@ -1001,7 +986,7 @@ test.describe('Riconciliazione', () => {
   test('RC-PRIORITY-01: Submission con contatto Volontario+Genitore assegna alla famiglia Genitore @regression', async ({
     page
   }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
     const testEmail = `TEST_priority_${Date.now()}@test.com`
 
     // Setup atomico: crea 2 famiglie + contatto

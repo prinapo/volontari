@@ -7,6 +7,7 @@ import {
   assegnaContattoAFamigliaViaUI,
   rimuoviContattoDaFamigliaViaUI
 } from './pagina-gestione.js'
+import { selezionaFamiglia } from './pagina-famiglie.js'
 import { createGiustificativoViaDialog } from './giustificativo.js'
 
 export {
@@ -46,42 +47,9 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
 
   for (const g of giustificativi) {
     await loginAs(page, 'volontario_nofam', auth)
-    await page.waitForURL('**/famiglie', { timeout: 15000 }).catch(() => {})
+    await page.goto('/famiglie', { timeout: 15000 }).catch(() => {})
     await page.waitForLoadState("networkidle").catch(() => {})
-    for (let i = 0; i < 30; i++) {
-      const done = await page.evaluate(async (famigliaNome) => {
-        try {
-          const app = document.querySelector('#q-app')?.__vue_app__
-          if (!app) return false
-          const pinia = app.config.globalProperties.$pinia
-          if (!pinia) return false
-          const s = pinia.state.value?.famiglie
-          if (!s?.famiglieContatti?.length) return false
-          if (s.selectedProgettoId) return true
-          if (s.error || s.selectedFamigliaId) return false
-          const fc = s.famiglieContatti.find(fc => fc.Famiglia?.Nome_Famiglia === famigliaNome)
-          if (!fc?.Famiglia) return false
-          const famId = fc.Famiglia.id_famiglia
-          const token = localStorage.getItem('access_token')
-          if (!token) return false
-          const res = await fetch('https://api-dev.sostienilsostegno.com/items/Famiglie/' + famId + '?fields=*,Progetti.*', {
-            headers: { Authorization: 'Bearer ' + token }
-          })
-          if (!res.ok) return false
-          const famiglia = (await res.json())?.data
-          if (!famiglia) return false
-          s.famiglia = famiglia
-          s.selectedFamigliaId = famId
-          if (famiglia.Progetti?.length > 0) {
-            s.selectedProgettoId = famiglia.Progetti[0].id_progetto
-            return true
-          }
-          return false
-        } catch (e) { return false }
-      }, prefix)
-      if (done) break
-      await page.waitForLoadState("networkidle").catch(() => {})
-    }
+    await selezionaFamiglia(page, prefix)
     await page.waitForLoadState("networkidle").catch(() => {})
     const result = await createGiustificativoViaDialog(page, {
       descrizione: g.descrizione,
@@ -104,20 +72,20 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
       await page.waitForLoadState("networkidle").catch(() => {})
 
       if (g.stato === 'verificato') {
-        await page.locator('[data-testid="btn-verify"]').first().click()
+        await page.locator('[data-testid="btn-verify"]').first().evaluate(el => el.click())
         await page.waitForLoadState("networkidle").catch(() => {})
       } else {
-        await page.locator('[data-testid="btn-reject"]').first().click()
+        await page.locator('[data-testid="btn-reject"]').first().evaluate(el => el.click())
         await page.waitForLoadState("networkidle").catch(() => {})
         const rejectDialog = page.locator('.q-dialog:visible').last()
-        if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const nota = rejectDialog.locator('textarea, input[type="text"]').first()
-          if (await nota.isVisible().catch(() => false)) await nota.fill('Rifiutato E2E')
-          await rejectDialog
+        if (await rejectDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+          const textarea = rejectDialog.locator('textarea').first()
+          await textarea.fill('Rifiutato E2E', { force: true })
+          const rifiutaBtn = rejectDialog
             .locator('button')
             .filter({ hasText: /rifiut|conferma/i })
             .last()
-            .click()
+          await rifiutaBtn.evaluate(el => el.click())
           await page.waitForLoadState("networkidle").catch(() => {})
         }
       }

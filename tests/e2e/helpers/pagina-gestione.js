@@ -9,7 +9,7 @@ async function waitForContattiTable(page) {
   await page
     .locator('.q-table tbody tr, .q-expansion-item')
     .first()
-    .waitFor({ state: 'visible', timeout: 15000 })
+    .waitFor({ state: 'visible', timeout: 15_000 })
     .catch(() => {})
 }
 
@@ -17,7 +17,7 @@ async function waitForFamiglieTable(page) {
   await page
     .locator('.q-table tbody tr, .q-expansion-item')
     .first()
-    .waitFor({ state: 'visible', timeout: 15000 })
+    .waitFor({ state: 'visible', timeout: 15_000 })
     .catch(() => {})
 }
 
@@ -35,14 +35,14 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
 
   // Seleziona tab Famiglie
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
-  await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
+  await famiglieTab.waitFor({ state: 'visible', timeout: 10_000 })
   await famiglieTab.click()
   await page.waitForLoadState("networkidle").catch(() => {})
 
   // Clicca "Aggiungi Famiglia"
   const aggiungiBtn = page.locator('button:has-text("Aggiungi Famiglia")')
-  await aggiungiBtn.waitFor({ state: 'visible', timeout: 10000 })
-  await aggiungiBtn.click()
+  await aggiungiBtn.waitFor({ state: 'visible', timeout: 10_000 })
+  await aggiungiBtn.evaluate(el => el.click())
 
   // Aspetta il dialog
   const dialog = page.locator('.q-dialog:visible')
@@ -52,13 +52,14 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
   await dialog.locator('[data-testid="famiglia-nome"]').fill(nomeFamiglia)
   // IBAN IT valido: 27 caratteri
   const ts = String(Date.now()).slice(-5)
-  const rnd = String(Math.floor(Math.random() * 90000) + 10000)
+  const rnd = String(Math.floor(Math.random() * 90_000) + 10_000)
   const testIban = iban || `IT60X${ts}${rnd}0000123456`
   await dialog.locator('[data-testid="famiglia-iban"]').fill(testIban)
   await dialog.locator('[data-testid="famiglia-intestatario"]').fill(intestatario || nomeFamiglia.slice(0, 20) + ' Int')
 
   // Submit e attendi POST /items/Famiglie
   // Filtra per Nome_Famiglia per evitare di catturare POST di altri test
+  const salvaBtn = dialog.locator('button:has-text("Salva")')
   const [postResp] = await Promise.all([
     page.waitForResponse(resp => {
       if (!resp.url().includes('/items/Famiglie') || resp.request().method() !== 'POST') return false
@@ -69,7 +70,7 @@ export async function createFamigliaViaUI(page, { nomeFamiglia, iban, intestatar
         return true
       }
     }),
-    dialog.locator('button:has-text("Salva")').click()
+    salvaBtn.evaluate(el => el.click())
   ])
 
   const data = await postResp.json()
@@ -97,14 +98,14 @@ export async function createContattoViaUI(page, { nome, cognome, email, cellular
 
   // Seleziona tab Contatti
   const contattiTab = page.locator('.q-tab:has-text("Contatti")')
-  await contattiTab.waitFor({ state: 'visible', timeout: 10000 })
+  await contattiTab.waitFor({ state: 'visible', timeout: 10_000 })
   await contattiTab.click()
   await page.waitForLoadState("networkidle").catch(() => {})
   await waitForContattiTable(page)
 
   // Clicca "Aggiungi Contatto"
   const aggiungiBtn = page.locator('[data-testid="btn-aggiungi-contatto"]')
-  await aggiungiBtn.waitFor({ state: 'visible', timeout: 10000 })
+  await aggiungiBtn.waitFor({ state: 'visible', timeout: 10_000 })
   await aggiungiBtn.click()
 
   // Aspetta il dialog
@@ -114,9 +115,9 @@ export async function createContattoViaUI(page, { nome, cognome, email, cellular
   // Compila tutti i campi
   await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
   await dialog.locator('[data-testid="contatto-cognome"]').fill(cognome)
-  const cell = cellulare || `333${Math.floor(Math.random() * 9000000) + 1000000}`
+  const cell = cellulare || `333${Math.floor(Math.random() * 9_000_000) + 1_000_000}`
   await dialog.locator('[data-testid="contatto-cellulare"]').fill(cell)
-  const telo = telefono || `02${Math.floor(Math.random() * 90000000) + 10000000}`
+  const telo = telefono || `02${Math.floor(Math.random() * 90_000_000) + 10_000_000}`
   await dialog.locator('[data-testid="contatto-telefono"]').fill(telo)
 
   // Aggiungi email se fornita
@@ -130,9 +131,10 @@ export async function createContattoViaUI(page, { nome, cognome, email, cellular
   }
 
   // Submit e attendi POST /items/contatti
+  const salvaBtn = dialog.locator('button:has-text("Salva")')
   const [postResp] = await Promise.all([
     page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'POST'),
-    dialog.locator('button:has-text("Salva")').click()
+    salvaBtn.evaluate(el => el.click())
   ])
 
   const data = await postResp.json()
@@ -167,7 +169,7 @@ export async function assegnaContattoAFamigliaViaUI(
 
   // Usa gp.clickContactsOnFamiglia che gestisce sia desktop che mobile
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
-  await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
+  await famiglieTab.waitFor({ state: 'visible', timeout: 10_000 })
   await famiglieTab.click()
   await page.waitForLoadState("networkidle").catch(() => {})
 
@@ -208,7 +210,7 @@ export async function rimuoviContattoDaFamigliaViaUI(page, { famigliaNome, fullN
 
   // Cerca la famiglia nel tab Famiglie e clicca contacts
   const famiglieTab = page.locator('.q-tab:has-text("Famiglie")')
-  await famiglieTab.waitFor({ state: 'visible', timeout: 10000 })
+  await famiglieTab.waitFor({ state: 'visible', timeout: 10_000 })
   await famiglieTab.click()
   await page.waitForLoadState("networkidle").catch(() => {})
 
@@ -217,7 +219,7 @@ export async function rimuoviContattoDaFamigliaViaUI(page, { famigliaNome, fullN
   await page.waitForLoadState("networkidle").catch(() => {})
   const famTable = page.locator('.q-table')
   const famRow = famTable.locator('td').filter({ hasText: famigliaNome }).first()
-  await famRow.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
+  await famRow.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {})
   const contactsBtn = famRow.locator('..').locator('[aria-label="Gestisci contatti"]')
   await contactsBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
   if (!((await contactsBtn.count()) > 0)) {

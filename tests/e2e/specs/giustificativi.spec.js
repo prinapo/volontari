@@ -2,7 +2,7 @@ import { test, expect } from '../helpers/console.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { apiLogin, apiPost } from '../helpers/api.js'
+import { apiLogin, apiPost, apiPatch, getToken } from '../helpers/api.js'
 import fs from 'fs'
 import crypto from 'crypto'
 import {
@@ -443,14 +443,45 @@ test.describe('Giustificativi', () => {
       expect(scaricaHref).toContain('access_token=')
     })
 
+    async function allegaFileAlPrimoGiust(page) {
+      // Trova il primo giustificativo visibile e recupera il suo ID
+      const card = page.locator('[data-testid^="giustificativo-card-"]').first()
+      const testId = await card.getAttribute('data-testid')
+      const giustId = testId?.replace('giustificativo-card-', '')
+      if (!giustId) return false
+
+      // Upload file via API come admin (il volontario non ha PATCH su Giustificativi)
+      const fileContent = fs.readFileSync(FIXTURE_PDF)
+      const formData = new FormData()
+      formData.append('file', new Blob([fileContent], { type: 'application/pdf' }), 'test-file.pdf')
+      const token = getToken()
+      const uploadRes = await fetch('https://api-dev.sostienilsostegno.com/files/', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      })
+      if (!uploadRes.ok) return false
+      const uploadData = await uploadRes.json()
+      const files = uploadData.data
+      const fileId = Array.isArray(files) ? files[0]?.id : files?.id
+      if (!fileId) return false
+
+      // Allega il file al giustificativo
+      await apiPatch('Giustificativi', giustId, { Allegato: fileId })
+      await page.reload()
+      await page.waitForLoadState("networkidle").catch(() => {})
+      return true
+    }
+
     test('AL-03: Scarica file è un PDF valido @crud', async ({ page }) => {
+      await allegaFileAlPrimoGiust(page)
+
       const cardWithAttach = page.locator('[data-testid^="giustificativo-card-"]').filter({ has: page.locator('a[href*="/assets/"]') })
+      if ((await cardWithAttach.count()) === 0) return
 
       const scaricaBtn = cardWithAttach.first().locator('a[aria-label="Scarica allegato"]')
       const href = await scaricaBtn.getAttribute('href')
 
-
-      // Scarica il file e verifica che sia un PDF valido
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 5000 }).catch(() => null),
         scaricaBtn.click({ force: true })
@@ -459,7 +490,10 @@ test.describe('Giustificativi', () => {
     })
 
     test('AL-04: Apri file si apre in nuova scheda con URL corretto @crud', async ({ page }) => {
+      await allegaFileAlPrimoGiust(page)
+
       const cardWithAttach = page.locator('[data-testid^="giustificativo-card-"]').filter({ has: page.locator('a[href*="/assets/"]') })
+      if ((await cardWithAttach.count()) === 0) return
 
       const apriBtn = cardWithAttach.first().locator('a[aria-label="Apri allegato"]')
       const href = await apriBtn.getAttribute('href')

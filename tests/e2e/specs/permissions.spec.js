@@ -68,7 +68,7 @@ test.describe('Sidebar Navigation — Extra Roles', () => {
     await expect(drawer.locator('text=Verifica').first()).toBeVisible()
     await expect(drawer.locator('text=Riconciliazione').first()).toBeVisible()
     await expect(drawer.locator('text=Gestione').first()).toBeVisible()
-    await expect(drawer.locator('text=User Admin').first()).toBeVisible()
+    await expect(drawer.locator('text=Admin').first()).toBeVisible()
   })
 })
 

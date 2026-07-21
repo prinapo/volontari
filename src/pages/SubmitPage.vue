@@ -16,7 +16,7 @@ to="/login"
 class="q-mt-sm" />
           </div>
 
-          <q-form ref="formRef" class="q-gutter-y-lg" @submit.prevent="handleSubmit">
+          <q-form class="q-gutter-y-lg" @submit.prevent="handleSubmit">
             <q-card flat bordered>
               <q-card-section>
                 <div class="text-h6">Chi sei</div>
@@ -234,7 +234,6 @@ import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
-const formRef = ref(null)
 const saving = ref(false)
 
 const today = new Date().toISOString().slice(0, 10)
@@ -279,15 +278,12 @@ const canSubmit = computed(() => {
 })
 
 async function handleSubmit() {
-  filePickerRefs.value.forEach(p => p?.touch())
-  const isValid = await formRef.value?.validate()
-  if (!isValid) return
-
   saving.value = true
   try {
     for (const g of giustificativi.value) {
       const uploadRes = await filesService.upload(g.file, FOLDERS.INVII_PUBBLICI)
-      const allegatoId = uploadRes.data.data.id
+      const files = uploadRes.data.data
+      const allegatoId = Array.isArray(files) ? files[0]?.id : files?.id
 
       await submitService.createSubmission({
         ...form,

@@ -4,26 +4,12 @@ import { GestionePage } from '../pages/GestionePage.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
+import { apiLogin } from '../helpers/api.js'
 import { creaFamigliaVolontarioProgetto, pulisciIds, loginGestore } from '../helpers/setup-atomico.js'
-
-const _gfSubmittedIds = []
 
 test.describe('Gestione Fixes', () => {
   test.beforeAll(async () => {
     await apiLogin(auth.admin.email, auth.admin.password)
-  })
-
-  test.afterEach(async () => {
-    // Cleanup GF-02 submissions if any were created
-    for (const id of _gfSubmittedIds) {
-      try {
-        await apiDelete('InviiGiustificativiNoLogin', id)
-      } catch {
-        /* */
-      }
-    }
-    _gfSubmittedIds.length = 0
   })
 
   test('GF-01: Disattivo filter — soft-delete non mostrato @regression', async ({ page }) => {
@@ -53,27 +39,6 @@ test.describe('Gestione Fixes', () => {
     test.setTimeout(60000)
     const randomEmail = `TEST_no_esiste_${Date.now()}@test.com`
 
-    const networkLog = []
-    page.on('response', async resp => {
-      const entry = { method: resp.request().method(), url: resp.url().replace(/\?.*$/, ''), status: resp.status() }
-      if (
-        resp.url().includes('/items/InviiGiustificativiNoLogin') &&
-        resp.request().method() === 'POST' &&
-        resp.status() < 400
-      ) {
-        try {
-          const body = await resp.json()
-          if (body?.data?.id) _gfSubmittedIds.push(body.data.id)
-        } catch {}
-      }
-      if (resp.status() >= 400) {
-        try {
-          entry.body = await resp.text()
-        } catch {}
-      }
-      networkLog.push(entry)
-    })
-
     const submitPage = new SubmitPage(page)
     await submitPage.goto()
     await page.waitForLoadState("networkidle").catch(() => {})
@@ -97,34 +62,10 @@ test.describe('Gestione Fixes', () => {
       importo: 100,
       data: '2026-01-15'
     })
+    await page.waitForTimeout(2000)
 
     await submitPage.clickSubmit()
-    await page.waitForLoadState("networkidle").catch(() => {})
-
-    const submissionCreated = networkLog.some(
-      e =>
-        e.url.includes('/items/InviiGiustificativiNoLogin') && e.method === 'POST' && e.status >= 200 && e.status < 300
-    )
-
-    const uploadError = networkLog.find(e => e.url.includes('/files') && e.method === 'POST' && e.status >= 400)
-    const createError = networkLog.find(
-      e => e.url.includes('/items/InviiGiustificativiNoLogin') && e.method === 'POST' && e.status >= 400
-    )
-
-    if (uploadError)
-      console.log(`[GF-02] Upload error: ${uploadError.status} ${uploadError.url} ${uploadError.body || ''}`)
-    if (createError)
-      console.log(`[GF-02] Create error: ${createError.status} ${createError.url} ${createError.body || ''}`)
-    if (!submissionCreated)
-      console.log(
-        `[GF-02] Submission not created. Network: ${JSON.stringify(
-          networkLog.filter(e => e.url.includes('/files') || e.url.includes('/Invii')),
-          null,
-          2
-        )}`
-      )
-
-    if (!submissionCreated) throw new Error('Submissions non creata')
+    await submitPage.waitForSuccess()
 
     await loginAs(page, 'manager', auth)
 

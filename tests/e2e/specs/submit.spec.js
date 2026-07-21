@@ -107,7 +107,8 @@ test.describe('SubmitPage', () => {
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
     await submitPage.nomeRichiedente.fill('')
-    await submitPage.cognomeRichiedente.click()
+    await page.keyboard.press('Tab')
+    await page.waitForTimeout(200)
 
     const errorFields = page.locator('.q-field--error')
     const count = await errorFields.count()

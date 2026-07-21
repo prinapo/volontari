@@ -13,18 +13,18 @@ export class GestionePage {
     return this.page.locator('.q-tab:has-text("Contatti")')
   }
 
-  async _waitForContattiApi() {
+  async #waitForContattiApi() {
     await this.page
       .waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET', {
-        timeout: 10000
+        timeout: 10_000
       })
       .catch(() => {})
   }
 
-  async _waitForFamiglieApi() {
+  async #waitForFamiglieApi() {
     await this.page
       .waitForResponse(resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET', {
-        timeout: 10000
+        timeout: 10_000
       })
       .catch(() => {})
   }
@@ -34,7 +34,7 @@ export class GestionePage {
    */
   async selectContattiTab() {
     await this.contattiTab.click()
-    await this._waitForContattiApi()
+    await this.#waitForContattiApi()
     await this.waitForTable()
     const isMobile = (await this.page.locator('.q-table__grid').count()) > 0
     if (isMobile) {
@@ -76,7 +76,7 @@ export class GestionePage {
           const exp = panel.querySelector('.q-expansion-item')
           return !!(tr || exp)
         },
-        { timeout: 20000 }
+        { timeout: 20_000 }
       )
       .catch(() => {})
     await this.page.waitForLoadState('networkidle')
@@ -86,7 +86,7 @@ export class GestionePage {
     await this.page
       .locator('.q-expansion-item')
       .first()
-      .waitFor({ state: 'visible', timeout: 15000 })
+      .waitFor({ state: 'visible', timeout: 15_000 })
       .catch(() => {})
   }
 
@@ -102,7 +102,7 @@ export class GestionePage {
     try {
       const text = await this.paginationInfo.innerText({ timeout: 5000 })
       const match = text.match(/di\s+([\d.]+)/)
-      return match ? parseInt(match[1].replace(/\./g, '')) : 0
+      return match ? parseInt(match[1].replaceAll('.', '')) : 0
     } catch {
       return 0
     }
@@ -110,7 +110,8 @@ export class GestionePage {
 
   async search(text) {
     await this.searchInput.fill(text)
-    await this._waitForContattiApi()
+    await this.page.waitForTimeout(500)
+    await this.#waitForContattiApi()
     await this.waitForTable()
     const isMobile = (await this.page.locator('.q-table__grid').count()) > 0
     if (isMobile) {
@@ -120,8 +121,8 @@ export class GestionePage {
 
   async setTipoFilter(tipo) {
     await this.tipoFilter.click()
-    await this.page.locator(`.q-item:has-text("${tipo}")`).click()
-    await this._waitForContattiApi()
+    await this.page.locator(`.q-menu .q-item:has-text("${tipo}"), .q-dialog .q-item:has-text("${tipo}")`).first().click()
+    await this.#waitForContattiApi()
     await this.waitForTable()
   }
 
@@ -149,7 +150,7 @@ export class GestionePage {
 
   async searchFamiglie(text) {
     await this.famiglieSearch.fill(text)
-    await this._waitForFamiglieApi()
+    await this.#waitForFamiglieApi()
     await this.waitForTable()
   }
 
@@ -165,14 +166,12 @@ export class GestionePage {
   async clickContactsOnFamiglia(nomeFamiglia) {
     // Desktop: trova la riga col nome famiglia, espandi, clicca Aggiungi contatto
     const famigliaRow = this.page.locator('.q-table tbody tr').filter({ hasText: nomeFamiglia }).first()
-    if (await famigliaRow.isVisible({ timeout: 8000 }).catch(() => false)) {
-      // Prova ad espandere solo se NON già espansa
+    if (await famigliaRow.isVisible({ timeout: 5000 }).catch(() => false)) {
       const expandBtn = famigliaRow.locator('button[aria-label="Mostra contatti"]')
       if (await expandBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await expandBtn.click()
         await this.page.waitForLoadState('networkidle')
       }
-      // Cerca Aggiungi contatto (nella riga espansa subito dopo)
       const addBtn = this.page.locator('button:has-text("Aggiungi contatto")').first()
       if (await addBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
         await addBtn.click()
@@ -180,6 +179,26 @@ export class GestionePage {
         return true
       }
     }
+
+    // Mobile: espandi l'expansion item e cerca il pulsante contatti
+    const grid = this.page.locator('.q-table--grid')
+    if (await grid.isVisible({ timeout: 1000 }).catch(() => false)) {
+      const expItem = this.page.locator('.q-expansion-item').filter({ hasText: nomeFamiglia }).first()
+      if (await expItem.isVisible({ timeout: 5000 }).catch(() => false)) {
+        // Espandi se non già espanso
+        if (!(await expItem.locator('.q-expansion-item--expanded').count())) {
+          await expItem.click()
+          await this.page.waitForLoadState('networkidle')
+        }
+        const addBtn = expItem.locator('button:has-text("Aggiungi contatto")')
+        if (await addBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await addBtn.evaluate(el => el.click())
+          await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+          return true
+        }
+      }
+    }
+
     return false
   }
 
@@ -197,15 +216,14 @@ export class GestionePage {
     await input.fill(searchTerm)
     await this.page.waitForResponse(
       resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET',
-      { timeout: 10000 }
+      { timeout: 10_000 }
     ).catch(() => {})
+    await this.page.waitForTimeout(500)
     const item = this.page.locator('.q-item').filter({ hasText: searchTerm }).first()
     if ((await item.count()) > 0) {
       await item.click({ force: true })
     } else {
-      // Fallback: primo item del menu
-      const any = this.page.locator('.q-menu .q-item, .q-dialog .q-item').first()
-      if ((await any.count()) > 0) await any.click({ force: true })
+      throw new Error(`Contatto con testo "${searchTerm}" non trovato nella ricerca`)
     }
     await this.contattiDialog.locator('button:has-text("Genitore")').last().click()
   }
@@ -221,16 +239,14 @@ export class GestionePage {
     await input.fill(searchEmail)
     await this.page.waitForResponse(
       resp => resp.url().includes('/items/contatti') && resp.request().method() === 'GET',
-      { timeout: 10000 }
+      { timeout: 10_000 }
     ).catch(() => {})
-    // Cerca l'item per email: su desktop è in .q-menu, su mobile in .q-dialog
+    await this.page.waitForTimeout(500)
     const item = this.page.locator('.q-item').filter({ hasText: searchEmail }).first()
     if ((await item.count()) > 0) {
       await item.click({ force: true })
     } else {
-      // Fallback: prendi il primo item disponibile dopo il filtro
-      const any = this.page.locator('.q-menu .q-item, .q-dialog .q-item').first()
-      if ((await any.count()) > 0) await any.click({ force: true })
+      throw new Error(`Contatto con email "${searchEmail}" non trovato nella ricerca`)
     }
     await this.contattiDialog.locator('button:has-text("Volontario")').first().click()
   }

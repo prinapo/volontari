@@ -94,7 +94,7 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     await expect(drawer.locator('text=Gestione').first()).toBeVisible()
     await expect(drawer.locator('text=Verifica').first()).toBeVisible()
     await expect(drawer.locator('text=Riconciliazione').first()).toBeVisible()
-    await expect(drawer.locator('text=User Admin').first()).toBeVisible()
+    await expect(drawer.locator('text=Admin').first()).toBeVisible()
   })
 
   test('LB-04: Click menu item naviga alla pagina corretta @smoke', async ({ page }) => {

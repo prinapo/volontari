@@ -20,16 +20,18 @@ export class VerificaPage {
   }
 
   async waitForTable() {
-    await this.table.waitFor({ state: 'visible', timeout: 15000 })
+    await this.table.waitFor({ state: 'visible', timeout: 15_000 })
     // Wait for actual data rows to load (desktop: tbody tr, mobile: .q-expansion-item)
     await this.page.waitForFunction(() => {
       const table = document.querySelector('.verifica-table')
       if (!table) return false
-      if (table.classList.contains('q-table--grid')) {
-        return table.querySelectorAll('.q-expansion-item').length > 0
-      }
-      return table.querySelectorAll('tbody tr').length > 0
-    }, { timeout: 15000 }).catch(() => {})
+      const grid = table.classList.contains('q-table--grid')
+      const rows = grid
+        ? table.querySelectorAll('.q-expansion-item')
+        : table.querySelectorAll('tbody tr')
+      if (rows.length > 0) return true
+      return document.body.innerText.includes('Nessun dato disponibile')
+    }, { timeout: 15_000 }).catch(() => {})
   }
 
   async getRowCount() {
@@ -50,7 +52,7 @@ export class VerificaPage {
           await this.page.evaluate(t => {
             const inp = document.querySelector('input[aria-label="Cerca famiglia"]')
             if (!inp) return
-            const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+            const nativeSetter = Object.getOwnPropertyDescriptor(globalThis.HTMLInputElement.prototype, 'value').set
             nativeSetter.call(inp, t)
             inp.dispatchEvent(new Event('input', { bubbles: true }))
             inp.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }))
@@ -62,7 +64,7 @@ export class VerificaPage {
       await this.page.evaluate(t => {
         const inp = document.querySelector('input[aria-label="Cerca famiglia"]')
         if (!inp) return
-        const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+        const nativeSetter = Object.getOwnPropertyDescriptor(globalThis.HTMLInputElement.prototype, 'value').set
         nativeSetter.call(inp, t)
         inp.dispatchEvent(new Event('input', { bubbles: true }))
         inp.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }))
@@ -70,7 +72,8 @@ export class VerificaPage {
     }
 
     // Wait for Quasar debounce and search API call(s) to complete
-    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+    await this.page.waitForTimeout(500)
+    await this.page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
     await this.page.waitForFunction(searchText => {
       const table = document.querySelector('.verifica-table')
       if (!table) return true
@@ -81,9 +84,14 @@ export class VerificaPage {
           if (item.textContent.includes(searchText)) return true
         }
       }
-      if (!isGrid && table.querySelectorAll('tbody tr').length > 0) return true
+      if (!isGrid) {
+        const rows = table.querySelectorAll('tbody tr')
+        for (const row of rows) {
+          if (row.textContent.includes(searchText)) return true
+        }
+      }
       return document.body.innerText.includes('Nessun dato disponibile')
-    }, text, { timeout: 10000 }).catch(() => {})
+    }, text, { timeout: 10_000 }).catch(() => {})
   }
 
   async expandRow(index = 0) {
@@ -91,15 +99,17 @@ export class VerificaPage {
     if ((await expandBtn.count()) > 0) {
       await expandBtn.click()
     } else {
-      // Su mobile: click sull'expansion item
+      // Su mobile: clicca header expansion item
       const expItem = this.page.locator('.q-expansion-item').nth(index)
       if ((await expItem.count()) > 0) {
-        await expItem.click()
+        await expItem.locator('.q-item').first().click()
       }
     }
 
     const isGrid = await this.page.locator('.q-table--grid').count() > 0
-    if (!isGrid) {
+    if (isGrid) {
+      await this.page.waitForTimeout(500)
+    } else {
       await this.page
         .locator('.expandable-content')
         .first()
@@ -107,8 +117,6 @@ export class VerificaPage {
         .catch(() => {
           console.log('[VerificaPage] expandable-content not found within timeout')
         })
-    } else {
-      await this.page.locator('.q-expansion-item--expanded').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     }
   }
 

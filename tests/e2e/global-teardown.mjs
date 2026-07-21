@@ -71,7 +71,12 @@ async function cleanupTestData(baseUrl, token) {
 
   // 2. Delete giustificativi with TEST_ prefix
   const giustificativi = await apiGet(baseUrl, token, '/items/Giustificativi', {
-    filter: JSON.stringify({ Descrizione: { _starts_with: 'TEST_' } }),
+    filter: JSON.stringify({
+      _or: [
+        { Descrizione: { _starts_with: 'TEST_' } },
+        { Descrizione: { _starts_with: 'Test ' } }
+      ]
+    }),
     fields: 'id',
     limit: -1
   })

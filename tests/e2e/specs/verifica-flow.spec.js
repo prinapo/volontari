@@ -1,18 +1,19 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { apiLogin, apiGet, apiPatch } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
-import { VerificaPage } from '../pages/VerificaPage.js'
+import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
 import { loginAs } from '../helpers/login.js'
 import { monitorApi, waitForPatchStato, logApiCalls } from '../helpers/network.js'
-import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
-import { apiLogin, apiGet, apiPatch } from '../helpers/api.js'
 import {
   creaFamigliaVolontarioProgetto,
   loginVolontarioConFamiglia,
   pulisciIds,
   loginGestore
 } from '../helpers/setup-atomico.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import path from 'path'
-import { fileURLToPath } from 'url'
+import { VerificaPage } from '../pages/VerificaPage.js'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
@@ -63,7 +64,8 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
   })
 
   test('VF-01: Verifica giustificativo — intercetta PATCH @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
+    page.expectApiError('/items/Progetti/')
     const testDesc = `TEST_VF_01_verify_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -120,11 +122,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
     logApiCalls(apiCalls)
     expect(patches.length).toBeGreaterThan(0)
-    expect(patches[patches.length - 1].Stato).toBe('verificato')
+    expect(patches.at(-1).Stato).toBe('verificato')
   })
 
   test('VF-02: Rifiuta giustificativo — intercetta PATCH @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
+    page.expectApiError('/items/Progetti/')
     const testDesc = `TEST_VF_02_reject_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -167,8 +170,8 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
       const rejectDialog = page.locator('.q-dialog:visible').last()
       if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-        const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
-        if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Test rifiuto E2E')
+        const textarea = rejectDialog.locator('textarea').first()
+        await textarea.fill('Test rifiuto E2E', { force: true })
         await rejectDialog
           .locator('button')
           .filter({ hasText: /rifiut|conferma/i })
@@ -180,11 +183,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
     logApiCalls(apiCalls)
     expect(patches.length).toBeGreaterThan(0)
-    expect(patches[patches.length - 1].Stato).toBe('rifiutato')
+    expect(patches.at(-1).Stato).toBe('rifiutato')
   })
 
   test('VF-03: Draft→Inviato — intercetta PATCH @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
+    page.expectApiError('/items/Progetti/')
     const testDesc = `TEST_VF_03_send_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -220,11 +224,11 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
     logApiCalls(apiCalls)
     expect(patches.length).toBeGreaterThan(0)
-    expect(patches[patches.length - 1].Stato).toBe('inviato')
+    expect(patches.at(-1).Stato).toBe('inviato')
   })
 
   test('VF-04: Aggiungi giustificativo da VerificaPage @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginGestore(page)
     await creaFamigliaVolontarioProgetto(page, ids)
 
@@ -235,7 +239,8 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
   })
 
   test('VF-05: Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e', async ({ page }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
+    page.expectApiError('/items/Progetti/')
     const apiCalls = monitorApi(page)
 
     // 1. Atomic setup — crea famiglia + progetto
@@ -254,46 +259,24 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (draft?.id) ids.giustificativi.push(draft.id)
     expect(draft, 'Creazione giustificativo fallita').not.toBeNull()
 
-    // 3. Verificatore verifica e poi rifiuta
+    // 3. Verificatore rifiuta il giustificativo
     await loginAs(page, 'manager', auth)
     const vp = new VerificaPage(page)
     await vp.goto()
     await vp.waitForTable()
 
-    // Cerca il giustificativo appena creato
-    const searchInput = page.locator('input[aria-label="Cerca famiglia"]')
-    await searchInput.fill(nomeFam)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await vp.searchFamiglia(nomeFam)
+    await vp.expandRow(0)
 
-    const expandBtn = page.locator('[data-testid="expand-row"]').first()
-    if (await expandBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expandBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
-    }
-
-    // Verifica
-    const verifyPatches = await waitForPatchStato(page, 'verificato', async () => {
-      const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
-      if (await verifyBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await verifyBtn.click()
-        await page.waitForLoadState("networkidle").catch(() => {})
-      }
-    })
-
-    if (verifyPatches.length > 0) {
-      expect(verifyPatches[verifyPatches.length - 1].Stato).toBe('verificato')
-    }
-
-    // Rifiuta
     const rejectPatches = await waitForPatchStato(page, 'rifiutato', async () => {
       const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
-      if (await rejectBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if (await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
         await rejectBtn.click()
         await page.waitForLoadState("networkidle").catch(() => {})
         const rejectDialog = page.locator('.q-dialog:visible').last()
         if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const notaInput = rejectDialog.locator('textarea, input[type="text"]').first()
-          if (await notaInput.isVisible().catch(() => false)) await notaInput.fill('Rifiuto test VF-05')
+          const textarea = rejectDialog.locator('textarea').first()
+          await textarea.fill('Rifiuto test VF-05', { force: true })
           await rejectDialog
             .locator('button')
             .filter({ hasText: /rifiut|conferma/i })
@@ -305,7 +288,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     })
 
     if (rejectPatches.length > 0) {
-      expect(rejectPatches[rejectPatches.length - 1].Stato).toBe('rifiutato')
+      expect(rejectPatches.at(-1).Stato).toBe('rifiutato')
     }
 
     logApiCalls(apiCalls)

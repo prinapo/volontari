@@ -23,6 +23,7 @@
     "test:unit:ui": "vitest --config tests/unit/vitest.config.mjs --ui",
     "test:unit:coverage": "vitest run --config tests/unit/vitest.config.mjs --coverage",
     "test:e2e": "npx playwright test --config tests/e2e/playwright.config.js",
+    "test:e2e:full": "bash scripts/run-e2e-full.sh",
     "test:e2e:ui": "npx playwright test --config tests/e2e/playwright.config.js --ui",
     "deploy": "node scripts/deploy-ftp.mjs",
     "deploy:init": "node scripts/deploy-init.mjs",

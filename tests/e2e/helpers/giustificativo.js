@@ -52,9 +52,10 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   const filePath = data.file || FIXTURE_PDF
   await dialog.locator('input[type="file"]').first().setInputFiles(filePath)
 
+  const salvaBtn = dialog.locator('[data-testid="giustform-salva"]')
   const [postResp] = await Promise.all([
     page.waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'POST'),
-    dialog.locator('[data-testid="giustform-salva"]').click()
+    salvaBtn.evaluate(el => el.click())
   ])
 
   expect(postResp.status()).toBe(200)
@@ -69,7 +70,7 @@ export async function createGiustificativoViaDialog(page, data = {}) {
     if (await sendBtn.count().then(c => c > 0)) {
       const [patchResp] = await Promise.all([
         page.waitForResponse(resp => resp.url().includes('/items/Giustificativi/' + giustId) && resp.request().method() === 'PATCH').catch(() => null),
-        sendBtn.click()
+        sendBtn.evaluate(el => el.click())
       ])
     }
     await page.waitForLoadState("networkidle").catch(() => {})

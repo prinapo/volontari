@@ -266,9 +266,9 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     await page.waitForLoadState("networkidle").catch(() => {})
     // Clicca campo IBAN per editarlo
     const ibanField = page.locator('.inline-editable-field').first()
-    await ibanField.click()
+    await ibanField.locator('[aria-label="Modifica"]').click()
     await page.waitForLoadState("networkidle").catch(() => {})
-    const ibanInput = ibanField.locator('input')
+    const ibanInput = page.locator('.inline-editable-field').first().locator('input')
     if ((await ibanInput.count()) > 0) {
       await ibanInput.fill('abc')
       const saveBtn = ibanField.locator('[data-testid="inline-save"]')

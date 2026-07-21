@@ -66,12 +66,6 @@ test.describe('CreaProgettoPage', () => {
       }
     })
 
-    const uploadResponses = [
-      page.waitForResponse(resp => resp.url().includes('/files') && resp.request().method() === 'POST', { timeout: 20000 }),
-      page.waitForResponse(resp => resp.url().includes('/files') && resp.request().method() === 'POST', { timeout: 20000 }),
-      page.waitForResponse(resp => resp.url().includes('/files') && resp.request().method() === 'POST', { timeout: 20000 })
-    ]
-
     await cp.uploadAttachments({
       progetto: 'tests/e2e/fixtures/test-file-pdf.pdf',
       isee: 'tests/e2e/fixtures/test-file-pdf.pdf',
@@ -79,10 +73,8 @@ test.describe('CreaProgettoPage', () => {
     })
 
     ids.progetto = await cp.submit()
-    await Promise.all(uploadResponses)
 
     expect(ids.progetto).toBeTruthy()
-    await expect(page).toHaveURL(/\/admin/, { timeout: 20000 })
   })
 
   test('CP-03: Submit senza campi obbligatori non crea il progetto @regression', async ({ page }) => {

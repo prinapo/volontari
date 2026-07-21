@@ -28,9 +28,8 @@ export default defineConfig({
     {
       name: 'mobile',
       use: {
-        browserName: 'chromium',
-        viewport: { width: 390, height: 844 },
-        userAgent: 'Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36'
+        ...devices['Pixel 5'],
+        browserName: 'chromium'
       }
     }
   ],

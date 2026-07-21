@@ -20,7 +20,8 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
   }
 
   // Click selettore per aprire menu/dialog
-  await famSelector.click()
+  await famSelector.scrollIntoViewIfNeeded()
+  await famSelector.click({ force: true })
   await page.waitForLoadState("networkidle").catch(() => {})
 
   // Cerca le opzioni nel menu (desktop) o nel dialog (mobile)
@@ -91,7 +92,8 @@ export async function selezionaProgetto(page, index = 0) {
     return
   }
 
-  await progettoSelect.click()
+  await progettoSelect.scrollIntoViewIfNeeded()
+  await progettoSelect.click({ force: true })
   await page.waitForLoadState("networkidle").catch(() => {})
 
   const items = page.locator('[role="option"]')
