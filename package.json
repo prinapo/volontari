@@ -131,7 +131,7 @@
     "pinia": "^4.0.2",
     "prettier": "^3.9.5",
     "rollup-plugin-visualizer": "^7.0.1",
-    "stylelint": "^17.14.0",
+    "stylelint": "^17.14.1",
     "stylelint-config-standard-scss": "^17.0.0",
     "vitest": "^4.1.10",
     "workbox-build": "^7.4.1",
