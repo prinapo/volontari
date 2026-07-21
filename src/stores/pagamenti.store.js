@@ -71,7 +71,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
         .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
 
-      const erogabile = Math.min(totaleVerificato, allocato)
+      const erogabile = Math.min(totaleVerificato * 0.8, allocato)
       const nuovoProposto = erogabile - totaleStorico
       const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
 
@@ -166,7 +166,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           fields:
             '*,Progetto.id_progetto,Progetto.Cognome_Beneficiario,Progetto.Nome_Beneficiario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
           limit: -1,
-          sort: '-DataProposta'
+          sort: 'DataProposta'
         })
         this.proposti = res.data.data || []
       } catch (error) {
@@ -183,7 +183,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           fields:
             '*,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
           limit: -1,
-          sort: '-DataProposta'
+          sort: 'DataProposta'
         })
         this.inCorso = res.data.data || []
       } catch (error) {
@@ -249,7 +249,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         )
 
         const allocato = Number.parseFloat(progetto.Allocato) || 0
-        const erogabile = Math.min(totaleVerificato, allocato)
+        const erogabile = Math.min(totaleVerificato * 0.8, allocato)
         const nuovoProposto = erogabile - totaleStorico
 
         const esistenteRes = await pagamentiService.getPagamenti({
@@ -286,7 +286,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async ricalcolaTotaliProgetto(progettoId) {
       this.error = null
       try {
-        const id = typeof progettoId === 'object' ? (progettoId?.id_progetto || progettoId?.id) : progettoId
+        const id = typeof progettoId === 'object' ? progettoId?.id_progetto || progettoId?.id : progettoId
         if (!id) return
         const progRes = await progettiService.getById(id)
         const progetto = progRes.data.data
@@ -366,9 +366,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         }
 
         // Valida nomi famiglia per CSV
-        const nomiInvalidi = pagamenti
-          .map(p => p.Famiglia?.Nome_Famiglia || '')
-          .filter(n => n && /[\n\r";]/.test(n))
+        const nomiInvalidi = pagamenti.map(p => p.Famiglia?.Nome_Famiglia || '').filter(n => n && /[\n\r";]/.test(n))
         if (nomiInvalidi.length > 0) {
           throw new Error(
             `Impossibile generare CSV: ${nomiInvalidi.length} famiglia/e hanno caratteri non consentiti nel nome.\n` +
