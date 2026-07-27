@@ -56,7 +56,8 @@ function normalizeProject(project, famiglia = {}) {
     allegatiProgetto: project.Allegati_Progetto || [],
     allegatiISEE: project.Allegati_ISEE || [],
     allegatiGiustificativi: project.Allegati_Giustificativi || [],
-    giustificativi: []
+    giustificativi: [],
+    percentualeRimborso: Math.min(100, Math.max(0, project.MassimaPercentualeErogabile ?? 80))
   }
 }
 
@@ -68,7 +69,8 @@ function recalculateRowTotals(row) {
     totaleRendicontato += toNumber(item.Importo)
   })
 
-  const totaleRimborsabileLordo = totaleRendicontato * 0.8
+  const fattore = (row.percentualeRimborso ?? 80) / 100
+  const totaleRimborsabileLordo = totaleRendicontato * fattore
   row.totaleRendicontato = totaleRendicontato
   row.totaleRimborsabile = Math.min(totaleRimborsabileLordo, row.allocato || totaleRimborsabileLordo)
   row.residuoAllocato = Math.max((row.allocato || 0) - totaleRimborsabileLordo, 0)

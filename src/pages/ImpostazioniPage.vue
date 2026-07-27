@@ -6,8 +6,22 @@
       <q-card-section>
         <div class="text-subtitle1 q-mb-sm">Dati anagrafici</div>
         <div class="row q-gutter-sm">
-          <q-input v-model="form.Nome" label="Nome" dense outlined class="col-12 col-sm" :rules="[val => !!val || 'Obbligatorio']" lazy-rules />
-          <q-input v-model="form.Cognome" label="Cognome" dense outlined class="col-12 col-sm" :rules="[val => !!val || 'Obbligatorio']" lazy-rules />
+          <q-input
+v-model="form.Nome"
+label="Nome"
+dense
+outlined
+class="col-12 col-sm"
+:rules="[val => !!val || 'Obbligatorio']"
+lazy-rules />
+          <q-input
+v-model="form.Cognome"
+label="Cognome"
+dense
+outlined
+class="col-12 col-sm"
+:rules="[val => !!val || 'Obbligatorio']"
+lazy-rules />
         </div>
         <div class="row q-gutter-sm q-mt-sm">
           <q-input v-model="form.Numero_di_cellulare" label="Cellulare" dense outlined class="col-12 col-sm" />
@@ -24,17 +38,51 @@
         <div class="text-subtitle1 q-mb-sm">Email</div>
         <div v-if="emails.length === 0" class="text-caption text-grey q-mb-sm">Nessuna email associata</div>
         <div v-for="(em, idx) in emails" :key="idx" class="row items-center q-gutter-xs q-mb-xs">
-          <q-input v-model="em.email_address" label="Email" type="email" dense outlined class="col" :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email non valida']" lazy-rules />
-          <q-btn v-if="!em.Primary && !em._saving" flat round dense icon="star_outline" color="grey" size="sm" aria-label="Imposta come primaria" @click="setPrimary(idx)">
+          <q-input
+v-model="em.email_address"
+label="Email"
+type="email"
+dense
+outlined
+class="col"
+:rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email non valida']"
+lazy-rules />
+          <q-btn
+v-if="!em.Primary && !em._saving"
+flat
+round
+dense
+icon="star_outline"
+color="grey"
+size="sm"
+aria-label="Imposta come primaria"
+@click="setPrimary(idx)">
             <q-tooltip>Imposta come primaria</q-tooltip>
           </q-btn>
           <q-badge v-else color="primary" label="Primaria" size="xs" />
-          <q-btn v-if="emails.length > 1 && !em._saving" flat round dense icon="delete" size="sm" aria-label="Elimina email" :disable="em.Primary" @click="removeEmail(idx)">
+          <q-btn
+v-if="emails.length > 1 && !em._saving"
+flat
+round
+dense
+icon="delete"
+size="sm"
+aria-label="Elimina email"
+:disable="em.Primary"
+@click="removeEmail(idx)">
             <q-tooltip>{{ em.Primary ? 'Imposta un\'altra primaria prima di eliminare' : 'Elimina email' }}</q-tooltip>
           </q-btn>
           <q-spinner v-if="em._saving" size="xs" color="grey" />
         </div>
-        <q-btn flat dense icon="add" label="Aggiungi email" color="primary" size="sm" class="q-mt-sm" @click="addEmail" />
+        <q-btn
+flat
+dense
+icon="add"
+label="Aggiungi email"
+color="primary"
+size="sm"
+class="q-mt-sm"
+@click="addEmail" />
         <div v-if="emailError" class="text-negative text-caption q-mt-sm">{{ emailError }}</div>
       </q-card-section>
     </q-card>
@@ -42,8 +90,23 @@
     <q-card flat bordered class="q-mb-md">
       <q-card-section>
         <div class="text-subtitle1 q-mb-sm">Cambia password</div>
-        <q-input v-model="passwordForm.newPassword" label="Nuova password" type="password" dense outlined class="q-mb-sm" :rules="[val => !!val || 'Obbligatorio']" lazy-rules />
-        <q-input v-model="passwordForm.confirmPassword" label="Conferma password" type="password" dense outlined :rules="[val => val === passwordForm.newPassword || 'Le password non coincidono']" lazy-rules />
+        <q-input
+v-model="passwordForm.newPassword"
+label="Nuova password"
+type="password"
+dense
+outlined
+class="q-mb-sm"
+:rules="[val => !!val || 'Obbligatorio']"
+lazy-rules />
+        <q-input
+v-model="passwordForm.confirmPassword"
+label="Conferma password"
+type="password"
+dense
+outlined
+:rules="[val => val === passwordForm.newPassword || 'Le password non coincidono']"
+lazy-rules />
         <div class="row q-mt-md">
           <q-btn color="primary" label="Cambia password" :loading="savingPassword" :disable="!passwordForm.newPassword || !passwordForm.confirmPassword || passwordForm.newPassword !== passwordForm.confirmPassword" @click="savePassword" />
         </div>
@@ -53,13 +116,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from 'stores/auth.store'
 import { useQuasar } from 'quasar'
-import { contattiService } from 'src/services/contatti.service'
+import { ref, computed, onMounted } from 'vue'
 import { authService } from 'src/services/auth.service'
+import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { notifySuccess, notifyError } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
 
 const $q = useQuasar()
 const authStore = useAuthStore()

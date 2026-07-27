@@ -4,9 +4,9 @@ import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
 import { STORAGE_KEYS } from 'src/utils/constants'
-import { logSessionEvent } from 'src/utils/session-log'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
+import { logSessionEvent } from 'src/utils/session-log'
 
 const AUTH_MODE = 'cookie'
 
@@ -140,7 +140,10 @@ export const useAuthStore = defineStore('auth', {
 
         if (!this.user?.id) return
       } catch (error) {
-        logSessionEvent('fetch_user_fallito', error.response?.data?.errors?.[0]?.message || error.message || 'Errore recupero utente')
+        logSessionEvent(
+          'fetch_user_fallito',
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore recupero utente'
+        )
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore recupero utente'
         return
       }
@@ -152,7 +155,10 @@ export const useAuthStore = defineStore('auth', {
           await this.resolveFamiglieAccess()
         }
       } catch (error) {
-        logSessionEvent('contatto_lookup_fallito', error.response?.data?.errors?.[0]?.message || error.message || 'Error message')
+        logSessionEvent(
+          'contatto_lookup_fallito',
+          error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        )
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         this.contatto = null
         this.hasFamiglieAccess = false
@@ -295,7 +301,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const refreshToken = AUTH_MODE === 'json' ? (this.refreshToken || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)) : null
+      const refreshToken =
+        AUTH_MODE === 'json' ? this.refreshToken || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) : null
       try {
         await authService.logout(refreshToken)
       } catch (error) {

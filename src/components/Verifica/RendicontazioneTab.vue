@@ -119,7 +119,7 @@ aria-label="Aggiorna dati"
                   </div>
                 </div>
                 <div class="col-12 col-sm-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile 80%</div>
+                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile {{ props.row.percentualeRimborso }}%</div>
                   <div class="text-positive text-weight-medium">
                     {{ formatCurrency(props.row.totaleRimborsabile) }}
                   </div>
@@ -281,14 +281,30 @@ aria-label="Aggiorna dati"
                           </div>
                           <div v-else-if="g.Stato === 'verificato'" class="row items-center q-gutter-xs">
                             <q-icon name="check_circle" size="md" color="positive" /><span class="text-body2 text-positive">Verificato</span>
-                            <q-btn flat dense round size="sm" icon="undo" color="grey" aria-label="Ripristina" @click="handleRevert(props.row.idProgetto, g)">
+                            <q-btn
+flat
+dense
+round
+size="sm"
+icon="undo"
+color="grey"
+aria-label="Ripristina"
+@click="handleRevert(props.row.idProgetto, g)">
                               <q-tooltip>Ripristina come 'inviato'</q-tooltip>
                             </q-btn>
                           </div>
                           <div v-else-if="g.Stato === 'rifiutato'">
                             <div class="row items-center q-gutter-xs">
                               <q-icon name="cancel" size="md" color="negative" /><span class="text-body2 text-negative">Rifiutato</span>
-                              <q-btn flat dense round size="sm" icon="undo" color="grey" aria-label="Ripristina" @click="handleRevert(props.row.idProgetto, g)">
+                              <q-btn
+flat
+dense
+round
+size="sm"
+icon="undo"
+color="grey"
+aria-label="Ripristina"
+@click="handleRevert(props.row.idProgetto, g)">
                                 <q-tooltip>Ripristina come 'inviato'</q-tooltip>
                               </q-btn>
                             </div>
@@ -518,7 +534,7 @@ aria-label="Aggiorna dati"
                   </div>
                 </div>
                 <div class="col-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile 80%</div>
+                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile {{ props.row.percentualeRimborso }}%</div>
                   <div class="text-positive text-weight-medium">
                     {{ formatCurrency(props.row.totaleRimborsabile) }}
                   </div>
@@ -880,7 +896,7 @@ const prontiCount = computed(() => {
 const summary = computed(() => [
   { label: 'Famiglie/progetti', value: String(filteredRows.value.length), color: '' },
   { label: 'Rendicontato', value: formatCurrency(selectedTotals.value.rendicontato), color: 'primary' },
-  { label: 'Rimborsabile 80%', value: formatCurrency(selectedTotals.value.rimborsabile), color: 'positive' },
+  { label: 'Rimborsabile', value: formatCurrency(selectedTotals.value.rimborsabile), color: 'positive' },
   { label: 'Pronte', value: String(prontiCount.value), color: '' }
 ])
 

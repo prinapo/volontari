@@ -251,7 +251,15 @@ size="sm"
                 <div class="text-caption">IBAN: {{ props.row.IBAN || '—' }}</div>
                 <div v-if="props.row.Stato === 'pagato'" class="row items-center q-gutter-xs q-mt-sm">
                   <q-badge color="positive">Pagato</q-badge>
-                  <q-btn flat round dense icon="undo" color="grey" size="sm" aria-label="Ripristina" @click="handleRipristina(props.row)">
+                  <q-btn
+flat
+round
+dense
+icon="undo"
+color="grey"
+size="sm"
+aria-label="Ripristina"
+@click="handleRipristina(props.row)">
                     <q-tooltip>Ripristina come 'in pagamento'</q-tooltip>
                   </q-btn>
                 </div>

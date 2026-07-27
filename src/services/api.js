@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { useAuthStore } from 'src/stores/auth.store'
 import { API_URL as ENV_API_URL, STORAGE_KEYS } from 'src/utils/constants'
-import { errorLogService } from './error-log.service'
 import { logSessionEvent } from 'src/utils/session-log'
+import { errorLogService } from './error-log.service'
 
 const API_URL = ENV_API_URL
 
@@ -68,10 +68,7 @@ function isInvalidTokenError(error) {
 
 async function refreshTokens() {
   if (AUTH_MODE === 'cookie') {
-    const { data } = await axios.post(`${API_URL}/auth/refresh`,
-      { mode: 'cookie' },
-      { withCredentials: true }
-    )
+    const { data } = await axios.post(`${API_URL}/auth/refresh`, { mode: 'cookie' }, { withCredentials: true })
     const newToken = data.data.access_token
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newToken)
     const authStore = useAuthStore()

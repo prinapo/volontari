@@ -9,8 +9,8 @@
     borderless
   >
     <template #control>
-      <div class="self-center full-width no-outline text-body1">
-        {{ displayValue || '—' }}
+      <div class="self-center no-outline text-body1" style="overflow-wrap: break-word; word-break: break-word; white-space: pre-wrap;">
+        {{ displayValue }}
       </div>
     </template>
     <template #append>

@@ -7,6 +7,8 @@ const DEFAULT_ATTACHMENT_PATH = 'tests/e2e/fixtures/test-file-pdf.pdf'
 export class CreaProgettoPage {
   constructor(page) {
     this.page = page
+    /** @type {object|null} dati del form correntemente in fase di fill */
+    this._formData = null
   }
 
   #fieldByLabel(label) {
@@ -42,10 +44,11 @@ export class CreaProgettoPage {
     await select.locator('.q-field__control').click()
     const searchInput = select.locator('input').first()
     await searchInput.fill(nomeFamiglia)
-    await this.page.waitForResponse(
-      resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET',
-      { timeout: 10_000 }
-    ).catch(() => {})
+    await this.page
+      .waitForResponse(resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'GET', {
+        timeout: 10_000
+      })
+      .catch(() => {})
 
     const item = this.page.locator('.q-menu .q-item, .q-dialog .q-item').filter({ hasText: nomeFamiglia }).first()
     if (await item.count()) {
@@ -121,6 +124,7 @@ export class CreaProgettoPage {
       Dettaglio_Costi: data.Dettaglio_Costi || null,
       Eta: data.Eta || null,
       Relazione_con_il_soggetto_richiedente: data.Relazione_con_il_soggetto_richiedente || null,
+      MassimaPercentualeErogabile: data.MassimaPercentualeErogabile || null,
       StatoProgetto: 'aperto'
     }
 

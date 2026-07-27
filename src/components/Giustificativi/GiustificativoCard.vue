@@ -114,10 +114,10 @@ label="Elimina"
 import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
-import GiustificativoFilePicker from './GiustificativoFilePicker.vue'
 import { assetUrl } from 'src/utils/assets'
 import { FILE_ACCEPT } from 'src/utils/constants'
 import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import GiustificativoFilePicker from './GiustificativoFilePicker.vue'
 
 const $q = useQuasar()
 

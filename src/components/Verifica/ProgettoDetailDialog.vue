@@ -183,7 +183,7 @@ aria-label="Chiudi">
             </div>
           </div>
           <div class="col-4">
-            <div class="text-caption text-grey-7">Rimborsabile 80%</div>
+            <div class="text-caption text-grey-7">Rimborsabile {{ progetto.percentualeRimborso }}%</div>
             <div class="text-weight-medium text-positive">
               {{ formatCurrency(progetto.totaleRimborsabile) }}
             </div>

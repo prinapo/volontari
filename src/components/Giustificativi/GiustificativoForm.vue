@@ -80,8 +80,20 @@ aria-label="Chiudi">
           />
           <GiustificativoFilePicker ref="filePickerRef" v-model="form.File" />
           <q-card-actions align="right" class="q-px-none q-mt-sm">
-            <q-btn v-close-popup data-testid="form-annulla" flat dense size="sm" label="Annulla" />
-            <q-btn color="primary" label="Salva" data-testid="giustform-salva" :loading="saving" :disable="!form.Descrizione || !form.Importo || Number.parseFloat(form.Importo || 0) <= 0 || !form.File || !form.Data || saving" type="submit" />
+            <q-btn
+v-close-popup
+data-testid="form-annulla"
+flat
+dense
+size="sm"
+label="Annulla" />
+            <q-btn
+color="primary"
+label="Salva"
+data-testid="giustform-salva"
+:loading="saving"
+:disable="!form.Descrizione || !form.Importo || Number.parseFloat(form.Importo || 0) <= 0 || !form.File || !form.Data || saving"
+type="submit" />
           </q-card-actions>
         </q-form>
       </q-card-section>

@@ -71,7 +71,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
         .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
 
-      const erogabile = Math.min(totaleVerificato * 0.8, allocato)
+      const fattore = (row.percentualeRimborso ?? 80) / 100
+      const erogabile = Math.min(totaleVerificato * fattore, allocato)
       const nuovoProposto = erogabile - totaleStorico
       const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
 
@@ -181,7 +182,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const res = await pagamentiService.getPagamenti({
           'filter[Stato][_in]': `${STATO_PAGAMENTO.IN_PAGAMENTO},${STATO_PAGAMENTO.PAGATO}`,
           fields:
-            '*,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
+            '*,Batch.id,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
           limit: -1,
           sort: 'DataProposta'
         })
@@ -249,7 +250,8 @@ export const usePagamentiStore = defineStore('pagamenti', {
         )
 
         const allocato = Number.parseFloat(progetto.Allocato) || 0
-        const erogabile = Math.min(totaleVerificato * 0.8, allocato)
+        const pct = Math.min(100, Math.max(0, progetto.MassimaPercentualeErogabile ?? 80))
+        const erogabile = Math.min(totaleVerificato * (pct / 100), allocato)
         const nuovoProposto = erogabile - totaleStorico
 
         const esistenteRes = await pagamentiService.getPagamenti({

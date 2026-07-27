@@ -207,11 +207,194 @@
                   icon="person_add"
                   color="primary"
                   label="Aggiungi contatto"
-                  @click="openContatti(props.row)"
                   class="q-mt-sm"
+                  @click="openContatti(props.row)"
                 />
               </q-card-section>
             </q-card>
+
+            <div v-if="progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-center q-py-md">
+              <q-spinner size="sm" /> Caricamento progetti...
+            </div>
+            <q-card v-else-if="progettiCache[props.row.id_famiglia]?.length" flat bordered class="q-mt-sm">
+              <q-card-section class="q-pa-sm">
+                <div class="text-caption text-grey-7 q-mb-sm">Progetti ({{ progettiCache[props.row.id_famiglia].length }})</div>
+                <div v-for="prog in progettiCache[props.row.id_famiglia]" :key="prog.id_progetto" class="q-mb-sm">
+                  <q-expansion-item dense dense-toggle expand-separator header-class="expansion-header">
+                    <template #header>
+                      <q-item-section>
+                        <q-item-label>
+                          {{ prog.AnnoBando }} — {{ prog.Cognome_Beneficiario }} {{ prog.Nome_Beneficiario }}
+                          <q-badge :color="prog.StatoProgetto === 'chiuso' ? 'grey-6' : 'positive'" outline class="q-ml-sm">
+                            {{ prog.StatoProgetto === 'chiuso' ? 'Chiuso' : 'Aperto' }}
+                          </q-badge>
+                        </q-item-label>
+                        <q-item-label caption>
+                          Allocato {{ formatCurrencyVal(prog.Allocato) }}
+                          <span v-if="prog.MassimaPercentualeErogabile != null"> — {{ prog.MassimaPercentualeErogabile }}%</span>
+                          <span v-else> — 80% (default)</span>
+                        </q-item-label>
+                      </q-item-section>
+                    </template>
+                    <q-card flat bordered>
+              <q-card-section class="q-pa-sm" style="overflow-wrap: break-word;">
+                      <q-separator class="q-mb-sm" />
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Cognome_Beneficiario || ''" label="Cognome" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Cognome_Beneficiario', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Nome_Beneficiario || ''" label="Nome" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Nome_Beneficiario', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Eta" label="Età" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Eta', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.AnnoBando" label="Anno bando" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'AnnoBando', v)" />
+                        </div>
+                        <div class="col-auto">
+                          <InlineEditableField :model-value="prog.Titolo_Progetto || ''" label="Titolo progetto" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Titolo_Progetto', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Ambito || ''" label="Ambito" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Ambito', v)" />
+                        </div>
+                      </div>
+                      <q-list dense class="q-mt-sm">
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Costo annuale</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Costo_Annuale) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Altri finanziamenti</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Altri_Fianziamenti) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Carico famiglia</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Costo_Carico_Famiglia) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Erogazione richiesta</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Erogazione_Richiesta) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Allocato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Allocato) }}</div></q-item-section>
+                        </q-item>
+                      </q-list>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Interstatario_CC || ''" label="Intestatario CC" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Interstatario_CC', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.IBAN || ''" label="IBAN" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'IBAN', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.ISEE" label="ISEE" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'ISEE', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Indice_ISEE" label="Indice ISEE" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Indice_ISEE', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Indice_Gravita_Disabilita" label="Indice gravità disabilità" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Indice_Gravita_Disabilita', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Punteggio_Complessivo || ''" label="Punteggio complessivo" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Punteggio_Complessivo', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Data_Inizio_Progetto || ''" label="Data inizio" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Data_Inizio_Progetto', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Data_Fine_Progetto || ''" label="Data fine" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Data_Fine_Progetto', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.DataChiusura || ''" label="Data chiusura" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'DataChiusura', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.MotivoChiusura || ''" label="Motivo chiusura" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'MotivoChiusura', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.StatoRendicontazione || ''" label="Stato rendicontazione" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'StatoRendicontazione', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Relazione_con_il_soggetto_richiedente || ''" label="Relazione con richiedente" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Relazione_con_il_soggetto_richiedente', v)" />
+                        </div>
+                      </div>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-12 col-sm-12">
+                          <InlineEditableField :model-value="prog.Descrizione_Progetto || ''" label="Descrizione progetto" type="textarea" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Descrizione_Progetto', v)" />
+                        </div>
+                        <div class="col-12 col-sm-12">
+                          <InlineEditableField :model-value="prog.Descrizione_Condizione || ''" label="Descrizione condizione" type="textarea" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Descrizione_Condizione', v)" />
+                        </div>
+                        <div class="col-12 col-sm-12">
+                          <InlineEditableField :model-value="prog.Dettaglio_Costi || ''" label="Dettaglio costi" type="textarea" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Dettaglio_Costi', v)" />
+                        </div>
+                      </div>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-6 col-sm-3">
+                          <q-checkbox :model-value="prog.Progetto_Sostegno_Scolastico" label="Sostegno scolastico" dense @update:model-value="v => saveProgettoField(prog, 'Progetto_Sostegno_Scolastico', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <q-checkbox :model-value="prog.Continuazione" label="Continuazione" dense @update:model-value="v => saveProgettoField(prog, 'Continuazione', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <div class="text-caption text-grey-7 q-mb-xs">Massimo erogabile</div>
+                          <q-input
+                            :model-value="prog.MassimaPercentualeErogabile"
+                            type="number"
+                            dense
+                            outlined
+                            min="0"
+                            max="100"
+                            step="1"
+                            suffix="%"
+                            style="max-width: 140px"
+                            :loading="salvandoProgId === prog.id_progetto"
+                            @update:model-value="salvaPercentualeProgetto(prog, $event)"
+                          />
+                        </div>
+                      </div>
+                      <q-separator class="q-my-sm" />
+                      <div class="text-caption text-grey-7">Dati calcolati automaticamente</div>
+                      <q-list dense class="q-mt-xs">
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale importo</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotaleImporto) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale verificato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotaleVerificato) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale proposto</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotaleProposto) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale pagato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotalePagato) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Residuo allocato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.ResiduoAllocato) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale pagamento</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotalePagamento) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale giustificativi</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ prog.TotaleGiustificativi ?? 0 }}</div></q-item-section>
+                        </q-item>
+                      </q-list>
+                     </q-card-section>
+                   </q-card>
+                 </q-expansion-item>
+                 </div>
+               </q-card-section>
+             </q-card>
+            <div v-else-if="!progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-grey q-py-sm">
+              Nessun progetto per questa famiglia.
+            </div>
           </q-expansion-item>
         </div>
       </template>
@@ -278,8 +461,8 @@
             </template>
           </q-td>
         </q-tr>
-        <q-tr v-show="props.expand" :props="props">
-          <q-td colspan="100%">
+        <q-tr v-show="props.expand" :props="props" style="max-width: 100%;">
+          <q-td colspan="100%" style="max-width: 100%; overflow-wrap: break-word;">
             <q-card flat bordered class="q-ma-sm">
               <q-card-section>
                 <div class="text-caption text-grey-7 q-mb-sm">Contatti</div>
@@ -406,11 +589,194 @@
                   icon="person_add"
                   color="primary"
                   label="Aggiungi contatto"
-                  @click="openContatti(props.row)"
                   class="q-mt-sm"
+                  @click="openContatti(props.row)"
                 />
               </q-card-section>
             </q-card>
+
+            <div v-if="progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-center q-py-md">
+              <q-spinner size="sm" /> Caricamento progetti...
+            </div>
+            <q-card v-else-if="progettiCache[props.row.id_famiglia]?.length" flat bordered class="q-mt-sm">
+              <q-card-section class="q-pa-sm">
+                <div class="text-caption text-grey-7 q-mb-sm">Progetti ({{ progettiCache[props.row.id_famiglia].length }})</div>
+                <div v-for="prog in progettiCache[props.row.id_famiglia]" :key="prog.id_progetto" class="q-mb-sm">
+                  <q-expansion-item dense dense-toggle expand-separator header-class="expansion-header">
+                    <template #header>
+                      <q-item-section>
+                        <q-item-label>
+                          {{ prog.AnnoBando }} — {{ prog.Cognome_Beneficiario }} {{ prog.Nome_Beneficiario }}
+                          <q-badge :color="prog.StatoProgetto === 'chiuso' ? 'grey-6' : 'positive'" outline class="q-ml-sm">
+                            {{ prog.StatoProgetto === 'chiuso' ? 'Chiuso' : 'Aperto' }}
+                          </q-badge>
+                        </q-item-label>
+                        <q-item-label caption>
+                          Allocato {{ formatCurrencyVal(prog.Allocato) }}
+                          <span v-if="prog.MassimaPercentualeErogabile != null"> — {{ prog.MassimaPercentualeErogabile }}%</span>
+                          <span v-else> — 80% (default)</span>
+                        </q-item-label>
+                      </q-item-section>
+                    </template>
+                    <q-card flat bordered>
+              <q-card-section class="q-pa-sm" style="overflow-wrap: break-word;">
+                      <q-separator class="q-mb-sm" />
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Cognome_Beneficiario || ''" label="Cognome" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Cognome_Beneficiario', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Nome_Beneficiario || ''" label="Nome" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Nome_Beneficiario', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Eta" label="Età" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Eta', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.AnnoBando" label="Anno bando" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'AnnoBando', v)" />
+                        </div>
+                        <div class="col-auto">
+                          <InlineEditableField :model-value="prog.Titolo_Progetto || ''" label="Titolo progetto" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Titolo_Progetto', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Ambito || ''" label="Ambito" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Ambito', v)" />
+                        </div>
+                      </div>
+                      <q-list dense class="q-mt-sm">
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Costo annuale</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Costo_Annuale) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Altri finanziamenti</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Altri_Fianziamenti) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Carico famiglia</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Costo_Carico_Famiglia) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Erogazione richiesta</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Erogazione_Richiesta) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Allocato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrencyVal(prog.Allocato) }}</div></q-item-section>
+                        </q-item>
+                      </q-list>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Interstatario_CC || ''" label="Intestatario CC" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Interstatario_CC', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.IBAN || ''" label="IBAN" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'IBAN', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.ISEE" label="ISEE" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'ISEE', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Indice_ISEE" label="Indice ISEE" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Indice_ISEE', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Indice_Gravita_Disabilita" label="Indice gravità disabilità" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Indice_Gravita_Disabilita', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Punteggio_Complessivo || ''" label="Punteggio complessivo" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Punteggio_Complessivo', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Data_Inizio_Progetto || ''" label="Data inizio" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Data_Inizio_Progetto', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Data_Fine_Progetto || ''" label="Data fine" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Data_Fine_Progetto', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.DataChiusura || ''" label="Data chiusura" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'DataChiusura', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.MotivoChiusura || ''" label="Motivo chiusura" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'MotivoChiusura', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.StatoRendicontazione || ''" label="Stato rendicontazione" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'StatoRendicontazione', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <InlineEditableField :model-value="prog.Relazione_con_il_soggetto_richiedente || ''" label="Relazione con richiedente" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Relazione_con_il_soggetto_richiedente', v)" />
+                        </div>
+                      </div>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-12 col-sm-12">
+                          <InlineEditableField :model-value="prog.Descrizione_Progetto || ''" label="Descrizione progetto" type="textarea" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Descrizione_Progetto', v)" />
+                        </div>
+                        <div class="col-12 col-sm-12">
+                          <InlineEditableField :model-value="prog.Descrizione_Condizione || ''" label="Descrizione condizione" type="textarea" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Descrizione_Condizione', v)" />
+                        </div>
+                        <div class="col-12 col-sm-12">
+                          <InlineEditableField :model-value="prog.Dettaglio_Costi || ''" label="Dettaglio costi" type="textarea" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Dettaglio_Costi', v)" />
+                        </div>
+                      </div>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-6 col-sm-3">
+                          <q-checkbox :model-value="prog.Progetto_Sostegno_Scolastico" label="Sostegno scolastico" dense @update:model-value="v => saveProgettoField(prog, 'Progetto_Sostegno_Scolastico', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <q-checkbox :model-value="prog.Continuazione" label="Continuazione" dense @update:model-value="v => saveProgettoField(prog, 'Continuazione', v)" />
+                        </div>
+                        <div class="col-6 col-sm-3">
+                          <div class="text-caption text-grey-7 q-mb-xs">Massimo erogabile</div>
+                          <q-input
+                            :model-value="prog.MassimaPercentualeErogabile"
+                            type="number"
+                            dense
+                            outlined
+                            min="0"
+                            max="100"
+                            step="1"
+                            suffix="%"
+                            style="max-width: 140px"
+                            :loading="salvandoProgId === prog.id_progetto"
+                            @update:model-value="salvaPercentualeProgetto(prog, $event)"
+                          />
+                        </div>
+                      </div>
+                      <q-separator class="q-my-sm" />
+                      <div class="text-caption text-grey-7">Dati calcolati automaticamente</div>
+                      <q-list dense class="q-mt-xs">
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale importo</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotaleImporto) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale verificato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotaleVerificato) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale proposto</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotaleProposto) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale pagato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotalePagato) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Residuo allocato</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.ResiduoAllocato) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale pagamento</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ formatCurrency(prog.TotalePagamento) }}</div></q-item-section>
+                        </q-item>
+                        <q-item dense class="q-px-none q-py-xs" style="max-width: 300px;">
+                          <q-item-section class="col-7 col-sm-8"><div class="text-caption text-grey">Totale giustificativi</div></q-item-section>
+                          <q-item-section side class="col-5 col-sm-4"><div class="text-body2 text-right">{{ prog.TotaleGiustificativi ?? 0 }}</div></q-item-section>
+                        </q-item>
+                      </q-list>
+                     </q-card-section>
+                   </q-card>
+                 </q-expansion-item>
+                 </div>
+               </q-card-section>
+             </q-card>
+            <div v-else-if="!progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-grey q-py-sm">
+              Nessun progetto per questa famiglia.
+            </div>
           </q-td>
         </q-tr>
       </template>
@@ -428,9 +794,12 @@ import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import { emailService } from 'src/services/email.service'
+import { famiglieService } from 'src/services/famiglie.service'
 import { gestioneService } from 'src/services/gestione.service'
+import { progettiService } from 'src/services/progetti.service'
 import { revisionsService } from 'src/services/revisions.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { formatCurrency } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
 import { useGestioneStore } from 'stores/gestione.store'
@@ -440,6 +809,11 @@ import FamigliaDialog from './FamigliaDialog.vue'
 const store = useGestioneStore()
 const $q = useQuasar()
 const authStore = useAuthStore()
+
+function formatCurrencyVal(v) {
+  if (v == null || v === '' || v === false) return '—'
+  return formatCurrency(v)
+}
 
 const search = ref('')
 const volontarioFilter = ref('tutti')
@@ -460,6 +834,9 @@ const contattiTarget = ref(null)
 const expandedCache = ref({})
 const expandedLoading = ref(false)
 const expandedRows = ref([])
+const progettiCache = ref({})
+const progettiLoading = ref(false)
+const salvandoProgId = ref(null)
 
 const pagination = ref({
   page: 1,
@@ -554,6 +931,50 @@ async function loadExpanded(row) {
     expandedCache.value = { ...expandedCache.value, [row.id_famiglia]: [] }
   } finally {
     expandedLoading.value = false
+  }
+  loadProgetti(row)
+}
+
+async function loadProgetti(row) {
+  if (!row || progettiCache.value[row.id_famiglia]) return
+  const fid = row.id_famiglia
+  progettiLoading.value = true
+  try {
+    const famRes = await famiglieService.getById(fid)
+    const progetti = famRes.data.data?.Progetti || []
+    progettiCache.value = { ...progettiCache.value, [fid]: progetti }
+  } catch {
+    if (!progettiCache.value[fid]) progettiCache.value = { ...progettiCache.value, [fid]: [] }
+  } finally {
+    progettiLoading.value = false
+  }
+}
+
+async function saveProgettoField(prog, field, value) {
+  salvandoProgId.value = prog.id_progetto
+  try {
+    await progettiService.update(prog.id_progetto, { [field]: value })
+    prog[field] = value
+    notifySuccess($q, 'Campo aggiornato')
+  } catch (error) {
+    notifyError($q, error, 'Errore aggiornamento')
+  } finally {
+    salvandoProgId.value = null
+  }
+}
+
+async function salvaPercentualeProgetto(prog, val) {
+  if (!prog || !prog.id_progetto) return
+  const pct = val === '' || val === null ? null : Math.min(100, Math.max(0, Number.parseInt(val, 10) || 0))
+  salvandoProgId.value = prog.id_progetto
+  try {
+    await progettiService.update(prog.id_progetto, { MassimaPercentualeErogabile: pct })
+    prog.MassimaPercentualeErogabile = pct
+    notifySuccess($q, 'Percentuale aggiornata', 1500)
+  } catch (error) {
+    notifyError($q, error, 'Errore salvataggio percentuale')
+  } finally {
+    salvandoProgId.value = null
   }
 }
 

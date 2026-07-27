@@ -9,7 +9,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
     @rejected="onRejected"
   >
-    <template v-slot:prepend>
+    <template #prepend>
       <q-icon name="attach_file" />
     </template>
   </q-file>
