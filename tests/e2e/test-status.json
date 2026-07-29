@@ -1,246 +1,246 @@
 {
-  "version": "v3.23.3",
-  "updated": "2026-07-29T20:01:19.701Z",
+  "version": "v3.23.4",
+  "updated": "2026-07-29T20:32:41.202Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "AD-03": {
       "name": "Tab Errori cliccabile @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "ADU-01": {
       "name": "Tabella utenti si carica con colonne @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "ADU-02": {
       "name": "Ricerca utenti filtra tabella @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "ADU-03": {
       "name": "Aggiungi utente apre dialog @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "ADA-01": {
       "name": "Tab Associazioni mostra tabella budget @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "ADA-02": {
       "name": "Bottone Nuova associazione apre dialog @smoke",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "ADA-03": {
       "name": "Crea associazione con Nome e Budget @crud",
       "file": "admin.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "A-01": {
       "name": "Login con credenziali valide @smoke",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "A-02": {
       "name": "Logout pulisce sessione e blocca accesso diretto @smoke",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "A-03": {
       "name": "Login fallito mostra errore @regression",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "A-04": {
       "name": "Privazione token forza redirect a login @regression",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "SP-01": {
       "name": "SubmitPage si carica senza errori console @smoke",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "RG-01": {
       "name": "Volontario non accede a /gestione @regression",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "RG-02": {
       "name": "Volontario non accede a /admin @regression",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "RG-03": {
       "name": "Volontario non accede a /verifica @regression",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "RG-04": {
       "name": "Redirect post-login va alla pagina corretta per ruolo @regression",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "RG-05": {
       "name": "Admin accede a /admin @smoke",
       "file": "auth.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "BGT-01": {
       "name": "Invalida giustificativo aggiorna totale giustificativi @crud",
       "file": "bug-invalida-totali.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CPW-01": {
       "name": "Cambia password con successo @smoke",
       "file": "change-password.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CPW-02": {
       "name": "Password mismatch blocca salvataggio @regression",
       "file": "change-password.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CPW-03": {
       "name": "Annulla chiude dialog senza cambiare @smoke",
       "file": "change-password.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-01": {
       "name": "Pagina carica e tab Contatti selezionato @smoke",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-02": {
       "name": "Intestazioni colonne ordine corretto @smoke",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-07": {
       "name": "Controlli paginazione visibili @smoke",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-04": {
       "name": "Ricerca per nome restringe risultati @crud",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-05": {
       "name": "Filtro tipo cambia risultati @crud",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-06": {
       "name": "Badge tipo mostra valore corretto @smoke",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-08": {
       "name": "Contatti con user_id null sono visibili @smoke",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-09": {
       "name": "Crea contatto nuovo @crud",
       "file": "contatti.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "lastRun": "v3.23.4",
+      "lastPassed": "v3.23.4"
     },
     "CT-10": {
       "name": "Modifica contatto esistente @crud",
@@ -1054,64 +1054,64 @@
       "name": "Nessun giustificativo → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": "v3.23.3"
     },
     "SR-04": {
       "name": "Solo draft → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": "v3.23.3"
     },
     "SR-05": {
       "name": "Tutti verificati → Pronto (green) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": null
     },
     "SR-06": {
       "name": "Almeno un inviato → Da verificare (orange) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": null
     },
     "SR-07": {
       "name": "Draft + verificato → Da completare (warning) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": null
     },
     "SR-08": {
       "name": "Solo rifiutato → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": null
     },
     "SR-09": {
       "name": "Verificato + rifiutato → Da completare (warning) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": null
     },
     "SR-10": {
       "name": "Draft + rifiutato → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": null,
       "lastPassed": null
     },
     "SP-02": {
