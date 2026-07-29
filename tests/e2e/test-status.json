@@ -1,6 +1,6 @@
 {
   "version": "v3.23.3",
-  "updated": "2026-07-29T11:35:39.512Z",
+  "updated": "2026-07-29T12:20:23.274Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -326,7 +326,7 @@
       "name": "Cestino Elimina visibile solo in bozza @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -334,7 +334,7 @@
       "name": "Elimina dialog Annulla card resta @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -398,7 +398,7 @@
       "name": "Dialog si apre con Aggiungi @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -406,47 +406,47 @@
       "name": "Salva disabilitato senza Descrizione @regression",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "CG-03": {
       "name": "Salva disabilitato senza Importo @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "pass",
-      "mobile": "untested",
+      "chromium": "fail",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-04": {
       "name": "Salva disabilitato senza file, abilitato dopo allegato @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "pass",
-      "mobile": "untested",
+      "chromium": "fail",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-05": {
       "name": "Annulla chiude dialog senza creare @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "pass",
-      "mobile": "untested",
+      "chromium": "fail",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-06": {
       "name": "Crea con tutti i campi persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "pass",
-      "mobile": "untested",
+      "chromium": "fail",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-07": {
       "name": "Importo negativo → Salva disabilitato @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "pass",
-      "mobile": "untested",
+      "chromium": "fail",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -454,7 +454,7 @@
       "name": "Importo zero → Salva disabilitato @regression",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -462,7 +462,7 @@
       "name": "Form larghezza limitata non fullscreen @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -470,7 +470,7 @@
       "name": "Descrizione modifica con ✓ salva e persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -478,7 +478,7 @@
       "name": "Descrizione modifica con X annulla valore originale @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -486,7 +486,7 @@
       "name": "Descrizione click senza modificare ✓ torna a display @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -494,7 +494,7 @@
       "name": "Importo modifica con ✓ salva e persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -502,7 +502,7 @@
       "name": "Importo modifica con X annulla valore originale @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -510,7 +510,7 @@
       "name": "Data modifica con ✓ salva e persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -518,7 +518,7 @@
       "name": "Data modifica con X annulla valore originale @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -526,7 +526,7 @@
       "name": "Card con allegato ha pulsanti Apri e Scarica con label @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -534,7 +534,7 @@
       "name": "Scarica file è un PDF valido @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -542,7 +542,7 @@
       "name": "Apri file si apre in nuova scheda con URL corretto @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -550,7 +550,7 @@
       "name": "Cambia file visibile solo in bozza @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -558,7 +558,7 @@
       "name": "Sostituisci file reload persiste @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -566,7 +566,7 @@
       "name": "Upload file → CRC match on download, change file → CRC match again @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -574,7 +574,7 @@
       "name": "Elimina conferma card sparisce dalla lista @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -582,7 +582,7 @@
       "name": "Elimina reload card ancora sparita @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -590,7 +590,7 @@
       "name": "Invia badge passa da Bozza a Inviato @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -598,7 +598,7 @@
       "name": "Dopo Invia pulsanti edit/Elimina spariscono @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -606,7 +606,7 @@
       "name": "Invia reload stato ancora Inviato @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -614,7 +614,7 @@
       "name": "Card inviata click campo NON entra in edit @crud",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
@@ -622,65 +622,65 @@
       "name": "Card inviata Apri e Scarica ancora funzionanti @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "untested",
+      "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "HF-01": {
       "name": "Crea famiglia via UI e cancella via API @smoke",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "HF-02": {
       "name": "Crea contatto via UI e cancella via API @smoke",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "HF-03": {
       "name": "Crea famiglia+contatto+assegna+pulisci ciclo completo @crud",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "HF-04": {
       "name": "IBAN corto → Salva disabilitato @regression",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "HF-05": {
       "name": "Cellulare lettere → Salva disabilitato @regression",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "HF-06": {
       "name": "IBAN minuscolo → auto-uppercase e valido @regression",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "HF-07": {
       "name": "IBAN con spazi → auto-strip e valido @regression",
       "file": "helpers.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "LB-01": {
       "name": "Volontario vede solo Famiglie @smoke",
@@ -757,82 +757,82 @@
     "PAG-01": {
       "name": "Login gestore e pagina gestione carica @smoke",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-02": {
       "name": "Manager vede pagina verifica @smoke",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PM-01": {
       "name": "Pagina pagamenti carica @smoke",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PM-02": {
       "name": "Volontario non accede a /pagamenti @regression",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-10": {
       "name": "Admin vede tab Errori in AdminPage @smoke",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-17": {
       "name": "Volontario vede pagina famiglie @smoke",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-20": {
       "name": "Pagina pagamenti mostra sottotab Bonifici da fare @crud",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-21": {
       "name": "Sottotab Bonifici da fare attivo @crud",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-22": {
       "name": "Sottotab Da riscontrare si attiva @crud",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PAG-23": {
       "name": "Sottotab Falliti si attiva @crud",
       "file": "pagamenti.spec.js",
-      "chromium": "untested",
+      "chromium": "pass",
       "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-01": {
       "name": "GestoreVerifica non accede a /admin @regression",
