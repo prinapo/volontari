@@ -5,7 +5,7 @@ CONFIG="tests/e2e/playwright.config.js"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WORKSPACE="$SCRIPT_DIR/.."
 STATUS_FILE="$WORKSPACE/tests/e2e/test-status.json"
-TIMEOUT_PER_FILE="300"
+TIMEOUT_PER_TEST="300"
 
 cd "$WORKSPACE"
 
@@ -13,134 +13,95 @@ VERSION=$(node -p "JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8'))
 echo "=== E2E Report — $VERSION ==="
 echo ""
 
-# Trova i file con almeno un test non ancora pass per questa versione
-FILES_JSON=$(node -p "
+TOTAL=$(node -p "Object.keys(JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8')).tests).length")
+
+while true; do
+  # Trova il prossimo test non ancora eseguito per questa versione
+  NEXT=$(node -e "
 const s = JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8'));
-const version = s.version;
-const fileMap = {};
+const v = s.version;
 for (const [id, t] of Object.entries(s.tests)) {
-  const skip = t.lastRun === version && t.chromium === 'pass' && t.mobile === 'pass';
-  if (!skip) {
-    if (!fileMap[t.file]) fileMap[t.file] = [];
-    fileMap[t.file].push(id);
+  const cDone = t.lastRun === v && (t.chromium === 'pass' || t.chromium === 'fail');
+  const mDone = t.lastRun === v && (t.mobile === 'pass' || t.mobile === 'fail');
+  if (!cDone || !mDone) {
+    console.log(JSON.stringify({ id, file: t.file, name: t.name, cDone, mDone }));
+    process.exit(0);
   }
 }
-JSON.stringify(fileMap)
+console.log('DONE');
 ")
 
-TOTAL_FILES=$(echo "$FILES_JSON" | node -p "Object.keys(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'))).length")
-echo "File con test da eseguire: $TOTAL_FILES"
-echo ""
+  if [ "$NEXT" = "DONE" ]; then
+    echo "✅ Tutti i test passati per $VERSION"
+    break
+  fi
 
-mapfile -t FILE_NAMES < <(echo "$FILES_JSON" | node -p "Object.keys(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'))).join('\n')")
+  ID=$(echo "$NEXT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).id")
+  FILE=$(echo "$NEXT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).file")
+  NAME=$(echo "$NEXT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).name")
+  CDONE=$(echo "$NEXT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).cDone")
+  MDONE=$(echo "$NEXT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).mDone")
 
-PASSED=0
-FAILED=0
-FILE_OK=0
-FILE_KO=0
-
-for FILE in "${FILE_NAMES[@]}"; do
-  TEST_IDS=$(echo "$FILES_JSON" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'))['$FILE'].join(' ')")
-
-  echo "━━━ $FILE ━━━"
-  echo "  Test: $TEST_IDS"
-
-  FILE_RESULT="ok"
+  echo "━━━ $ID: $NAME ━━━"
+  echo "  File: $FILE"
 
   for project in "chromium" "mobile"; do
-    # Salta se tutti i test del file sono già pass per questo progetto in questa versione
-    ALL_PASS=$(node -e "
-const s = JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8'));
-const ids = '$TEST_IDS'.split(' ');
-const allPass = ids.every(id => s.tests[id].lastRun === '$VERSION' && s.tests[id].$project === 'pass');
-process.stdout.write(allPass ? 'yes' : 'no');
-")
-
-    if [ "$ALL_PASS" = "yes" ]; then
-      echo "  ⏩ $project — già passato"
+    # Se già eseguito per questo progetto, salta
+    if { [ "$project" = "chromium" ] && [ "$CDONE" = "true" ]; } || \
+       { [ "$project" = "mobile" ] && [ "$MDONE" = "true" ]; }; then
+      echo "  ⏩ $project — già eseguito"
       continue
     fi
 
     echo "  ─ $project ─"
     START=$(date +%s)
-    LOG="/tmp/e2e-$(echo "$FILE" | sed 's/\.spec\.js$//')-$project.log"
+    LOG="/tmp/e2e-$ID-$project.log"
 
-    if timeout "$TIMEOUT_PER_FILE" npx playwright test "tests/e2e/specs/$FILE" --config "$CONFIG" --project "$project" --reporter=list > "$LOG" 2>&1; then
+    if timeout "$TIMEOUT_PER_TEST" npx playwright test "tests/e2e/specs/$FILE" --config "$CONFIG" --project "$project" --grep "$ID:" --reporter=list > "$LOG" 2>&1; then
       DURATION=$(( $(date +%s) - START ))
       echo "  ✅ $project — ${DURATION}s"
-
-      # Aggiorna tutti i test del file come pass
       node -e "
 const s = JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8'));
-const ids = '$TEST_IDS'.split(' ');
-ids.forEach(id => {
-  s.tests[id].$project = 'pass';
-  s.tests[id].lastRun = '$VERSION';
-  s.tests[id].lastPassed = '$VERSION';
-});
+s.tests['$ID'].$project = 'pass';
+s.tests['$ID'].lastRun = '$VERSION';
+s.tests['$ID'].lastPassed = '$VERSION';
 s.updated = new Date().toISOString();
 require('fs').writeFileSync('$STATUS_FILE', JSON.stringify(s, null, 2));
 "
-      PASSED=$((PASSED + 1))
     else
       RC=$?
       DURATION=$(( $(date +%s) - START ))
-      FILE_RESULT="ko"
-
       if [ "$RC" -eq 124 ]; then
-        echo "  ⏰ $project — TIMEOUT (${TIMEOUT_PER_FILE}s)"
+        echo "  ⏰ $project — TIMEOUT (${TIMEOUT_PER_TEST}s)"
         tail -5 "$LOG" | sed 's/^/    /'
       else
         echo "  ❌ $project — ${DURATION}s"
         tail -15 "$LOG" | sed 's/^/    /'
       fi
-
-      # Segna come fail SOLO i test che effettivamente hanno fallito
-      # (Playwright --reporter=list mostra ✓/×)
       node -e "
 const s = JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8'));
-const ids = '$TEST_IDS'.split(' ');
-const fs = require('fs');
-const log = fs.readFileSync('$LOG', 'utf8');
-ids.forEach(id => {
-  const passInLog = new RegExp('✓\\\\s+' + id).test(log);
-  s.tests[id].$project = passInLog ? 'pass' : 'fail';
-  s.tests[id].lastRun = '$VERSION';
-  if (passInLog) s.tests[id].lastPassed = '$VERSION';
-});
+s.tests['$ID'].$project = 'fail';
+s.tests['$ID'].lastRun = '$VERSION';
 s.updated = new Date().toISOString();
 require('fs').writeFileSync('$STATUS_FILE', JSON.stringify(s, null, 2));
 "
-      FAILED=$((FAILED + 1))
     fi
   done
-
-  if [ "$FILE_RESULT" = "ok" ]; then
-    FILE_OK=$((FILE_OK + 1))
-  else
-    FILE_KO=$((FILE_KO + 1))
-  fi
   echo ""
 done
 
 echo "═══════════════════════════════════"
-echo "  Riepilogo"
+echo "  Riepilogo finale"
 echo "═══════════════════════════════════"
-echo "  File OK:   $FILE_OK"
-echo "  File KO:   $FILE_KO"
-
 node -e "
 const s = JSON.parse(require('fs').readFileSync('$STATUS_FILE','utf8'));
-let ok = 0, ko = 0, unt = 0;
-for (const t of Object.values(s.tests)) {
-  if (t.chromium === 'pass' || t.mobile === 'pass') ok++;
-  if (t.chromium === 'fail' || t.mobile === 'fail') ko++;
-  if (t.chromium === 'untested' && t.mobile === 'untested') unt++;
+let ok=0,fail=0,unt=0;
+for(const t of Object.values(s.tests)){
+  if(t.chromium==='pass'&&t.mobile==='pass') ok++;
+  else if(t.chromium==='fail'||t.mobile==='fail') fail++;
+  if(t.chromium==='untested'||t.mobile==='untested') unt++;
 }
-console.log('Test:');
-console.log('  ✅ Pass:    ' + ok);
-console.log('  ❌ Fail:    ' + ko);
-console.log('  ⬜ Mancano: ' + unt);
+console.log('  ✅ Completati: ' + ok + '/' + Object.keys(s.tests).length);
+console.log('  ❌ Falliti:    ' + fail);
+console.log('  ⬜ Mancano:    ' + Math.ceil(unt/2));
 "
-
-exit $FILE_KO

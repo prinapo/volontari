@@ -1,6 +1,6 @@
 {
   "version": "v3.23.3",
-  "updated": "2026-07-29T16:39:38.677Z",
+  "updated": "2026-07-29T20:01:19.701Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -557,10 +557,10 @@
     "AL-06": {
       "name": "Sostituisci file reload persiste @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "AL-07": {
       "name": "Upload file → CRC match on download, change file → CRC match again @crud",
@@ -614,7 +614,7 @@
       "name": "Card inviata click campo NON entra in edit @crud",
       "file": "giustificativi.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -1093,138 +1093,138 @@
     "SR-08": {
       "name": "Solo rifiutato → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "SR-09": {
       "name": "Verificato + rifiutato → Da completare (warning) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "SR-10": {
       "name": "Draft + rifiutato → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "SP-02": {
       "name": "Torna al login naviga a /login @smoke",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-03": {
       "name": "\"+ Aggiungi\" aggiunge una riga giustificativo @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-04": {
       "name": "Pulsante delete rimuove riga @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-05": {
       "name": "Submit vuoto Invia disabilitato mostra errori validazione @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-06": {
       "name": "Email non valida mostra errore @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-07": {
       "name": "Submit 1 giustificativo mostra notifica successo @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-08": {
       "name": "Submit 3 giustificativi mostra notifica successo @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-09": {
       "name": "Submit resetta automaticamente il form @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SP-10": {
       "name": "IBAN non valido → Invia disabilitato @regression",
       "file": "submit.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "VF-01": {
       "name": "Verifica giustificativo — intercetta PATCH @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "VF-02": {
       "name": "Rifiuta giustificativo — intercetta PATCH @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "VF-03": {
       "name": "Draft→Inviato — intercetta PATCH @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "VF-04": {
       "name": "Aggiungi giustificativo da VerificaPage @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "VF-05": {
       "name": "Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e",
       "file": "verifica-flow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "VR-01": {
       "name": "Accesso verificatore apre VerificaPage @smoke",
@@ -1341,34 +1341,34 @@
     "WF-01": {
       "name": "Flusso Submit → Riconcilia → Verifica @e2e",
       "file": "workflow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "WF-02": {
       "name": "Submit → nuovo contatto → Riconcilia @e2e",
       "file": "workflow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "WF-03": {
       "name": "Multi-volontario — due volontari su due famiglie @e2e",
       "file": "workflow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "WF-05": {
       "name": "Volontario invia → Verificatore rifiuta con nota @e2e",
       "file": "workflow.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     }
   }
 }

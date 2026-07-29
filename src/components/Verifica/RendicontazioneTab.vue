@@ -799,6 +799,7 @@ import BancariDialog from 'components/Common/BancariDialog.vue'
 import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import { useServerTable } from 'src/composables/useServerTable'
+import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
@@ -917,6 +918,20 @@ onMounted(() => {
   store.fetchAnni()
   loadData()
 })
+
+function statoColor(stato) {
+  if (stato === 'verificato') return 'positive'
+  if (stato === 'inviato') return 'orange'
+  if (stato === 'rifiutato') return 'negative'
+  return 'grey'
+}
+
+function statoLabel(stato) {
+  if (stato === 'verificato') return 'Verificato'
+  if (stato === 'inviato') return 'Inviato'
+  if (stato === 'rifiutato') return 'Rifiutato'
+  return 'Bozza'
+}
 
 watch(selectedAnno, () => {
   onSearchChange()
