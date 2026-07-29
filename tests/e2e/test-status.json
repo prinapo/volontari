@@ -1,6 +1,6 @@
 {
   "version": "v3.23.5",
-  "updated": "2026-07-29T20:53:02.476Z",
+  "updated": "2026-07-29T21:03:05.712Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1054,65 +1054,65 @@
       "name": "Nessun giustificativo → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": "v3.23.3"
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-04": {
       "name": "Solo draft → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": "v3.23.3"
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-05": {
       "name": "Tutti verificati → Pronto (green) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-06": {
       "name": "Almeno un inviato → Da verificare (orange) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-07": {
       "name": "Draft + verificato → Da completare (warning) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-08": {
       "name": "Solo rifiutato → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-09": {
       "name": "Verificato + rifiutato → Da completare (warning) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SR-10": {
       "name": "Draft + rifiutato → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "SP-02": {
       "name": "Torna al login naviga a /login @smoke",
@@ -1342,9 +1342,9 @@
       "name": "Flusso Submit → Riconcilia → Verifica @e2e",
       "file": "workflow.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "WF-02": {
       "name": "Submit → nuovo contatto → Riconcilia @e2e",
@@ -1358,17 +1358,17 @@
       "name": "Multi-volontario — due volontari su due famiglie @e2e",
       "file": "workflow.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "WF-05": {
       "name": "Volontario invia → Verificatore rifiuta con nota @e2e",
       "file": "workflow.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     }
   }
 }
