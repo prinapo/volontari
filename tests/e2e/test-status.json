@@ -1,6 +1,6 @@
 {
-  "version": "v3.23.4",
-  "updated": "2026-07-29T20:32:41.202Z",
+  "version": "v3.23.5",
+  "updated": "2026-07-29T20:53:02.476Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1189,42 +1189,42 @@
     "VF-01": {
       "name": "Verifica giustificativo — intercetta PATCH @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "VF-02": {
       "name": "Rifiuta giustificativo — intercetta PATCH @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "VF-03": {
       "name": "Draft→Inviato — intercetta PATCH @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "VF-04": {
       "name": "Aggiungi giustificativo da VerificaPage @crud",
       "file": "verifica-flow.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "VF-05": {
       "name": "Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e",
       "file": "verifica-flow.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
-      "lastRun": "v3.23.3",
-      "lastPassed": "v3.23.3"
+      "mobile": "pass",
+      "lastRun": "v3.23.5",
+      "lastPassed": "v3.23.5"
     },
     "VR-01": {
       "name": "Accesso verificatore apre VerificaPage @smoke",

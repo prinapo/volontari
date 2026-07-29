@@ -20,7 +20,14 @@ aria-label="Aggiorna dati"
 
   <div class="row q-col-gutter-md q-mb-md">
     <div class="col-12 col-sm-6 col-md-4">
-      <q-input v-model="searchTerm" outlined dense debounce="300" label="Cerca famiglia">
+      <q-input
+        v-model="searchTerm"
+        outlined
+        dense
+        debounce="300"
+        label="Cerca famiglia"
+        @update:model-value="onSearchChange"
+      >
         <template #prepend>
           <q-icon name="search" />
         </template>
@@ -798,6 +805,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
 import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
