@@ -1,6 +1,6 @@
 {
   "version": "v3.23.3",
-  "updated": "2026-07-29T13:42:35.103Z",
+  "updated": "2026-07-29T16:39:38.677Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -325,18 +325,18 @@
     "EL-01": {
       "name": "Cestino Elimina visibile solo in bozza @smoke",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "EL-02": {
       "name": "Elimina dialog Annulla card resta @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "FPW-01": {
       "name": "Richiedi reset password mostra notifica @smoke",
@@ -397,7 +397,7 @@
     "CG-01": {
       "name": "Dialog si apre con Aggiungi @smoke",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
+      "chromium": "pass",
       "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
@@ -405,7 +405,7 @@
     "CG-02": {
       "name": "Salva disabilitato senza Descrizione @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
+      "chromium": "pass",
       "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
@@ -438,7 +438,7 @@
       "name": "Crea con tutti i campi persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -446,113 +446,113 @@
       "name": "Importo negativo → Salva disabilitato @regression",
       "file": "giustificativi.spec.js",
       "chromium": "pass",
-      "mobile": "fail",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-08": {
       "name": "Importo zero → Salva disabilitato @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "CG-09": {
       "name": "Form larghezza limitata non fullscreen @smoke",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-01": {
       "name": "Descrizione modifica con ✓ salva e persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-02": {
       "name": "Descrizione modifica con X annulla valore originale @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-03": {
       "name": "Descrizione click senza modificare ✓ torna a display @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-04": {
       "name": "Importo modifica con ✓ salva e persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-05": {
       "name": "Importo modifica con X annulla valore originale @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-06": {
       "name": "Data modifica con ✓ salva e persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "IE-07": {
       "name": "Data modifica con X annulla valore originale @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "AL-01": {
       "name": "Card con allegato ha pulsanti Apri e Scarica con label @smoke",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "AL-03": {
       "name": "Scarica file è un PDF valido @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "AL-04": {
       "name": "Apri file si apre in nuova scheda con URL corretto @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "AL-05": {
       "name": "Cambia file visibile solo in bozza @smoke",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "AL-06": {
       "name": "Sostituisci file reload persiste @crud",
@@ -565,66 +565,66 @@
     "AL-07": {
       "name": "Upload file → CRC match on download, change file → CRC match again @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "EL-03": {
       "name": "Elimina conferma card sparisce dalla lista @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "EL-04": {
       "name": "Elimina reload card ancora sparita @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "SU-01": {
       "name": "Invia badge passa da Bozza a Inviato @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "SU-02": {
       "name": "Dopo Invia pulsanti edit/Elimina spariscono @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "SU-03": {
       "name": "Invia reload stato ancora Inviato @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "RO-01": {
       "name": "Card inviata click campo NON entra in edit @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
+      "chromium": "pass",
       "mobile": "fail",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "RO-02": {
       "name": "Card inviata Apri e Scarica ancora funzionanti @smoke",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "HF-01": {
       "name": "Crea famiglia via UI e cancella via API @smoke",
@@ -758,7 +758,7 @@
       "name": "Login gestore e pagina gestione carica @smoke",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -766,7 +766,7 @@
       "name": "Manager vede pagina verifica @smoke",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -774,7 +774,7 @@
       "name": "Pagina pagamenti carica @smoke",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -782,7 +782,7 @@
       "name": "Volontario non accede a /pagamenti @regression",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -790,7 +790,7 @@
       "name": "Admin vede tab Errori in AdminPage @smoke",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -798,7 +798,7 @@
       "name": "Volontario vede pagina famiglie @smoke",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -806,7 +806,7 @@
       "name": "Pagina pagamenti mostra sottotab Bonifici da fare @crud",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -814,7 +814,7 @@
       "name": "Sottotab Bonifici da fare attivo @crud",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -822,7 +822,7 @@
       "name": "Sottotab Da riscontrare si attiva @crud",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
@@ -830,89 +830,89 @@
       "name": "Sottotab Falliti si attiva @crud",
       "file": "pagamenti.spec.js",
       "chromium": "pass",
-      "mobile": "untested",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "PER-01": {
       "name": "GestoreVerifica non accede a /admin @regression",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-02": {
       "name": "Verificatore non accede a /gestione @regression",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-03": {
       "name": "Gestore non accede a /admin @regression",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-04": {
       "name": "Volontario non accede a /verifica @regression",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-05": {
       "name": "GestoreVerifica vede Verifica+Riconciliazione+Gestione @smoke",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-06": {
       "name": "Admin vede tutte le voci di navigazione @smoke",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-07": {
       "name": "Verificatore vede pagina Pagamenti @smoke",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-08": {
       "name": "Volontario non vede pagina Pagamenti @regression",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-09": {
       "name": "Gestore non accede a /admin (reindirizzato) @smoke",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "PER-10": {
       "name": "Verificatore non accede a /admin @smoke",
       "file": "permissions.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RF-01": {
       "name": "Bottone Assegna Referente visibile solo per Volontari @smoke",
@@ -965,50 +965,50 @@
     "RP-01": {
       "name": "Nessun token mostra link non valido @smoke",
       "file": "reset-password.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RP-02": {
       "name": "Token valido submit con password matching mostra successo @smoke",
       "file": "reset-password.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RP-03": {
       "name": "Password mismatch mostra errore @regression",
       "file": "reset-password.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RP-04": {
       "name": "Errore API mostra messaggio errore @regression",
       "file": "reset-password.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RP-05": {
       "name": "Dopo successo reindirizza a login @smoke",
       "file": "reset-password.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RP-10": {
       "name": "Reset password reale via email e ripristino @e2e",
       "file": "reset-password.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "RC-01": {
       "name": "Pagina riconciliazione carica @smoke",
@@ -1053,41 +1053,41 @@
     "SR-03": {
       "name": "Nessun giustificativo → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SR-04": {
       "name": "Solo draft → Non ricevuta (grey) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
-      "lastPassed": null
+      "chromium": "pass",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
+      "lastPassed": "v3.23.3"
     },
     "SR-05": {
       "name": "Tutti verificati → Pronto (green) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "SR-06": {
       "name": "Almeno un inviato → Da verificare (orange) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "SR-07": {
       "name": "Draft + verificato → Da completare (warning) @smoke",
       "file": "stato-rendicontazione.spec.js",
-      "chromium": "untested",
-      "mobile": "untested",
-      "lastRun": null,
+      "chromium": "fail",
+      "mobile": "fail",
+      "lastRun": "v3.23.3",
       "lastPassed": null
     },
     "SR-08": {
