@@ -1,6 +1,6 @@
 {
   "version": "v3.23.3",
-  "updated": "2026-07-29T12:20:23.274Z",
+  "updated": "2026-07-29T13:42:35.103Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -398,46 +398,46 @@
       "name": "Dialog si apre con Aggiungi @smoke",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "fail",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "CG-02": {
       "name": "Salva disabilitato senza Descrizione @regression",
       "file": "giustificativi.spec.js",
       "chromium": "fail",
-      "mobile": "fail",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
-      "lastPassed": null
+      "lastPassed": "v3.23.3"
     },
     "CG-03": {
       "name": "Salva disabilitato senza Importo @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-04": {
       "name": "Salva disabilitato senza file, abilitato dopo allegato @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-05": {
       "name": "Annulla chiude dialog senza creare @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
-      "mobile": "fail",
+      "chromium": "pass",
+      "mobile": "pass",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
     },
     "CG-06": {
       "name": "Crea con tutti i campi persiste dopo reload @crud",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
+      "chromium": "pass",
       "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
@@ -445,7 +445,7 @@
     "CG-07": {
       "name": "Importo negativo → Salva disabilitato @regression",
       "file": "giustificativi.spec.js",
-      "chromium": "fail",
+      "chromium": "pass",
       "mobile": "fail",
       "lastRun": "v3.23.3",
       "lastPassed": "v3.23.3"
