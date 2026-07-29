@@ -156,8 +156,7 @@ describe('gestione store', () => {
   it('createGenitore rejects duplicate email', async () => {
     mockGetContattoByEmails.mockResolvedValue({ data: { data: [{ id_contatto: 'other' }] } })
     const store = useGestioneStore()
-    const id = await store.createGenitore({ Email: 'dup@r.it' })
-    expect(id).toBe(false)
+    await expect(store.createGenitore({ Email: 'dup@r.it' })).rejects.toThrow()
     expect(store.error).toContain('già associata')
   })
 
@@ -166,8 +165,7 @@ describe('gestione store', () => {
     mockGetEmailRecord.mockResolvedValue({ data: { data: [{ id: 'e-1' }] } })
     mockUpdateEmail.mockResolvedValue({})
     const store = useGestioneStore()
-    const ok = await store.updateContatto('c-1', { Nome: 'New', Email: 'new@r.it' })
-    expect(ok).toBe(true)
+    await store.updateContatto('c-1', { Nome: 'New', Email: 'new@r.it' })
     expect(mockUpdateContatto).toHaveBeenCalled()
     expect(mockUpdateEmail).toHaveBeenCalled()
     expect(store.saving).toBe(false)
@@ -177,15 +175,13 @@ describe('gestione store', () => {
     const store = useGestioneStore()
 
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [{ id_contatto: 'other' }] } })
-    let ok = await store.updateContatto('c-1', { Email: 'dup@r.it' })
-    expect(ok).toBe(false)
+    await expect(store.updateContatto('c-1', { Email: 'dup@r.it' })).rejects.toThrow()
     expect(store.error).toContain('già associata')
 
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [] } })
     mockGetEmailRecord.mockResolvedValueOnce({ data: { data: [] } })
     mockCreateEmail.mockResolvedValueOnce({})
-    ok = await store.updateContatto('c-1', { Nome: 'New', Email: 'new@r.it' })
-    expect(ok).toBe(true)
+    await store.updateContatto('c-1', { Nome: 'New', Email: 'new@r.it' })
     expect(mockCreateEmail).toHaveBeenCalledWith({
       email_address: 'new@r.it',
       Contatto_Relation: 'c-1',
@@ -195,20 +191,30 @@ describe('gestione store', () => {
 
   it('createFamiglia sends and refetches', async () => {
     mockCreateFamiglia.mockResolvedValue({})
-    mockGetFamiglie.mockResolvedValue({ data: { data: [], meta: {} } })
+    mockGetFamiglie.mockResolvedValue({ data: { data: [{ id_famiglia: 'FAM_1', Nome_Famiglia: 'Fam Test' }], meta: { filter_count: 1 } } })
     const store = useGestioneStore()
-    const ok = await store.createFamiglia({ Nome_Famiglia: 'Fam Test' })
-    expect(ok).toBe(true)
-    expect(mockCreateFamiglia).toHaveBeenCalled()
+    await store.createFamiglia({ Nome_Famiglia: 'Fam Test' })
+    expect(mockCreateFamiglia).toHaveBeenCalledWith(
+      expect.objectContaining({ Nome_Famiglia: 'Fam Test', IBAN: null, Intestatario_CC: null })
+    )
+    expect(mockGetFamiglie).toHaveBeenCalledWith(expect.objectContaining({ meta: 'filter_count' }))
+    expect(store.famiglie).toHaveLength(1)
+    expect(store.famiglie[0].Nome_Famiglia).toBe('Fam Test')
+    expect(store.totalFamiglie).toBe(1)
     expect(store.saving).toBe(false)
   })
 
   it('updateFamiglia updates and refetches', async () => {
     mockUpdateFamiglia.mockResolvedValue({})
-    mockGetFamiglie.mockResolvedValue({ data: { data: [], meta: {} } })
+    mockGetFamiglie.mockResolvedValue({ data: { data: [{ id_famiglia: 1, Nome_Famiglia: 'New' }], meta: { filter_count: 1 } } })
     const store = useGestioneStore()
-    const ok = await store.updateFamiglia(1, { Nome_Famiglia: 'New' })
-    expect(ok).toBe(true)
+    await store.updateFamiglia(1, { Nome_Famiglia: 'New' })
+    expect(mockUpdateFamiglia).toHaveBeenCalledWith(1, { Nome_Famiglia: 'New' })
+    expect(mockGetFamiglie).toHaveBeenCalledWith(expect.objectContaining({ meta: 'filter_count' }))
+    expect(store.famiglie).toHaveLength(1)
+    expect(store.famiglie[0].Nome_Famiglia).toBe('New')
+    expect(store.totalFamiglie).toBe(1)
+    expect(store.saving).toBe(false)
   })
 
   it('assignToFamiglia for Volontario creates user', async () => {
@@ -222,8 +228,7 @@ describe('gestione store', () => {
     mockSendInvite.mockResolvedValue({})
     mockAssignToFamiglia.mockResolvedValue({})
     const store = useGestioneStore()
-    const ok = await store.assignToFamiglia('c-1', 'fam-1', 'Volontario')
-    expect(ok).toBe(true)
+    await store.assignToFamiglia('c-1', 'fam-1', 'Volontario')
     expect(mockCreateUser).toHaveBeenCalled()
   })
 
@@ -232,56 +237,49 @@ describe('gestione store', () => {
     mockUpdateContatto.mockResolvedValueOnce({})
     const store = useGestioneStore()
 
-    let ok = await store.assignToFamiglia('c-gen', 'fam-1', 'Genitore')
-    expect(ok).toBe(true)
+    await store.assignToFamiglia('c-gen', 'fam-1', 'Genitore')
     expect(mockUpdateContatto).toHaveBeenCalledWith('c-gen', { IsGenitore: true })
 
     mockAssignToFamiglia.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'assign family fail' }] } } })
-    ok = await store.assignToFamiglia('c-gen', 'fam-1', 'Genitore')
-    expect(ok).toBe(false)
+    await expect(store.assignToFamiglia('c-gen', 'fam-1', 'Genitore')).rejects.toThrow()
     expect(store.error).toBe('assign family fail')
   })
 
   it('removeFromFamiglia removes and clears flag', async () => {
     mockRemoveFromFamiglia.mockResolvedValue({})
     const store = useGestioneStore()
-    const ok = await store.removeFromFamiglia('fc-1', 'c-1', 'Genitore')
-    expect(ok).toBe(true)
+    await store.removeFromFamiglia('fc-1', 'c-1', 'Genitore')
     expect(mockUpdateContatto).toHaveBeenCalledWith('c-1', { IsGenitore: false })
   })
 
   it('removeFromFamiglia clears referente flag and handles errors', async () => {
     mockRemoveFromFamiglia.mockResolvedValueOnce({})
     const store = useGestioneStore()
-    let ok = await store.removeFromFamiglia('fc-1', 'c-1', 'Referente')
-    expect(ok).toBe(true)
+    await store.removeFromFamiglia('fc-1', 'c-1', 'Referente')
     expect(mockUpdateContatto).toHaveBeenCalledWith('c-1', { IsReferente: false })
 
     mockRemoveFromFamiglia.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'remove fail' }] } } })
-    ok = await store.removeFromFamiglia('fc-2', 'c-1', 'Genitore')
-    expect(ok).toBe(false)
+    await expect(store.removeFromFamiglia('fc-2', 'c-1', 'Genitore')).rejects.toThrow()
     expect(store.error).toBe('remove fail')
   })
 
   it('referente actions handle errors', async () => {
     const store = useGestioneStore()
     mockRemoveReferente.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'remove ref fail' }] } } })
-    expect(await store.removeReferente('rel-1')).toBe(false)
+    await expect(store.removeReferente('rel-1')).rejects.toThrow()
     expect(store.error).toBe('remove ref fail')
   })
 
   it('assignReferente creates relation', async () => {
     mockCreateReferente.mockResolvedValue({})
     const store = useGestioneStore()
-    const ok = await store.assignReferente('v-1', 'r-1')
-    expect(ok).toBe(true)
+    await store.assignReferente('v-1', 'r-1')
   })
 
   it('removeReferente removes relation', async () => {
     mockRemoveReferente.mockResolvedValue({})
     const store = useGestioneStore()
-    const ok = await store.removeReferente('rel-1')
-    expect(ok).toBe(true)
+    await store.removeReferente('rel-1')
   })
 
   it('markAsReferente creates user if needed', async () => {
@@ -293,8 +291,7 @@ describe('gestione store', () => {
     mockCreateUser.mockResolvedValue({ data: { data: { id: 'u-1' } } })
     mockUpdateContatto.mockResolvedValue({})
     const store = useGestioneStore()
-    const ok = await store.markAsReferente('c-1')
-    expect(ok).toBe(true)
+    await store.markAsReferente('c-1')
     expect(mockUpdateContatto).toHaveBeenCalledWith('c-1', { IsReferente: true })
   })
 
@@ -302,23 +299,21 @@ describe('gestione store', () => {
     mockUpdateUser.mockResolvedValue({})
     const store = useGestioneStore()
 
-    const disabled = await store.disableUser('u-1')
-    expect(disabled).toBe(true)
+    await store.disableUser('u-1')
     expect(mockUpdateUser).toHaveBeenCalledWith('u-1', { status: 'suspended' })
 
-    const enabled = await store.enableUser('u-1')
-    expect(enabled).toBe(true)
+    await store.enableUser('u-1')
     expect(mockUpdateUser).toHaveBeenCalledWith('u-1', { status: 'active' })
   })
 
   it('disableUser / enableUser handle errors', async () => {
     const store = useGestioneStore()
     mockUpdateUser.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'disable fail' }] } } })
-    expect(await store.disableUser('u-1')).toBe(false)
+    await expect(store.disableUser('u-1')).rejects.toThrow()
     expect(store.error).toBe('disable fail')
 
     mockUpdateUser.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'enable fail' }] } } })
-    expect(await store.enableUser('u-1')).toBe(false)
+    await expect(store.enableUser('u-1')).rejects.toThrow()
     expect(store.error).toBe('enable fail')
   })
 
@@ -349,8 +344,7 @@ describe('gestione store', () => {
     mockSendInvite.mockResolvedValue({})
     mockGetVolontariSenzaUtente.mockResolvedValue({ data: { data: [] } })
     const store = useGestioneStore()
-    const ok = await store.creaUtentePerVolontario('c-1')
-    expect(ok).toBe(true)
+    await store.creaUtentePerVolontario('c-1')
     expect(mockCreateUser).toHaveBeenCalled()
     expect(store.saving).toBe(false)
   })
@@ -384,12 +378,10 @@ describe('gestione store', () => {
     const store = useGestioneStore()
 
     mockGetContattoById.mockResolvedValue({ data: { data: { id_contatto: 'c-9', email: [] } } })
-    let ok = await store.assignToFamiglia('c-9', 'fam-1', 'Volontario')
-    expect(ok).toBe(false)
+    await expect(store.assignToFamiglia('c-9', 'fam-1', 'Volontario')).rejects.toThrow()
     expect(store.error).toContain('Email mancante')
 
-    ok = await store.markAsReferente('c-9')
-    expect(ok).toBe(false)
+    await expect(store.markAsReferente('c-9')).rejects.toThrow()
     expect(store.error).toContain("prima aggiungi un'email")
   })
 
@@ -397,28 +389,27 @@ describe('gestione store', () => {
     const store = useGestioneStore()
 
     mockCreateFamiglia.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'family create fail' }] } } })
-    expect(await store.createFamiglia({ Nome_Famiglia: 'X' })).toBe(false)
+    await expect(store.createFamiglia({ Nome_Famiglia: 'X' })).rejects.toThrow()
     expect(store.error).toBe('family create fail')
 
     mockUpdateFamiglia.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'family update fail' }] } } })
-    expect(await store.updateFamiglia(1, { Nome_Famiglia: 'Y' })).toBe(false)
+    await expect(store.updateFamiglia(1, { Nome_Famiglia: 'Y' })).rejects.toThrow()
     expect(store.error).toBe('family update fail')
 
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [] } })
     mockCreateContatto.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'contact create fail' }] } } })
-    expect(await store.createGenitore({ Nome: 'A', Cognome: 'B', Email: 'a@b.it' })).toBe(false)
+    await expect(store.createGenitore({ Nome: 'A', Cognome: 'B', Email: 'a@b.it' })).rejects.toThrow()
     expect(store.error).toBe('contact create fail')
 
     mockUpdateContatto.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'contact update fail' }] } } })
-    expect(await store.updateContatto('c-1', { Nome: 'New' })).toBe(false)
+    await expect(store.updateContatto('c-1', { Nome: 'New' })).rejects.toThrow()
     expect(store.error).toBe('contact update fail')
   })
 
   it('creaUtentePerVolontario returns false when helper reports an error', async () => {
     const store = useGestioneStore()
     mockGetContattoById.mockResolvedValueOnce({ data: { data: { id_contatto: 'c-err', email: [] } } })
-    const ok = await store.creaUtentePerVolontario('c-err')
-    expect(ok).toBe(false)
+    await expect(store.creaUtentePerVolontario('c-err')).rejects.toThrow()
     expect(store.error).toBe('Email mancante')
   })
 
@@ -429,11 +420,11 @@ describe('gestione store', () => {
       data: { data: { id_contatto: 'c-1', email: [{ email_address: 'x@test.it', Primary: true }], user_id: 'u-1' } }
     })
     mockUpdateContatto.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'referente fail' }] } } })
-    expect(await store.markAsReferente('c-1')).toBe(false)
+    await expect(store.markAsReferente('c-1')).rejects.toThrow()
     expect(store.error).toBe('referente fail')
 
     mockGetContattoById.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'helper exploded' }] } } })
-    expect(await store.creaUtentePerVolontario('c-2')).toBe(false)
+    await expect(store.creaUtentePerVolontario('c-2')).rejects.toThrow()
     expect(store.error).toBe('helper exploded')
   })
 })

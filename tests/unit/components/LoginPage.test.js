@@ -80,7 +80,7 @@ describe('LoginPage', () => {
   })
 
   it('does not redirect when login fails', async () => {
-    mockLogin.mockResolvedValue(false)
+    mockLogin.mockRejectedValue(new Error('Login fallito'))
     const wrapper = quasarMount(LoginPage)
 
     await wrapper.vm.handleLogin()

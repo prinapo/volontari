@@ -8,7 +8,7 @@
         flat
         round
         icon="refresh"
-        :loading="store.submissionsLoading"
+        :loading="loading"
         data-testid="btn-refresh-riconciliazioni"
         aria-label="Aggiorna"
         @click="loadData"
@@ -23,9 +23,9 @@
       bordered
       row-key="id"
       :grid="$q.screen.lt.sm"
-      :rows="store.submissions"
+      :rows="rows"
       :columns="submissionColumns"
-      :loading="store.submissionsLoading"
+      :loading="loading"
       :rows-per-page-options="[10, 25, 50]"
       @request="onRequest"
     >
@@ -485,6 +485,7 @@ import ContactLink from 'components/Common/ContactLink.vue'
 import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
 import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
 import RiconciliaDialog from 'components/RiconciliaDialog.vue'
+import { useServerTable } from 'src/composables/useServerTable'
 import { verificaService } from 'src/services/verifica.service'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
@@ -520,11 +521,22 @@ const contattoInitialData = computed(() => {
 const assegnaDialogVisible = ref(false)
 const assegnaContatto = ref(null)
 
-const pagination = ref({
-  page: 1,
-  rowsPerPage: 25,
-  rowsNumber: 0
-})
+const {
+  rows,
+  loading,
+  pagination,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    await store.fetchSubmissions({
+      page: params.page,
+      limit: params.limit
+    })
+    return { rows: store.submissions, total: store.submissionsTotalCount }
+  }
+)
 
 const submissionColumns = [
   { name: 'data_invio', label: 'Data invio', field: 'data_invio', align: 'left', sortable: true },
@@ -554,24 +566,8 @@ onMounted(() => {
   loadData()
 })
 
-async function loadData() {
-  await store.fetchSubmissions({
-    page: pagination.value.page,
-    limit: pagination.value.rowsPerPage
-  })
-  pagination.value.rowsNumber = store.submissionsTotalCount
-}
-
-async function onRequest(props) {
-  const { page, rowsPerPage } = props.pagination
-  pagination.value.page = page
-  if (rowsPerPage) pagination.value.rowsPerPage = rowsPerPage
-  await loadData()
-}
-
 function onToggleScartati(_val) {
-  pagination.value.page = 1
-  loadData()
+  onSearchChange()
 }
 
 function openRiconcilia(submission) {
@@ -595,7 +591,7 @@ async function handleAssociaGenitore(submission) {
     notifySuccess($q, 'Contatto associato come genitore')
     loadData()
   } catch (error) {
-    notifyError($q, error, "Errore nell'associazione")
+    notifyError($q, gestioneStore.error || error, "Errore nell'associazione")
   }
 }
 

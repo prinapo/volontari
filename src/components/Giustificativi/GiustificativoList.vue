@@ -56,7 +56,7 @@ const props = defineProps({
 const showForm = ref(false)
 
 const items = computed(() => {
-  return [...giustificativiStore.items].filter(i => !i.Invalidato).sort((a, b) => new Date(b.Data) - new Date(a.Data))
+  return [...giustificativiStore.data].filter(i => !i.Invalidato).sort((a, b) => new Date(b.Data) - new Date(a.Data))
 })
 const loading = computed(() => giustificativiStore.loading)
 const saving = computed(() => giustificativiStore.saving)
@@ -72,56 +72,56 @@ watch(
 )
 
 async function handleCreate(formData) {
-  const ok = await giustificativiStore.createGiustificativo(formData, formData.File)
-  if (ok) {
+  try {
+    await giustificativiStore.createGiustificativo(formData, formData.File)
     notifySuccess($q, 'Giustificativo creato')
     showForm.value = false
     if (props.progettoId) {
       giustificativiStore.fetchByProgetto(props.progettoId)
     }
-  } else {
+  } catch {
     notifyError($q, giustificativiStore.error || 'Errore nella creazione')
   }
 }
 
 async function handleSaveField({ id, field, value }) {
-  const ok = await giustificativiStore.saveInlineEdit(id, field, value)
-  if (ok) {
+  try {
+    await giustificativiStore.saveInlineEdit(id, field, value)
     notifySuccess($q, 'Campo salvato')
-  } else {
+  } catch {
     notifyError($q, giustificativiStore.error || 'Errore nel salvataggio')
   }
 }
 
 async function handleSubmit(item) {
-  const ok = await giustificativiStore.submitGiustificativo(item.id)
-  if (ok) {
+  try {
+    await giustificativiStore.submitGiustificativo(item.id)
     notifySuccess($q, 'Giustificativo inviato')
     if (props.progettoId) {
       await giustificativiStore.fetchByProgetto(props.progettoId)
     }
-  } else {
+  } catch {
     notifyError($q, giustificativiStore.error || "Errore nell'invio")
   }
 }
 
 async function handleFileChange({ id, file }) {
-  const ok = await giustificativiStore.updateGiustificativo(id, {}, file)
-  if (ok) {
+  try {
+    await giustificativiStore.updateGiustificativo(id, {}, file)
     notifySuccess($q, 'Allegato aggiornato')
     if (props.progettoId) {
       giustificativiStore.fetchByProgetto(props.progettoId)
     }
-  } else {
+  } catch {
     notifyError($q, giustificativiStore.error || "Errore nell'aggiornamento")
   }
 }
 
 async function handleInvalida(id) {
-  const ok = await giustificativiStore.invalidateGiustificativo(id)
-  if (ok) {
+  try {
+    await giustificativiStore.invalidateGiustificativo(id)
     notifySuccess($q, 'Giustificativo eliminato')
-  } else {
+  } catch {
     notifyError($q, giustificativiStore.error || "Errore nell'invalidazione")
   }
 }

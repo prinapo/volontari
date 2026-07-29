@@ -154,24 +154,24 @@ async function filterReferenti(val, update) {
 
 async function addReferente() {
   if (!selectedReferente.value || !props.volontario?.id_contatto) return
-  const ok = await store.assignReferente(props.volontario.id_contatto, selectedReferente.value)
-  if (ok) {
+  try {
+    await store.assignReferente(props.volontario.id_contatto, selectedReferente.value)
     notifySuccess($q, 'Referente assegnato al volontario')
     selectedReferente.value = null
     await loadAssigned()
     emit('saved')
-  } else {
+  } catch {
     notifyError($q, store.error || "Errore nell'assegnazione")
   }
 }
 
 async function removeReferente(referente) {
-  const ok = await store.removeReferente(referente.id)
-  if (ok) {
+  try {
+    await store.removeReferente(referente.id)
     notifySuccess($q, 'Referente rimosso dal volontario')
     await loadAssigned()
     emit('saved')
-  } else {
+  } catch {
     notifyError($q, store.error || 'Errore nella rimozione')
   }
 }

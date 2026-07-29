@@ -175,9 +175,8 @@ describe('auth store', () => {
       })
 
       const store = useAuthStore()
-      const result = await store.login('test@example.com', 'password')
+      await store.login('test@example.com', 'password')
 
-      expect(result).toBe(true)
       expect(store.token).toBe('new-token')
       expect(store.refreshToken).toBeNull()
       expect(store.user.id).toBe('user-1')
@@ -185,15 +184,13 @@ describe('auth store', () => {
       expect(store.loading).toBe(false)
     })
 
-    it('returns false on login failure', async () => {
+    it('throws on login failure', async () => {
       mockLogin.mockRejectedValue({
         response: { data: { errors: [{ message: 'Credenziali errate' }] } }
       })
 
       const store = useAuthStore()
-      const result = await store.login('bad@email', 'wrong')
-
-      expect(result).toBe(false)
+      await expect(store.login('bad@email', 'wrong')).rejects.toThrow()
       expect(store.error).toBe('Credenziali errate')
       expect(store.token).toBeNull()
     })
@@ -202,8 +199,7 @@ describe('auth store', () => {
       mockLogin.mockRejectedValue(new Error('Network failure'))
 
       const store = useAuthStore()
-      await store.login('test@example.com', 'password')
-
+      await expect(store.login('test@example.com', 'password')).rejects.toThrow()
       expect(store.error).toBe('Errore di login')
     })
   })

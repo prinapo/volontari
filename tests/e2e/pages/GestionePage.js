@@ -152,7 +152,12 @@ export class GestionePage {
 
   async searchFamiglie(text) {
     await this.famiglieSearch.fill(text)
-    await this.#waitForFamiglieApi()
+    await this.page.waitForTimeout(300)
+    // Attende che l'API di ricerca risponda E che la riga cercata appaia nella tabella
+    await Promise.all([
+      this.#waitForFamiglieApi(),
+      this.page.locator('.q-table tbody tr').filter({ hasText: text }).first().waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {})
+    ])
     await this.waitForTable()
   }
 
@@ -172,13 +177,24 @@ export class GestionePage {
       const expandBtn = famigliaRow.locator('button[aria-label="Mostra contatti"]')
       if (await expandBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await expandBtn.click()
+        await this.page.waitForTimeout(500)
         await this.page.waitForLoadState('networkidle')
       }
       const addBtn = this.page.locator('button:has-text("Aggiungi contatto")').first()
-      if (await addBtn.isVisible({ timeout: 6000 }).catch(() => false)) {
+      // Il pulsante potrebbe essere fuori viewport dopo l'espansione
+      await addBtn.scrollIntoViewIfNeeded().catch(() => {})
+      try {
+        await addBtn.waitFor({ state: 'visible', timeout: 10_000 })
         await addBtn.click()
         await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
         return true
+      } catch {
+        // Fallback: clicca via evaluate se waitFor fallisce
+        const clicked = await addBtn.evaluate(el => { el.click(); return true }).catch(() => false)
+        if (clicked) {
+          await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+          return true
+        }
       }
     }
 
@@ -187,16 +203,24 @@ export class GestionePage {
     if (await grid.isVisible({ timeout: 1000 }).catch(() => false)) {
       const expItem = this.page.locator('.q-expansion-item').filter({ hasText: nomeFamiglia }).first()
       if (await expItem.isVisible({ timeout: 10_000 }).catch(() => false)) {
-        // Espandi se non già espanso
         if (!(await expItem.locator('.q-expansion-item--expanded').count())) {
           await expItem.click()
+          await this.page.waitForTimeout(500)
           await this.page.waitForLoadState('networkidle')
         }
         const addBtn = expItem.locator('button:has-text("Aggiungi contatto")')
-        if (await addBtn.isVisible({ timeout: 6000 }).catch(() => false)) {
+        await addBtn.scrollIntoViewIfNeeded().catch(() => {})
+        try {
+          await addBtn.waitFor({ state: 'visible', timeout: 10_000 })
           await addBtn.evaluate(el => el.click())
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true
+        } catch {
+          const clicked = await addBtn.evaluate(el => { el.click(); return true }).catch(() => false)
+          if (clicked) {
+            await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
+            return true
+          }
         }
       }
     }

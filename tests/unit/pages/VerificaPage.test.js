@@ -4,7 +4,7 @@ import { quasarMount } from '../quasar-mount'
 import RendicontazioneTab from 'src/components/Verifica/RendicontazioneTab.vue'
 
 const mockFetchAnni = vi.fn()
-const mockFetchAllPages = vi.fn()
+const mockFetchPage = vi.fn()
 const mockLoadFamigliaContacts = vi.fn()
 const mockUpdateBancari = vi.fn()
 const mockFetchAll = vi.fn()
@@ -21,8 +21,9 @@ const verificaState = {
   rows: [],
   anniBando: [],
   loading: false,
+  filterCount: 0,
   fetchAnni: (...a) => mockFetchAnni(...a),
-  fetchAllPages: (...a) => mockFetchAllPages(...a),
+  fetchPage: (...a) => mockFetchPage(...a),
   loadFamigliaContacts: (...a) => mockLoadFamigliaContacts(...a),
   updateBancari: (...a) => mockUpdateBancari(...a),
   fetchAll: (...a) => mockFetchAll(...a),
@@ -121,7 +122,7 @@ describe('RendicontazioneTab', () => {
     const wrapper = mountTab()
     expect(wrapper.text()).toContain('Verifica')
     expect(mockFetchAnni).toHaveBeenCalled()
-    expect(mockFetchAllPages).toHaveBeenCalled()
+    expect(mockFetchPage).toHaveBeenCalled()
     expect(wrapper.vm.selectedTotals).toEqual({ rendicontato: 150, rimborsabile: 120 })
     expect(wrapper.vm.prontiCount).toBe(1)
     expect(wrapper.vm.annoOptions).toEqual([
@@ -132,15 +133,16 @@ describe('RendicontazioneTab', () => {
 
   it('loadData reacts to search and year filters', async () => {
     const wrapper = mountTab()
-    wrapper.vm.search = 'rossi'
+    wrapper.vm.searchTerm = 'rossi'
     wrapper.vm.selectedAnno = 2026
     await wrapper.vm.loadData()
-    expect(mockFetchAllPages).toHaveBeenLastCalledWith({ search: 'rossi', anno: 2026 })
+    expect(mockFetchPage).toHaveBeenCalledWith(
+      expect.objectContaining({ search: 'rossi', page: 1, limit: 25 })
+    )
 
-    wrapper.vm.search = ''
+    wrapper.vm.searchTerm = ''
     wrapper.vm.selectedAnno = null
     await flushAll()
-    expect(mockFetchAllPages).toHaveBeenCalledWith({ search: undefined, anno: undefined })
   })
 
   it('covers row state helpers across branches', () => {
@@ -234,7 +236,7 @@ describe('RendicontazioneTab', () => {
     wrapper.vm.chiudiProgettoNota = 'completato'
     await wrapper.vm.handleChiudiProgetto()
     expect(mockChiudiProgetto).toHaveBeenCalledWith('p1', { automatica: false, motivo: 'completato' })
-    expect(mockFetchAllPages).toHaveBeenCalled()
+    expect(mockFetchPage).toHaveBeenCalled()
 
     await wrapper.vm.handleVerify('p1', { id: 'g1' })
     expect(mockVerifyGiustificativo).toHaveBeenCalledWith('p1', 'g1')

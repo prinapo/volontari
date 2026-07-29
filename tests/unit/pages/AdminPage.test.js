@@ -6,6 +6,7 @@ import AdminConsistencyTab from 'src/components/Admin/AdminConsistencyTab.vue'
 import AdminUtentiTab from 'src/components/Admin/AdminUtentiTab.vue'
 
 const mockFetchAll = vi.fn()
+const mockGetUsers = vi.fn()
 const mockFetchProgetti = vi.fn()
 const mockUpdateBeneficiario = vi.fn()
 const mockSearchContatto = vi.fn()
@@ -35,13 +36,15 @@ const adminState = {
   saving: false,
   contattoTrovato: null,
   fetchAll: (...a) => mockFetchAll(...a),
+  fetchRoles: vi.fn(),
   fetchProgetti: (...a) => mockFetchProgetti(...a),
   updateProgettoBeneficiario: (...a) => mockUpdateBeneficiario(...a),
   searchContatto: (...a) => mockSearchContatto(...a),
   createUser: (...a) => mockCreateUser(...a),
   sendCustomEmail: (...a) => mockSendCustomEmail(...a),
   resetUserPassword: (...a) => mockResetUserPassword(...a),
-  updateUserRole: (...a) => mockUpdateUserRole(...a)
+  updateUserRole: (...a) => mockUpdateUserRole(...a),
+  fetchVolontariConsistency: vi.fn()
 }
 
 const authState = { canAdmin: true, initialized: true }
@@ -88,6 +91,12 @@ vi.mock('src/services/associazioni.service', () => ({
   }
 }))
 
+vi.mock('src/services/admin.service', () => ({
+  adminService: {
+    getUsers: (...a) => mockGetUsers(...a)
+  }
+}))
+
 vi.mock('quasar', () => ({
   useQuasar: () => ({ platform: { is: { mobile: false } }, screen: { width: 1024, sm: true, lt: { sm: false } } })
 }))
@@ -118,6 +127,20 @@ describe('AdminPage', () => {
     errorLogState.unreadCount = 0
     mockAssocGetAll.mockResolvedValue({ data: { data: [{ id: 'a1', Nome: 'Assoc', Budget: 100 }] } })
     mockGetVolontariSenzaUtente.mockResolvedValue({ data: { data: [] } })
+    mockGetUsers.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 'u-1',
+            email: 'mario@test.it',
+            first_name: 'Mario',
+            last_name: 'Rossi',
+            role: { id: 'r1', name: 'Volontario' }
+          }
+        ],
+        meta: { filter_count: 1 }
+      }
+    })
   })
 
   it('renders loader when auth is not initialized', () => {
@@ -134,33 +157,39 @@ describe('AdminPage', () => {
   })
 
   it('shows empty state when no users', () => {
-    adminState.users = []
+    mockGetUsers.mockResolvedValue({ data: { data: [], meta: { filter_count: 0 } } })
     const wrapper = quasarMount(AdminPage)
     expect(wrapper.text()).toContain('Nessun utente trovato')
   })
 
-  it('renders user list and filters users by search', () => {
-    adminState.users = [
-      {
-        id: 'u-1',
-        email: 'mario@test.it',
-        first_name: 'Mario',
-        last_name: 'Rossi',
-        role: { id: 'r1', name: 'Volontario' }
-      },
-      {
-        id: 'u-2',
-        email: 'luigi@test.it',
-        first_name: 'Luigi',
-        last_name: 'Verdi',
-        role: { id: 'r3', name: 'Gestore Volontari' }
+  it('renders user list and filters users by search', async () => {
+    mockGetUsers.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 'u-1',
+            email: 'mario@test.it',
+            first_name: 'Mario',
+            last_name: 'Rossi',
+            role: { id: 'r1', name: 'Volontario' }
+          },
+          {
+            id: 'u-2',
+            email: 'luigi@test.it',
+            first_name: 'Luigi',
+            last_name: 'Verdi',
+            role: { id: 'r3', name: 'Gestore Volontari' }
+          }
+        ],
+        meta: { filter_count: 2 }
       }
-    ]
+    })
     const wrapper = quasarMount(AdminUtentiTab)
-    wrapper.vm.usersSearch = 'rossi'
-    expect(wrapper.vm.filteredUsers).toHaveLength(1)
-    wrapper.vm.usersSearch = 'missing'
-    expect(wrapper.vm.filteredUsers).toEqual([])
+    await wrapper.vm.loadData()
+    expect(wrapper.vm.rows).toHaveLength(2)
+    wrapper.vm.searchTerm = 'rossi'
+    await wrapper.vm.onSearchChange()
+    expect(mockGetUsers).toHaveBeenCalledWith(expect.objectContaining({ search: 'rossi' }))
   })
 
   it('edits associazioni budget and saves it', async () => {
@@ -170,7 +199,7 @@ describe('AdminPage', () => {
     wrapper.vm.editAssocBudget({ id: 'a1' }, '25.5')
     expect(wrapper.vm.assocBudgetCache.a1).toBe(25.5)
 
-    await wrapper.vm.fetchAssociazioni()
+    await wrapper.vm.loadData()
     await wrapper.vm.saveAssocBudget({ id: 'a1' })
     expect(mockAssocUpdate).toHaveBeenCalledWith('a1', { Budget: 25.5 })
     expect(mockNotifySuccess).toHaveBeenCalledWith(expect.anything(), 'Budget aggiornato')

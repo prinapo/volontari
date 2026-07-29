@@ -2,7 +2,7 @@
   <div>
     <div class="row items-center q-mb-md q-gutter-sm">
       <q-input
-        v-model="search"
+        v-model="searchTerm"
         dense
         outlined
         placeholder="Cerca per nome famiglia..."
@@ -37,13 +37,13 @@
     <q-table
       v-model:expanded="expandedRows"
       v-model:pagination="pagination"
-      :rows="store.famiglie"
+      :rows="rows"
       :columns="columns"
       row-key="id_famiglia"
       flat
       bordered
       :grid="$q.screen.lt.sm"
-      :loading="store.loading"
+      :loading="loading"
       @request="onRequest"
     >
       <template #header="props">
@@ -793,6 +793,7 @@ import { useQuasar } from 'quasar'
 import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import { useServerTable } from 'src/composables/useServerTable'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { gestioneService } from 'src/services/gestione.service'
@@ -815,7 +816,6 @@ function formatCurrencyVal(v) {
   return formatCurrency(v)
 }
 
-const search = ref('')
 const volontarioFilter = ref('tutti')
 const revisioniFamiglie = ref({})
 const savingField = ref('')
@@ -838,13 +838,38 @@ const progettiCache = ref({})
 const progettiLoading = ref(false)
 const salvandoProgId = ref(null)
 
-const pagination = ref({
-  page: 1,
-  rowsPerPage: 25,
-  rowsNumber: 0,
-  sortBy: null,
-  descending: false
-})
+const {
+  rows,
+  loading,
+  pagination,
+  searchTerm,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    await store.fetchAll(params)
+    if (authStore.canAdmin) {
+      const ids = store.famiglie.map(f => f.id_famiglia).filter(Boolean)
+      if (ids.length > 0) {
+        try {
+          const data = await revisionsService.getBulkRevisions('Famiglie', ids, 100)
+          revisioniFamiglie.value = revisionsService.groupByItemAndField(data, ['Nome_Famiglia', 'IBAN', 'Intestatario_CC'])
+        } catch {
+          revisioniFamiglie.value = {}
+        }
+      }
+    }
+    return { rows: store.famiglie, total: store.totalFamiglie }
+  },
+  {
+    sortMap: {
+      nome: 'Nome_Famiglia',
+      IBAN: 'IBAN',
+      intestatario: 'Intestatario_CC'
+    }
+  }
+)
 
 watch(showContatti, val => {
   if (val) {
@@ -865,47 +890,6 @@ const columns = [
   { name: 'IBAN', label: 'IBAN', align: 'left' },
   { name: 'intestatario', label: 'Intestatario CC', field: 'Intestatario_CC', align: 'left' }
 ]
-
-async function loadData() {
-  const SORT_FIELD_MAP = {
-    nome: 'Nome_Famiglia',
-    IBAN: 'IBAN',
-    intestatario: 'Intestatario_CC'
-  }
-  const sortField = SORT_FIELD_MAP[pagination.value.sortBy] || pagination.value.sortBy
-  const sort = sortField ? (pagination.value.descending ? `-${sortField}` : sortField) : undefined
-  const params = {
-    page: pagination.value.page,
-    limit: pagination.value.rowsPerPage > 0 ? pagination.value.rowsPerPage : -1,
-    search: search.value || undefined,
-    sort
-  }
-  await store.fetchAll(params)
-  pagination.value.rowsNumber = store.totalFamiglie
-  if (!authStore.canAdmin) return
-  const ids = store.famiglie.map(f => f.id_famiglia).filter(Boolean)
-  if (ids.length === 0) return
-  try {
-    const data = await revisionsService.getBulkRevisions('Famiglie', ids, 100)
-    revisioniFamiglie.value = revisionsService.groupByItemAndField(data, ['Nome_Famiglia', 'IBAN', 'Intestatario_CC'])
-  } catch {
-    revisioniFamiglie.value = {}
-  }
-}
-
-function onSearchChange() {
-  pagination.value.page = 1
-  loadData()
-}
-
-async function onRequest(props) {
-  const { page, rowsPerPage, sortBy, descending } = props.pagination
-  pagination.value.page = page
-  if (rowsPerPage) pagination.value.rowsPerPage = rowsPerPage
-  if (sortBy !== undefined) pagination.value.sortBy = sortBy
-  if (descending !== undefined) pagination.value.descending = descending
-  await loadData()
-}
 
 onMounted(() => {
   loadData()
@@ -1020,6 +1004,6 @@ function openContatti(row) {
 }
 
 function onSaved() {
-  // nothing to refresh
+  loadData()
 }
 </script>

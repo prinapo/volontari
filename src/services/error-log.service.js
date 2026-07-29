@@ -6,13 +6,18 @@ export const errorLogService = {
   },
 
   getAll(params = {}) {
+    const query = {
+      fields: '*',
+      sort: '-timestamp',
+      limit: 100
+    }
+    if (params.page) query.page = params.page
+    if (params.limit) query.limit = params.limit
+    if (params.sort) query.sort = params.sort
+    if (params.search) query['filter[message][_icontains]'] = params.search
+    if (params.meta) query.meta = params.meta
     return api.get('/items/ErrorLog', {
-      params: {
-        fields: '*',
-        sort: '-timestamp',
-        limit: 100,
-        ...params
-      }
+      params: query
     })
   },
 

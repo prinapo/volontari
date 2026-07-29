@@ -312,38 +312,40 @@ async function saveEmails(contattoId) {
 }
 
 async function handleSaveEdit() {
-  const ok = await store.updateContatto(props.editItem.id_contatto, {
-    Nome: form.value.Nome,
-    Cognome: form.value.Cognome,
-    Numero_di_cellulare: form.value.Numero_di_cellulare || null,
-    Numero_di_telefono: form.value.Numero_di_telefono || null,
-    IsReferente: form.value.IsReferente
-  })
-  if (!ok) {
+  try {
+    await store.updateContatto(props.editItem.id_contatto, {
+      Nome: form.value.Nome,
+      Cognome: form.value.Cognome,
+      Numero_di_cellulare: form.value.Numero_di_cellulare || null,
+      Numero_di_telefono: form.value.Numero_di_telefono || null,
+      IsReferente: form.value.IsReferente
+    })
+    await saveEmails(props.editItem.id_contatto)
+    emit('saved')
+    visible.value = false
+  } catch {
     notifyError($q, store.error || 'Errore nella modifica')
-    return
   }
-  await saveEmails(props.editItem.id_contatto)
-  emit('saved')
-  visible.value = false
 }
 
 async function handleSaveCreate() {
-  const contattoId = await store.createGenitore({
-    id_contatto: generateContattoId(),
-    Nome: form.value.Nome,
-    Cognome: form.value.Cognome,
-    Email: (emails.value[0]?.email_address || '').toLowerCase(),
-    Numero_di_cellulare: form.value.Numero_di_cellulare,
-    Numero_di_telefono: form.value.Numero_di_telefono,
-    IsReferente: form.value.IsReferente
-  })
-  if (!contattoId) {
+  try {
+    const contattoId = await store.createGenitore({
+      id_contatto: generateContattoId(),
+      Nome: form.value.Nome,
+      Cognome: form.value.Cognome,
+      Email: (emails.value[0]?.email_address || '').toLowerCase(),
+      Numero_di_cellulare: form.value.Numero_di_cellulare,
+      Numero_di_telefono: form.value.Numero_di_telefono,
+      IsReferente: form.value.IsReferente
+    })
+    if (contattoId) {
+      emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
+      visible.value = false
+    }
+  } catch {
     notifyError($q, store.error || 'Errore nella creazione')
-    return
   }
-  emit('saved', { id: contattoId, Nome: form.value.Nome, Cognome: form.value.Cognome })
-  visible.value = false
 }
 
 async function handleSave() {

@@ -11,7 +11,7 @@ round
 dense
 size="sm"
 icon="refresh"
-:loading="store.loading"
+      :loading="loading"
 aria-label="Aggiorna dati"
 @click="loadData">
       <q-tooltip>Aggiorna dati</q-tooltip>
@@ -20,7 +20,7 @@ aria-label="Aggiorna dati"
 
   <div class="row q-col-gutter-md q-mb-md">
     <div class="col-12 col-sm-6 col-md-4">
-      <q-input v-model="search" outlined dense debounce="300" label="Cerca famiglia">
+      <q-input v-model="searchTerm" outlined dense debounce="300" label="Cerca famiglia">
         <template #prepend>
           <q-icon name="search" />
         </template>
@@ -67,9 +67,10 @@ aria-label="Aggiorna dati"
     row-key="idProgetto"
     :rows="filteredRows"
     :columns="columns"
-    :loading="store.loading"
+    :loading="loading"
     :grid="$q.screen.lt.sm"
     :dense="$q.screen.lt.md"
+    @request="onRequest"
   >
     <template #header="props">
       <q-tr :props="props">
@@ -797,13 +798,12 @@ import { computed, onMounted, ref, watch } from 'vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
 import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
-import GiustificativoForm from 'components/Giustificativi/GiustificativoForm.vue'
-import ProgettoDetailDialog from 'components/Verifica/ProgettoDetailDialog.vue'
-import { assetUrl } from 'src/utils/assets'
-import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import { useServerTable } from 'src/composables/useServerTable'
+import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
+import ProgettoDetailDialog from './ProgettoDetailDialog.vue'
 import RifiutaGiustificativoDialog from './RifiutaGiustificativoDialog.vue'
 
 const $q = useQuasar()
@@ -811,7 +811,6 @@ const store = useVerificaStore()
 const authStore = useAuthStore()
 
 const selectedAnno = ref(null)
-const search = ref('')
 const verifyingId = ref(null)
 const rejectingId = ref(null)
 const savingField = ref(null)
@@ -844,12 +843,28 @@ const detailDialog = ref(false)
 
 const selectedProgettoRow = computed(() => filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {})
 
-const pagination = ref({
-  sortBy: 'famiglia',
-  descending: false,
-  page: 1,
-  rowsPerPage: 25
-})
+const {
+  loading,
+  pagination,
+  searchTerm,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    await store.fetchPage({
+      page: params.page,
+      limit: params.limit,
+      sort: params.sort,
+      search: params.search,
+      anno: selectedAnno.value || undefined
+    })
+    return { rows: store.rows, total: store.filterCount }
+  },
+  { perPage: 25 }
+)
+
+const filteredRows = computed(() => store.rows)
 
 const annoOptions = computed(() =>
   store.anniBando.map(anno => ({
@@ -869,8 +884,6 @@ const columns = [
   { name: 'stato', label: 'Stato', field: 'id', align: 'left' },
   { name: 'actions', label: '', field: 'id', align: 'right' }
 ]
-
-const filteredRows = computed(() => store.rows)
 
 const selectedTotals = computed(() => {
   return filteredRows.value.reduce(
@@ -905,16 +918,8 @@ onMounted(() => {
   loadData()
 })
 
-async function loadData() {
-  await store.fetchAllPages({
-    search: search.value || undefined,
-    anno: selectedAnno.value || undefined
-  })
-}
-
-watch([search, selectedAnno], () => {
-  pagination.value.page = 1
-  loadData()
+watch(selectedAnno, () => {
+  onSearchChange()
 })
 
 function hasPendingGiustificativi(row) {
@@ -1011,7 +1016,7 @@ async function handleChiudiProgetto() {
     })
     notifySuccess($q, 'Progetto chiuso')
     chiudiProgettoDialog.value = false
-    await store.fetchAllPages()
+    await loadData()
   } catch (error) {
     notifyError($q, error, 'Errore chiusura progetto')
   } finally {
@@ -1029,7 +1034,7 @@ async function handleRiapriProgetto(row) {
     await pagStore.riapriProgetto(row.idProgetto)
     if (pagStore.error) throw new Error(pagStore.error)
     notifySuccess($q, 'Progetto riaperto')
-    await store.fetchAllPages()
+    await loadData()
   } catch (error) {
     notifyError($q, error, 'Errore riapertura progetto')
   } finally {

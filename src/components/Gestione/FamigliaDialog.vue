@@ -118,30 +118,30 @@ async function handleSave() {
   if (!form.value.Nome_Famiglia) return
 
   if (isEdit.value) {
-    const ok = await store.updateFamiglia(props.editItem.id_famiglia, {
-      Nome_Famiglia: form.value.Nome_Famiglia,
-      IBAN: form.value.IBAN || null,
-      Intestatario_CC: form.value.Intestatario_CC || null
-    })
-    if (ok) {
+    try {
+      await store.updateFamiglia(props.editItem.id_famiglia, {
+        Nome_Famiglia: form.value.Nome_Famiglia,
+        IBAN: form.value.IBAN || null,
+        Intestatario_CC: form.value.Intestatario_CC || null
+      })
       notifySuccess($q, 'Famiglia modificata')
       emit('saved')
       visible.value = false
-    } else if (store.error) {
-      notifyError($q, store.error, 'Errore nella modifica della famiglia')
+    } catch {
+      notifyError($q, store.error || 'Errore nella modifica della famiglia')
     }
   } else {
-    const ok = await store.createFamiglia({
-      Nome_Famiglia: form.value.Nome_Famiglia,
-      IBAN: form.value.IBAN,
-      Intestatario_CC: form.value.Intestatario_CC
-    })
-    if (ok) {
+    try {
+      await store.createFamiglia({
+        Nome_Famiglia: form.value.Nome_Famiglia,
+        IBAN: form.value.IBAN,
+        Intestatario_CC: form.value.Intestatario_CC
+      })
       notifySuccess($q, 'Famiglia creata')
       emit('saved')
       visible.value = false
-    } else if (store.error) {
-      notifyError($q, store.error, 'Errore nella creazione della famiglia')
+    } catch {
+      notifyError($q, store.error || 'Errore nella creazione della famiglia')
     }
   }
 }

@@ -73,4 +73,18 @@ test.describe('Pagamenti CRUD', () => {
     await page.waitForLoadState('networkidle')
     await expect(page.locator('.q-tab--active:has-text("Liste esportazione")')).toBeVisible({ timeout: 5000 })
   })
+
+  test('PAG-40: Filtro testuale in Da riscontrare @smoke', async ({ page }) => {
+    await loginAs(page, 'manager', auth)
+    await page.goto('/pagamenti')
+    await page.waitForLoadState('networkidle')
+    await page.locator('.q-tab:has-text("Da riscontrare")').click()
+    await page.waitForLoadState('networkidle')
+
+    const searchInput = page.locator('input[placeholder*="Cerca famiglia"]').first()
+    await expect(searchInput).toBeVisible({ timeout: 5000 })
+    await searchInput.fill('TEST')
+    await page.waitForTimeout(500)
+    await expect(searchInput).toHaveValue('TEST')
+  })
 })

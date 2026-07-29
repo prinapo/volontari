@@ -77,7 +77,7 @@ describe('FamigliaDialog', () => {
 
   it('updates famiglia and notifies error on failure', async () => {
     gestioneState.error = 'Errore update'
-    mockUpdateFamiglia.mockResolvedValue(false)
+    mockUpdateFamiglia.mockRejectedValue(new Error('Errore update'))
     const wrapper = quasarMount(FamigliaDialog, {
       props: {
         modelValue: true,

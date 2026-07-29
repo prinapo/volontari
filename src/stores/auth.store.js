@@ -123,10 +123,9 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token)
         }
         await this.fetchUserData()
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore di login'
-        return false
+        throw error
       } finally {
         this.loading = false
       }

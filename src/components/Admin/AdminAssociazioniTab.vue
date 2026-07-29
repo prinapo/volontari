@@ -5,6 +5,20 @@
       <div class="text-body2 text-grey-7">Gestisci i budget annuali delle associazioni.</div>
     </div>
     <q-space />
+    <q-input
+      v-model="searchTerm"
+      dense
+      outlined
+      placeholder="Cerca associazione..."
+      clearable
+      debounce="300"
+      class="col-12 col-sm"
+      @update:model-value="onSearchChange"
+    >
+      <template #prepend>
+        <q-icon name="search" />
+      </template>
+    </q-input>
     <q-btn color="primary" icon="add" label="Nuova associazione" @click="openNewAssociazioneDialog" />
     <q-btn
 flat
@@ -13,20 +27,21 @@ dense
 size="sm"
 icon="refresh"
 aria-label="Aggiorna"
-@click="fetchAssociazioni">
+      @click="loadData">
       <q-tooltip>Aggiorna</q-tooltip>
     </q-btn>
   </div>
 
   <q-table
-    :rows="associazioni"
+    v-model:pagination="pagination"
+    :rows="rows"
     :columns="assocColumns"
     row-key="id"
     flat
     bordered
-    hide-pagination
-    :pagination="{ rowsPerPage: 0 }"
+    :loading="loading"
     :grid="$q.screen.lt.sm"
+    @request="onRequest"
   >
     <template #body-cell-budget="props">
       <q-td :props="props">
@@ -143,11 +158,36 @@ step="0.01" />
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, reactive, onMounted } from 'vue'
+import { useServerTable } from 'src/composables/useServerTable'
+import { associazioniService } from 'src/services/associazioni.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
 
-const associazioni = ref([])
+const {
+  rows,
+  loading,
+  pagination,
+  searchTerm,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    const res = await associazioniService.getAll({
+      page: params.page,
+      limit: params.limit,
+      sort: params.sort || 'Nome',
+      search: params.search,
+      meta: 'filter_count'
+    })
+    const data = res.data.data || []
+    const total = res.data.meta?.filter_count || 0
+    return { rows: data, total }
+  },
+  { perPage: 25 }
+)
+
 const assocBudgetCache = reactive({})
 const savingAssoc = ref(false)
 const assocColumns = [
@@ -155,16 +195,6 @@ const assocColumns = [
   { name: 'budget', label: 'Budget (€)', align: 'left' },
   { name: 'actions', label: '', align: 'center' }
 ]
-
-async function fetchAssociazioni() {
-  try {
-    const { associazioniService } = await import('src/services/associazioni.service')
-    const res = await associazioniService.getAll()
-    associazioni.value = res.data.data || []
-  } catch {
-    associazioni.value = []
-  }
-}
 
 function editAssocBudget(row, val) {
   assocBudgetCache[row.id] = Number.parseFloat(val) || 0
@@ -175,11 +205,10 @@ async function saveAssocBudget(row) {
   if (val === undefined) return
   savingAssoc.value = true
   try {
-    const { associazioniService } = await import('src/services/associazioni.service')
     await associazioniService.update(row.id, { Budget: val })
     notifySuccess($q, 'Budget aggiornato')
     delete assocBudgetCache[row.id]
-    await fetchAssociazioni()
+    await loadData()
   } catch (error) {
     notifyError($q, error, 'Errore aggiornamento budget')
   } finally {
@@ -202,7 +231,6 @@ async function createAssociazione() {
   if (!newAssociazioneNome.value) return
   savingAssociazione.value = true
   try {
-    const { associazioniService } = await import('src/services/associazioni.service')
     const data = { Nome: newAssociazioneNome.value }
     if (newAssociazioneBudget.value > 0) {
       data.Budget = newAssociazioneBudget.value
@@ -210,7 +238,7 @@ async function createAssociazione() {
     await associazioniService.create(data)
     notifySuccess($q, 'Associazione creata')
     showNewAssociazioneDialog.value = false
-    await fetchAssociazioni()
+    await loadData()
   } catch (error) {
     notifyError($q, error, 'Errore creazione associazione')
   } finally {
@@ -219,6 +247,6 @@ async function createAssociazione() {
 }
 
 onMounted(() => {
-  fetchAssociazioni()
+  loadData()
 })
 </script>

@@ -112,6 +112,20 @@
     <template v-if="subTab === 'incorso'">
       <div>
         <div class="row items-center q-gutter-sm q-mb-md">
+          <q-input
+            v-model="searchInCorso"
+            dense
+            outlined
+            placeholder="Cerca famiglia, IBAN, batch..."
+            clearable
+            debounce="300"
+            :class="$q.screen.lt.sm ? 'col-12' : 'col-auto'"
+            style="min-width: 220px"
+          >
+            <template #prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
           <q-select
             v-model="batchFilter"
             :options="batchOptions"
@@ -517,6 +531,7 @@ const paginationInCorso = ref({ rowsPerPage: 25 })
 const paginationFalliti = ref({ rowsPerPage: 25 })
 const batchAssociazione = ref(null)
 const batchFilter = ref(null)
+const searchInCorso = ref('')
 const batchNome = ref('')
 const showBatchDialog = ref(false)
 const editingFalliti = ref({})
@@ -534,8 +549,21 @@ const batchAssociazioneLabel = computed(() => {
 const selectedTotal = computed(() => selected.value.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0))
 
 const filteredInCorso = computed(() => {
-  if (!batchFilter.value) return store.inCorso
-  return store.inCorso.filter(p => (p.Batch?.id || p.Batch) === batchFilter.value)
+  let result = store.inCorso
+  if (batchFilter.value) {
+    result = result.filter(p => (p.Batch?.id || p.Batch) === batchFilter.value)
+  }
+  if (searchInCorso.value) {
+    const q = searchInCorso.value.toLowerCase()
+    result = result.filter(p => {
+      const famiglia = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
+      const iban = (p.IBAN || p.Famiglia?.IBAN || '').toLowerCase()
+      const intestatario = (p.Intestatario || p.Famiglia?.Intestatario_CC || '').toLowerCase()
+      const batch = p.Batch?.Nome?.toLowerCase() || ''
+      return famiglia.includes(q) || iban.includes(q) || intestatario.includes(q) || batch.includes(q)
+    })
+  }
+  return result
 })
 
 const allInPagamento = computed(() =>

@@ -5,6 +5,20 @@
       <div class="text-body2 text-grey-7">Errori API registrati dalle richieste del frontend.</div>
     </div>
     <q-space />
+    <q-input
+      v-model="searchTerm"
+      dense
+      outlined
+      placeholder="Cerca..."
+      clearable
+      debounce="300"
+      class="col-12 col-sm"
+      @update:model-value="onSearchChange"
+    >
+      <template #prepend>
+        <q-icon name="search" />
+      </template>
+    </q-input>
     <q-btn
       flat
       round
@@ -12,23 +26,23 @@
       size="sm"
       icon="refresh"
       aria-label="Aggiorna"
-      :loading="errorLogStore.loading"
-      @click="errorLogStore.fetchAll"
+      :loading="loading"
+      @click="loadData"
     >
       <q-tooltip>Aggiorna</q-tooltip>
     </q-btn>
   </div>
 
   <q-table
-    :rows="errorLogStore.items"
+    v-model:pagination="pagination"
+    :rows="rows"
     :columns="erroriColumns"
     row-key="id"
     flat
     bordered
-    hide-pagination
-    :pagination="{ rowsPerPage: 0 }"
-    :loading="errorLogStore.loading"
+    :loading="loading"
     :grid="$q.screen.lt.sm"
+    @request="onRequest"
   >
     <template #body-cell-level="props">
       <q-td :props="props">
@@ -62,7 +76,7 @@
           size="sm"
           color="grey"
           aria-label="Segna come letto"
-          @click="errorLogStore.markAsRead(props.row.id)"
+          @click="handleMarkAsRead(props.row.id)"
         >
           <q-tooltip>Segna come letto</q-tooltip>
         </q-btn>
@@ -79,7 +93,7 @@
           color="negative"
           size="sm"
           aria-label="Elimina"
-          @click="errorLogStore.delete(props.row.id)"
+          @click="handleDelete(props.row.id)"
         >
           <q-tooltip>Elimina</q-tooltip>
         </q-btn>
@@ -100,7 +114,7 @@
                 dense
                 icon="mark_email_read"
                 size="sm"
-                @click="errorLogStore.markAsRead(props.row.id)"
+                @click="handleMarkAsRead(props.row.id)"
                 ><q-tooltip>Segna come letto</q-tooltip></q-btn
               >
             </div>
@@ -148,13 +162,49 @@ aria-label="Chiudi">
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useServerTable } from 'src/composables/useServerTable'
+import { errorLogService } from 'src/services/error-log.service'
 import { useErrorLogStore } from 'stores/error-log.store'
 
 const errorLogStore = useErrorLogStore()
 
+const {
+  rows,
+  loading,
+  pagination,
+  searchTerm,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    const res = await errorLogService.getAll({
+      page: params.page,
+      limit: params.limit,
+      sort: params.sort || '-timestamp',
+      search: params.search,
+      meta: 'filter_count'
+    })
+    const data = res.data.data || []
+    const total = res.data.meta?.filter_count || 0
+    return { rows: data, total }
+  },
+  { perPage: 25 }
+)
+
 const errorDetail = ref({ visible: false, text: '' })
 function showErrorDetail(text) {
   errorDetail.value = { visible: true, text: text || '' }
+}
+
+async function handleMarkAsRead(id) {
+  await errorLogStore.markAsRead(id)
+  loadData()
+}
+
+async function handleDelete(id) {
+  await errorLogStore.delete(id)
+  loadData()
 }
 
 const erroriColumns = [
@@ -168,6 +218,6 @@ const erroriColumns = [
 ]
 
 onMounted(() => {
-  errorLogStore.fetchAll()
+  loadData()
 })
 </script>

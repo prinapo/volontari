@@ -40,7 +40,7 @@ vi.mock('quasar', () => ({
 describe('GiustificativoList', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    giustificativiState.items = []
+    giustificativiState.data = []
     giustificativiState.loading = false
     giustificativiState.saving = false
     giustificativiState.error = null
@@ -61,7 +61,7 @@ describe('GiustificativoList', () => {
   })
 
   it('fetches items on mount with progettoId and filters/sorts visible items', () => {
-    giustificativiState.items = [
+    giustificativiState.data = [
       { id: 1, Data: '2025-01-01', Stato: 'draft', Invalidato: false },
       { id: 2, Data: '2026-01-01', Stato: 'draft', Invalidato: false },
       { id: 3, Data: '2024-01-01', Stato: 'draft', Invalidato: true }
@@ -81,7 +81,7 @@ describe('GiustificativoList', () => {
   })
 
   it('creates a giustificativo successfully and refreshes the list', async () => {
-    mockCreateGiustificativo.mockResolvedValue(true)
+    mockCreateGiustificativo.mockResolvedValue()
     const wrapper = quasarMount(GiustificativoList, {
       props: { progettoId: 'p-1', famigliaId: 'fam-1' },
       global: {
@@ -104,11 +104,11 @@ describe('GiustificativoList', () => {
 
   it('handles create/edit/submit/file invalidate errors', async () => {
     giustificativiState.error = 'Errore store'
-    mockCreateGiustificativo.mockResolvedValue(false)
-    mockSaveInlineEdit.mockResolvedValue(false)
-    mockSubmitGiustificativo.mockResolvedValue(false)
-    mockUpdateGiustificativo.mockResolvedValue(false)
-    mockInvalidateGiustificativo.mockResolvedValue(false)
+    mockCreateGiustificativo.mockRejectedValue(new Error('test'))
+    mockSaveInlineEdit.mockRejectedValue(new Error('test'))
+    mockSubmitGiustificativo.mockRejectedValue(new Error('test'))
+    mockUpdateGiustificativo.mockRejectedValue(new Error('test'))
+    mockInvalidateGiustificativo.mockRejectedValue(new Error('test'))
 
     const wrapper = quasarMount(GiustificativoList, {
       props: { progettoId: 'p-1', famigliaId: 'fam-1' },
@@ -130,9 +130,9 @@ describe('GiustificativoList', () => {
   })
 
   it('handles save, submit, file change and invalidate success flows', async () => {
-    mockSaveInlineEdit.mockResolvedValue(true)
-    mockSubmitGiustificativo.mockResolvedValue(true)
-    mockUpdateGiustificativo.mockResolvedValue(true)
+    mockSaveInlineEdit.mockResolvedValue()
+    mockSubmitGiustificativo.mockResolvedValue()
+    mockUpdateGiustificativo.mockResolvedValue()
     mockInvalidateGiustificativo.mockResolvedValue(true)
 
     const wrapper = quasarMount(GiustificativoList, {

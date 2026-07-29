@@ -131,19 +131,19 @@ const props = defineProps({
 })
 
 async function handleIBANSave(newIBAN) {
-  const ok = await famiglieStore.updateIBAN(newIBAN, famiglieStore.intestatarioCC)
-  if (ok) {
+  try {
+    await famiglieStore.updateIBAN(newIBAN, famiglieStore.intestatarioCC)
     notifySuccess($q, 'IBAN aggiornato')
-  } else {
+  } catch {
     notifyError($q, famiglieStore.error || 'Errore aggiornamento IBAN')
   }
 }
 
 async function handleIntestatarioSave(newIntestatario) {
-  const ok = await famiglieStore.updateIBAN(famiglieStore.iban, newIntestatario)
-  if (ok) {
+  try {
+    await famiglieStore.updateIBAN(famiglieStore.iban, newIntestatario)
     notifySuccess($q, 'Intestatario aggiornato')
-  } else {
+  } catch {
     notifyError($q, famiglieStore.error || 'Errore aggiornamento intestatario')
   }
 }

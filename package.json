@@ -8,7 +8,7 @@
     "dev": "quasar dev",
     "build": "quasar build",
     "preview": "quasar build && npx serve dist/spa",
-    "lint": "eslint src --ext .js,.vue",
+    "lint": "eslint src --ext .js,.vue --max-warnings 0",
     "lint:css": "stylelint \"src/**/*.scss\"",
     "lint:a11y": "eslint src --ext .vue --rulesdir-esm 2>/dev/null; eslint src --ext .vue --rule 'vuejs-accessibility/*: error'",
     "lint:spell": "cspell --no-progress \"src/**/*.{js,vue}\"",

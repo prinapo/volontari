@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!store.loading && store.users.length === 0 && !store.error" class="text-center text-grey-5 q-py-xl">
+  <div v-if="!loading && rows.length === 0 && !error" class="text-center text-grey-5 q-py-xl">
     <q-icon name="admin_panel_settings" size="64px" />
     <div class="text-h6 q-mt-md">Nessun utente trovato</div>
     <div class="text-body2">Verifica i permessi API di Directus.</div>
@@ -10,12 +10,14 @@
 
   <div class="row items-center q-gutter-sm q-mb-md">
     <q-input
-      v-model="usersSearch"
+      v-model="searchTerm"
       dense
       outlined
       placeholder="Cerca utente per nome o email..."
       clearable
+      debounce="300"
       class="col"
+      @update:model-value="onSearchChange"
     >
       <template #prepend>
         <q-icon name="search" />
@@ -28,29 +30,28 @@ round
 dense
 size="sm"
 icon="refresh"
-:loading="store.loading"
+:loading="loading"
 aria-label="Aggiorna"
-@click="store.fetchAll">
+@click="loadData">
       <q-tooltip>Aggiorna</q-tooltip>
     </q-btn>
     <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
   </div>
 
-  <q-banner v-if="store.error" class="bg-red-1 text-negative q-mb-md" rounded>
-    {{ store.error }}
+  <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded>
+    {{ error }}
   </q-banner>
 
   <!-- User table -->
   <q-table
-    :rows="filteredUsers"
+    v-model:pagination="pagination"
+    :rows="rows"
     :columns="userColumns"
     row-key="id"
     flat
     bordered
-    :loading="store.loading"
-    :pagination="{ rowsPerPage: 0 }"
-    hide-pagination
-    :grid="$q.screen.lt.sm"
+    :loading="loading"
+    @request="onRequest"
   >
     <template #item="props">
       <div class="q-pa-xs col-12">
@@ -336,24 +337,38 @@ aria-label="Chiudi">
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
+import { useServerTable } from 'src/composables/useServerTable'
+import { adminService } from 'src/services/admin.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
 
 const $q = useQuasar()
 const store = useAdminStore()
 
-const usersSearch = ref('')
-
-const filteredUsers = computed(() => {
-  const q = usersSearch.value.toLowerCase().trim()
-  if (!q) return store.users
-  return store.users.filter(
-    u =>
-      (u.first_name || '').toLowerCase().includes(q) ||
-      (u.last_name || '').toLowerCase().includes(q) ||
-      (u.email || '').toLowerCase().includes(q)
-  )
-})
+const {
+  rows,
+  loading,
+  error,
+  pagination,
+  searchTerm,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    const res = await adminService.getUsers({
+      page: params.page,
+      limit: params.limit,
+      search: params.search,
+      sort: params.sort,
+      meta: 'filter_count'
+    })
+    const data = res.data.data || []
+    const total = res.data.meta?.filter_count || 0
+    return { rows: data, total }
+  },
+  { perPage: 25 }
+)
 
 const userColumns = [
   { name: 'name', label: 'Nome', align: 'left' },
@@ -398,12 +413,12 @@ async function handleSearchContatto() {
 }
 
 async function handleCreateUser() {
-  const ok = await store.createUser(searchEmail.value, newRole.value, newFirstName.value, newLastName.value)
-  if (ok) {
+  try {
+    await store.createUser(searchEmail.value, newRole.value, newFirstName.value, newLastName.value)
     notifySuccess($q, 'Utente creato con successo')
     userCreated.value = true
-  } else if (store.error) {
-    notifyError($q, store.error, "Errore nella creazione dell'utente")
+  } catch {
+    notifyError($q, store.error || "Errore nella creazione dell'utente")
   }
 }
 
@@ -421,26 +436,27 @@ function openResetPasswordDialog(user) {
 }
 
 async function handleResetPassword() {
-  const ok = await store.resetUserPassword(resetUser.value.id, resetPassword.value)
-  if (ok) {
+  try {
+    await store.resetUserPassword(resetUser.value.id, resetPassword.value)
     notifySuccess($q, 'Password reimpostata con successo')
     showResetDialog.value = false
-  } else if (store.error) {
-    notifyError($q, store.error, 'Errore nel reset della password')
+  } catch {
+    notifyError($q, store.error || 'Errore nel reset della password')
   }
 }
 
 async function handleRoleChange(userId, roleId) {
   if (!roleId) return
-  const ok = await store.updateUserRole(userId, roleId)
-  if (ok) {
+  try {
+    await store.updateUserRole(userId, roleId)
     notifySuccess($q, 'Ruolo aggiornato')
-  } else if (store.error) {
-    notifyError($q, store.error, "Errore nell'aggiornamento del ruolo")
+  } catch {
+    notifyError($q, store.error || "Errore nell'aggiornamento del ruolo")
   }
 }
 
 onMounted(() => {
-  store.fetchAll()
+  store.fetchRoles()
+  loadData()
 })
 </script>

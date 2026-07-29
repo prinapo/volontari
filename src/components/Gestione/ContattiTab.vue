@@ -2,14 +2,14 @@
   <div>
     <div class="row items-center q-mb-md q-gutter-sm">
       <q-input
-        v-model="search"
+        v-model="searchTerm"
         dense
         outlined
         placeholder="Cerca per nome..."
         clearable
         debounce="300"
         class="col-12 col-sm"
-        @update:model-value="onSearch"
+        @update:model-value="onSearchChange"
       >
         <template #prepend>
           <q-icon name="search" />
@@ -332,9 +332,10 @@ aria-label="Assegna famiglia"
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import FieldHistoryButton from 'components/Common/FieldHistoryButton.vue'
+import { useServerTable } from 'src/composables/useServerTable'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
@@ -349,19 +350,7 @@ import ContattoDialog from './ContattoDialog.vue'
 const $q = useQuasar()
 const authStore = useAuthStore()
 
-const rows = ref([])
 const revisioniContatti = ref({})
-const loading = ref(false)
-const totalItems = ref(0)
-const pagination = ref({
-  sortBy: 'Cognome',
-  descending: false,
-  page: 1,
-  rowsPerPage: 25,
-  rowsNumber: 0
-})
-
-const search = ref('')
 const tipoFilter = ref('Tutti')
 const tipoOptions = ['Tutti', 'Volontario', 'Genitore', 'Referente', 'Contatto']
 const statoFilter = ref('Tutti')
@@ -378,7 +367,68 @@ const referenteTarget = ref(null)
 
 const famiglieCount = ref({})
 
-let searchTimeout = null
+const {
+  rows,
+  loading,
+  pagination,
+  searchTerm,
+  onRequest,
+  onSearchChange,
+  loadData
+} = useServerTable(
+  async (params) => {
+    const filters = getQueryFilters()
+    const res = await contattiService.query({
+      limit: params.limit,
+      offset: params.limit > 0 ? (params.page - 1) * params.limit : 0,
+      sort: params.sort || 'Cognome',
+      search: params.search,
+      isVolontario: filters.isVolontario,
+      isGenitore: filters.isGenitore,
+      isReferente: filters.isReferente,
+      stato: tipoFilter.value === 'Volontario' ? statoFilter.value : undefined
+    })
+
+    const data = res.data.data || []
+    const total = res.data.meta?.filter_count || 0
+
+    const userIds = data.map(c => c.user_id).filter(Boolean)
+    if (userIds.length > 0) {
+      const usersRes = await usersService.getByIds([...new Set(userIds)])
+      const users = usersRes.data.data || []
+      const userMap = {}
+      users.forEach(u => { userMap[u.id] = u })
+      data.forEach(c => {
+        if (c.user_id && userMap[c.user_id]) {
+          c.user_id = userMap[c.user_id]
+        }
+      })
+    }
+
+    const ids = data.map(c => c.id_contatto)
+    if (ids.length > 0) {
+      const famRes = await gestioneService.queryFamiglieContatti(ids)
+      const famItems = famRes.data.data || []
+      const counts = {}
+      for (const item of famItems) {
+        const cid = item.Contatto
+        if (!counts[cid]) counts[cid] = 0
+        counts[cid]++
+      }
+      famiglieCount.value = counts
+
+      const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
+      for (const row of data) {
+        if (!row.user_id?.email) {
+          row._emails = emailMap[row.id_contatto] || []
+        }
+      }
+    }
+
+    return { rows: data, total }
+  },
+  { defaultSort: 'Cognome' }
+)
 
 const columns = [
   {
@@ -458,63 +508,14 @@ function getQueryFilters() {
   return { isVolontario, isGenitore, isReferente }
 }
 
-async function onRequest(props) {
-  const { page, rowsPerPage, sortBy, descending } = props.pagination
-
-  loading.value = true
-
-  try {
-    const filters = getQueryFilters()
-    const sort = descending ? `-${sortBy || 'Cognome'}` : sortBy || 'Cognome'
-
-    const res = await contattiService.query({
-      limit: rowsPerPage > 0 ? rowsPerPage : -1,
-      offset: rowsPerPage > 0 ? (page - 1) * rowsPerPage : 0,
-      sort,
-      search: search.value || undefined,
-      isVolontario: filters.isVolontario,
-      isGenitore: filters.isGenitore,
-      isReferente: filters.isReferente,
-      stato: tipoFilter.value === 'Volontario' ? statoFilter.value : undefined
-    })
-
-    const data = res.data.data || []
-    totalItems.value = res.data.meta?.filter_count || 0
-
-    const userIds = data.map(c => c.user_id).filter(Boolean)
-    if (userIds.length > 0) {
-      const usersRes = await usersService.getByIds([...new Set(userIds)])
-      const users = usersRes.data.data || []
-      const userMap = {}
-      users.forEach(u => {
-        userMap[u.id] = u
-      })
-      data.forEach(c => {
-        if (c.user_id && userMap[c.user_id]) {
-          c.user_id = userMap[c.user_id]
-        }
-      })
-    }
-
-    await enrichRows(data)
-
-    rows.value = data
-
-    pagination.value = {
-      ...pagination.value,
-      page,
-      rowsPerPage,
-      sortBy,
-      descending,
-      rowsNumber: totalItems.value
-    }
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-    caricaRevisioni()
-  }
+function onFilterChange() {
+  pagination.value.page = 1
+  loadData()
 }
+
+watch(rows, () => {
+  caricaRevisioni()
+})
 
 async function caricaRevisioni() {
   if (!authStore.canAdmin) return
@@ -528,51 +529,8 @@ async function caricaRevisioni() {
   }
 }
 
-async function enrichRows(data) {
-  if (!data.length) return
-
-  const ids = data.map(c => c.id_contatto)
-
-  const famRes = await gestioneService.queryFamiglieContatti(ids)
-
-  const famItems = famRes.data.data || []
-  const counts = {}
-  for (const item of famItems) {
-    const cid = item.Contatto
-    if (!counts[cid]) counts[cid] = 0
-    counts[cid]++
-  }
-  famiglieCount.value = counts
-
-  const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
-  for (const row of data) {
-    if (!row.user_id?.email) {
-      row._emails = emailMap[row.id_contatto] || []
-    }
-  }
-}
-
-function onSearch() {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    pagination.value.page = 1
-    onRequest({
-      pagination: pagination.value
-    })
-  }, 300)
-}
-
-function onFilterChange() {
-  pagination.value.page = 1
-  onRequest({
-    pagination: pagination.value
-  })
-}
-
 onMounted(() => {
-  onRequest({
-    pagination: pagination.value
-  })
+  loadData()
 })
 
 function openCreate() {
@@ -596,8 +554,6 @@ function openReferente(row) {
 }
 
 async function onSaved() {
-  await onRequest({
-    pagination: pagination.value
-  })
+  await loadData()
 }
 </script>

@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { vi } from 'vitest'
 
 const QUASAR_STUBS = {
   'q-icon': { name: 'QIcon', template: '<span />' },

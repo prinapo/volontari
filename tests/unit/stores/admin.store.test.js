@@ -11,10 +11,12 @@ const mockUpdateUser = vi.fn()
 const mockSendEmail = vi.fn()
 const mockGetProgetti = vi.fn()
 const mockUpdateProgetto = vi.fn()
+const mockContattoUpdate = vi.fn()
 
 vi.mock('src/services/contatti.service', () => ({
   contattiService: {
-    create: (...a) => mockCreateContatto(...a)
+    create: (...a) => mockCreateContatto(...a),
+    update: (...a) => mockContattoUpdate(...a)
   }
 }))
 
@@ -98,8 +100,7 @@ describe('admin store', () => {
     mockCreateUser.mockResolvedValue({})
     mockGetUsers.mockResolvedValue({ data: { data: [] } })
     const store = useAdminStore()
-    const ok = await store.createUser('test@r.it', 'role-1', 'Mario', 'Rossi')
-    expect(ok).toBe(true)
+    await store.createUser('test@r.it', 'role-1', 'Mario', 'Rossi')
     expect(mockCreateContatto).toHaveBeenCalled()
     expect(mockCreateUser).toHaveBeenCalled()
     expect(store.nuovaPassword).toBeTruthy()
@@ -112,15 +113,13 @@ describe('admin store', () => {
     const store = useAdminStore()
     store.contattoTrovato = { id_contatto: 'c-9', Nome: 'Anna', Cognome: 'Verdi' }
 
-    let ok = await store.createUser('anna@r.it', 'role-1')
-    expect(ok).toBe(true)
+    await store.createUser('anna@r.it', 'role-1')
     expect(mockCreateContatto).not.toHaveBeenCalled()
     expect(mockCreateEmail).not.toHaveBeenCalled()
     expect(mockCreateUser).toHaveBeenCalledWith(expect.objectContaining({ first_name: 'Anna', last_name: 'Verdi' }))
 
     mockCreateUser.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'create user fail' }] } } })
-    ok = await store.createUser('anna@r.it', 'role-1')
-    expect(ok).toBe(false)
+    await expect(store.createUser('anna@r.it', 'role-1')).rejects.toThrow()
     expect(store.error).toBe('create user fail')
     expect(store.saving).toBe(false)
   })
@@ -129,24 +128,21 @@ describe('admin store', () => {
     mockUpdateUser.mockResolvedValue({})
     mockGetUsers.mockResolvedValue({ data: { data: [] } })
     const store = useAdminStore()
-    const ok = await store.updateUserRole('u-1', 'role-new')
-    expect(ok).toBe(true)
+    await store.updateUserRole('u-1', 'role-new')
     expect(store.saving).toBe(false)
   })
 
   it('resetUserPassword resets password', async () => {
     mockUpdateUser.mockResolvedValue({})
     const store = useAdminStore()
-    const ok = await store.resetUserPassword('u-1', 'new-pwd')
-    expect(ok).toBe(true)
+    await store.resetUserPassword('u-1', 'new-pwd')
     expect(store.saving).toBe(false)
   })
 
   it('sendCustomEmail sends with template', async () => {
     mockSendEmail.mockResolvedValue({})
     const store = useAdminStore()
-    const ok = await store.sendCustomEmail('test@r.it', 'Subject', 'Ciao {email} {link_login}')
-    expect(ok).toBe(true)
+    await store.sendCustomEmail('test@r.it', 'Subject', 'Ciao {email} {link_login}')
     expect(mockSendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'test@r.it',
@@ -167,8 +163,7 @@ describe('admin store', () => {
   it('updateProgettoBeneficiario updates project', async () => {
     mockUpdateProgetto.mockResolvedValue({})
     const store = useAdminStore()
-    const ok = await store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')
-    expect(ok).toBe(true)
+    await store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')
     expect(store.saving).toBe(false)
   })
 
@@ -192,8 +187,7 @@ describe('admin store', () => {
   it('updateUserRole handles error', async () => {
     mockUpdateUser.mockRejectedValue({ response: { data: { errors: [{ message: 'no access' }] } } })
     const store = useAdminStore()
-    const ok = await store.updateUserRole('u-1', 'r-new')
-    expect(ok).toBe(false)
+    await expect(store.updateUserRole('u-1', 'r-new')).rejects.toThrow()
     expect(store.error).toBe('no access')
     expect(store.saving).toBe(false)
   })
@@ -201,26 +195,22 @@ describe('admin store', () => {
   it('resetUserPassword handles specific and generic errors', async () => {
     mockUpdateUser.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'fail' }] } } })
     const store = useAdminStore()
-    let ok = await store.resetUserPassword('u-1', 'pwd')
-    expect(ok).toBe(false)
+    await expect(store.resetUserPassword('u-1', 'pwd')).rejects.toThrow()
     expect(store.error).toBe('fail')
 
     mockUpdateUser.mockRejectedValueOnce(new Error('boom'))
-    ok = await store.resetUserPassword('u-1', 'pwd')
-    expect(ok).toBe(false)
+    await expect(store.resetUserPassword('u-1', 'pwd')).rejects.toThrow()
     expect(store.error).toBe('Errore nel reset della password')
   })
 
   it('sendCustomEmail handles specific and generic errors', async () => {
     mockSendEmail.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'email fail' }] } } })
     const store = useAdminStore()
-    let ok = await store.sendCustomEmail('test@r.it', 'Sub', 'body')
-    expect(ok).toBe(false)
+    await expect(store.sendCustomEmail('test@r.it', 'Sub', 'body')).rejects.toThrow()
     expect(store.error).toBe('email fail')
 
     mockSendEmail.mockRejectedValueOnce(new Error('smtp'))
-    ok = await store.sendCustomEmail('test@r.it', 'Sub', 'body')
-    expect(ok).toBe(false)
+    await expect(store.sendCustomEmail('test@r.it', 'Sub', 'body')).rejects.toThrow()
     expect(store.error).toBe("Errore nell'invio dell'email")
   })
 
@@ -236,16 +226,28 @@ describe('admin store', () => {
     expect(store.error).toBe('Errore nel caricamento dei progetti')
   })
 
+  it('clearUserReference clears user_id on contatto', async () => {
+    mockContattoUpdate.mockResolvedValue({})
+    const store = useAdminStore()
+    await store.clearUserReference('c-1', 'u-1')
+    expect(mockContattoUpdate).toHaveBeenCalledWith('c-1', { user_id: null })
+  })
+
+  it('clearUserReference throws on error', async () => {
+    mockContattoUpdate.mockRejectedValue({ response: { data: { errors: [{ message: 'no access' }] } } })
+    const store = useAdminStore()
+    await expect(store.clearUserReference('c-1', 'u-1')).rejects.toThrow()
+    expect(store.error).toBe('no access')
+  })
+
   it('updateProgettoBeneficiario handles specific and generic errors', async () => {
     mockUpdateProgetto.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'project fail' }] } } })
     const store = useAdminStore()
-    let ok = await store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')
-    expect(ok).toBe(false)
+    await expect(store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')).rejects.toThrow()
     expect(store.error).toBe('project fail')
 
     mockUpdateProgetto.mockRejectedValueOnce(new Error('boom'))
-    ok = await store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')
-    expect(ok).toBe(false)
+    await expect(store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')).rejects.toThrow()
     expect(store.error).toBe("Errore nell'aggiornamento del progetto")
   })
 })

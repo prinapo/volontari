@@ -3,13 +3,13 @@ import { errorLogService } from 'src/services/error-log.service'
 
 export const useErrorLogStore = defineStore('errorLog', {
   state: () => ({
-    items: [],
+    data: [],
     loading: false,
     error: null
   }),
 
   getters: {
-    unreadCount: state => state.items.filter(i => !i.read).length
+    unreadCount: state => state.data.filter(i => !i.read).length
   },
 
   actions: {
@@ -18,7 +18,7 @@ export const useErrorLogStore = defineStore('errorLog', {
       this.error = null
       try {
         const res = await errorLogService.getAll()
-        this.items = res.data.data || []
+        this.data = res.data.data || []
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore caricamento log'
       } finally {
@@ -30,7 +30,7 @@ export const useErrorLogStore = defineStore('errorLog', {
       this.error = null
       try {
         await errorLogService.markAsRead(id)
-        const item = this.items.find(i => i.id === id)
+        const item = this.data.find(i => i.id === id)
         if (item) item.read = true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
@@ -41,7 +41,7 @@ export const useErrorLogStore = defineStore('errorLog', {
       this.error = null
       try {
         await errorLogService.delete(id)
-        this.items = this.items.filter(i => i.id !== id)
+        this.data = this.data.filter(i => i.id !== id)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
       }

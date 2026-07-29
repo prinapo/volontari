@@ -138,10 +138,12 @@ const resetEmail = ref('')
 const sendingReset = ref(false)
 
 async function handleLogin() {
-  const ok = await authStore.login(email.value.toLowerCase(), password.value)
-  if (ok) {
+  try {
+    await authStore.login(email.value.toLowerCase(), password.value)
     if (authStore.canManager) return router.push('/gestione')
     router.push('/famiglie')
+  } catch {
+    // error already set in authStore.error
   }
 }
 

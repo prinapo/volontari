@@ -260,8 +260,7 @@ describe('verifica store', () => {
     mockGetFamigliaById.mockResolvedValue({ data: { data: { id_famiglia: 'fam-1', IBAN: 'IT00' } } })
     const store = useVerificaStore()
     store.rows = [{ idFamiglia: 'fam-1' }]
-    const ok = await store.updateBancari('fam-1', { iban: 'IT00X', intestatario: 'Mario' })
-    expect(ok).toBe(true)
+    await store.updateBancari('fam-1', { iban: 'IT00X', intestatario: 'Mario' })
     expect(mockUpdateFamiglia).toHaveBeenCalled()
     expect(store.rows[0].iban).toBe('IT00X')
   })
@@ -279,11 +278,10 @@ describe('verifica store', () => {
     mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
     mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
     const store = useVerificaStore()
-    const ok = await store.addGiustificativo(
+    await store.addGiustificativo(
       { Descrizione: 'test', Importo: 50, Progetto: 1, Famiglia: 'fam-1' },
       new File([], 'x.pdf')
     )
-    expect(ok).toBe(true)
     expect(mockCreateGiust).toHaveBeenCalled()
   })
 
@@ -660,7 +658,7 @@ describe('verifica store', () => {
 
   it('updateBancari handles empty patches and reconcileUpdateField rejects unknown keys', async () => {
     const store = useVerificaStore()
-    await expect(store.updateBancari('fam-1', {})).resolves.toBe(true)
+    await store.updateBancari('fam-1', {})
     await expect(store.reconcileUpdateField('c-1', 'fam-1', 'CampoX', 'value')).rejects.toThrow(
       'Campo sconosciuto: CampoX'
     )

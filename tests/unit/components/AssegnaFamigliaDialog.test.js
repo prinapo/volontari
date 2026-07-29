@@ -102,7 +102,7 @@ describe('AssegnaFamigliaDialog', () => {
 
   it('removes assigned family and reports error on failure', async () => {
     gestioneState.error = 'Errore remove'
-    mockRemoveFromFamiglia.mockResolvedValue(false)
+    mockRemoveFromFamiglia.mockRejectedValue(new Error('Errore remove'))
     const wrapper = quasarMount(AssegnaFamigliaDialog, {
       props: { modelValue: false, contatto: { id_contatto: 'cont-1' } }
     })

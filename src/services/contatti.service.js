@@ -1,11 +1,13 @@
 import api from './api'
 
+const ENDPOINT = '/items/contatti'
+
 const CONTATTI_FIELDS =
   'id_contatto,Nome,Cognome,Numero_di_cellulare,Numero_di_telefono,IsGenitore,IsVolontario,IsReferente,email.email_address,email.Primary,email.id'
 
 export const contattiService = {
   getByUserId(userId) {
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         'filter[user_id][_eq]': userId,
         fields: 'id_contatto,Nome,Cognome'
@@ -14,7 +16,7 @@ export const contattiService = {
   },
 
   getByEmail(email) {
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         'filter[email][email_address][_eq]': email.toLowerCase(),
         fields: CONTATTI_FIELDS
@@ -24,7 +26,7 @@ export const contattiService = {
 
   getByEmails(emails) {
     const list = Array.isArray(emails) ? emails : [emails]
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         'filter[email][email_address][_in]': list.map(e => e.toLowerCase()).join(','),
         fields: CONTATTI_FIELDS,
@@ -75,7 +77,7 @@ export const contattiService = {
       filter['user_id.status'] = { _eq: 'suspended' }
     }
 
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         filter: JSON.stringify(filter),
         fields: [
@@ -107,7 +109,7 @@ export const contattiService = {
 
   search(q, excludeWithUserId) {
     if (!q || !q.trim()) {
-      return api.get('/items/contatti', {
+      return api.get(ENDPOINT, {
         params: {
           fields: 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
           limit: 20
@@ -124,7 +126,7 @@ export const contattiService = {
     if (excludeWithUserId) {
       filter.user_id = { _null: true }
     }
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         filter: JSON.stringify(filter),
         fields: 'id_contatto,Nome,Cognome,email.email_address,email.Primary',
@@ -134,7 +136,7 @@ export const contattiService = {
   },
 
   create(data) {
-    return api.post('/items/contatti', data)
+    return api.post(ENDPOINT, data)
   },
 
   update(id, data) {
@@ -142,7 +144,7 @@ export const contattiService = {
   },
 
   getVolontariSenzaUtente() {
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         'filter[IsVolontario][_eq]': true,
         'filter[user_id][_null]': true,
@@ -154,10 +156,21 @@ export const contattiService = {
 
   getByIds(ids) {
     const list = Array.isArray(ids) ? ids.join(',') : ids
-    return api.get('/items/contatti', {
+    return api.get(ENDPOINT, {
       params: {
         'filter[id_contatto][_in]': list,
         fields: 'id_contatto,Nome,Cognome,IsVolontario,user_id',
+        limit: -1
+      }
+    })
+  },
+
+  getByUserIds(userIds) {
+    const list = Array.isArray(userIds) ? userIds.join(',') : userIds
+    return api.get(ENDPOINT, {
+      params: {
+        'filter[user_id][_in]': list,
+        fields: 'id_contatto,Nome,Cognome,user_id',
         limit: -1
       }
     })

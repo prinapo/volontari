@@ -117,7 +117,7 @@ lazy-rules />
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'

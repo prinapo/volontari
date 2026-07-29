@@ -101,7 +101,8 @@ describe('FamiglieTab', () => {
     await flushAll()
     vi.clearAllMocks()
 
-    wrapper.vm.search = 'rossi'
+    wrapper.vm.searchTerm = 'rossi'
+    await nextTick()
     wrapper.vm.onSearchChange()
     await flushAll()
     expect(mockFetchAll).toHaveBeenCalledWith({

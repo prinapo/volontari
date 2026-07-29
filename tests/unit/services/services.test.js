@@ -34,6 +34,16 @@ describe('services', () => {
     const { associazioniService } = await import('src/services/associazioni.service')
     await associazioniService.getAll()
     expect(mockGet).toHaveBeenCalledWith('/items/Associazioni', expect.any(Object))
+
+    vi.clearAllMocks()
+    await associazioniService.getAll({ page: 2, limit: 10, sort: 'Nome', search: 'test', meta: 'filter_count' })
+    expect(mockGet).toHaveBeenCalledWith(
+      '/items/Associazioni',
+      expect.objectContaining({
+        params: expect.objectContaining({ page: 2, limit: 10, sort: 'Nome', search: 'test', meta: 'filter_count' })
+      })
+    )
+
     await associazioniService.create({ Nome: 'A' })
     expect(mockPost).toHaveBeenCalledWith('/items/Associazioni', { Nome: 'A' })
     await associazioniService.update(1, { Nome: 'B' })

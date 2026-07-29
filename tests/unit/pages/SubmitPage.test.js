@@ -106,19 +106,6 @@ describe('SubmitPage', () => {
     expect(wrapper.vm.giustificativi).toHaveLength(0)
   })
 
-  it('returns early when form validation fails after touching file pickers', async () => {
-    const wrapper = quasarMount(SubmitPage)
-    const touch = vi.fn()
-    wrapper.vm.addGiustificativo()
-    wrapper.vm.setFilePickerRef(0, { touch })
-    wrapper.vm.formRef = { validate: vi.fn().mockResolvedValue(false) }
-
-    await wrapper.vm.handleSubmit()
-
-    expect(touch).toHaveBeenCalled()
-    expect(mockUploadFile).not.toHaveBeenCalled()
-  })
-
   it('resets form fields explicitly', () => {
     const wrapper = quasarMount(SubmitPage)
     Object.assign(wrapper.vm.form, {

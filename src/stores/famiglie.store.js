@@ -51,7 +51,7 @@ export const useFamiglieStore = defineStore('famiglie', {
 
         if (this.famiglieContatti.length === 1) {
           const famigliaId = this.famiglieContatti[0].Famiglia?.id_famiglia
-          if (famigliaId) await this.loadFamiglia(famigliaId)
+          if (famigliaId) await this.fetchFamiglia(famigliaId)
         }
         // Se 0 o >1 famiglie, nessun auto-caricamento — l'utente sceglie
       } catch (error) {
@@ -64,36 +64,23 @@ export const useFamiglieStore = defineStore('famiglie', {
     async selectFamiglia(famigliaId) {
       if (!famigliaId) return
       this.selectedFamigliaId = famigliaId
-      await this.loadFamiglia(famigliaId)
+      await this.fetchFamiglia(famigliaId)
     },
 
-    async checkAccess(contattoId) {
-      if (!contattoId) return false
-      try {
-        const fcRes = await famiglieService.getFamiglieByVolontario(contattoId)
-        this.famiglieContatti = fcRes.data.data || []
-        return this.famiglieContatti.length > 0
-      } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
-        this.famiglieContatti = []
-        return false
-      }
-    },
-
-    async loadFamiglia(famigliaId) {
+    async fetchFamiglia(famigliaId) {
       try {
         const res = await famiglieService.getById(famigliaId)
         this.famiglia = res.data.data
         if (this.progetti.length > 0) {
           this.selectedProgettoId = this.progetti[0].id_progetto
         }
-        await Promise.all([this.loadGenitori(famigliaId), this.loadVolontari(famigliaId)])
+        await Promise.all([this.fetchGenitori(famigliaId), this.fetchVolontari(famigliaId)])
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
       }
     },
 
-    async loadGenitori(famigliaId) {
+    async fetchGenitori(famigliaId) {
       this.contattiLoading = true
       try {
         const res = await famiglieService.getGenitoriByFamiglia(famigliaId)
@@ -128,7 +115,7 @@ export const useFamiglieStore = defineStore('famiglie', {
       }
     },
 
-    async loadVolontari(famigliaId) {
+    async fetchVolontari(famigliaId) {
       this.contattiLoading = true
       try {
         const res = await famiglieService.getVolontariByFamiglia(famigliaId)
@@ -194,7 +181,10 @@ export const useFamiglieStore = defineStore('famiglie', {
     },
 
     async updateIBAN(iban, intestatario) {
-      if (!this.famiglia) return false
+      if (!this.famiglia) {
+        this.error = 'Nessuna famiglia selezionata'
+        throw new Error('Nessuna famiglia selezionata')
+      }
       this.saving = true
       try {
         const patchRes = await famiglieService.update(this.famiglia.id_famiglia, {
@@ -203,15 +193,16 @@ export const useFamiglieStore = defineStore('famiglie', {
         })
 
         const updated = patchRes?.data?.data
-        if (!updated) return false
+        if (!updated) {
+          this.error = 'Aggiornamento fallito: risposta vuota'
+          throw new Error('Aggiornamento fallito: risposta vuota')
+        }
 
-        // merge selettivo: aggiorno solo i campi inviati, preservo relazioni (Progetti, Relazioni)
         this.famiglia.IBAN = updated.IBAN
         this.famiglia.Intestatario_CC = updated.Intestatario_CC
-        return true
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel salvataggio'
-        return false
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel salvataggio'
+        throw error
       } finally {
         this.saving = false
       }

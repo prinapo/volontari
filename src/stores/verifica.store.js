@@ -569,7 +569,7 @@ export const useVerificaStore = defineStore('verifica', {
         const data = {}
         if (iban !== undefined) data.IBAN = iban
         if (intestatario !== undefined) data.Intestatario_CC = intestatario
-        if (Object.keys(data).length === 0) return true
+        if (Object.keys(data).length === 0) return
         await famiglieService.update(famigliaId, data)
         this.rows.forEach(r => {
           if (r.idFamiglia === famigliaId) {
@@ -577,7 +577,6 @@ export const useVerificaStore = defineStore('verifica', {
             if (intestatario !== undefined) r.intestatario = intestatario
           }
         })
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento dati bancari"
         throw error
@@ -603,7 +602,6 @@ export const useVerificaStore = defineStore('verifica', {
         })
         await this.fetchPage({})
         await this.patchProgettoAggregates(formData.Progetto)
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
         throw error
@@ -653,7 +651,6 @@ export const useVerificaStore = defineStore('verifica', {
       } else if (mapping.service === 'famiglie' && famigliaId) {
         await famiglieService.update(famigliaId, { [mapping.field]: value })
       }
-      return true
     },
 
     async resolveSubmissionContext(email) {

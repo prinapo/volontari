@@ -31,7 +31,7 @@ const famiglieState = {
 }
 
 const giustificativiState = {
-  items: []
+  data: []
 }
 
 vi.mock('stores/auth.store', () => ({
@@ -76,7 +76,7 @@ describe('FamigliePage', () => {
     famiglieState.selectedProgettoId = null
     famiglieState.selectedProgetto = null
     famiglieState.progetti = []
-    giustificativiState.items = []
+    giustificativiState.data = []
   })
 
   it('shows loading screen when auth is not initialized', () => {
@@ -94,7 +94,7 @@ describe('FamigliePage', () => {
     famiglieState.famiglia = { id_famiglia: 'fam-1' }
     famiglieState.selectedProgettoId = 'p-1'
     famiglieState.selectedProgetto = { Allocato: '100', AnnoBando: 2026 }
-    giustificativiState.items = [{ Importo: '50' }, { Importo: '25' }]
+    giustificativiState.data = [{ Importo: '50' }, { Importo: '25' }]
 
     const wrapper = quasarMount(FamigliePage)
 

@@ -106,7 +106,7 @@ describe('AssegnaReferenteDialog', () => {
 
   it('removes referente and reports error on failure', async () => {
     gestioneState.error = 'Errore remove'
-    mockRemoveReferente.mockResolvedValue(false)
+    mockRemoveReferente.mockRejectedValue(new Error('Errore remove'))
     const wrapper = quasarMount(AssegnaReferenteDialog, {
       props: { modelValue: false, volontario: { id_contatto: 'vol-1' } }
     })

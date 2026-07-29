@@ -173,10 +173,7 @@ export async function assegnaContattoAFamigliaViaUI(
   await famiglieTab.click()
   await page.waitForLoadState("networkidle").catch(() => {})
 
-  await gp.famiglieSearch.fill(famigliaNome)
-  // Attende il debounce di 300ms + chiamata API
-  await page.waitForTimeout(400)
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await gp.searchFamiglie(famigliaNome)
 
   const found = await gp.clickContactsOnFamiglia(famigliaNome)
   if (!found) {

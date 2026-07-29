@@ -200,23 +200,23 @@ async function filterFamiglie(search, update) {
 
 async function handleAssign() {
   if (!selectedFamiglia.value) return
-  const ok = await store.assignToFamiglia(props.contatto.id_contatto, selectedFamiglia.value, selectedRuolo.value)
-  if (ok) {
+  try {
+    await store.assignToFamiglia(props.contatto.id_contatto, selectedFamiglia.value, selectedRuolo.value)
     notifySuccess($q, 'Famiglia assegnata')
     selectedFamiglia.value = null
     await loadFamiglie()
-  } else if (store.error) {
-    notifyError($q, store.error, "Errore nell'assegnazione della famiglia")
+  } catch {
+    notifyError($q, store.error || "Errore nell'assegnazione della famiglia")
   }
 }
 
 async function handleRemove(row) {
-  const ok = await store.removeFromFamiglia(row.id, props.contatto.id_contatto, row.Ruolo_nella_Famiglia)
-  if (ok) {
+  try {
+    await store.removeFromFamiglia(row.id, props.contatto.id_contatto, row.Ruolo_nella_Famiglia)
     notifySuccess($q, 'Famiglia rimossa')
     await loadFamiglie()
-  } else if (store.error) {
-    notifyError($q, store.error, 'Errore nella rimozione della famiglia')
+  } catch {
+    notifyError($q, store.error || 'Errore nella rimozione della famiglia')
   }
 }
 </script>

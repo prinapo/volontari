@@ -10,13 +10,16 @@ export const adminService = {
     })
   },
 
-  getUsers() {
-    return api.get('/users', {
-      params: {
-        fields: ['id', 'email', 'first_name', 'last_name', 'role.id', 'role.name'].join(','),
-        limit: -1
-      }
-    })
+  getUsers(params = {}) {
+    const query = {
+      fields: ['id', 'email', 'first_name', 'last_name', 'role.id', 'role.name'].join(',')
+    }
+    if (params.page) query.page = params.page
+    if (params.limit) query.limit = params.limit
+    if (params.search) query.search = params.search
+    if (params.sort) query.sort = params.sort
+    if (params.meta) query.meta = params.meta
+    return api.get('/users', { params: query })
   },
 
   searchContattoByEmail(email) {

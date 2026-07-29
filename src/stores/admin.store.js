@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
+import { Notify } from 'quasar'
 import { adminService } from 'src/services/admin.service'
-import api from 'src/services/api'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
@@ -102,10 +102,9 @@ export const useAdminStore = defineStore('admin', {
 
         this.nuovaPassword = pwd
         await this.fetchUsers()
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nella creazione dell'utente"
-        return false
+        throw error
       } finally {
         this.saving = false
       }
@@ -117,10 +116,9 @@ export const useAdminStore = defineStore('admin', {
       try {
         await usersService.update(userId, { role: roleId })
         await this.fetchUsers()
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del ruolo"
-        return false
+        throw error
       } finally {
         this.saving = false
       }
@@ -131,10 +129,9 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       try {
         await usersService.update(userId, { password })
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
-        return false
+        throw error
       } finally {
         this.saving = false
       }
@@ -153,10 +150,9 @@ export const useAdminStore = defineStore('admin', {
           body: resolvedBody,
           type: 'html'
         })
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'email"
-        return false
+        throw error
       } finally {
         this.sending = false
       }
@@ -183,10 +179,9 @@ export const useAdminStore = defineStore('admin', {
           Cognome_Beneficiario: cognome,
           Nome_Beneficiario: nome
         })
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del progetto"
-        return false
+        throw error
       } finally {
         this.saving = false
       }
@@ -269,9 +264,7 @@ export const useAdminStore = defineStore('admin', {
       if (users.length === 0) return []
       // Batch fetch all contatti with these user_ids
       const userIds = users.map(u => u.id)
-      const cRes = await api.get('/items/contatti', {
-        params: { 'filter[user_id][_in]': userIds.join(','), fields: 'id_contatto,Nome,Cognome,user_id', limit: -1 }
-      })
+      const cRes = await contattiService.getByUserIds(userIds)
       const contattiMap = {}
       for (const c of cRes.data.data || []) {
         if (c.user_id) contattiMap[c.user_id] = c
@@ -304,56 +297,59 @@ export const useAdminStore = defineStore('admin', {
 
     async clearIsVolontarioFlag(contattoId) {
       try {
-        await api.patch(`/items/contatti/${contattoId}`, { IsVolontario: false })
-        return true
+        await contattiService.update(contattoId, { IsVolontario: false })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
-        return false
+        throw error
+      }
+    },
+
+    async clearUserReference(contattoId, _userId) {
+      try {
+        await contattiService.update(contattoId, { user_id: null })
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        throw error
       }
     },
 
     async setUserReference(contattoId, userId) {
       try {
-        await api.patch(`/items/contatti/${contattoId}`, { user_id: userId })
-        return true
+        await contattiService.update(contattoId, { user_id: userId })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
-        return false
+        throw error
       }
     },
 
     async setVolontarioFlag(contattoId) {
       try {
-        await api.patch(`/items/contatti/${contattoId}`, { IsVolontario: true })
-        return true
+        await contattiService.update(contattoId, { IsVolontario: true })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
-        return false
+        throw error
       }
     },
 
     async assignVolontarioRole(userId) {
       try {
-        const roleRes = await api.get('/roles', {
-          params: { 'filter[name][_eq]': VOLONTARIO_ROLE_NAMES[0], fields: 'id', limit: 1 }
-        })
+        const roleRes = await usersService.getRoleByName(VOLONTARIO_ROLE_NAMES[0])
         const ruoloId = roleRes.data.data?.[0]?.id
         if (!ruoloId) {
           this.error = 'Ruolo "Volontario" non trovato'
-          return false
+          throw new Error('Ruolo "Volontario" non trovato')
         }
-        await api.patch(`/users/${userId}`, { role: ruoloId })
-        return true
+        await usersService.update(userId, { role: ruoloId })
       } catch {
-        this.error = 'Errore assegnazione ruolo'
-        return false
+        if (!this.error) this.error = 'Errore assegnazione ruolo'
+        throw new Error('Errore assegnazione ruolo')
       }
     },
 
     async startImpersonation(userId) {
       try {
         const currentToken = localStorage.getItem('access_token')
-        if (!currentToken) return false
+        if (!currentToken) return
         const uuid = crypto.randomUUID()
         await usersService.setToken(userId, uuid)
         sessionStorage.setItem('admin_jwt', currentToken)
@@ -365,7 +361,9 @@ export const useAdminStore = defineStore('admin', {
       } catch (error) {
         this.error =
           error.response?.data?.errors?.[0]?.message || error.message || "Errore nell'avvio dell'impersonazione"
-        return false
+        // Notify diretto perché i chiamanti sono fire-and-forget
+        // (@click senza await/try-catch) — eccezione alla regola "store non fa UI"
+        Notify.create({ type: 'negative', message: this.error, timeout: 0, actions: [{ icon: 'close', color: 'white', round: true }] })
       }
     },
 
@@ -388,6 +386,9 @@ export const useAdminStore = defineStore('admin', {
       } catch (error) {
         this.error =
           error.response?.data?.errors?.[0]?.message || error.message || "Errore nel termine dell'impersonazione"
+        // Notify diretto perché i chiamanti sono fire-and-forget
+        // (@click senza await/try-catch) — eccezione alla regola "store non fa UI"
+        Notify.create({ type: 'negative', message: this.error, timeout: 0, actions: [{ icon: 'close', color: 'white', round: true }] })
       }
     }
   }

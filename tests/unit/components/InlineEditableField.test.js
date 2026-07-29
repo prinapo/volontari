@@ -14,9 +14,9 @@ describe('InlineEditableField', () => {
     expect(wrapper.text()).toContain('Test')
   })
 
-  it('shows placeholder when value is empty', () => {
-    const wrapper = createWrapper({ modelValue: '', label: 'Nome' })
-    expect(wrapper.text()).toContain('—')
+  it('shows empty when value is not set', () => {
+    const wrapper = createWrapper({ modelValue: '', label: 'Test' })
+    expect(wrapper.text()).not.toContain('—')
   })
 
   it('uses formatDisplay function when provided', () => {

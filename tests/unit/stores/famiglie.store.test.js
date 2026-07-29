@@ -181,25 +181,7 @@ describe('famiglie store', () => {
     })
   })
 
-  describe('checkAccess and contacts loading', () => {
-    it('checkAccess returns true when at least one family exists', async () => {
-      mockGetFamiglieByVolontario.mockResolvedValue({ data: { data: [{ Famiglia: { id_famiglia: 1 } }] } })
-      const store = useFamiglieStore()
-      const ok = await store.checkAccess('cont-1')
-      expect(ok).toBe(true)
-      expect(store.famiglieContatti).toHaveLength(1)
-    })
-
-    it('checkAccess returns false on missing contatto or service error', async () => {
-      const store = useFamiglieStore()
-      expect(await store.checkAccess(null)).toBe(false)
-
-      mockGetFamiglieByVolontario.mockRejectedValue(new Error('boom'))
-      expect(await store.checkAccess('cont-1')).toBe(false)
-      expect(store.famiglieContatti).toEqual([])
-    })
-
-    it('loadGenitori enriches emails and handles enrichment/service failure', async () => {
+  it('fetchGenitori enriches emails and handles enrichment/service failure', async () => {
       mockGetGenitoriByFamiglia.mockResolvedValue({
         data: {
           data: [{ Contatto: { id_contatto: 'g1', Nome: 'Anna', Cognome: 'Verdi' } }]
@@ -210,19 +192,19 @@ describe('famiglie store', () => {
       })
 
       const store = useFamiglieStore()
-      await store.loadGenitori('fam-1')
+      await store.fetchGenitori('fam-1')
       expect(store.genitori[0]._emails[0].email_address).toBe('anna@test.it')
 
       mockGetByContatto.mockRejectedValueOnce(new Error('boom'))
-      await store.loadGenitori('fam-1')
+      await store.fetchGenitori('fam-1')
       expect(store.genitori[0]._emails).toEqual([])
 
       mockGetGenitoriByFamiglia.mockRejectedValueOnce(new Error('service down'))
-      await store.loadGenitori('fam-1')
+      await store.fetchGenitori('fam-1')
       expect(store.genitori).toEqual([])
     })
 
-    it('loadVolontari filters current user, enriches emails/referenti, and handles failures', async () => {
+    it('fetchVolontari filters current user, enriches emails/referenti, and handles failures', async () => {
       mockGetVolontariByFamiglia.mockResolvedValue({
         data: {
           data: [
@@ -241,7 +223,7 @@ describe('famiglie store', () => {
       })
 
       const store = useFamiglieStore()
-      await store.loadVolontari('fam-1')
+      await store.fetchVolontari('fam-1')
       expect(store.altriVolontari).toHaveLength(1)
       expect(store.altriVolontari[0]._emails[0].email_address).toBe('luca@test.it')
       expect(store.altriVolontari[0]._referenti[0].id_contatto).toBe('r1')
@@ -251,24 +233,22 @@ describe('famiglie store', () => {
       })
       mockGetByContatto.mockRejectedValueOnce(new Error('no emails'))
       mockGetByVolontari.mockRejectedValueOnce(new Error('no referenti'))
-      await store.loadVolontari('fam-1')
+      await store.fetchVolontari('fam-1')
       expect(store.altriVolontari).toEqual([
         expect.objectContaining({ id_contatto: 'v3', _emails: [], _referenti: [] })
       ])
 
       mockGetVolontariByFamiglia.mockRejectedValueOnce(new Error('boom'))
-      await store.loadVolontari('fam-2')
+      await store.fetchVolontari('fam-2')
       expect(store.altriVolontari).toEqual([])
     })
 
-    it('loadFamiglia stores service error when family load fails', async () => {
+    it('fetchFamiglia stores service error when family load fails', async () => {
       mockGetById.mockRejectedValue({ response: { data: { errors: [{ message: 'No famiglia' }] } } })
       const store = useFamiglieStore()
-      await store.loadFamiglia('fam-x')
+      await store.fetchFamiglia('fam-x')
       expect(store.error).toBe('No famiglia')
     })
-  })
-
   describe('updateIBAN', () => {
     it('updates IBAN and intestatario', async () => {
       mockUpdate.mockResolvedValue({
@@ -283,18 +263,17 @@ describe('famiglie store', () => {
         Progetti: []
       }
 
-      const result = await store.updateIBAN('IT00X', 'Mario Rossi')
+      await store.updateIBAN('IT00X', 'Mario Rossi')
 
-      expect(result).toBe(true)
       expect(store.famiglia.IBAN).toBe('IT00X')
       expect(store.famiglia.Intestatario_CC).toBe('Mario Rossi')
       expect(store.saving).toBe(false)
+      expect(store.error).toBeNull()
     })
 
-    it('returns false when no famiglia loaded', async () => {
+    it('throws when no famiglia loaded', async () => {
       const store = useFamiglieStore()
-      const result = await store.updateIBAN('IT00X', 'Mario Rossi')
-      expect(result).toBe(false)
+      await expect(store.updateIBAN('IT00X', 'Mario Rossi')).rejects.toThrow()
     })
 
     it('handles error', async () => {
@@ -305,9 +284,7 @@ describe('famiglie store', () => {
       const store = useFamiglieStore()
       store.famiglia = { id_famiglia: 1, IBAN: '', Intestatario_CC: '' }
 
-      const result = await store.updateIBAN('IT00X', 'Mario Rossi')
-
-      expect(result).toBe(false)
+      await expect(store.updateIBAN('IT00X', 'Mario Rossi')).rejects.toThrow()
       expect(store.error).toBe('Validation error')
     })
   })

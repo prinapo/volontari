@@ -154,7 +154,6 @@
 </template>
 
 <script setup>
-import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminStore } from 'stores/admin.store'
@@ -162,7 +161,6 @@ import { useAuthStore } from 'stores/auth.store'
 
 const isDev = import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'test'
 
-const $q = useQuasar()
 const router = useRouter()
 const authStore = useAuthStore()
 

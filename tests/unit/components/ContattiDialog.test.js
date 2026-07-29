@@ -221,7 +221,7 @@ describe('ContattiDialog', () => {
 
   it('preloads options after saving a contact without assignment and reports remove errors', async () => {
     gestioneState.error = 'Errore remove'
-    mockRemoveFromFamiglia.mockResolvedValue(false)
+    mockRemoveFromFamiglia.mockRejectedValue(new Error('Errore remove'))
     const wrapper = mountDialog()
     await wrapper.setProps({ modelValue: true })
     await wrapper.vm.loadContatti()

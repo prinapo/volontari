@@ -1,9 +1,18 @@
 import api from './api'
 
 export const associazioniService = {
-  getAll() {
+  getAll(params = {}) {
+    const query = {
+      sort: 'Nome',
+      limit: -1
+    }
+    if (params.page) query.page = params.page
+    if (params.limit) query.limit = params.limit
+    if (params.sort) query.sort = params.sort
+    if (params.search) query.search = params.search
+    if (params.meta) query.meta = params.meta
     return api.get('/items/Associazioni', {
-      params: { limit: -1, sort: 'Nome' }
+      params: query
     })
   },
 

@@ -380,14 +380,14 @@ async function filterContatti(search, update) {
 
 async function handleAssign(ruolo) {
   if (!selectedContatto.value) return
-  const ok = await store.assignToFamiglia(selectedContatto.value, props.famiglia.id_famiglia, ruolo)
-  if (ok) {
+  try {
+    await store.assignToFamiglia(selectedContatto.value, props.famiglia.id_famiglia, ruolo)
     notifySuccess($q, 'Contatto associato come ' + ruolo)
     selectedContatto.value = null
     await loadContatti()
     await preloadOptions()
-  } else if (store.error) {
-    notifyError($q, store.error, "Errore nell'assegnazione del contatto")
+  } catch {
+    notifyError($q, store.error || "Errore nell'assegnazione del contatto")
   }
 }
 
@@ -405,25 +405,25 @@ function onNewContattoSaved(data) {
 async function assignNewContatto(ruolo) {
   showRoleDialog.value = false
   if (!newContattoId.value || !props.famiglia?.id_famiglia) return
-  const ok = await store.assignToFamiglia(newContattoId.value, props.famiglia.id_famiglia, ruolo)
-  if (ok) {
+  try {
+    await store.assignToFamiglia(newContattoId.value, props.famiglia.id_famiglia, ruolo)
     notifySuccess($q, `Contatto associato come ${ruolo}`)
     await loadContatti()
     await preloadOptions()
-  } else if (store.error) {
-    notifyError($q, store.error, "Errore nell'associazione del contatto")
+  } catch {
+    notifyError($q, store.error || "Errore nell'associazione del contatto")
   }
 }
 
 async function handleRemove(row) {
   const contattoId = row.Contatto?.id_contatto || row.Contatto
-  const ok = await store.removeFromFamiglia(row.id, contattoId, row.Ruolo_nella_Famiglia)
-  if (ok) {
+  try {
+    await store.removeFromFamiglia(row.id, contattoId, row.Ruolo_nella_Famiglia)
     notifySuccess($q, 'Contatto rimosso dalla famiglia')
     await loadContatti()
     await preloadOptions()
-  } else if (store.error) {
-    notifyError($q, store.error, 'Errore nella rimozione del contatto')
+  } catch {
+    notifyError($q, store.error || 'Errore nella rimozione del contatto')
   }
 }
 </script>

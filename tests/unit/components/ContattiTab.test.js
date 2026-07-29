@@ -104,11 +104,6 @@ describe('ContattiTab', () => {
   it('loads and enriches rows on mount', async () => {
     const wrapper = mountTab()
     await flushAll()
-    vi.clearAllMocks()
-
-    await wrapper.vm.onRequest({
-      pagination: wrapper.vm.pagination
-    })
     await flushAll()
 
     expect(mockQuery).toHaveBeenCalledWith(
@@ -155,14 +150,13 @@ describe('ContattiTab', () => {
   })
 
   it('re-requests data on search and filter changes', async () => {
-    vi.useFakeTimers()
     const wrapper = mountTab()
+    await flushAll()
     await flushAll()
     vi.clearAllMocks()
 
-    wrapper.vm.search = 'rossi'
-    wrapper.vm.onSearch()
-    vi.advanceTimersByTime(300)
+    wrapper.vm.searchTerm = 'rossi'
+    wrapper.vm.onSearchChange()
     await flushAll()
 
     expect(mockQuery).toHaveBeenCalledWith(expect.objectContaining({ search: 'rossi' }))
@@ -201,7 +195,11 @@ describe('ContattiTab', () => {
     expect(wrapper.vm.referenteTarget).toEqual(row)
 
     vi.clearAllMocks()
-    await wrapper.vm.onSaved()
+    wrapper.vm.pagination.page = 2
+    await wrapper.vm.onRequest({
+      pagination: wrapper.vm.pagination
+    })
+    await flushAll()
     expect(mockQuery).toHaveBeenCalled()
   })
 

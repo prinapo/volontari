@@ -34,7 +34,7 @@ describe('errorLog store', () => {
       await store.fetchAll()
 
       expect(mockGetAll).toHaveBeenCalledOnce()
-      expect(store.items).toEqual(createLogs())
+      expect(store.data).toEqual(createLogs())
       expect(store.loading).toBe(false)
       expect(store.error).toBeNull()
     })
@@ -46,7 +46,7 @@ describe('errorLog store', () => {
 
       await store.fetchAll()
 
-      expect(store.items).toEqual([])
+      expect(store.data).toEqual([])
       expect(store.error).toBe('Forbidden')
       expect(store.loading).toBe(false)
     })
@@ -65,12 +65,12 @@ describe('errorLog store', () => {
     it('marks a log item as read', async () => {
       mockMarkAsRead.mockResolvedValue({})
       const store = useErrorLogStore()
-      store.items = createLogs()
+      store.data = createLogs()
 
       await store.markAsRead(1)
 
       expect(mockMarkAsRead).toHaveBeenCalledWith(1)
-      expect(store.items.find(i => i.id === 1).read).toBe(true)
+      expect(store.data.find(i => i.id === 1).read).toBe(true)
     })
   })
 
@@ -78,22 +78,22 @@ describe('errorLog store', () => {
     it('removes a log item', async () => {
       mockDelete.mockResolvedValue({})
       const store = useErrorLogStore()
-      store.items = createLogs()
+      store.data = createLogs()
 
       await store.delete(2)
 
       expect(mockDelete).toHaveBeenCalledWith(2)
-      expect(store.items).toHaveLength(2)
-      expect(store.items.find(i => i.id === 2)).toBeUndefined()
+      expect(store.data).toHaveLength(2)
+      expect(store.data.find(i => i.id === 2)).toBeUndefined()
     })
   })
 
   describe('unreadCount getter', () => {
-    it('counts unread items', () => {
+    it('counts unread data', () => {
       const store = useErrorLogStore()
-      store.$state.items = createLogs()
+      store.$state.data = createLogs()
 
-      const unread = store.$state.items.filter(i => !i.read).length
+      const unread = store.$state.data.filter(i => !i.read).length
       expect(unread).toBe(2)
       expect(store.unreadCount).toBe(2)
     })

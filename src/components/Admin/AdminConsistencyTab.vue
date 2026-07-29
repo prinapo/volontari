@@ -259,42 +259,42 @@ async function runConsistencyCheck() {
 }
 
 async function clearUserRef(c) {
-  const ok = await store.clearUserReference(c.id_contatto, c.user_id)
-  if (ok) {
+  try {
+    await store.clearUserReference(c.id_contatto, c.user_id)
     notifySuccess($q, `${c.Nome} ${c.Cognome}: user_id rimosso`)
     await runConsistencyCheck()
-  } else {
-    notifyError($q, store.error, 'Errore nella rimozione user_id')
+  } catch {
+    notifyError($q, store.error || 'Errore nella rimozione user_id')
   }
 }
 
 async function clearIsVolontario(c) {
-  const ok = await store.clearIsVolontarioFlag(c.id_contatto)
-  if (ok) {
+  try {
+    await store.clearIsVolontarioFlag(c.id_contatto)
     notifySuccess($q, `${c.Nome} ${c.Cognome}: IsVolontario resettato`)
     await runConsistencyCheck()
-  } else {
-    notifyError($q, store.error, 'Errore nel reset IsVolontario')
+  } catch {
+    notifyError($q, store.error || 'Errore nel reset IsVolontario')
   }
 }
 
 async function setVolontarioFlag(c) {
-  const ok = await store.setVolontarioFlag(c.id_contatto)
-  if (ok) {
+  try {
+    await store.setVolontarioFlag(c.id_contatto)
     notifySuccess($q, `${c.Nome} ${c.Cognome}: IsVolontario impostato`)
     await runConsistencyCheck()
-  } else {
-    notifyError($q, store.error, "Errore nell'impostazione IsVolontario")
+  } catch {
+    notifyError($q, store.error || "Errore nell'impostazione IsVolontario")
   }
 }
 
 async function assignVolontarioRole(c) {
-  const ok = await store.assignVolontarioRole(c.user_id)
-  if (ok) {
+  try {
+    await store.assignVolontarioRole(c.user_id)
     notifySuccess($q, `${c.Nome} ${c.Cognome}: ruolo Volontario assegnato`)
     await runConsistencyCheck()
-  } else {
-    notifyError($q, store.error, 'Errore assegnazione ruolo')
+  } catch {
+    notifyError($q, store.error || 'Errore assegnazione ruolo')
   }
 }
 

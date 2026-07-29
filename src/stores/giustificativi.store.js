@@ -5,7 +5,7 @@ import { uploadAndPrefixFile, markFileObsolete } from 'src/utils/file-naming'
 
 export const useGiustificativiStore = defineStore('giustificativi', {
   state: () => ({
-    items: [],
+    data: [],
     loading: false,
     saving: false,
     editingItem: null,
@@ -13,10 +13,10 @@ export const useGiustificativiStore = defineStore('giustificativi', {
   }),
 
   getters: {
-    draftItems: state => state.items.filter(i => i.Stato === 'draft'),
-    inviatoItems: state => state.items.filter(i => i.Stato === 'inviato'),
+    draftItems: state => state.data.filter(i => i.Stato === 'draft'),
+    inviatoItems: state => state.data.filter(i => i.Stato === 'inviato'),
     canEdit: state => itemId => {
-      const item = state.items.find(i => i.id === itemId)
+      const item = state.data.find(i => i.id === itemId)
       return item && item.Stato === 'draft'
     }
   },
@@ -27,7 +27,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.error = null
       try {
         const res = await giustificativiService.getByProgetto(progettoId)
-        this.items = res.data.data || []
+        this.data = res.data.data || []
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei giustificativi'
       } finally {
@@ -39,7 +39,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.saving = true
       this.error = null
       try {
-        const rendicontazioneId = await this.ensureRendicontazione(data)
+        const rendicontazioneId = await this._ensureRendicontazione(data)
         let fileId = null
         if (file) {
           fileId = await uploadAndPrefixFile(file, data.Famiglia, FOLDERS.GIUSTIFICATIVI)
@@ -57,16 +57,18 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         })
 
         const created = createRes.data.data
-        return !created || created.Descrizione === data.Descrizione
+        if (!created || created.Descrizione !== data.Descrizione) {
+          throw new Error('Creazione giustificativo fallita')
+        }
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione'
-        return false
+        throw error
       } finally {
         this.saving = false
       }
     },
 
-    async ensureRendicontazione(data) {
+    async _ensureRendicontazione(data) {
       if (!data.Famiglia || !data.Progetto) return null
 
       const existingRes = await giustificativiService.findByProject({
@@ -91,7 +93,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.error = null
       try {
         if (newFile) {
-          const existingItem = this.items.find(i => i.id === id)
+          const existingItem = this.data.find(i => i.id === id)
           if (existingItem?.Allegato) {
             await markFileObsolete(existingItem.Allegato)
           }
@@ -102,13 +104,12 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const patchRes = await giustificativiService.update(id, data)
         const updated = patchRes.data.data
         if (updated) {
-          const idx = this.items.findIndex(i => i.id === id)
-          if (idx !== -1) this.items[idx] = { ...this.items[idx], ...updated }
+          const idx = this.data.findIndex(i => i.id === id)
+          if (idx !== -1)           this.data[idx] = { ...this.data[idx], ...updated }
         }
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella modifica'
-        return false
+        throw error
       } finally {
         this.saving = false
       }
@@ -121,15 +122,14 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const patchRes = await giustificativiService.submit(id)
         const updated = patchRes.data.data
         if (updated) {
-          const copy = [...this.items]
+          const copy = [...this.data]
           const idx = copy.findIndex(i => i.id === id)
           if (idx !== -1) copy[idx] = { ...copy[idx], ...updated }
-          this.items = copy
+          this.data = copy
         }
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio"
-        return false
+        throw error
       } finally {
         this.saving = false
       }
@@ -149,13 +149,12 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const patchRes = await giustificativiService.update(id, { [field]: value })
         const updated = patchRes.data.data
         if (updated) {
-          const idx = this.items.findIndex(i => i.id === id)
-          if (idx !== -1) this.items[idx] = { ...this.items[idx], ...updated }
+          const idx = this.data.findIndex(i => i.id === id)
+          if (idx !== -1) this.data[idx] = { ...this.data[idx], ...updated }
         }
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento"
-        return false
+        throw error
       }
     },
 
@@ -163,19 +162,18 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.saving = true
       this.error = null
       try {
-        const item = this.items.find(i => i.id === id)
+        const item = this.data.find(i => i.id === id)
         if (item?.Allegato) {
           await markFileObsolete(item.Allegato)
         }
         await giustificativiService.invalidate(id)
-        const idx = this.items.findIndex(i => i.id === id)
+        const idx = this.data.findIndex(i => i.id === id)
         if (idx !== -1) {
-          this.items[idx] = { ...this.items[idx], Invalidato: true }
+          this.data[idx] = { ...this.data[idx], Invalidato: true }
         }
-        return true
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invalidazione"
-        return false
+        throw error
       } finally {
         this.saving = false
       }

@@ -1,145 +1,117 @@
 # Project conventions
 
 ## Stack
-
 - Vue 3 + Quasar 2 + Pinia + Axios, plain JS (no TypeScript)
 - Vite via @quasar/app-vite
 - Backend: Directus 11.x REST API
 
 ## Quality toolchain
+ESLint 8 | Prettier 3 | Stylelint 16 | commitlint | Husky 9 | lint-staged | knip 5 | Playwright | GitHub Actions | Dependabot
 
-| Tool           | Purpose                 | Config                                   |
-| -------------- | ----------------------- | ---------------------------------------- |
-| ESLint 8       | JS + Vue linting        | `.eslintrc.cjs`                          |
-| Prettier 3     | Formatting              | `.prettierrc`                            |
-| Stylelint 16   | SCSS linting            | `.stylelintrc.cjs`                       |
-| commitlint     | Conventional commits    | `commitlint.config.cjs`                  |
-| Husky 9        | Git hooks               | `.husky/pre-commit`, `.husky/commit-msg` |
-| lint-staged    | Auto-fix on commit      | Defined in `package.json`                |
-| knip 5         | Dead code detection     | Defined in `package.json`                |
-| Playwright     | E2E tests               | `tests/e2e/playwright.config.js`         |
-| GitHub Actions | CI/CD                   | `.github/workflows/ci.yml`               |
-| Dependabot     | Auto-dependency updates | `.github/dependabot.yml`                 |
+**Nota su knip e template Vue**: knip non traccia i tag usati solo nei template Vue
+(es. `<ProgettoDetailDialog />`). Dopo ogni rimozione di import segnalato come
+"unused" da knip, verificare SEMPRE che il componente non sia referenziato come tag
+in un template prima di eliminare il file/import.
 
-## Commands
+## Comandi chiave
+- npm run dev (porta :9000)
+- npm run build (dist/spa/)
+- npm run lint (ESLint, ora --max-warnings 0)
+- npm run lint:css (Stylelint)
+- npm run test:e2e (Playwright)
+- npm run release (build + FTP deploy)
 
-```bash
-npm run dev             # Dev server on :9000
-npm run build           # Production build (dist/spa/)
-npm run lint            # ESLint
-npm run lint:css        # Stylelint
-npm run lint:all        # Both
-npm run format          # Prettier
-npm run audit           # Check vulnerabilities
-npm run knip            # Find dead code
-npm run test:e2e        # Playwright
-npm run release         # Build + deploy via FTP
-```
+## Regole ESLint
+- Nessun console.log (solo warn/error)
+- Nessun warning tollerato
+- import/order alfabetico
+- Number.parseFloat, String#replaceAll
+- Catch parameter = error
 
-## Commit convention
-
-Use `type(scope): message` where type is one of: feat, fix, chore, docs, refactor, test, style, ci, perf, build, revert.
-
-## ESLint rules
-
-- `vue/multi-word-component-names: off` (Quasar pages are single-word)
-- `import/order` enforced (alphabetized within groups: builtin → external → internal → parent → sibling → index)
-- Catch parameters must be named `error` (not `err`)
-- Use `Number.parseFloat` not `parseFloat`
-- Use `String#replaceAll` not `String#replace` with regex
-- No console.log (only warn/error allowed)
-- Cognitive complexity limit: 25 (warn)
-
-## Path aliases (Vite/Quasar)
-
-`src/` → `./src`, `stores/` → `./src/stores`, `components/` → `./src/components`, `pages/` → `./src/pages`, `services/` → `./src/services`, `utils/` → `./src/utils`, `boot/` → `./src/boot`
+## Path aliases
+src/ → ./src, stores/, components/, pages/, services/, utils/, boot/
 
 ## Pre-commit hooks
+.js → ESLint --fix + Prettier
+.vue → ESLint --fix
+.scss → Stylelint --fix + Prettier
+.json, .md → Prettier
+Commit message → conventional-changelog
 
-- `.js` → ESLint --fix + Prettier --write
-- `.vue` → ESLint --fix
-- `.scss` → Stylelint --fix + Prettier --write
-- `.json`, `.md` → Prettier --write
-- Commit messages validated with conventional-changelog
+## Store Pinia
+- (target futuro: Composition API setup stores — non ancora applicato)
+- Stato asincrono: `{ data` (o `data_*`, array/null), `loading`, `error` } — no varianti (isLoading, pending...)
+  Eccezione: più flag loading ammessi solo se mappano sezioni UI indipendenti (es. `saving` per submit + `loading` per fetch)
+- Naming azioni: verbo+entità in camelCase (fetchX, createX, updateX, deleteX)
+  Prefisso `_` solo per azioni private (helper interni allo store)
+- Nessuna azione ritorna boolean per successo/fallimento: throw o this.error, mai `return true/false`
+  È invece ACCETTABILE ritornare un dato utile (es. l'id della risorsa creata)
+- Chiamate sempre via `src/services/`, mai `api.*` diretto nello store
+- Errori: `catch (error) { this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore generico' }`
+  Eccezione: admin.store.js usa Notify.create() direttamente nei catch di
+  startImpersonation/stopImpersonation perché i chiamanti sono fire-and-forget
+  (@click senza await/try-catch), non c'è altro punto dove intercettare l'errore.
+  Non estendere questo pattern ad altre azioni store senza la stessa giustificazione.
+- Getters solo per derivare stato esistente, mai per eseguire side effect o chiamate
+- Riferimento canonico: `error-log.store.js`
 
-## Visibilità contenuti per ruolo
+## Services (Directus)
+- Ogni chiamata a Directus passa da src/services/, mai da componenti o store direttamente
+- Gestione errori centralizzata in un unico helper condiviso, mai try/catch ad-hoc duplicato nei singoli service
+- Refresh token e logica di auth: gestiti solo da services/auth.js, nessun altro file la reimplementa
 
-Tabella basata sulle permissions Directus verificate sulle collections (giu 2026).  
-Regola: **se il ruolo non ha permessi di lettura su una collection, l'app non deve mostrare l'interfaccia che chiama quella collection**.
+## Composable
+- Prefisso use*, vivono in src/composables/
+- Dipendenze esplicite passate come argomenti/parametri, non import diretto di uno store specifico se il composable deve restare riutilizzabile
 
-| Collection / Feature | Administrator | Gestore Volontari | GestoreVerifica | Verificatore | Volontario |
-| -------------------- | ------------- | ----------------- | --------------- | ------------ | ---------- |
-| Pagamenti            | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
-| Associazioni         | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
-| BatchPagamenti       | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
-| ListePagamenti       | ✅ 200        | ❌ 403            | ❌ 403          | ✅ 200       | ❌ 403     |
-| ErrorLog             | ✅ 200        | ✅ 200            | ✅ 200          | ❌ 403       | ❌ 403     |
-| Famiglie_Contatti    | ✅ 200        | ✅ 200            | ✅ 200          | ✅ 200       | ✅ 200     |
-| Progetti             | ✅ 200        | ✅ 200            | ✅ 200          | —            | —          |
-| Famiglie             | ✅ 200        | ✅ 200            | ✅ 200          | ✅ 200       | —          |
-| Contatti             | ❌ 403        | —                 | —               | —            | —          |
+## Tabelle server-side
+- Usare sempre `useServerTable` (src/composables/useServerTable.js) per QTable con
+  `@request`, mai implementare `onRequest` ad-hoc
+- `table.loading` / `table.error` del composable sono l'UNICA fonte di verità nel
+  template, anche quando `fetchFn` avvolge un'azione store che gestisce
+  internamente `store.loading`/`store.error` (es. `store.fetchAll`)
+- `loadData()` va chiamato esplicitamente al mount (`onMounted(() => table.loadData())`)
+- Search input: `v-model="table.searchTerm"` + `debounce="300"` +
+  `@update:model-value="table.onSearchChange"`
+- Filtri extra: `table.setFilters({ ... })`
 
-**Permessi Directus attuali** (giu 2026):
+## Prima di generare codice nuovo
+Prima di scrivere store, service, composable o test nuovi, cerca nel repo un file esistente dello stesso tipo che risolve un problema simile e replica lo stesso pattern — anche se non è l'approccio di default che useresti. Non introdurre un secondo modo di fare la stessa cosa già gestita altrove nel progetto.
 
-- **Verificatore**: lettura + modifica su `Pagamenti`; lettura su `Associazioni`; lettura + creazione su `BatchPagamenti` + `ListePagamenti`
-- **Administrator**: full su tutte
-- **ErrorLog**: admin + gestori hanno accesso; verificatore **no** — l'interceptor Axios che logga errori 4xx tenta POST ma fallisce con 403 silenziato nel catch; browser mostra console.error ma non blocca il flusso
-- **Contatti**: admin non ha read su `/items/Contatti` (usa `/users` invece)
+## File di riferimento (pattern canonico)
+- Store: <!-- es. src/stores/auth.js -->
+- Service: <!-- es. src/services/http.js -->
+- Composable: <!-- es. src/composables/useAuth.js -->
+- Test: <!-- es. tests/unit/stores/auth.spec.js -->
 
-## Unit testing (Vitest)
+## Test
+- E2E: Playwright, 2 progetti (chromium + mobile Pixel 5)
+  Tag: @smoke, @crud, @regression, @visual
+- Unit: Vitest, 240 test (stores + services)
+- Coverage: Utils 100%, Stores 82%, Services 78%
 
-- Run: `npm run test:unit` (240 tests, no backend needed)
-- Coverage: `npm run test:unit:coverage`
-- Path: `tests/unit/`
-- Utils coverage: 100%, Stores: 82%, Services: 78%
+### Esecuzione e tracciamento E2E
 
-## Regola fondamentale
-
-**Non esiste "pre-esistente".** Questo software è stato sviluppato dall'utente con le mie indicazioni. Ogni bug, test fallito, o comportamento inaspettato è stato introdotto da noi in qualche sessione. Va investigato e risolto, non archiviato come "pre-esistente".
-
-## E2E testing (Playwright)
-
-- Run: `npm run test:e2e` (needs Directus accessible)
-- Tags: `@smoke` (critical path), `@crud` (data persistence), `@regression` (edge cases), `@visual` (screenshots)
-- Page Object Model in `tests/e2e/pages/`
-- Two projects in Playwright: `chromium` (desktop) and `mobile` (Pixel 6)
-- Screenshot tests: update baseline with `PLAYWRIGHT_UPDATE_SNAPSHOTS=1 npm run test:e2e`
-- Visual tests (`@visual`) verify UI consistency across commits
-- CI/CD: `.github/workflows/ci.yml` — quality (lint+build) → e2e (playwright)
-
-## Processo feature
-
-1. **Aprire GitHub Issue** con label: `feature`, `bug`, `security`, `chore`
-2. **Discutere requisiti** nella issue (chi fa cosa, perché, quando)
-3. **Scrivere piano** in `.opencode/plans/{nome-feature}.md` con:
-   - Obiettivo e contesto
-   - Modifiche necessarie (file per file)
-   - Rischi e mitigazioni
-   - Test da creare/modificare
-4. **Implementare** seguendo il piano
-5. **Testare** — unitari + E2E
-6. **Aggiornare CHANGELOG.md** con descrizione della modifica
-7. **Commit** con messaggio convenzionale: `feat(area): descrizione`
-8. **Pull Request** su GitHub (se applicabile)
-
-### .env e ambienti
-
-- `.env` → sviluppo locale + test (MAI in produzione)
-- `.env.production` → solo per `quasar build`
-- `.env.development` → solo per `quasar dev` (sovrascrive .env)
-- Le variabili `VITE_*` sono caricate nell'app. Quelle senza prefisso `VITE_` sono usate solo da script (deploy, test)
-- **Non mettere MAI URL di produzione in `.env`** — usare `.env.production`
-
-### Password utenti
-
-- Alla creazione di un utente Directus, NON viene inviata email di invito
-- Il volontario riceve password gestita manualmente dall'admin
-- Il cambio password è disponibile dal menu utente (AppLayout)
-- Il reset password via email funziona dalla pagina di login
+1. **File di stato**: `tests/e2e/test-status.json` — contiene per ogni singolo
+   test (GF-01, AD-01, CT-01...) lo stato su chromium e mobile, la versione
+   dell'ultima esecuzione, e l'ultima versione in cui ha passato.
+2. **Prima di eseguire**: leggere `test-status.json`. Se un test è già `pass`
+   per la versione corrente, non rieseguirlo.
+3. **Dopo ogni esecuzione**: aggiornare `test-status.json` con l'esito.
+4. **Script di comodo**: `scripts/e2e-report.sh` — esegue solo i test con
+   stato `untested` per la versione corrente, aggiorna il file, e riporta
+   il riepilogo.
+5. **Recupero da interruzione**: al rilancio, riprende dai test non ancora
+   marcati `pass` — non butta via i risultati già ottenuti.
+6. **Dopo ogni modifica al codice**: `npm version patch` (incrementa versione),
+   aggiornare `version` in `test-status.json`, eseguire i test mancanti,
+   aggiornare il file.
 
 ## Deploy
+- FTP su app.sostienilsostegno.com
+- MAI senza autorizzazione esplicita
+- E2E full suite prima del deploy
+- Patch version solo dopo autorizzazione
 
-- **MAI deployare in produzione senza prima chiedere esplicita autorizzazione all'utente.**
-- Prima del deploy: E2E full suite passata.
-- Dopo il deploy: avvisare l'utente e chiedere conferma.
-- Il numero di versione (patch) va aumentato solo dopo autorizzazione.
+## Regola fondamentale
+Tutto il software è stato sviluppato dall'utente con le mie indicazioni. Nessun bug è "pre-esistente" — va investigato e risolto.

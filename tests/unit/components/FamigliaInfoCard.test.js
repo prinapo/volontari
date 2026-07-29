@@ -81,7 +81,7 @@ describe('FamigliaInfoCard', () => {
   })
 
   it('handleIBANSave notifies success when update succeeds', async () => {
-    mockUpdateIBAN.mockResolvedValue(true)
+    mockUpdateIBAN.mockResolvedValue()
     const wrapper = quasarMount(FamigliaInfoCard)
 
     await wrapper.vm.handleIBANSave('IT11X123')
@@ -92,7 +92,7 @@ describe('FamigliaInfoCard', () => {
 
   it('handleIntestatarioSave notifies error when update fails', async () => {
     famiglieState.error = 'Errore update'
-    mockUpdateIBAN.mockResolvedValue(false)
+    mockUpdateIBAN.mockRejectedValue(new Error('fail'))
     const wrapper = quasarMount(FamigliaInfoCard)
 
     await wrapper.vm.handleIntestatarioSave('Nuovo Intestatario')
