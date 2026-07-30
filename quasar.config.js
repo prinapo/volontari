@@ -46,9 +46,7 @@ export default function (ctx) {
           : 'Portale Volontario'
       },
       env: {
-        VITE_RESET_URL: ctx.dev
-          ? 'http://localhost:9000/reset-password?token='
-          : 'https://volontari.sostienilsostegno.com/reset-password?token=',
+        VITE_RESET_URL: `${process.env.VITE_APP_BASE_URL || (ctx.dev ? 'http://localhost:9000' : 'https://volontari.sostienilsostegno.com')}/reset-password?token=`,
         VITE_INVII_PUBBLICI_FOLDER: '25cd095a-20a2-48fd-9827-9b6754b429f6',
         VITE_LISTE_PAGAMENTI_FOLDER: ctx.dev
           ? 'c3e98185-5fcf-466a-9263-aa5515ed65c1'

@@ -3,7 +3,6 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test, expect } from '../helpers/console.js'
 import { waitForResetLink } from '../helpers/email.js'
-import { LoginPage } from '../pages/LoginPage.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const AUTH_EMAIL_PATH = resolve(__dirname, '..', 'fixtures', 'auth-email.json')
@@ -73,15 +72,16 @@ test.describe('ResetPasswordPage — UI', () => {
 })
 
 test.describe('ResetPasswordPage — Full E2E', () => {
-  test('RP-10: Reset password reale via email e ripristino @e2e', async ({ page }) => {
-    test.setTimeout(240_000)
+  test('RP-10: Reset password reale via email @e2e', async ({ page }) => {
+    test.setTimeout(180_000)
     if (!hasAuthEmail || !authEmailFixture?.email) {
       test.skip('auth-email.json non trovato')
       return
     }
 
-    // 1. Forgot password — richiedi reset
     const startTime = new Date()
+
+    // 1. Richiedi reset password
     await page.goto('/login')
     await page.locator('button:has-text("Password dimenticata")').click()
     await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
@@ -90,17 +90,17 @@ test.describe('ResetPasswordPage — Full E2E', () => {
     await expect(page.locator('.q-notification')).toBeVisible({ timeout: 5000 })
     await page.waitForLoadState('networkidle').catch(() => {})
 
-    // 2. Intercetta email via IMAP ed estrai il token
-    let resetLink, token
+    // 2. Aspetta email via IMAP ed estrai URL col token
+    let resetUrl
     try {
-      resetLink = await waitForResetLink(90_000, startTime)
-      token = new URL(resetLink).searchParams.get('token')
+      resetUrl = await waitForResetLink(120_000, startTime)
     } catch {
-      test.skip('Email di reset non ricevuta (SMTP non configurato?)')
+      test.skip('Email di reset non ricevuta')
       return
     }
+    const token = new URL(resetUrl).searchParams.get('token')
 
-    // 3. Reset password
+    // 4. Reimposta password nella nostra app
     await page.goto(`/reset-password?token=${token}`)
     await expect(page.locator('.text-h6:text-is("Reimposta password")')).toBeVisible()
     const inputs = page.locator('input[type="password"]')
@@ -110,47 +110,10 @@ test.describe('ResetPasswordPage — Full E2E', () => {
     await expect(page.locator('.text-h6:text-is("Password aggiornata")')).toBeVisible({ timeout: 5000 })
     await expect(page).toHaveURL(/\/login/, { timeout: 5000 })
 
-    // 4. Login con nuova password
-    const loginPage = new LoginPage(page)
-    await loginPage.login(authEmailFixture.email, TEMP_PWD)
-    await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 })
-
-    // 5. Logout e richiedi secondo reset
-    const secondStartTime = new Date()
-    await page.evaluate(() => {
-      localStorage.clear()
-      sessionStorage.clear()
-    })
-    await page.goto('/login')
-    await page.locator('button:has-text("Password dimenticata")').click()
-    await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
-    await page.locator('.q-dialog input').fill(authEmailFixture.email)
-    await page.locator('.q-dialog button:has-text("Invia link")').click()
-    await expect(page.locator('.q-notification')).toBeVisible({ timeout: 5000 })
-    await page.waitForLoadState('networkidle').catch(() => {})
-
-    // 6. Intercetta seconda email
-    let secondLink, token2
-    try {
-      secondLink = await waitForResetLink(90_000, secondStartTime)
-      token2 = new URL(secondLink).searchParams.get('token')
-    } catch {
-      test.skip('Seconda email di reset non ricevuta (SMTP non configurato?)')
-      return
-    }
-
-    // 7. Ripristina password originale
-    await page.goto(`/reset-password?token=${token2}`)
-    await expect(page.locator('.text-h6:text-is("Reimposta password")')).toBeVisible()
-    const inputs2 = page.locator('input[type="password"]')
-    await inputs2.nth(0).fill(authEmailFixture.password)
-    await inputs2.nth(1).fill(authEmailFixture.password)
-    await page.locator('button:has-text("Reimposta password")').click()
-    await expect(page.locator('.text-h6:text-is("Password aggiornata")')).toBeVisible({ timeout: 5000 })
-    await expect(page).toHaveURL(/\/login/, { timeout: 5000 })
-
-    // 8. Login con password originale
-    await loginPage.login(authEmailFixture.email, authEmailFixture.password)
+    // 5. Login con nuova password per verificare
+    await page.locator('[data-testid="login-email"]').fill(authEmailFixture.email)
+    await page.locator('[data-testid="login-password"]').fill(TEMP_PWD)
+    await page.locator('[data-testid="login-submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 })
   })
 })

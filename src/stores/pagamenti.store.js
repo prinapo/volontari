@@ -134,9 +134,6 @@ export const usePagamentiStore = defineStore('pagamenti', {
         }
 
         if (writeOps.length > 0) await Promise.all(writeOps)
-        if (ricalcolaSet.size > 0) {
-          await Promise.all([...ricalcolaSet].map(id => this.ricalcolaTotaliProgetto(id)))
-        }
         await this.fetchProposti()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel ricalcolo proposte'

@@ -8,6 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '..', '..', '..', '.env') })
 
 const SUBJECT_KEYWORDS = ['reset password', 'password reset', 'reimposta password']
+const BREVO_URL_PATTERN = /https?:\/\/r\.sender\.sostienilsostegno\.com\/tr\/cl\/[^\s"'>]+/
 
 function getConfig() {
   return {
@@ -18,6 +19,25 @@ function getConfig() {
       user: process.env.TEST_EMAIL,
       pass: process.env.TEST_EMAIL_PASSWORD
     }
+  }
+}
+
+async function followRedirect(url) {
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000)
+    })
+    if (resp.status === 301 || resp.status === 302 || resp.status === 303 || resp.status === 307 || resp.status === 308) {
+      const location = resp.headers.get('location')
+      if (location && location.includes('reset-password?token=')) {
+        return location
+      }
+    }
+    return null
+  } catch {
+    return null
   }
 }
 
@@ -51,34 +71,38 @@ async function fetchRecentMessages(client, count = 5) {
   }
 }
 
-function extractResetLink(messages, since = new Date(0)) {
+async function extractResetLink(messages, since = new Date(0)) {
   for (const msg of messages) {
     if (msg.date < since) continue
     const subjectLower = msg.subject.toLowerCase()
     const isResetEmail = SUBJECT_KEYWORDS.some(kw => subjectLower.includes(kw))
     if (!isResetEmail) continue
 
-    const pattern = /https?:\/\/[^"'\s]+\/(?:admin\/)?(?:#\/)?reset-password\?token=[^"'\s&]+/
-    const htmlMatch = msg.html.match(pattern)
-    if (htmlMatch) return htmlMatch[0]
-    const textMatch = msg.text?.match(pattern)
-    if (textMatch) return textMatch[0]
+    const htmlMatch = msg.html.match(BREVO_URL_PATTERN)
+    const textMatch = msg.text?.match(BREVO_URL_PATTERN)
+    const brevoUrl = htmlMatch?.[0] || textMatch?.[0] || null
+    if (!brevoUrl) continue
+
+    const finalUrl = await followRedirect(brevoUrl)
+    if (finalUrl) return finalUrl
   }
   return null
 }
 
-export async function waitForResetLink(timeoutMs = 20000, since = new Date(0)) {
+export async function waitForResetLink(timeoutMs = 120000, since = new Date(0)) {
   const config = getConfig()
   const client = new ImapFlow(config)
   await client.connect()
+
+  await new Promise(r => setTimeout(r, 35000))
 
   const deadline = Date.now() + timeoutMs
   try {
     while (Date.now() < deadline) {
       const messages = await fetchRecentMessages(client, 10)
-      const link = extractResetLink(messages, since)
+      const link = await extractResetLink(messages, since)
       if (link) return link
-      await new Promise(r => setTimeout(r, 2000))
+      await new Promise(r => setTimeout(r, 15000))
     }
     throw new Error(`Password reset email not found within ${timeoutMs}ms`)
   } finally {
