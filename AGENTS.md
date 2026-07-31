@@ -174,7 +174,14 @@ Prima di scrivere store, service, composable o test nuovi, cerca nel repo un fil
 - **nginx (host)**: `development.sostienilsostegno.com` proxy-za a Directus
   (8055) le route API (`/items/`, `/users/`, `/roles/`, `/sync/`, …) e il resto
   a `localhost:9000` (dev server). La route `/sync/` è stata aggiunta per il
-  sync — se manca, le chiamate del sync cadono sulla SPA.
+  sync — se manca, le chiamate del sync cadono sulla SPA. NOTA: per l'upload
+  file serve ANCHE `location = /files` (esatta, senza slash) — altrimenti
+  nginx 301 `/files` → `/files/` e il browser converte il POST in GET (lista
+  file) → l'upload non crea nulla.
+- **Permessi dev (DB, non git)**: durante i fix E2E è stato aggiunto al ruolo
+  Manager di dev il permesso `update` su `Progetti` (il flusso "Chiudi
+  progetto" e il ricalcolo aggregati PATCHano `/items/Progetti/{id}` e senza
+  il permesso il manager riceve 403). Vale solo per il DB di dev.
 - **E2E**: test `SY-01`/`SY-02` in `admin.spec.js` verificano la tab Sync e il
   download da produzione (solo lettura, NON l'import che è distruttivo).
 - **Snapshot/backup**: dentro `directus-dev/db-sync/` (host), montato come

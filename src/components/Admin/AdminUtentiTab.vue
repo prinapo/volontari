@@ -34,6 +34,7 @@
           <TableToolbar
             v-model:search="searchTerm"
             search-placeholder="Cerca utente per nome o email..."
+            search-aria-label="Cerca utenti"
             :loading="loading"
             refresh
             @update:search="onSearchChange"

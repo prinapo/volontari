@@ -11,6 +11,7 @@
           size="sm"
           icon="refresh"
           :loading="loading"
+          :data-testid="refreshTestId"
           aria-label="Aggiorna"
           @click="$emit('refresh')"
         >
@@ -21,6 +22,7 @@
           dense
           outlined
           :placeholder="searchPlaceholder"
+          :aria-label="searchAriaLabel"
           clearable
           debounce="300"
           class="col"
@@ -42,6 +44,7 @@
       size="sm"
       icon="refresh"
       :loading="loading"
+      :data-testid="refreshTestId"
       aria-label="Aggiorna"
       @click="$emit('refresh')"
     >
@@ -59,8 +62,10 @@
 defineProps({
   search: { type: String, default: undefined },
   searchPlaceholder: { type: String, default: 'Cerca...' },
+  searchAriaLabel: { type: String, default: 'Cerca' },
   loading: { type: Boolean, default: false },
-  refresh: { type: Boolean, default: false }
+  refresh: { type: Boolean, default: false },
+  refreshTestId: { type: String, default: undefined }
 })
 
 defineEmits(['update:search', 'refresh'])

@@ -21,6 +21,7 @@
             search-placeholder="Cerca..."
             :loading="loading"
             refresh
+            refresh-test-id="btn-refresh-riconciliazioni"
             @update:search="onSearchChange"
             @refresh="loadData"
           >

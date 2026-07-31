@@ -2,7 +2,7 @@
   <div>
     <div class="text-h5 text-weight-medium q-mb-md">Contatti</div>
     <div class="row q-gutter-sm q-mb-md">
-      <q-btn color="primary" icon="person_add" label="Aggiungi Contatto" @click="openCreate" />
+      <q-btn color="primary" icon="person_add" label="Aggiungi Contatto" data-testid="btn-aggiungi-contatto" @click="openCreate" />
     </div>
 
     <q-table

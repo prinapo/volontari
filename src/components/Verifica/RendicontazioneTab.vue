@@ -45,6 +45,7 @@
         <TableToolbar
           v-model:search="searchTerm"
           search-placeholder="Cerca famiglia..."
+          search-aria-label="Cerca famiglia"
           :loading="loading"
           refresh
           @update:search="onSearchChange"
