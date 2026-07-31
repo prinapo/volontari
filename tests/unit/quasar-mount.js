@@ -91,7 +91,12 @@ const QUASAR_STUBS = {
   'q-scroll-area': { name: 'QScrollArea', template: '<div><slot /></div>' },
   'q-inner-loading': { name: 'QInnerLoading', template: '<div v-if="showing"><slot /></div>', props: ['showing'] },
   'router-link': { template: '<a><slot /></a>' },
-  'router-view': { template: '<div />' }
+  'router-view': { template: '<div />' },
+  TableToolbar: {
+    name: 'TableToolbar',
+    template: '<div>{{ title }}{{ subtitle }}<slot name="filters" /><slot /></div>',
+    props: ['title', 'subtitle', 'loading', 'search', 'searchPlaceholder', 'createLabel', 'createIcon', 'refresh']
+  }
 }
 
 const $qMock = {
@@ -101,15 +106,15 @@ const $qMock = {
 }
 
 export function quasarMount(component, options = {}) {
-  const mergedStubs = { ...QUASAR_STUBS, ...(options.global?.stubs || {}) }
+  const mergedStubs = { ...QUASAR_STUBS, ...options.global?.stubs }
 
   return mount(component, {
     ...options,
     global: {
-      ...(options.global || {}),
+      ...options.global,
       stubs: mergedStubs,
       directives: {
-        ...(options.global?.directives || {}),
+        ...options.global?.directives,
         ripple: () => {},
         closePopup: () => {}
       },

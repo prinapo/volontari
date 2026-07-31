@@ -22,6 +22,7 @@
             }}</q-badge>
           </q-tab>
           <q-tab name="check" icon="fact_check" label="Check" />
+          <q-tab v-if="SYNC.ENABLED" name="sync" icon="sync" label="Sync" />
         </q-tabs>
       </div>
 
@@ -30,6 +31,7 @@
         <q-tab-panel name="associazioni"><AdminAssociazioniTab /></q-tab-panel>
         <q-tab-panel name="errori"><AdminErroriTab /></q-tab-panel>
         <q-tab-panel name="check"><AdminConsistencyTab /></q-tab-panel>
+        <q-tab-panel v-if="SYNC.ENABLED" name="sync"><AdminSyncTab /></q-tab-panel>
       </q-tab-panels>
     </template>
   </q-page>
@@ -40,7 +42,9 @@ import { ref } from 'vue'
 import AdminAssociazioniTab from 'components/Admin/AdminAssociazioniTab.vue'
 import AdminConsistencyTab from 'components/Admin/AdminConsistencyTab.vue'
 import AdminErroriTab from 'components/Admin/AdminErroriTab.vue'
+import AdminSyncTab from 'components/Admin/AdminSyncTab.vue'
 import AdminUtentiTab from 'components/Admin/AdminUtentiTab.vue'
+import { SYNC } from 'src/utils/constants'
 import { useAuthStore } from 'stores/auth.store'
 import { useErrorLogStore } from 'stores/error-log.store'
 

@@ -20,54 +20,44 @@
         <q-tab name="liste" label="Liste esportazione" />
       </q-tabs>
       <q-space />
-
-      <!-- Indicatori capienza -->
-      <template v-if="subTab === 'proposti'">
-        <div class="row items-center q-gutter-sm" :class="$q.screen.lt.sm ? 'full-width q-mt-sm' : 'col-auto'">
-          <q-select
-            v-model="batchAssociazione"
-            :options="assocOptions"
-            label="Associazione"
-            dense
-            outlined
-            class="col-12 col-sm-auto"
-            style="min-width: 200px"
-            emit-value
-            map-options
-          />
-          <div v-if="batchAssociazione" class="text-caption q-mr-md">
-            €{{ formatNumber(residuo(batchAssociazione)) }} disponibili
-          </div>
-          <q-btn
-            color="primary"
-            icon="playlist_add"
-            label="Crea gruppo di pagamento"
-            :disable="selected.length === 0 || !batchAssociazione"
-            @click="openCreaBatch"
-          >
-            <q-tooltip v-if="!batchAssociazione">Seleziona un'associazione</q-tooltip>
-            <q-tooltip v-else-if="selected.length === 0">Seleziona almeno un pagamento</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            dense
-            icon="refresh"
-            size="sm"
-            color="primary"
-            label="Ricalcola proposte"
-            :loading="store.loading"
-            @click="ricalcolaProposte"
-          />
-        </div>
-      </template>
     </div>
 
     <!-- Sotto-vista: Proposti -->
     <template v-if="subTab === 'proposti'">
+      <div class="row q-gutter-sm q-mb-md">
+        <q-select
+          v-model="batchAssociazione"
+          :options="assocOptions"
+          label="Associazione"
+          dense
+          outlined
+          class="col-auto"
+          style="min-width: 160px"
+          emit-value
+          map-options
+        />
+        <div v-if="batchAssociazione" class="text-caption q-mr-md self-center">
+          €{{ formatNumber(residuo(batchAssociazione)) }} disponibili
+        </div>
+        <q-btn
+          color="primary"
+          icon="playlist_add"
+          label="Crea gruppo di pagamento"
+          :disable="selected.length === 0 || !batchAssociazione"
+          @click="openCreaBatch"
+        />
+        <q-btn
+          color="primary"
+          label="RICALCOLA"
+          :loading="store.loading"
+          @click="ricalcolaProposte"
+        />
+      </div>
+
       <q-table
         v-model:selected="selected"
         v-model:pagination="paginationProposti"
-        :rows="store.proposti"
+        :rows="filteredProposti"
         :columns="propostiColumns"
         row-key="id"
         flat
@@ -78,6 +68,18 @@
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
       >
+        <template #top>
+          <div class="full-width">
+            <TableToolbar
+              v-model:search="searchProposti"
+              search-placeholder="Cerca famiglia, IBAN..."
+              :loading="store.loading"
+              refresh
+              @refresh="store.fetchProposti()"
+            />
+          </div>
+        </template>
+
         <template #body-cell-importo="props">
           <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
         </template>
@@ -110,74 +112,10 @@
 
     <!-- Sotto-vista: In corso / Da riscontrare -->
     <template v-if="subTab === 'incorso'">
-      <div>
-        <div class="row items-center q-gutter-sm q-mb-md">
-          <q-input
-            v-model="searchInCorso"
-            dense
-            outlined
-            placeholder="Cerca famiglia, IBAN, batch..."
-            clearable
-            debounce="300"
-            :class="$q.screen.lt.sm ? 'col-12' : 'col-auto'"
-            style="min-width: 220px"
-          >
-            <template #prepend>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-          <q-select
-            v-model="batchFilter"
-            :options="batchOptions"
-            label="Filtra per gruppo"
-            dense
-            outlined
-            clearable
-            :class="$q.screen.lt.sm ? 'col-12' : 'col-auto'"
-            style="min-width: 250px"
-            emit-value
-            map-options
-          />
-          <template v-if="selectedInCorso.length > 0">
-            <q-space />
-            <span class="text-caption">{{ selectedInCorso.length }} selezionati</span>
-          <q-btn
-color="positive"
-icon="check_circle"
-label="Segna pagato"
-size="sm"
-:disable="!allInPagamento"
-@click="handleBatchPagato">
-            <q-tooltip>Segna come pagati tutti i selezionati</q-tooltip>
-          </q-btn>
-          <q-btn
-color="negative"
-icon="cancel"
-label="Segna fallito"
-size="sm"
-:disable="!allInPagamento"
-@click="handleBatchFallito">
-            <q-tooltip>Segna come falliti tutti i selezionati</q-tooltip>
-          </q-btn>
-          <q-btn
-color="grey"
-icon="block"
-label="Rimuovi dal gruppo"
-size="sm"
-:disable="!allInPagamento"
-@click="handleBatchAnnullato">
-            <q-tooltip>Rimuovi dal gruppo tutti i selezionati</q-tooltip>
-          </q-btn>
-          <div v-if="selectedInCorso.length > 0 && !allInPagamento" class="text-negative text-caption q-ml-sm">
-            Alcuni selezionati hanno stato diverso da 'in pagamento' e non possono essere elaborati.
-          </div>
-          </template>
-        </div>
-
       <q-table
         v-model:selected="selectedInCorso"
         v-model:pagination="paginationInCorso"
-        :rows="filteredInCorso"
+        :rows="store.inCorso"
         :columns="incorsoColumns"
         row-key="id"
         flat
@@ -188,6 +126,69 @@ size="sm"
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
       >
+        <template #top>
+          <div class="full-width">
+            <div v-if="selectedInCorso.length > 0" class="row items-center q-gutter-sm q-mb-sm">
+              <span class="text-caption">{{ selectedInCorso.length }} selezionati</span>
+              <q-btn
+                color="positive"
+                icon="check_circle"
+                label="Segna pagato"
+                size="sm"
+                :disable="!allInPagamento"
+                @click="handleBatchPagato"
+              >
+                <q-tooltip>Segna come pagati tutti i selezionati</q-tooltip>
+              </q-btn>
+              <q-btn
+                color="negative"
+                icon="cancel"
+                label="Segna fallito"
+                size="sm"
+                :disable="!allInPagamento"
+                @click="handleBatchFallito"
+              >
+                <q-tooltip>Segna come falliti tutti i selezionati</q-tooltip>
+              </q-btn>
+              <q-btn
+                color="grey"
+                icon="block"
+                label="Rimuovi dal gruppo"
+                size="sm"
+                :disable="!allInPagamento"
+                @click="handleBatchAnnullato"
+              >
+                <q-tooltip>Rimuovi dal gruppo tutti i selezionati</q-tooltip>
+              </q-btn>
+              <div v-if="selectedInCorso.length > 0 && !allInPagamento" class="text-negative text-caption q-ml-sm">
+                Alcuni selezionati hanno stato diverso da 'in pagamento' e non possono essere elaborati.
+              </div>
+            </div>
+            <TableToolbar
+              v-model:search="searchInCorso"
+              search-placeholder="Cerca famiglia, IBAN, batch..."
+              :loading="store.loading"
+              refresh
+              @refresh="loadInCorso"
+            >
+              <template #filters>
+                <q-select
+                  v-model="batchFilter"
+                  :options="batchOptions"
+                  label="Filtra per gruppo"
+                  dense
+                  outlined
+                  clearable
+                  class="col-auto"
+                  style="min-width: 220px"
+                  emit-value
+                  map-options
+                />
+              </template>
+            </TableToolbar>
+          </div>
+        </template>
+
         <template #body-cell-importo="props">
           <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
         </template>
@@ -317,7 +318,6 @@ aria-label="Ripristina"
           </div>
         </template>
       </q-table>
-    </div>
     </template>
 
     <!-- Sotto-vista: Falliti -->
@@ -325,7 +325,7 @@ aria-label="Ripristina"
       <q-table
         v-model:selected="selectedFalliti"
         v-model:pagination="paginationFalliti"
-        :rows="store.falliti"
+        :rows="filteredFalliti"
         :columns="fallitiColumns"
         row-key="id"
         flat
@@ -336,6 +336,22 @@ aria-label="Ripristina"
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
       >
+        <template #top>
+          <div class="full-width">
+            <div v-if="selectedFalliti.length > 0" class="row items-center q-gutter-sm q-mb-sm">
+              <span class="text-caption">{{ selectedFalliti.length }} selezionati</span>
+              <q-btn color="warning" icon="restore" label="Ripristina a Bonifici" @click="handleRipristinaProposti" />
+            </div>
+            <TableToolbar
+              v-model:search="searchFalliti"
+              search-placeholder="Cerca famiglia, IBAN..."
+              :loading="store.loading"
+              refresh
+              @refresh="store.fetchFalliti()"
+            />
+          </div>
+        </template>
+
         <template #body-cell-iban="props">
           <q-td :props="props">
             <q-input
@@ -392,11 +408,6 @@ aria-label="Ripristina"
           </div>
         </template>
       </q-table>
-
-      <div v-if="selectedFalliti.length > 0" class="row items-center q-gutter-sm q-mt-md">
-        <span class="text-caption">{{ selectedFalliti.length }} selezionati</span>
-        <q-btn color="primary" icon="restore" label="Ripristina a Bonifici" @click="handleRipristinaProposti" />
-      </div>
     </template>
 
     <!-- Sotto-vista: Liste esportazione -->
@@ -406,7 +417,7 @@ aria-label="Ripristina"
       </div>
 
       <q-table
-        :rows="store.liste"
+        :rows="filteredListe"
         :columns="listeColumns"
         row-key="id"
         flat
@@ -418,6 +429,18 @@ aria-label="Ripristina"
         :grid="$q.screen.lt.sm"
         :dense="$q.screen.lt.md"
       >
+        <template #top>
+          <div class="full-width">
+            <TableToolbar
+              v-model:search="searchListe"
+              search-placeholder="Cerca lista..."
+              :loading="store.loading"
+              refresh
+              @refresh="store.fetchListe()"
+            />
+          </div>
+        </template>
+
         <template #body-cell-data="props">
           <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
         </template>
@@ -510,7 +533,8 @@ aria-label="Chiudi">
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatDate } from 'src/utils/formatters'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
@@ -532,6 +556,48 @@ const paginationFalliti = ref({ rowsPerPage: 25 })
 const batchAssociazione = ref(null)
 const batchFilter = ref(null)
 const searchInCorso = ref('')
+const searchProposti = ref('')
+const searchFalliti = ref('')
+const searchListe = ref('')
+let debounceTimer
+ 
+function loadInCorso() {
+  store.fetchInCorso(searchInCorso.value, batchFilter.value)
+}
+ 
+watch(searchInCorso, () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => loadInCorso(), 300)
+})
+watch(batchFilter, () => loadInCorso())
+
+const filteredProposti = computed(() => {
+  if (!searchProposti.value) return store.proposti
+  const q = searchProposti.value.toLowerCase()
+  return store.proposti.filter(p => {
+    const fam = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
+    const iban = (p.IBAN || '').toLowerCase()
+    const int = (p.Intestatario || '').toLowerCase()
+    return fam.includes(q) || iban.includes(q) || int.includes(q)
+  })
+})
+
+const filteredFalliti = computed(() => {
+  if (!searchFalliti.value) return store.falliti
+  const q = searchFalliti.value.toLowerCase()
+  return store.falliti.filter(p => {
+    const fam = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
+    const iban = (p.IBAN || '').toLowerCase()
+    const note = (p.NoteEsito || '').toLowerCase()
+    return fam.includes(q) || iban.includes(q) || note.includes(q)
+  })
+})
+
+const filteredListe = computed(() => {
+  if (!searchListe.value) return store.liste
+  const q = searchListe.value.toLowerCase()
+  return store.liste.filter(p => (p.Nome || '').toLowerCase().includes(q))
+})
 const batchNome = ref('')
 const showBatchDialog = ref(false)
 const editingFalliti = ref({})
@@ -547,24 +613,6 @@ const batchAssociazioneLabel = computed(() => {
 })
 
 const selectedTotal = computed(() => selected.value.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0))
-
-const filteredInCorso = computed(() => {
-  let result = store.inCorso
-  if (batchFilter.value) {
-    result = result.filter(p => (p.Batch?.id || p.Batch) === batchFilter.value)
-  }
-  if (searchInCorso.value) {
-    const q = searchInCorso.value.toLowerCase()
-    result = result.filter(p => {
-      const famiglia = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
-      const iban = (p.IBAN || p.Famiglia?.IBAN || '').toLowerCase()
-      const intestatario = (p.Intestatario || p.Famiglia?.Intestatario_CC || '').toLowerCase()
-      const batch = p.Batch?.Nome?.toLowerCase() || ''
-      return famiglia.includes(q) || iban.includes(q) || intestatario.includes(q) || batch.includes(q)
-    })
-  }
-  return result
-})
 
 const allInPagamento = computed(() =>
   selectedInCorso.value.length > 0 && selectedInCorso.value.every(p => p.Stato === 'in_pagamento')

@@ -123,6 +123,49 @@ describe('pagamenti store', () => {
     expect(store.inCorso).toHaveLength(1)
   })
 
+  it('fetchInCorso builds combined _and filter with search and batchFilter', async () => {
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 2, Stato: 'in_pagamento', Batch: { id: 'b-1' } }] } })
+    const store = usePagamentiStore()
+    await store.fetchInCorso('rossi', 'b-1')
+    expect(mockGetPagamenti).toHaveBeenCalledWith({
+      fields:
+        '*,Batch.id,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
+      limit: -1,
+      sort: 'DataProposta',
+      'filter[_and][0][Stato][_in]': 'in_pagamento,pagato',
+      'filter[_and][1][Batch][_eq]': 'b-1',
+      'filter[_and][2][_or][0][Famiglia][Nome_Famiglia][_icontains]': 'rossi',
+      'filter[_and][2][_or][1][IBAN][_icontains]': 'rossi',
+      'filter[_and][2][_or][2][Intestatario][_icontains]': 'rossi',
+      'filter[_and][2][_or][3][Batch][Nome][_icontains]': 'rossi'
+    })
+    expect(store.inCorso).toHaveLength(1)
+  })
+
+  it('fetchInCorso uses only batchFilter when no search', async () => {
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 2, Stato: 'in_pagamento' }] } })
+    const store = usePagamentiStore()
+    await store.fetchInCorso(undefined, 'b-1')
+    expect(mockGetPagamenti).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'filter[_and][0][Stato][_in]': 'in_pagamento,pagato',
+        'filter[_and][1][Batch][_eq]': 'b-1'
+      })
+    )
+  })
+
+  it('fetchInCorso uses only search when no batchFilter', async () => {
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 2, Stato: 'in_pagamento' }] } })
+    const store = usePagamentiStore()
+    await store.fetchInCorso('rossi')
+    expect(mockGetPagamenti).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'filter[_and][0][Stato][_in]': 'in_pagamento,pagato',
+        'filter[_and][1][_or][0][Famiglia][Nome_Famiglia][_icontains]': 'rossi'
+      })
+    )
+  })
+
   it('fetchFalliti loads failed payments', async () => {
     mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 3 }] } })
     const store = usePagamentiStore()
@@ -251,7 +294,9 @@ describe('pagamenti store', () => {
   it('segnaPagato rejects invalid states and stores update errors', async () => {
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-x', Stato: 'fallito', Progetto: 1 }] } })
     const store = usePagamentiStore()
-    await expect(store.segnaPagato('p-x')).rejects.toThrow('Solo pagamenti in_pagamento possono essere segnati come pagati')
+    await expect(store.segnaPagato('p-x')).rejects.toThrow(
+      'Solo pagamenti in_pagamento possono essere segnati come pagati'
+    )
     expect(store.error).toBe('Solo pagamenti in_pagamento possono essere segnati come pagati')
 
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-y', Stato: 'in_pagamento', Progetto: 1 }] } })
@@ -280,7 +325,9 @@ describe('pagamenti store', () => {
   it('segnaFallito rejects invalid states', async () => {
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'pagato', Progetto: 1 }] } })
     const store = usePagamentiStore()
-    await expect(store.segnaFallito('p-1', 'bad')).rejects.toThrow('Solo pagamenti in_pagamento possono essere segnati come falliti')
+    await expect(store.segnaFallito('p-1', 'bad')).rejects.toThrow(
+      'Solo pagamenti in_pagamento possono essere segnati come falliti'
+    )
     expect(store.error).toBe('Solo pagamenti in_pagamento possono essere segnati come falliti')
   })
 
@@ -439,7 +486,9 @@ describe('pagamenti store', () => {
     mockGetPagamenti.mockResolvedValueOnce({
       data: { data: [{ id: 'p-3', Stato: 'pagato', Progetto: 9 }] }
     })
-    await expect(store.segnaAnnullato('p-3')).rejects.toThrow('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
+    await expect(store.segnaAnnullato('p-3')).rejects.toThrow(
+      'Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo'
+    )
     expect(store.error).toBe('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
   })
 

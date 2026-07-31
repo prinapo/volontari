@@ -1,49 +1,8 @@
 <template>
   <div>
-    <div class="row items-center q-mb-md q-gutter-sm">
-      <q-input
-        v-model="searchTerm"
-        dense
-        outlined
-        placeholder="Cerca per nome..."
-        clearable
-        debounce="300"
-        class="col-12 col-sm"
-        @update:model-value="onSearchChange"
-      >
-        <template #prepend>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-
-      <q-select
-        v-model="tipoFilter"
-        :options="tipoOptions"
-        dense
-        outlined
-        class="col-auto select-min-width"
-        @update:model-value="onFilterChange"
-      />
-
-      <q-select
-        v-if="tipoFilter === 'Volontario'"
-        v-model="statoFilter"
-        :options="statoOptions"
-        dense
-        outlined
-        class="col-auto select-min-width"
-        @update:model-value="onFilterChange"
-      />
-
-      <q-space />
-
-      <q-btn
-        color="primary"
-        icon="person_add"
-        label="Aggiungi Contatto"
-        data-testid="btn-aggiungi-contatto"
-        @click="openCreate"
-      />
+    <div class="text-h5 text-weight-medium q-mb-md">Contatti</div>
+    <div class="row q-gutter-sm q-mb-md">
+      <q-btn color="primary" icon="person_add" label="Aggiungi Contatto" @click="openCreate" />
     </div>
 
     <q-table
@@ -58,6 +17,40 @@
       :grid="$q.screen.lt.sm"
       @request="onRequest"
     >
+      <template #top>
+        <div class="full-width">
+          <TableToolbar
+            v-model:search="searchTerm"
+            search-placeholder="Cerca per nome..."
+            :loading="loading"
+            refresh
+            @update:search="onSearchChange"
+            @refresh="loadData"
+          >
+            <template #filters>
+              <q-select
+                v-model="tipoFilter"
+                :options="tipoOptions"
+                dense
+                outlined
+                class="col-auto select-min-width"
+                @update:model-value="onFilterChange"
+              />
+
+              <q-select
+                v-if="tipoFilter === 'Volontario'"
+                v-model="statoFilter"
+                :options="statoOptions"
+                dense
+                outlined
+                class="col-auto select-min-width"
+                @update:model-value="onFilterChange"
+              />
+            </template>
+          </TableToolbar>
+        </div>
+      </template>
+
       <template #item="props">
         <div class="q-pa-xs col-12 col-sm-6">
           <q-expansion-item
@@ -285,7 +278,8 @@ color="grey-6"
             round
             dense
             icon="edit"
-color="grey-6"
+            color="grey-6"
+            size="sm"
             data-testid="btn-edit-contatto"
             aria-label="Modifica"
             @click="openEdit(props.row)"
@@ -297,6 +291,7 @@ flat
 round
 dense
 icon="groups"
+size="sm"
 aria-label="Assegna famiglia"
 @click="openFamiglie(props.row)">
             <q-tooltip>Assegna famiglia</q-tooltip>
@@ -308,6 +303,7 @@ aria-label="Assegna famiglia"
             dense
             icon="person_search"
             color="accent"
+            size="sm"
             data-testid="btn-assigna-referente"
             aria-label="Assegna Referente"
             @click="openReferente(props.row)"
@@ -335,12 +331,14 @@ import { useQuasar } from 'quasar'
 import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import FieldHistoryButton from 'components/Common/FieldHistoryButton.vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { revisionsService } from 'src/services/revisions.service'
 import { usersService } from 'src/services/users.service'
+import { tipoBadgeColor } from 'src/utils/badges'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { useAuthStore } from 'stores/auth.store'
 import AssegnaFamigliaDialog from './AssegnaFamigliaDialog.vue'
@@ -456,13 +454,6 @@ const columns = [
 function displayNome(row) {
   const parts = [row.Nome, row.Cognome].filter(Boolean)
   return parts.length ? parts.join(' ') : '—'
-}
-
-function tipoBadgeColor(tipo) {
-  if (tipo === 'Volontario') return 'primary'
-  if (tipo === 'Genitore') return 'secondary'
-  if (tipo === 'Referente') return 'accent'
-  return 'grey'
 }
 
 function computedTipi(row) {

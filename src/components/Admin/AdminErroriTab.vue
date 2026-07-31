@@ -1,50 +1,62 @@
 <template>
-  <div class="row items-center q-gutter-sm q-mb-md">
-    <div>
-      <div class="text-h5 text-weight-medium">Errori</div>
-      <div class="text-body2 text-grey-7">Errori API registrati dalle richieste del frontend.</div>
-    </div>
-    <q-space />
-    <q-input
-      v-model="searchTerm"
-      dense
-      outlined
-      placeholder="Cerca..."
-      clearable
-      debounce="300"
-      class="col-12 col-sm"
-      @update:model-value="onSearchChange"
-    >
-      <template #prepend>
-        <q-icon name="search" />
-      </template>
-    </q-input>
-    <q-btn
-      flat
-      round
-      dense
-      size="sm"
-      icon="refresh"
-      aria-label="Aggiorna"
-      :loading="loading"
-      @click="loadData"
-    >
-      <q-tooltip>Aggiorna</q-tooltip>
-    </q-btn>
-  </div>
+  <div>
+    <div class="text-h5 text-weight-medium">Errori</div>
+    <div class="text-body2 text-grey-7 q-mb-md">Errori API registrati dalle richieste del frontend.</div>
 
-  <q-table
-    v-model:pagination="pagination"
-    :rows="rows"
-    :columns="erroriColumns"
-    row-key="id"
-    flat
-    bordered
-    :loading="loading"
-    :grid="$q.screen.lt.sm"
-    @request="onRequest"
-  >
-    <template #body-cell-level="props">
+    <q-table
+      v-model:pagination="pagination"
+      v-model:selected="selected"
+      :rows="rows"
+      :columns="erroriColumns"
+      row-key="id"
+      flat
+      bordered
+      :loading="loading"
+      selection="multiple"
+      :grid="$q.screen.lt.sm"
+      @request="onRequest"
+    >
+      <template #top>
+        <div class="full-width">
+          <div v-if="selected.length > 0" class="row items-center q-gutter-sm q-mb-sm">
+            <span class="text-caption">{{ selected.length }} selezionati</span>
+            <q-btn
+              flat
+              dense
+              size="sm"
+              color="grey"
+              icon="mark_email_read"
+              label="Segna come letti"
+              :loading="bulkLoading"
+              @click="handleBulkMarkRead"
+            >
+              <q-tooltip>Segna come letti tutti i selezionati</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              dense
+              size="sm"
+              color="negative"
+              icon="delete"
+              label="Elimina"
+              :loading="bulkLoading"
+              @click="handleBulkDelete"
+            >
+              <q-tooltip>Elimina tutti i selezionati</q-tooltip>
+            </q-btn>
+          </div>
+          <TableToolbar
+            v-model:search="searchTerm"
+            search-placeholder="Cerca..."
+            :loading="loading"
+            refresh
+            @update:search="onSearchChange"
+            @refresh="loadData"
+          />
+        </div>
+      </template>
+
+      <template #body-cell-level="props">
       <q-td :props="props">
         <q-badge :color="props.value === 'error' ? 'negative' : props.value === 'warning' ? 'warning' : 'grey'">
           {{ props.value }}
@@ -113,6 +125,7 @@
                 round
                 dense
                 icon="mark_email_read"
+                color="grey"
                 size="sm"
                 @click="handleMarkAsRead(props.row.id)"
                 ><q-tooltip>Segna come letto</q-tooltip></q-btn
@@ -158,15 +171,20 @@ aria-label="Chiudi">
       </q-card-actions>
     </q-card>
   </q-dialog>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { errorLogService } from 'src/services/error-log.service'
 import { useErrorLogStore } from 'stores/error-log.store'
 
 const errorLogStore = useErrorLogStore()
+
+const selected = ref([])
+const bulkLoading = ref(false)
 
 const {
   rows,
@@ -205,6 +223,33 @@ async function handleMarkAsRead(id) {
 async function handleDelete(id) {
   await errorLogStore.delete(id)
   loadData()
+}
+
+async function handleBulkMarkRead() {
+  bulkLoading.value = true
+  try {
+    const unread = selected.value.filter(r => !r.read)
+    for (const row of unread) {
+      await errorLogStore.markAsRead(row.id)
+    }
+    selected.value = []
+    loadData()
+  } finally {
+    bulkLoading.value = false
+  }
+}
+
+async function handleBulkDelete() {
+  bulkLoading.value = true
+  try {
+    for (const row of selected.value) {
+      await errorLogStore.delete(row.id)
+    }
+    selected.value = []
+    loadData()
+  } finally {
+    bulkLoading.value = false
+  }
 }
 
 const erroriColumns = [

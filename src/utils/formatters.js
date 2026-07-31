@@ -26,35 +26,7 @@ export function formatDate(dateStr) {
   })
 }
 
-/**
- * Restituisce l'etichetta testuale per uno stato giustificativo
- * @param {string} stato - Codice stato (draft|inviato|verificato|rifiutato)
- * @returns {string} Etichetta in italiano
- */
-export function statoLabel(stato) {
-  const labels = {
-    draft: 'Bozza',
-    inviato: 'Inviato',
-    verificato: 'Verificato',
-    rifiutato: 'Rifiutato'
-  }
-  return labels[stato] || stato
-}
-
-/**
- * Restituisce il colore Quasar per uno stato giustificativo
- * @param {string} stato - Codice stato
- * @returns {string} Nome colore Quasar
- */
-export function statoColor(stato) {
-  const colors = {
-    draft: 'warning',
-    inviato: 'primary',
-    verificato: 'positive',
-    rifiutato: 'negative'
-  }
-  return colors[stato] || 'grey'
-}
+export { statoColor, statoLabel } from './badges'
 
 /**
  * Compone nome e cognome da un oggetto contatto/persona

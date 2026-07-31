@@ -1,6 +1,6 @@
 {
   "name": "volontari",
-  "version": "3.23.7",
+  "version": "3.24.0",
   "description": "Portale Volontario \u2014 Quasar frontend for Directus backend",
   "private": true,
   "type": "module",

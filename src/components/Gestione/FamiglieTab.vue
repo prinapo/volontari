@@ -1,36 +1,7 @@
 <template>
   <div>
-    <div class="row items-center q-mb-md q-gutter-sm">
-      <q-input
-        v-model="searchTerm"
-        dense
-        outlined
-        placeholder="Cerca per nome famiglia..."
-        clearable
-        debounce="300"
-        class="col-12 col-sm"
-        @update:model-value="onSearchChange"
-      >
-        <template #prepend>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-
-      <q-select
-        v-model="volontarioFilter"
-        :options="filterOptions"
-        option-value="value"
-        option-label="label"
-        emit-value
-        map-options
-        dense
-        outlined
-        class="col-auto"
-        style="min-width: 160px"
-      />
-
-      <q-space />
-
+    <div class="text-h5 text-weight-medium q-mb-md">Famiglie</div>
+    <div class="row q-gutter-sm q-mb-md">
       <q-btn color="primary" icon="home_work" label="Aggiungi Famiglia" @click="openCreate" />
     </div>
 
@@ -46,6 +17,34 @@
       :loading="loading"
       @request="onRequest"
     >
+      <template #top>
+        <div class="full-width">
+          <TableToolbar
+            v-model:search="searchTerm"
+            search-placeholder="Cerca per nome famiglia..."
+            :loading="loading"
+            refresh
+            @update:search="onSearchChange"
+            @refresh="loadData"
+          >
+            <template #filters>
+              <q-select
+                v-model="volontarioFilter"
+                :options="filterOptions"
+                option-value="value"
+                option-label="label"
+                emit-value
+                map-options
+                dense
+                outlined
+                class="col-auto"
+                style="min-width: 160px"
+              />
+            </template>
+          </TableToolbar>
+        </div>
+      </template>
+
       <template #header="props">
         <q-tr :props="props">
           <q-th auto-width />
@@ -125,7 +124,7 @@
                       <q-item-section>
                         <q-item-label>
                           {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
-                          <q-badge outline color="secondary" class="q-ml-sm">
+                          <q-badge :color="tipoBadgeColor(c.Ruolo_nella_Famiglia)" class="q-ml-sm">
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
@@ -165,7 +164,7 @@
                       <q-item-section>
                         <q-item-label>
                           {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
-                          <q-badge outline color="primary" class="q-ml-sm">
+                          <q-badge :color="tipoBadgeColor(c.Ruolo_nella_Famiglia)" class="q-ml-sm">
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
@@ -481,7 +480,7 @@
                       <q-item-section>
                         <q-item-label>
                           {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
-                          <q-badge outline color="secondary" class="q-ml-sm">
+                          <q-badge :color="tipoBadgeColor(c.Ruolo_nella_Famiglia)" class="q-ml-sm">
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
@@ -537,7 +536,7 @@
                       <q-item-section>
                         <q-item-label>
                           {{ c.Contatto?.Nome || '' }} {{ c.Contatto?.Cognome || '' }}
-                          <q-badge outline color="primary" class="q-ml-sm">
+                          <q-badge :color="tipoBadgeColor(c.Ruolo_nella_Famiglia)" class="q-ml-sm">
                             {{ c.Ruolo_nella_Famiglia }}
                           </q-badge>
                         </q-item-label>
@@ -793,12 +792,14 @@ import { useQuasar } from 'quasar'
 import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { progettiService } from 'src/services/progetti.service'
 import { revisionsService } from 'src/services/revisions.service'
+import { tipoBadgeColor } from 'src/utils/badges'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { formatCurrency } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'

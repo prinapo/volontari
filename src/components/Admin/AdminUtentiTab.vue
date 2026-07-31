@@ -1,59 +1,48 @@
 <template>
-  <div v-if="!loading && rows.length === 0 && !error" class="text-center text-grey-5 q-py-xl">
-    <q-icon name="admin_panel_settings" size="64px" />
-    <div class="text-h6 q-mt-md">Nessun utente trovato</div>
-    <div class="text-body2">Verifica i permessi API di Directus.</div>
-  </div>
+  <div>
+    <div v-if="!loading && rows.length === 0 && !error" class="text-center text-grey-5 q-py-xl">
+      <q-icon name="admin_panel_settings" size="64px" />
+      <div class="text-h6 q-mt-md">Nessun utente trovato</div>
+      <div class="text-body2">Verifica i permessi API di Directus.</div>
+    </div>
 
-  <div class="text-h5 text-weight-medium">Admin</div>
-  <div class="text-body2 text-grey-7 q-mb-md">Gestisci utenti, ruoli e invii comunicazioni.</div>
+    <div class="text-h5 text-weight-medium">Admin</div>
+    <div class="text-body2 text-grey-7 q-mb-md">Gestisci utenti, ruoli e invii comunicazioni.</div>
+    <div class="row q-gutter-sm q-mb-md">
+      <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
+    </div>
 
-  <div class="row items-center q-gutter-sm q-mb-md">
-    <q-input
-      v-model="searchTerm"
-      dense
-      outlined
-      placeholder="Cerca utente per nome o email..."
-      clearable
-      debounce="300"
-      class="col"
-      @update:model-value="onSearchChange"
+    <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded>
+      {{ error }}
+    </q-banner>
+
+    <!-- User table -->
+    <q-table
+      v-model:pagination="pagination"
+      :rows="rows"
+      :columns="userColumns"
+      row-key="id"
+      flat
+      bordered
+      :loading="loading"
+      :grid="$q.screen.lt.sm"
+      :dense="$q.screen.lt.md"
+      @request="onRequest"
     >
-      <template #prepend>
-        <q-icon name="search" />
+      <template #top>
+        <div class="full-width">
+          <TableToolbar
+            v-model:search="searchTerm"
+            search-placeholder="Cerca utente per nome o email..."
+            :loading="loading"
+            refresh
+            @update:search="onSearchChange"
+            @refresh="loadData"
+          />
+        </div>
       </template>
-    </q-input>
-    <q-space />
-    <q-btn
-flat
-round
-dense
-size="sm"
-icon="refresh"
-:loading="loading"
-aria-label="Aggiorna"
-@click="loadData">
-      <q-tooltip>Aggiorna</q-tooltip>
-    </q-btn>
-    <q-btn color="primary" icon="person_add" label="Aggiungi utente" @click="openCreateDialog" />
-  </div>
 
-  <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded>
-    {{ error }}
-  </q-banner>
-
-  <!-- User table -->
-  <q-table
-    v-model:pagination="pagination"
-    :rows="rows"
-    :columns="userColumns"
-    row-key="id"
-    flat
-    bordered
-    :loading="loading"
-    @request="onRequest"
-  >
-    <template #item="props">
+      <template #item="props">
       <div class="q-pa-xs col-12">
         <q-card flat bordered>
           <q-card-section class="q-py-sm">
@@ -332,11 +321,13 @@ aria-label="Chiudi">
       </q-card-actions>
     </q-card>
   </q-dialog>
+  </div>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { adminService } from 'src/services/admin.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'

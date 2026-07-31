@@ -36,3 +36,8 @@ export const FOLDERS = {
   ISEE: import.meta.env.VITE_ISEE_FOLDER,
   PROGETTI: import.meta.env.VITE_PROGETTI_FOLDER
 }
+
+export const SYNC = {
+  ENABLED: import.meta.env.VITE_SYNC_ENABLED === 'true',
+  ENDPOINT: import.meta.env.VITE_SYNC_ENDPOINT || '/sync/prod'
+}

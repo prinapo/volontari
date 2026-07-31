@@ -2,10 +2,12 @@ import api from './api'
 import { filesService } from './files.service'
 
 export const listePagamentiService = {
-  async getAll() {
-    const res = await api.get('/items/ListePagamenti', {
-      params: { sort: '-DataCreazione' }
-    })
+  async getAll(search) {
+    const params = { sort: '-DataCreazione' }
+    if (search) {
+      params['filter[Nome][_icontains]'] = search
+    }
+    const res = await api.get('/items/ListePagamenti', { params })
     return res.data.data || []
   },
 

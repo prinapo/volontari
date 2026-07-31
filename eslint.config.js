@@ -1,12 +1,12 @@
 import js from '@eslint/js'
-import pluginVue from 'eslint-plugin-vue'
+import eslintConfigPrettier from 'eslint-config-prettier'
+import pluginImportX from 'eslint-plugin-import-x'
 import pluginPromise from 'eslint-plugin-promise'
-import pluginUnicorn from 'eslint-plugin-unicorn'
 import pluginSecurity from 'eslint-plugin-security'
 import pluginSonarjs from 'eslint-plugin-sonarjs'
+import pluginUnicorn from 'eslint-plugin-unicorn'
+import pluginVue from 'eslint-plugin-vue'
 import pluginVueA11y from 'eslint-plugin-vuejs-accessibility'
-import pluginImportX from 'eslint-plugin-import-x'
-import eslintConfigPrettier from 'eslint-config-prettier'
 
 export default [
   js.configs.recommended,
@@ -21,6 +21,11 @@ export default [
       sonarjs: pluginSonarjs,
       'import-x': pluginImportX
     },
+    languageOptions: {
+      globals: {
+        process: 'readonly'
+      }
+    },
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/require-default-prop': 'off',
@@ -31,7 +36,7 @@ export default [
       'preserve-caught-error': 'off',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 
-      'import-x/no-unresolved': ['warn', { ignore: ['\\.svg$'] }],
+      'import-x/no-unresolved': ['warn', { ignore: [String.raw`\.svg$`] }],
       'import-x/no-extraneous-dependencies': 'warn',
       'import-x/namespace': 'off',
       'import-x/default': 'off',
@@ -131,7 +136,7 @@ export default [
           extensions: ['.js', '.vue']
         }
       },
-      'import-x/ignore': ['node_modules', '\\.svg$', '\\.json$']
+      'import-x/ignore': ['node_modules', String.raw`\.svg$`, String.raw`\.json$`]
     }
   },
   {

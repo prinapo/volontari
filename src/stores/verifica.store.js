@@ -296,7 +296,7 @@ export const useVerificaStore = defineStore('verifica', {
       }
     },
 
-    async fetchSubmissions({ page, limit, includeScartati } = {}) {
+    async fetchSubmissions({ page, limit, includeScartati, search } = {}) {
       this.submissionsLoading = true
       try {
         const pageVal = page ?? 1
@@ -308,6 +308,7 @@ export const useVerificaStore = defineStore('verifica', {
             page: pageVal,
             limit: limitVal,
             includeScartati: includeScartatiVal,
+            search,
             meta: 'filter_count'
           })
         } catch (error) {
@@ -315,7 +316,8 @@ export const useVerificaStore = defineStore('verifica', {
             res = await verificaService.getSubmissions({
               page: pageVal,
               limit: limitVal,
-              includeScartati: includeScartatiVal
+              includeScartati: includeScartatiVal,
+              search
             })
           } else throw error
         }

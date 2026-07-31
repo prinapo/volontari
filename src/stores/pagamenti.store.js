@@ -156,16 +156,24 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async fetchProposti() {
+    async fetchProposti(search) {
       this.error = null
       try {
-        const res = await pagamentiService.getPagamenti({
+        const params = {
           'filter[Stato][_eq]': STATO_PAGAMENTO.PROPOSTO,
           fields:
             '*,Progetto.id_progetto,Progetto.Cognome_Beneficiario,Progetto.Nome_Beneficiario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
           limit: -1,
           sort: 'DataProposta'
-        })
+        }
+        if (search) {
+          params['filter[_and][0][Stato][_eq]'] = STATO_PAGAMENTO.PROPOSTO
+          delete params['filter[Stato][_eq]']
+          params['filter[_and][1][_or][0][Famiglia][Nome_Famiglia][_icontains]'] = search
+          params['filter[_and][1][_or][1][IBAN][_icontains]'] = search
+          params['filter[_and][1][_or][2][Intestatario][_icontains]'] = search
+        }
+        const res = await pagamentiService.getPagamenti(params)
         this.proposti = res.data.data || []
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento proposti'
@@ -173,16 +181,40 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async fetchInCorso() {
+    async fetchInCorso(search, batchFilter) {
       this.error = null
       try {
-        const res = await pagamentiService.getPagamenti({
+        const params = {
           'filter[Stato][_in]': `${STATO_PAGAMENTO.IN_PAGAMENTO},${STATO_PAGAMENTO.PAGATO}`,
           fields:
             '*,Batch.id,Batch.Nome,Batch.Associazione,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Famiglia.IBAN,Famiglia.Intestatario_CC',
           limit: -1,
           sort: 'DataProposta'
-        })
+        }
+
+        const hasSearch = !!search
+        const hasBatch = !!batchFilter
+
+        if (hasSearch || hasBatch) {
+          const statoVal = `${STATO_PAGAMENTO.IN_PAGAMENTO},${STATO_PAGAMENTO.PAGATO}`
+          delete params['filter[Stato][_in]']
+          let idx = 0
+          params[`filter[_and][${idx++}][Stato][_in]`] = statoVal
+
+          if (hasBatch) {
+            params[`filter[_and][${idx++}][Batch][_eq]`] = batchFilter
+          }
+
+          if (hasSearch) {
+            const searchIdx = idx
+            params[`filter[_and][${searchIdx}][_or][0][Famiglia][Nome_Famiglia][_icontains]`] = search
+            params[`filter[_and][${searchIdx}][_or][1][IBAN][_icontains]`] = search
+            params[`filter[_and][${searchIdx}][_or][2][Intestatario][_icontains]`] = search
+            params[`filter[_and][${searchIdx}][_or][3][Batch][Nome][_icontains]`] = search
+          }
+        }
+
+        const res = await pagamentiService.getPagamenti(params)
         this.inCorso = res.data.data || []
       } catch (error) {
         this.error =
@@ -191,14 +223,22 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async fetchFalliti() {
+    async fetchFalliti(search) {
       this.error = null
       try {
-        const res = await pagamentiService.getPagamenti({
+        const params = {
           'filter[Stato][_eq]': STATO_PAGAMENTO.FALLITO,
           fields: '*,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
           limit: -1
-        })
+        }
+        if (search) {
+          params['filter[_and][0][Stato][_eq]'] = STATO_PAGAMENTO.FALLITO
+          delete params['filter[Stato][_eq]']
+          params['filter[_and][1][_or][0][Famiglia][Nome_Famiglia][_icontains]'] = search
+          params['filter[_and][1][_or][1][IBAN][_icontains]'] = search
+          params['filter[_and][1][_or][2][NoteEsito][_icontains]'] = search
+        }
+        const res = await pagamentiService.getPagamenti(params)
         this.falliti = res.data.data || []
       } catch (error) {
         this.error =
@@ -663,9 +703,9 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async fetchListe() {
+    async fetchListe(search) {
       try {
-        this.liste = await listePagamentiService.getAll()
+        this.liste = await listePagamentiService.getAll(search)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento liste'
         this.liste = []

@@ -1,49 +1,36 @@
 <template>
-  <div class="row items-center q-gutter-sm q-mb-md">
-    <div>
-      <div class="text-h5 text-weight-medium">Associazioni</div>
-      <div class="text-body2 text-grey-7">Gestisci i budget annuali delle associazioni.</div>
+  <div>
+    <div class="text-h5 text-weight-medium">Associazioni</div>
+    <div class="text-body2 text-grey-7 q-mb-md">Gestisci i budget annuali delle associazioni.</div>
+    <div class="row q-gutter-sm q-mb-md">
+      <q-btn color="primary" icon="add" label="Nuova associazione" @click="openNewAssociazioneDialog" />
     </div>
-    <q-space />
-    <q-input
-      v-model="searchTerm"
-      dense
-      outlined
-      placeholder="Cerca associazione..."
-      clearable
-      debounce="300"
-      class="col-12 col-sm"
-      @update:model-value="onSearchChange"
-    >
-      <template #prepend>
-        <q-icon name="search" />
-      </template>
-    </q-input>
-    <q-btn color="primary" icon="add" label="Nuova associazione" @click="openNewAssociazioneDialog" />
-    <q-btn
-flat
-round
-dense
-size="sm"
-icon="refresh"
-aria-label="Aggiorna"
-      @click="loadData">
-      <q-tooltip>Aggiorna</q-tooltip>
-    </q-btn>
-  </div>
 
-  <q-table
-    v-model:pagination="pagination"
-    :rows="rows"
-    :columns="assocColumns"
-    row-key="id"
-    flat
-    bordered
-    :loading="loading"
-    :grid="$q.screen.lt.sm"
-    @request="onRequest"
-  >
-    <template #body-cell-budget="props">
+    <q-table
+      v-model:pagination="pagination"
+      :rows="rows"
+      :columns="assocColumns"
+      row-key="id"
+      flat
+      bordered
+      :loading="loading"
+      :grid="$q.screen.lt.sm"
+      @request="onRequest"
+    >
+      <template #top>
+        <div class="full-width">
+          <TableToolbar
+            v-model:search="searchTerm"
+            search-placeholder="Cerca associazione..."
+            :loading="loading"
+            refresh
+            @update:search="onSearchChange"
+            @refresh="loadData"
+          />
+        </div>
+      </template>
+
+      <template #body-cell-budget="props">
       <q-td :props="props">
         <q-input
           :model-value="
@@ -153,11 +140,13 @@ step="0.01" />
       </q-card-actions>
     </q-card>
   </q-dialog>
+  </div>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, reactive, onMounted } from 'vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { associazioniService } from 'src/services/associazioni.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'

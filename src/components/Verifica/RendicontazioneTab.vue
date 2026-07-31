@@ -5,47 +5,8 @@
       <div class="text-body2 text-grey-7">Controllo importi rimborsabili e verifica giustificativi.</div>
     </div>
     <q-space />
-    <q-btn
-flat
-round
-dense
-size="sm"
-icon="refresh"
-      :loading="loading"
-aria-label="Aggiorna dati"
-@click="loadData">
-      <q-tooltip>Aggiorna dati</q-tooltip>
-    </q-btn>
   </div>
 
-  <div class="row q-col-gutter-md q-mb-md">
-    <div class="col-12 col-sm-6 col-md-4">
-      <q-input
-        v-model="searchTerm"
-        outlined
-        dense
-        debounce="300"
-        label="Cerca famiglia"
-        @update:model-value="onSearchChange"
-      >
-        <template #prepend>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-    </div>
-    <div class="col-12 col-sm-6 col-md-4">
-      <q-select
-        v-model="selectedAnno"
-        :options="annoOptions"
-        emit-value
-        map-options
-        outlined
-        dense
-        clearable
-        label="Anno bando"
-      />
-    </div>
-  </div>
   <div class="row q-col-gutter-md q-mb-md">
     <div v-for="s in summary" :key="s.label" class="col-6 col-sm-3">
       <q-card flat bordered class="fit">
@@ -79,6 +40,33 @@ aria-label="Aggiorna dati"
     :dense="$q.screen.lt.md"
     @request="onRequest"
   >
+    <template #top>
+      <div class="full-width">
+        <TableToolbar
+          v-model:search="searchTerm"
+          search-placeholder="Cerca famiglia..."
+          :loading="loading"
+          refresh
+          @update:search="onSearchChange"
+          @refresh="loadData"
+        >
+          <template #filters>
+            <q-select
+              v-model="selectedAnno"
+              :options="annoOptions"
+              emit-value
+              map-options
+              outlined
+              dense
+              clearable
+              label="Anno bando"
+              style="min-width: 140px"
+            />
+          </template>
+        </TableToolbar>
+      </div>
+    </template>
+
     <template #header="props">
       <q-tr :props="props">
         <q-th auto-width />
@@ -118,6 +106,7 @@ aria-label="Aggiorna dati"
                       dense
                       size="sm"
                       icon="edit"
+                      color="grey-6"
                       data-testid="btn-edit-bancari"
                       aria-label="Modifica dati bancari"
                       @click="openBancariDialog(props.row)"
@@ -264,7 +253,7 @@ aria-label="Aggiorna dati"
                               dense
                               flat
                               icon="check_circle"
-                              color="primary"
+                              :color="ACTION_VERIFY"
                               size="sm"
                               data-testid="btn-verify"
                               aria-label="Verifica"
@@ -277,7 +266,7 @@ aria-label="Aggiorna dati"
                               dense
                               flat
                               icon="cancel"
-                              color="negative"
+                              :color="ACTION_REJECT"
                               size="sm"
                               data-testid="btn-reject"
                               aria-label="Rifiuta"
@@ -463,6 +452,7 @@ aria-label="Ripristina"
               dense
               icon="add"
               color="primary"
+              size="sm"
               data-testid="btn-add-giust"
               aria-label="Aggiungi giustificativo"
               @click="addingForRow = props.row"
@@ -474,6 +464,7 @@ aria-label="Ripristina"
               round
               dense
               icon="visibility"
+              size="sm"
               data-testid="btn-detail-row"
               aria-label="Dettaglio progetto"
               @click="openRowDetail(props.row)"
@@ -487,6 +478,7 @@ aria-label="Ripristina"
               dense
               icon="lock"
               color="warning"
+              size="sm"
               aria-label="Chiudi progetto"
               @click="openChiudiProgetto(props.row)"
             >
@@ -499,6 +491,7 @@ aria-label="Ripristina"
               dense
               icon="lock_open"
               color="positive"
+              size="sm"
               aria-label="Riapri progetto"
               :loading="savingRiapriProgetto"
               @click="handleRiapriProgetto(props.row)"
@@ -533,6 +526,7 @@ aria-label="Ripristina"
                       dense
                       size="sm"
                       icon="edit"
+                      color="grey-6"
                       data-testid="btn-edit-bancari"
                       aria-label="Modifica dati bancari"
                       @click="openBancariDialog(props.row)"
@@ -672,7 +666,7 @@ aria-label="Ripristina"
                       dense
                       flat
                       icon="check_circle"
-                      color="primary"
+                      :color="ACTION_VERIFY"
                       size="sm"
                       data-testid="btn-verify"
                       aria-label="Verifica"
@@ -685,7 +679,7 @@ aria-label="Ripristina"
                       dense
                       flat
                       icon="cancel"
-                      color="negative"
+                      :color="ACTION_REJECT"
                       size="sm"
                       data-testid="btn-reject"
                       aria-label="Rifiuta"
@@ -754,7 +748,9 @@ flat
 round
 dense
 icon="close"
-aria-label="Chiudi" />
+aria-label="Chiudi">
+          <q-tooltip>Chiudi</q-tooltip>
+        </q-btn>
       </q-card-section>
       <q-separator />
       <q-card-section>
@@ -805,9 +801,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
 import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { assetUrl } from 'src/utils/assets'
+import { ACTION_VERIFY, ACTION_REJECT, statoColor, statoLabel } from 'src/utils/badges'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
@@ -926,20 +924,6 @@ onMounted(() => {
   store.fetchAnni()
   loadData()
 })
-
-function statoColor(stato) {
-  if (stato === 'verificato') return 'positive'
-  if (stato === 'inviato') return 'orange'
-  if (stato === 'rifiutato') return 'negative'
-  return 'grey'
-}
-
-function statoLabel(stato) {
-  if (stato === 'verificato') return 'Verificato'
-  if (stato === 'inviato') return 'Inviato'
-  if (stato === 'rifiutato') return 'Rifiutato'
-  return 'Bozza'
-}
 
 watch(selectedAnno, () => {
   onSearchChange()

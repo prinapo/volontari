@@ -36,46 +36,58 @@ export const contattiService = {
   },
 
   query({ limit = 25, offset = 0, sort, search, isVolontario, isGenitore, isReferente, stato }) {
-    const filter = {}
+    const conditions = []
 
     if (search) {
-      filter._or = [
-        { Nome: { _icontains: search } },
-        { Cognome: { _icontains: search } },
-        { email: { _some: { email_address: { _icontains: search } } } }
-      ]
+      conditions.push({
+        _or: [
+          { Nome: { _icontains: search } },
+          { Cognome: { _icontains: search } },
+          { email: { _some: { email_address: { _icontains: search } } } }
+        ]
+      })
+    }
+
+    function addRoleOr(field, value) {
+      conditions.push({
+        _or: [{ [field]: { _null: true } }, { [field]: { _eq: value } }]
+      })
     }
 
     switch (true) {
       case isVolontario: {
-        filter.IsVolontario = { _eq: true }
+        conditions.push({ IsVolontario: { _eq: true } })
 
         break
       }
       case isGenitore: {
-        filter.IsGenitore = { _eq: true }
-        filter.IsVolontario = { _eq: false }
+        conditions.push({ IsGenitore: { _eq: true } })
+        addRoleOr('IsVolontario', false)
 
         break
       }
       case isReferente: {
-        filter.IsReferente = { _eq: true }
+        conditions.push({ IsReferente: { _eq: true } })
 
         break
       }
       default:
         if (isVolontario === false && isGenitore === false && isReferente === false) {
-          filter.IsVolontario = { _eq: false }
-          filter.IsGenitore = { _eq: false }
-          filter.IsReferente = { _eq: false }
+          addRoleOr('IsVolontario', false)
+          addRoleOr('IsGenitore', false)
+          addRoleOr('IsReferente', false)
         }
     }
 
     if (stato === 'Attivi') {
-      filter['user_id.status'] = { _neq: 'suspended' }
+      conditions.push({ user_id: { status: { _neq: 'suspended' } } })
     } else if (stato === 'Disattivati') {
-      filter['user_id.status'] = { _eq: 'suspended' }
+      conditions.push({
+        _or: [{ user_id: { status: { _eq: 'suspended' } } }, { user_id: { _null: true } }]
+      })
     }
+
+    const filter = conditions.length === 1 ? conditions[0] : { _and: conditions }
 
     return api.get(ENDPOINT, {
       params: {

@@ -1,19 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import {
-  formatCurrency,
-  formatDate,
-  statoLabel,
-  statoColor,
-  displayFullName
-} from 'src/utils/formatters'
+import { formatCurrency, formatDate, statoLabel, statoColor, displayFullName } from 'src/utils/formatters'
 
 describe('formatCurrency', () => {
   it('formats a number to EUR', () => {
-    expect(formatCurrency(100)).toBe('100,00\u00a0€')
+    expect(formatCurrency(100)).toBe('100,00\u{A0}€')
   })
 
   it('formats zero', () => {
-    expect(formatCurrency(0)).toBe('0,00\u00a0€')
+    expect(formatCurrency(0)).toBe('0,00\u{A0}€')
   })
 
   it('returns fallback for null', () => {
@@ -21,7 +15,7 @@ describe('formatCurrency', () => {
   })
 
   it('returns fallback for undefined', () => {
-    expect(formatCurrency(undefined)).toBe('€ 0,00')
+    expect(formatCurrency()).toBe('€ 0,00')
   })
 
   it('formats decimal values', () => {
@@ -40,7 +34,7 @@ describe('formatDate', () => {
 
   it('returns empty for falsy input', () => {
     expect(formatDate(null)).toBe('')
-    expect(formatDate(undefined)).toBe('')
+    expect(formatDate()).toBe('')
     expect(formatDate('')).toBe('')
   })
 })
@@ -53,15 +47,15 @@ describe('statoLabel', () => {
     expect(statoLabel('rifiutato')).toBe('Rifiutato')
   })
 
-  it('returns the input as fallback for unknown states', () => {
-    expect(statoLabel('unknown')).toBe('unknown')
+  it('falls back to Bozza for unknown states', () => {
+    expect(statoLabel('unknown')).toBe('Bozza')
   })
 })
 
 describe('statoColor', () => {
-  it('returns Quasar color names', () => {
-    expect(statoColor('draft')).toBe('warning')
-    expect(statoColor('inviato')).toBe('primary')
+  it('returns Quasar color names per standard', () => {
+    expect(statoColor('draft')).toBe('grey')
+    expect(statoColor('inviato')).toBe('orange')
     expect(statoColor('verificato')).toBe('positive')
     expect(statoColor('rifiutato')).toBe('negative')
   })

@@ -4,7 +4,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-export default function (ctx) {
+export default function quasarConfig(ctx) {
   return {
     boot: ['axios', 'auth'],
     css: ['app.scss'],
@@ -29,21 +29,22 @@ export default function (ctx) {
         }
       },
       vitePlugins: [
-        [ 'rollup-plugin-visualizer', {
-          filename: 'dist/bundle-report.html',
-          template: 'treemap',
-          gzipSize: true,
-          brotliSize: true,
-          open: false
-        } ]
+        [
+          'rollup-plugin-visualizer',
+          {
+            filename: 'dist/bundle-report.html',
+            template: 'treemap',
+            gzipSize: true,
+            brotliSize: true,
+            open: false
+          }
+        ]
       ],
       defineEnv: {
-        VITE_API_URL: ctx.dev
-          ? 'https://development.sostienilsostegno.com'
-          : 'https://app.sostienilsostegno.com',
-        VITE_APP_TITLE: ctx.dev
-          ? 'Portale Volontario - Development'
-          : 'Portale Volontario'
+        VITE_API_URL: ctx.dev ? 'https://development.sostienilsostegno.com' : 'https://app.sostienilsostegno.com',
+        VITE_APP_TITLE: ctx.dev ? 'Portale Volontario - Development' : 'Portale Volontario',
+        VITE_SYNC_ENABLED: ctx.dev ? 'true' : 'false',
+        VITE_SYNC_ENDPOINT: '/sync/prod'
       },
       env: {
         VITE_RESET_URL: `${process.env.VITE_APP_BASE_URL || (ctx.dev ? 'http://localhost:9000' : 'https://volontari.sostienilsostegno.com')}/reset-password?token=`,
@@ -58,14 +59,14 @@ export default function (ctx) {
       port: 9000,
       open: false
     },
-      framework: {
+    framework: {
       iconSet: 'material-icons',
       lang: 'it',
       all: 'auto',
       plugins: ['Notify', 'Dialog'],
       config: {
         brand: {
-          primary: ctx.dev ? '#C0503A' : '#2E5D6E',
+          primary: ctx.dev ? '#E91E63' : '#2E5D6E',
           secondary: '#6B6B7B',
           accent: '#D4956A',
           positive: '#4A7C59',

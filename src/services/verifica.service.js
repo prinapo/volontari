@@ -96,10 +96,28 @@ export const verificaService = {
     })
   },
 
-  getSubmissions({ page = 1, limit = 25, includeScartati = false, meta } = {}) {
-    const filter = includeScartati
+  getSubmissions({ page = 1, limit = 25, includeScartati = false, search, meta } = {}) {
+    const conditions = []
+
+    const statoFilter = includeScartati
       ? { _or: [{ stato: { _eq: 'in_attesa' } }, { stato: { _eq: 'scartato' } }] }
       : { stato: { _eq: 'in_attesa' } }
+    conditions.push(statoFilter)
+
+    if (search) {
+      conditions.push({
+        _or: [
+          { nome_richiedente: { _icontains: search } },
+          { cognome_richiedente: { _icontains: search } },
+          { email: { _icontains: search } },
+          { descrizione: { _icontains: search } },
+          { nome_beneficiario: { _icontains: search } },
+          { cognome_beneficiario: { _icontains: search } }
+        ]
+      })
+    }
+
+    const filter = conditions.length === 1 ? conditions[0] : { _and: conditions }
     const params = {
       filter: JSON.stringify(filter),
       sort: '-data_invio',

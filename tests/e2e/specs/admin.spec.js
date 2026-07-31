@@ -279,4 +279,26 @@ test.describe('Admin — Impersonazione', () => {
     const impBtn = page.locator('[aria-label="Impersona utente"]').first()
     await expect(impBtn).toBeVisible({ timeout: 10_000 })
   })
+
+  test('SY-01: Tab Sync visibile in Admin (solo dev) @smoke', async ({ page }) => {
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    const tab = page.locator('.q-tab:has-text("Sync")')
+    await expect(tab).toBeVisible({ timeout: 10_000 })
+    await tab.click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await expect(page.getByRole('button', { name: 'Scarica da produzione' })).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('SY-02: Download da produzione (sola lettura) @smoke', async ({ page }) => {
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.locator('.q-tab:has-text("Sync")').click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.getByRole('button', { name: 'Scarica da produzione' }).click()
+    await expect(page.getByText('Snapshot scaricato')).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByRole('button', { name: 'Carica in dev' })).toBeVisible({ timeout: 10_000 })
+  })
 })

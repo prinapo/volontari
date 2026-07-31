@@ -1,11 +1,13 @@
 # Project conventions
 
 ## Stack
+
 - Vue 3 + Quasar 2 + Pinia + Axios, plain JS (no TypeScript)
 - Vite via @quasar/app-vite
 - Backend: Directus 11.x REST API
 
 ## Quality toolchain
+
 ESLint 8 | Prettier 3 | Stylelint 16 | commitlint | Husky 9 | lint-staged | knip 5 | Playwright | GitHub Actions | Dependabot
 
 **Nota su knip e template Vue**: knip non traccia i tag usati solo nei template Vue
@@ -14,6 +16,7 @@ ESLint 8 | Prettier 3 | Stylelint 16 | commitlint | Husky 9 | lint-staged | knip
 in un template prima di eliminare il file/import.
 
 ## Comandi chiave
+
 - npm run dev (porta :9000)
 - npm run build (dist/spa/)
 - npm run lint (ESLint, ora --max-warnings 0)
@@ -22,6 +25,7 @@ in un template prima di eliminare il file/import.
 - npm run release (build + FTP deploy)
 
 ## Regole ESLint
+
 - Nessun console.log (solo warn/error)
 - Nessun warning tollerato
 - import/order alfabetico
@@ -29,9 +33,11 @@ in un template prima di eliminare il file/import.
 - Catch parameter = error
 
 ## Path aliases
+
 src/ → ./src, stores/, components/, pages/, services/, utils/, boot/
 
 ## Pre-commit hooks
+
 .js → ESLint --fix + Prettier
 .vue → ESLint --fix
 .scss → Stylelint --fix + Prettier
@@ -39,6 +45,7 @@ src/ → ./src, stores/, components/, pages/, services/, utils/, boot/
 Commit message → conventional-changelog
 
 ## Store Pinia
+
 - (target futuro: Composition API setup stores — non ancora applicato)
 - Stato asincrono: `{ data` (o `data_*`, array/null), `loading`, `error` } — no varianti (isLoading, pending...)
   Eccezione: più flag loading ammessi solo se mappano sezioni UI indipendenti (es. `saving` per submit + `loading` per fetch)
@@ -56,15 +63,18 @@ Commit message → conventional-changelog
 - Riferimento canonico: `error-log.store.js`
 
 ## Services (Directus)
+
 - Ogni chiamata a Directus passa da src/services/, mai da componenti o store direttamente
 - Gestione errori centralizzata in un unico helper condiviso, mai try/catch ad-hoc duplicato nei singoli service
 - Refresh token e logica di auth: gestiti solo da services/auth.js, nessun altro file la reimplementa
 
 ## Composable
+
 - Prefisso use*, vivono in src/composables/
 - Dipendenze esplicite passate come argomenti/parametri, non import diretto di uno store specifico se il composable deve restare riutilizzabile
 
 ## Tabelle server-side
+
 - Usare sempre `useServerTable` (src/composables/useServerTable.js) per QTable con
   `@request`, mai implementare `onRequest` ad-hoc
 - `table.loading` / `table.error` del composable sono l'UNICA fonte di verità nel
@@ -75,16 +85,37 @@ Commit message → conventional-changelog
   `@update:model-value="table.onSearchChange"`
 - Filtri extra: `table.setFilters({ ... })`
 
+### PagamentiTab (eccezione)
+
+Solo "incorso" usa search + filtro server-side (Batch è FK nativa
+filtrabile). Proposti/falliti/liste restano client-side (limit: -1, tutto
+in memoria) per due motivi:
+
+1. Dataset piccolo per natura del dominio (~200/anno), rischio di
+   risultati fuori pagina basso
+2. Le azioni bulk (Crea gruppo, Ripristina) operano su tutti i record
+   selezionati e richiederebbero un redesign della selezione (persistente
+   cross-pagina o reset al cambio pagina) se si passasse a paginazione
+   server-side — costo non giustificato dal volume attuale.
+
+Da rivalutare insieme (intero PagamentiTab a useServerTable, incluso
+redesign selezione bulk) solo se il volume annuo cresce
+significativamente o se si introduce il filtro per anno già previsto,
+che potrebbe cambiare lo scope di questa decisione.
+
 ## Prima di generare codice nuovo
+
 Prima di scrivere store, service, composable o test nuovi, cerca nel repo un file esistente dello stesso tipo che risolve un problema simile e replica lo stesso pattern — anche se non è l'approccio di default che useresti. Non introdurre un secondo modo di fare la stessa cosa già gestita altrove nel progetto.
 
 ## File di riferimento (pattern canonico)
+
 - Store: <!-- es. src/stores/auth.js -->
 - Service: <!-- es. src/services/http.js -->
 - Composable: <!-- es. src/composables/useAuth.js -->
 - Test: <!-- es. tests/unit/stores/auth.spec.js -->
 
 ## Test
+
 - E2E: Playwright, 2 progetti (chromium + mobile Pixel 5)
   Tag: @smoke, @crud, @regression, @visual
 - Unit: Vitest, 240 test (stores + services)
@@ -107,11 +138,60 @@ Prima di scrivere store, service, composable o test nuovi, cerca nel repo un fil
    aggiornare `version` in `test-status.json`, eseguire i test mancanti,
    aggiornare il file.
 
+## Sync produzione → dev (Admin → Sync)
+
+- **Scopo**: portare i dati reali di produzione in dev per test con dati veri.
+  Sola lettura da prod, mai scrittura.
+- **Solo nel build di dev**: tab "Sync" visibile quando `VITE_SYNC_ENABLED=true`
+  (definito in `quasar.config.js` → blocco `defineEnv`, gated da `ctx.dev`:
+  `ctx.dev ? 'true' : 'false'`). Nel build di produzione è sempre `false`
+  (tab assente). NOTA: il blocco `env:` di Quasar NON arriva a
+  `import.meta.env` in dev — per i flag build usare `defineEnv`.
+  Inoltre `development.sostienilsostegno.com` è servito dal dev server
+  (`quasar dev`) tramite nginx → `ctx.dev` è true lì.
+- **Flusso a 2 fasi** (Admin → Sync):
+  1. **Scarica da produzione** → `POST /sync/prod/download` — l'estensione
+     Directus su dev (`directus-dev/extensions/db-sync`, FUORI dal repo) usa il
+     token read-only `PROD_SYNC_TOKEN` (env nel compose di directus-dev) e
+     scarica: 17 collezioni custom + `/users` + `/files` → snapshot JSON in
+     `directus-dev/db-sync/snapshots/prod-<ts>/`.
+  2. **Carica in dev** (conferma esplicita) → `POST /sync/prod/import` —
+     backup del DB dev attuale (`db-sync/backups/dev-<ts>.json`), TRUNCATE
+     (collezioni custom + `directus_users`, MAI roles/policies/permissions/
+     settings/folders), import con id preservati (relazioni intatte), re-seed
+     dei 9 utenti fake E2E, fix sequenze, clear cache. Tutto in una transazione
+     (rollback automatico se fallisce).
+- **Password admin preservata**: l'import NON tocca la password dell'utente
+  `ADMIN_EMAIL` di dev (la cattura prima del truncate e la ripristina). Gli
+  altri utenti importati ricevono la password di dev standard (`DevSync_2026!!`).
+  `ADMIN_PASSWORD` del compose è usata solo al primo bootstrap di Directus.
+- **Token prod**: `PROD_SYNC_TOKEN` (ruolo Directus read-only su prod, utente
+  `sync@readonly.com`, policy "ReadOnly" con solo READ) + `PROD_SYNC_EMAIL`.
+  Vivono SOLO nel `docker-compose.yml` di directus-dev (fuori repo), mai in git
+  o nel frontend. Nota: `/items/directus_users` e `/items/directus_files` sono
+  bloccati per i non-admin da Directus (controller `/items` hardcoded); si
+  leggono via `/users` e `/files`.
+- **nginx (host)**: `development.sostienilsostegno.com` proxy-za a Directus
+  (8055) le route API (`/items/`, `/users/`, `/roles/`, `/sync/`, …) e il resto
+  a `localhost:9000` (dev server). La route `/sync/` è stata aggiunta per il
+  sync — se manca, le chiamate del sync cadono sulla SPA.
+- **E2E**: test `SY-01`/`SY-02` in `admin.spec.js` verificano la tab Sync e il
+  download da produzione (solo lettura, NON l'import che è distruttivo).
+- **Snapshot/backup**: dentro `directus-dev/db-sync/` (host), montato come
+  volume `/directus/db-sync` nel container.
+- **Limite noto**: i file importati sono i metadati (`directus_files`); i
+  binari reali (uploads) non vengono copiati → download/anteprime file non
+  funzionano in dev dopo il sync.
+- Dopo un sync la sessione admin corrente è invalidata (truncate users): la UI
+  chiede di accedere di nuovo.
+
 ## Deploy
+
 - FTP su app.sostienilsostegno.com
 - MAI senza autorizzazione esplicita
 - E2E full suite prima del deploy
 - Patch version solo dopo autorizzazione
 
 ## Regola fondamentale
+
 Tutto il software è stato sviluppato dall'utente con le mie indicazioni. Nessun bug è "pre-esistente" — va investigato e risolto.

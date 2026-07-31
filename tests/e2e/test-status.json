@@ -1,6 +1,6 @@
 {
-  "version": "v3.23.7",
-  "updated": "2026-07-30T13:53:50.000Z",
+  "version": "v3.24.0",
+  "updated": null,
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1417,6 +1417,18 @@
       "mobile": "pass",
       "lastRun": "v3.23.6",
       "lastPassed": "v3.23.6"
+    },
+    "SY-01": {
+      "name": "Tab Sync visibile in Admin (solo dev) @smoke",
+      "file": "admin.spec.js",
+      "chromium": "untested",
+      "mobile": "untested"
+    },
+    "SY-02": {
+      "name": "Download da produzione (sola lettura) @smoke",
+      "file": "admin.spec.js",
+      "chromium": "untested",
+      "mobile": "untested"
     }
   }
 }

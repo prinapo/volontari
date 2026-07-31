@@ -1,21 +1,6 @@
 <template>
   <q-page class="q-pa-md riconciliazione-page">
-    <div class="row items-center q-gutter-sm q-mb-md">
-      <div class="text-h5 text-weight-medium">Da riconciliare</div>
-      <q-space />
-      <q-toggle v-model="store.includeScartati" label="Mostra scartati" dense @update:model-value="onToggleScartati" />
-      <q-btn
-        flat
-        round
-        icon="refresh"
-        :loading="loading"
-        data-testid="btn-refresh-riconciliazioni"
-        aria-label="Aggiorna"
-        @click="loadData"
-      >
-        <q-tooltip>Aggiorna</q-tooltip>
-      </q-btn>
-    </div>
+    <div class="text-h5 text-weight-medium q-mb-md">Da riconciliare</div>
 
     <q-table
       v-model:pagination="pagination"
@@ -29,6 +14,23 @@
       :rows-per-page-options="[10, 25, 50]"
       @request="onRequest"
     >
+      <template #top>
+        <div class="full-width">
+          <TableToolbar
+            v-model:search="searchTerm"
+            search-placeholder="Cerca..."
+            :loading="loading"
+            refresh
+            @update:search="onSearchChange"
+            @refresh="loadData"
+          >
+            <template #filters>
+              <q-toggle v-model="store.includeScartati" label="Mostra scartati" dense @update:model-value="onToggleScartati" />
+            </template>
+          </TableToolbar>
+        </div>
+      </template>
+
       <template #item="props">
         <div class="q-pa-xs col-12">
           <q-expansion-item
@@ -485,6 +487,7 @@ import ContactLink from 'components/Common/ContactLink.vue'
 import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
 import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
 import RiconciliaDialog from 'components/RiconciliaDialog.vue'
+import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { verificaService } from 'src/services/verifica.service'
 import { assetUrl } from 'src/utils/assets'
@@ -525,6 +528,7 @@ const {
   rows,
   loading,
   pagination,
+  searchTerm,
   onRequest,
   onSearchChange,
   loadData
@@ -532,7 +536,8 @@ const {
   async (params) => {
     await store.fetchSubmissions({
       page: params.page,
-      limit: params.limit
+      limit: params.limit,
+      search: params.search
     })
     return { rows: store.submissions, total: store.submissionsTotalCount }
   }
