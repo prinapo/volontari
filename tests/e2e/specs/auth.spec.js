@@ -1,6 +1,6 @@
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { test, expect } from '../helpers/console.js'
 import { LoginPage } from '../pages/LoginPage.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 const testUser = auth.volontario
 
@@ -48,22 +48,22 @@ test.describe('Authentication', () => {
     // Rimuovi token e ricarica — il sistema deve reindirizzare a login
     await page.evaluate(() => localStorage.removeItem('access_token'))
     await page.reload()
-    await expect(page).toHaveURL(/\/login/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
   })
 })
 
 test.describe('Pagine Pubbliche', () => {
   test('SP-01: SubmitPage si carica senza errori console @smoke', async ({ page }) => {
     await page.goto('/submit')
-    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10_000 })
     await expect(page.locator('text=Invio giustificativi')).toBeVisible()
   })
 
   test('A-SS-01: LoginPage screenshot non cambia @visual', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.locator('.login-card').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.login-card').first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Accedi' })).toBeVisible()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(page).toHaveScreenshot('login-page.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 })
@@ -73,10 +73,10 @@ test.describe('Route Guards', () => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.volontario.email, auth.volontario.password)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15_000 })
 
     await page.goto('/gestione')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     expect(page.url()).not.toContain('/gestione')
   })
 
@@ -84,10 +84,10 @@ test.describe('Route Guards', () => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.volontario.email, auth.volontario.password)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15_000 })
 
     await page.goto('/admin')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     expect(page.url()).not.toContain('/admin')
   })
 
@@ -95,10 +95,10 @@ test.describe('Route Guards', () => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.volontario.email, auth.volontario.password)
-    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15_000 })
 
     await page.goto('/verifica')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     expect(page.url()).not.toContain('/verifica')
   })
 
@@ -106,39 +106,49 @@ test.describe('Route Guards', () => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.manager.email, auth.manager.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15_000 })
 
     const loginPage2 = new LoginPage(page)
     await page.evaluate(() => localStorage.clear())
     await loginPage2.goto()
     await loginPage2.login(auth.manager.email, auth.manager.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15_000 })
   })
 
   test('RG-05: Admin accede a /admin @smoke', async ({ page }) => {
-    test.setTimeout(90000)
-    
+    test.setTimeout(90_000)
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     try {
       await loginPage.login(auth.admin.email, auth.admin.password)
     } catch {
       console.log('[RG-05] Admin login fallito — utente non presente in Directus')
-      
+
       return
     }
 
     // L'admin viene reindirizzato a /gestione (ha anche canManager)
     await page.goto('/admin')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const currentUrl = page.url()
 
     if (currentUrl.includes('/login')) {
-      
       return
     }
 
     expect(currentUrl).toContain('/admin')
     await expect(page.locator('.text-h5:has-text("User Admin")')).toBeVisible({ timeout: 5000 })
+  })
+
+  test('RG-06: Manager non accede a /admin @regression', async ({ page }) => {
+    const loginPage = new LoginPage(page)
+    await loginPage.goto()
+    await loginPage.login(auth.manager.email, auth.manager.password)
+    await expect(page).toHaveURL(/\/gestione/, { timeout: 15_000 })
+
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await expect(page).not.toHaveURL(/\/admin/, { timeout: 10_000 })
   })
 })

@@ -271,7 +271,7 @@ test.describe('Admin — Impersonazione', () => {
     await expect(page.locator('.q-banner, .q-card').first()).toBeVisible({ timeout: 15_000 })
   })
 
-  test('AD-IMP-03: Pulsante Impersona visibile su mobile @smoke', async ({ page }) => {
+  test('AD-IMP-04: Pulsante Impersona visibile su mobile @smoke', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')

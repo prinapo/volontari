@@ -31,7 +31,7 @@
           label="Associazione"
           dense
           outlined
-          class="col-auto"
+          class="col-12 col-sm-auto"
           style="min-width: 160px"
           emit-value
           map-options

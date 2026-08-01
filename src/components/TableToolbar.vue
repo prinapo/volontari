@@ -25,7 +25,7 @@
           :aria-label="searchAriaLabel"
           clearable
           debounce="300"
-          class="col"
+          class="col-12 col-sm"
           @update:model-value="$emit('update:search', $event)"
         >
           <template #prepend>

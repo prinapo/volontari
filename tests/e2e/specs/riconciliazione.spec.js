@@ -306,54 +306,54 @@ test.describe('Riconciliazione', () => {
       await apiDelete('Famiglie', id).catch(() => {})
     }
   })
-    test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
-      test.setTimeout(90_000)
+  test('RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup', async ({ page }) => {
+    test.setTimeout(90_000)
 
-      const vp = await page.viewportSize()
-      if (vp && vp.width < 600) return // mobile: inline editing non supportato
+    const vp = await page.viewportSize()
+    if (vp && vp.width < 600) return // mobile: inline editing non supportato
 
-      await loginGestore(page)
-      await page.goto('/gestione')
-      await page.waitForLoadState('networkidle')
-      const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
-      await page.goto('/gestione')
-      await page.waitForLoadState('networkidle')
-      const famData = await apiGet('Famiglie', {
-        filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
-        limit: 1,
-        fields: 'id_famiglia,IBAN,Intestatario_CC'
-      })
-      const famiglia = famData.data?.[0]
-      if (famiglia) {
-        _rcIds.famigliaOrig = { id: famiglia.id_famiglia, IBAN: famiglia.IBAN, Intestatario: famiglia.Intestatario_CC }
-      }
-
-      const gestione = new GestionePage(page)
-      await gestione.famiglieTab.click()
-      await gestione.waitForTable()
-      await gestione.searchFamiglie(nomeFam)
-
-      // Usa InlineEditableField per modificare IBAN e Intestatario
-      try {
-        const ibanField = page.locator('.inline-editable-field').first()
-        await ibanField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
-        await page.waitForTimeout(300)
-        const ibanInput = page.locator('.inline-editable-field').first().locator('input')
-        await ibanInput.fill('IT12X1234567890123456789012', { force: true, timeout: 5000 })
-        await ibanField.locator('[data-testid="inline-save"]').click()
-        await page.waitForLoadState("networkidle").catch(() => {})
-
-        const intestField = page.locator('.inline-editable-field').nth(1)
-        await intestField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
-        await page.waitForTimeout(300)
-        const intestInput = page.locator('.inline-editable-field').nth(1).locator('input')
-        await intestInput.fill('Famiglia Test Intestatario', { force: true, timeout: 5000 })
-        await intestField.locator('[data-testid="inline-save"]').click()
-        await page.waitForLoadState("networkidle").catch(() => {})
-      } catch {
-        // Inline editing non disponibile su questo viewport
-      }
+    await loginGestore(page)
+    await page.goto('/gestione')
+    await page.waitForLoadState('networkidle')
+    const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+    await page.goto('/gestione')
+    await page.waitForLoadState('networkidle')
+    const famData = await apiGet('Famiglie', {
+      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+      limit: 1,
+      fields: 'id_famiglia,IBAN,Intestatario_CC'
     })
+    const famiglia = famData.data?.[0]
+    if (famiglia) {
+      _rcIds.famigliaOrig = { id: famiglia.id_famiglia, IBAN: famiglia.IBAN, Intestatario: famiglia.Intestatario_CC }
+    }
+
+    const gestione = new GestionePage(page)
+    await gestione.famiglieTab.click()
+    await gestione.waitForTable()
+    await gestione.searchFamiglie(nomeFam)
+
+    // Usa InlineEditableField per modificare IBAN e Intestatario
+    try {
+      const ibanField = page.locator('.inline-editable-field').first()
+      await ibanField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
+      await page.waitForTimeout(300)
+      const ibanInput = page.locator('.inline-editable-field').first().locator('input')
+      await ibanInput.fill('IT12X1234567890123456789012', { force: true, timeout: 5000 })
+      await ibanField.locator('[data-testid="inline-save"]').click()
+      await page.waitForLoadState('networkidle').catch(() => {})
+
+      const intestField = page.locator('.inline-editable-field').nth(1)
+      await intestField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
+      await page.waitForTimeout(300)
+      const intestInput = page.locator('.inline-editable-field').nth(1).locator('input')
+      await intestInput.fill('Famiglia Test Intestatario', { force: true, timeout: 5000 })
+      await intestField.locator('[data-testid="inline-save"]').click()
+      await page.waitForLoadState('networkidle').catch(() => {})
+    } catch {
+      // Inline editing non disponibile su questo viewport
+    }
+  })
 
   // ── RC-SETUP-02: Modifica contatto via ContattiTab ──
   test('RC-SETUP-02: Modifica Nome/Cognome contatto @setup', async ({ page }) => {
@@ -793,7 +793,11 @@ test.describe('Riconciliazione', () => {
     // Seleziona progetto nel dialog
     const progettoSelect = riconcPage.dialog.locator('[data-testid="select-progetto-riconcilia"]')
     await progettoSelect.locator('input').click()
-    await page.locator('[role="option"]').first().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {})
+    await page
+      .locator('[role="option"]')
+      .first()
+      .waitFor({ state: 'visible', timeout: 3000 })
+      .catch(() => {})
     let firstItem = page.locator('[role="option"]').first()
     if ((await firstItem.count()) === 0) {
       firstItem = page.locator('.q-dialog .q-item').first()
@@ -939,7 +943,7 @@ test.describe('Riconciliazione', () => {
   })
 
   // ── RG-COMB-01: GestoreVerifica su Gestione CRUD contatti @smoke ──
-  test('RG-COMB-01: GestoreVerifica accede a Gestione e vede contatti @smoke', async ({ page }) => {
+  test('RG-COMB-01: Manager accede a Gestione e vede contatti @smoke', async ({ page }) => {
     test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
 

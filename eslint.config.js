@@ -140,6 +140,13 @@ export default [
     }
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '.quasar/**', 'src-pwa/**']
+    files: ['tests/e2e/**'],
+    rules: {
+      'unicorn/no-break-in-nested-loop': 'off',
+      'no-empty': 'off'
+    }
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', '.quasar/**', 'src-pwa/**', 'tests/e2e/obsolete/**']
   }
 ]

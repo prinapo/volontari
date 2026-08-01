@@ -1,10 +1,10 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -38,18 +38,18 @@ test.afterEach(async () => {
 })
 
 test.describe('Error Log', () => {
-  test('EL-01: Tab Errori in AdminPage è accessibile @smoke', async ({ page }) => {
-    test.setTimeout(45000)
+  test('ELG-01: Tab Errori in AdminPage è accessibile @smoke', async ({ page }) => {
+    test.setTimeout(45_000)
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     await expect(page.locator('.q-page')).toBeVisible({ timeout: 5000 })
 
     const erroriTab = page.locator('.q-tab').filter({ hasText: /errori/i })
     await expect(erroriTab).toBeVisible({ timeout: 5000 })
     await erroriTab.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     await expect(page.locator('.q-tab--active')).toBeVisible({ timeout: 3000 })
     const label = await page.locator('.q-tab--active').innerText()
@@ -69,39 +69,39 @@ test.describe('Error Log', () => {
       .catch(() => {})
   })
 
-  test('EL-02: Errore 400 registrato in ErrorLog e visibile in Admin @regression', async ({ page }) => {
-    test.setTimeout(60000)
+  test('ELG-02: Errore 400 registrato in ErrorLog e visibile in Admin @regression', async ({ page }) => {
+    test.setTimeout(60_000)
     page.expectApiError('/items/Progetti')
 
     // Intercetta le chiamate Progetti dell'AdminPage per generare un 400
     // Questo triggera l'interceptor Axios che logga su ErrorLog
     let errorTriggered = false
     await page.route('**/items/Progetti**', route => {
-      if (!errorTriggered) {
+      if (errorTriggered) {
+        route.continue()
+      } else {
         errorTriggered = true
         route.fulfill({
           status: 400,
           contentType: 'application/json',
           body: JSON.stringify({ errors: [{ message: 'EL-02 test error' }] })
         })
-      } else {
-        route.continue()
       }
     })
 
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Aspetta che l'errore venga loggato (POST a /items/ErrorLog)
     // L'admin ha i permessi per scrivere su ErrorLog
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Vai al tab Errori
     const erroriTab = page.locator('.q-tab').filter({ hasText: /errori/i })
     await expect(erroriTab).toBeVisible({ timeout: 5000 })
     await erroriTab.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Verifica che la tabella errori sia visibile
     await expect(page.locator('.q-tab--active')).toBeVisible({ timeout: 3000 })

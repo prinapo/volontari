@@ -1,6 +1,6 @@
 {
   "version": "v3.24.0",
-  "updated": "2026-07-31T22:14:03.491Z",
+  "updated": "2026-08-01T18:54:10.139Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -834,86 +834,6 @@
       "lastRun": "v3.24.0",
       "lastPassed": "v3.24.0"
     },
-    "PER-01": {
-      "name": "GestoreVerifica non accede a /admin @regression",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-02": {
-      "name": "Verificatore non accede a /gestione @regression",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-03": {
-      "name": "Gestore non accede a /admin @regression",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-04": {
-      "name": "Volontario non accede a /verifica @regression",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-05": {
-      "name": "GestoreVerifica vede Verifica+Riconciliazione+Gestione @smoke",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-06": {
-      "name": "Admin vede tutte le voci di navigazione @smoke",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-07": {
-      "name": "Verificatore vede pagina Pagamenti @smoke",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-08": {
-      "name": "Volontario non vede pagina Pagamenti @regression",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-09": {
-      "name": "Gestore non accede a /admin (reindirizzato) @smoke",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
-    "PER-10": {
-      "name": "Verificatore non accede a /admin @smoke",
-      "file": "permissions.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "v3.24.0",
-      "lastPassed": "v3.24.0"
-    },
     "RF-01": {
       "name": "Bottone Assegna Referente visibile solo per Volontari @smoke",
       "file": "referente.spec.js",
@@ -1429,6 +1349,406 @@
     "SY-02": {
       "name": "Download da produzione (sola lettura) @smoke",
       "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-SS-01": {
+      "name": "AD-SS-01: Admin page screenshot @visual",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-IMP-01": {
+      "name": "AD-IMP-01: Pulsante Impersona visibile su utenti @smoke",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-IMP-02": {
+      "name": "AD-IMP-02: Impersona utente e torna a admin @crud",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-IMP-03": {
+      "name": "AD-IMP-03: Impersona volontario e naviga a impostazioni @crud",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-CHECK-01": {
+      "name": "AD-CHECK-01: Tab Check mostra verifica consistenza @smoke",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-CHECK-02": {
+      "name": "AD-CHECK-02: Tab Check mostra sezione controllo @smoke",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-IMP-04": {
+      "name": "AD-IMP-04: Pulsante Impersona visibile su mobile @smoke",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "A-SS-01": {
+      "name": "A-SS-01: LoginPage screenshot non cambia @visual",
+      "file": "auth.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RG-06": {
+      "name": "RG-06: Manager non accede a /admin @regression",
+      "file": "auth.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "BUG-ASSET-01": {
+      "name": "BUG-ASSET-01: assetUrl non produce [object Object] su riconciliazione @regression",
+      "file": "bug-asset.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "BUG-ASSET-02": {
+      "name": "BUG-ASSET-02: assetUrl gestisce oggetti e stringhe (unitario)",
+      "file": "bug-asset.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "CT-SS-01": {
+      "name": "CT-SS-01: ContattiTab screenshot con tabella @visual",
+      "file": "contatti.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "ELG-01": {
+      "name": "ELG-01: Tab Errori in AdminPage \u00e8 accessibile @smoke",
+      "file": "error-log.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "ELG-02": {
+      "name": "ELG-02: Errore 400 registrato in ErrorLog e visibile in Admin @regression",
+      "file": "error-log.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "F-GR-01": {
+      "name": "F-GR-01: Verifica pagina famiglia \u2014 dati, sezioni, espansione @smoke",
+      "file": "famiglie.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "F-GR-02": {
+      "name": "F-GR-02: Modifica IBAN e Intestatario \u2014 salva, annulla, reload @crud",
+      "file": "famiglie.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "F-GR-03": {
+      "name": "F-GR-03: Notifiche salvataggio IBAN \u2014 compare e scompare @smoke",
+      "file": "famiglie.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "F-GR-05": {
+      "name": "F-GR-05: IBAN non valido inline \u2014 errore validazione @regression",
+      "file": "famiglie.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "F-GR-04": {
+      "name": "F-GR-04: Selettore progetti, totali e badge @smoke",
+      "file": "famiglie.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "CG-SS-01": {
+      "name": "CG-SS-01: GiustificativoForm dialog screenshot @visual",
+      "file": "giustificativi.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "LB-SS-01": {
+      "name": "LB-SS-01: Sidebar volontario screenshot @visual",
+      "file": "layout.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-NF-01": {
+      "name": "RC-NF-01: not_found crea contatto e aggiorna stato @crud",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-NL-01": {
+      "name": "RC-NL-01: not_linked mostra associa famiglia @crud",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-NP-01": {
+      "name": "RC-NP-01: not_parent mostra bottone associa genitore @crud",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-SETUP-01": {
+      "name": "RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-SETUP-02": {
+      "name": "RC-SETUP-02: Modifica Nome/Cognome contatto @setup",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-PG-01": {
+      "name": "RC-PG-01: Toggle scartati mostra/nasconde scartati @crud",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-PG-02": {
+      "name": "RC-PG-02: Controlli paginazione visibili @smoke",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-PG-03": {
+      "name": "RC-PG-03: Pulsante refresh ricarica @smoke",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-PG-04": {
+      "name": "RC-PG-04: Recupera submission scartata @crud",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RG-COMB-01": {
+      "name": "RG-COMB-01: Manager accede a Gestione e vede contatti @smoke",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-CARD-01": {
+      "name": "RC-CARD-01: Card mobile mostra richiedente corretto @smoke",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "RC-PRIORITY-01": {
+      "name": "RC-PRIORITY-01: Submission con contatto Volontario+Genitore assegna alla famiglia Genitore @regression",
+      "file": "riconciliazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "SR-FLOW-01": {
+      "name": "SR-FLOW-01: Flusso completo invia\u2192verifica\u2192chiudi @e2e",
+      "file": "stato-rendicontazione.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "SP-SS-01": {
+      "name": "SP-SS-01: SubmitPage screenshot con form compilato @visual",
+      "file": "submit.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VR-SS-01": {
+      "name": "VR-SS-01: Screenshot VerificaPage non cambia @visual",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VP-DETT-02": {
+      "name": "VP-DETT-02: Pulsante Dettaglio visibile per riga @smoke",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VP-DETT-03": {
+      "name": "VP-DETT-03: Dialog mostra tutti i campi del progetto @crud",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VP-DETT-04": {
+      "name": "VP-DETT-04: Dialog mostra lista giustificativi @crud",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VP-DETT-05": {
+      "name": "VP-DETT-05: Dialog mostra data inizio/fine e descrizioni @crud",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VP-DETT-06": {
+      "name": "VP-DETT-06: Dialog mostra sezione Allegati se presente @crud",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "PG-AL-01": {
+      "name": "PG-AL-01: Pagamenti tabs hanno overflow-x auto @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "PG-AL-02": {
+      "name": "PG-AL-02: Pagamenti filter ha class col-12 su mobile @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "GF-AL-01": {
+      "name": "GF-AL-01: Famiglie search ha class col-12 su mobile @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "PG-AL-03": {
+      "name": "PG-AL-03: Warning selezione pagati nel template @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "PG-AL-04": {
+      "name": "PG-AL-04: Bottone ripristina pagato presente @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "VF-AL-01": {
+      "name": "VF-AL-01: Bottone ripristina giustificativo presente @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "CT-AL-01": {
+      "name": "CT-AL-01: Icona delete email senza color negative @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "ST-AL-01": {
+      "name": "ST-AL-01: Pagina impostazioni ha sezioni @smoke",
+      "file": "visual-alignment.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "AD-AL-01": {
+      "name": "AD-AL-01: Menu mostra Admin non User Admin @smoke",
+      "file": "visual-alignment.spec.js",
       "chromium": "pass",
       "mobile": "pass",
       "lastRun": "v3.24.0",
