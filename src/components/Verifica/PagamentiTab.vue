@@ -619,7 +619,7 @@ const allInPagamento = computed(() =>
 )
 
 const propostiColumns = [
-  { name: 'famiglia', label: 'Famiglia', align: 'left' },
+  { name: 'famiglia', label: 'Famiglia', align: 'left', field: row => row.Famiglia?.Nome_Famiglia || '' },
   { name: 'importo', label: 'Importo', align: 'right' },
   { name: 'IBAN', label: 'IBAN', field: 'IBAN', align: 'left' },
   { name: 'Intestatario', label: 'Intestatario', field: 'Intestatario', align: 'left' }
@@ -673,6 +673,7 @@ async function ricalcolaProposte() {
   if (verificaStore.rows.length > 0) {
     await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
     if (store.error) notifyError($q, store.error, 'Errore ricalcolo')
+    await store.fetchProposti()
   }
 }
 

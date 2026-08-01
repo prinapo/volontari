@@ -1785,6 +1785,14 @@
       "mobile": "pass",
       "lastRun": "v3.24.0",
       "lastPassed": "v3.24.0"
+    },
+    "PAG-50": {
+      "name": "PAG-50: Crea gruppo di pagamento e segna pagato @crud",
+      "file": "pagamenti-crud.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
     }
   }
 }
