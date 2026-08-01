@@ -121,6 +121,36 @@ Prima di scrivere store, service, composable o test nuovi, cerca nel repo un fil
 - Unit: Vitest, 240 test (stores + services)
 - Coverage: Utils 100%, Stores 82%, Services 78%
 
+### Ruoli reali (importante)
+
+Gli unici utenti loggabili dell'app sono **admin**, **manager** e **volontario**
+(più `volontario_nofam` per il fixture). **Genitore NON è un utente**: è un ruolo
+di contatto (`IsGenitore`) usato solo per associare un contatto alla famiglia
+tramite il selettore genitore in Verifica/Riconciliazione. Non esistono utenti
+né ruoli separati "Verificatore", "Gestore" o "GestoreVerifica": la verifica e
+la gestione le fa il manager.
+
+- Nessun test deve fare `loginAs` con genitore/verificatore/gestore.
+- Test che assunvano quei ruoli come login → spostati in `tests/e2e/obsolete/`
+  (fuori dal `testDir` di Playwright, NON eseguiti, eslint ignorati).
+  Esempio: `obsolete/permissions.spec.js` (PER-01..10). La guardia "manager non
+  accede a /admin" è preservata da `RG-06` in `auth.spec.js`.
+
+### Copertura e gap noti
+
+- ~224 test E2E tracciati in `test-status.json` (v3.24.0+), tutti pass
+  chromium + mobile.
+- Coperti in Fase 2: Admin cambio ruolo (`ADU-04`) e reset password (`ADU-05`),
+  ErrorLog segna letto/elimina (`ELG-03/04`), flusso pagamenti completo
+  (`PAG-50`: giustificativo verificato → RICALCOLA → creaBatch → segnaPagato).
+- Gap documentati (NON coperti, da valutare in iterazioni future):
+  - Chiusura automatica progetto (pagato ≥ allocato) e riapertura (`riapriProgetto`)
+  - Invio email reale di notifica pagamento (il PATCH a `pagato` è verificato,
+    l'email Brevo/SMTP no)
+  - Edge: 413 file troppo grande, network error, refresh token concorrente
+- Nota PAG-50: `segnaPagato` spedisce un'email (POST /mail); il test verifica lo
+  stato `pagato` via API con retry (25s) per non dipendere dal timing dell'email.
+
 ### Esecuzione e tracciamento E2E
 
 1. **File di stato**: `tests/e2e/test-status.json` — contiene per ogni singolo
