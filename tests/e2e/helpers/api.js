@@ -101,6 +101,20 @@ export async function apiDeleteSystem(path, id) {
   }
 }
 
+export async function apiPostSystem(path, body) {
+  const res = await fetch(`${API_URL}/${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(body)
+  })
+  const text = await res.text()
+  if (!res.ok) throw new Error(`API POST system ${path} → ${res.status}: ${text}`)
+  return text ? JSON.parse(text) : {}
+}
+
 export async function apiPatchSystem(path, id, body) {
   const res = await fetch(`${API_URL}/${path}/${encodeURIComponent(id)}`, {
     method: 'PATCH',

@@ -170,6 +170,7 @@ dense
 icon="lock_reset"
 color="grey-6"
 size="sm"
+aria-label="Reset password"
 @click="openResetPasswordDialog(props.row)">
             <q-tooltip>Reset password</q-tooltip>
           </q-btn>

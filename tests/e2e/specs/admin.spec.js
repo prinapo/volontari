@@ -1,5 +1,13 @@
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin, apiGet, apiDelete, apiPatchSystem } from '../helpers/api.js'
+import {
+  apiLogin,
+  apiGet,
+  apiDelete,
+  apiDeleteSystem,
+  apiGetSystem,
+  apiPatchSystem,
+  apiPostSystem
+} from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 
@@ -300,5 +308,84 @@ test.describe('Admin — Impersonazione', () => {
     await page.getByRole('button', { name: 'Scarica da produzione' }).click()
     await expect(page.getByText('Snapshot scaricato')).toBeVisible({ timeout: 60_000 })
     await expect(page.getByRole('button', { name: 'Carica in dev' })).toBeVisible({ timeout: 10_000 })
+  })
+})
+
+test.describe('Admin — Utenti CRUD', () => {
+  const ids = { users: [] }
+
+  test.beforeAll(async () => {
+    await apiLogin(auth.admin.email, auth.admin.password)
+  })
+
+  test.afterEach(async () => {
+    for (const uid of ids.users) {
+      try {
+        await apiDeleteSystem('users', uid)
+      } catch {
+        /* */
+      }
+    }
+    ids.users = []
+  })
+
+  async function createThrowawayUser(page, prefix) {
+    const email = `${prefix}_${Date.now()}@test.com`
+    const created = await apiPostSystem('users', {
+      email,
+      role: '15c6d5a4-e739-452f-920d-e5db0824e213',
+      status: 'active',
+      first_name: 'E2E',
+      last_name: prefix,
+      password: 'TestPwd_2026!!'
+    })
+    const uid = created?.data?.id
+    expect(uid).toBeTruthy()
+    ids.users.push(uid)
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    const searchInput = page.locator('input[aria-label="Cerca utenti"]')
+    if (await searchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await searchInput.fill(email)
+      await page.waitForLoadState('networkidle').catch(() => {})
+    }
+    const row = page
+      .locator('.q-table tbody tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
+      .filter({ hasText: email })
+      .first()
+    await expect(row).toBeVisible({ timeout: 10_000 })
+    return { uid, email, row }
+  }
+
+  test('ADU-04: Cambio ruolo utente @crud', async ({ page }) => {
+    test.setTimeout(60_000)
+    const { uid, row } = await createThrowawayUser(page, 'e2e_role')
+
+    const roleSelect = row.locator('.admin-role-select').first()
+    await roleSelect.click()
+    const [patchResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/users/' + uid) && resp.request().method() === 'PATCH'),
+      page.getByRole('option', { name: 'Manager' }).first().click()
+    ])
+    expect(patchResp.status()).toBe(200)
+
+    const user = await apiGetSystem('users/' + uid, { fields: 'id,role' })
+    expect(String(user.data.role)).toBe('d8bef69c-78ef-4be2-94d9-93c01fa734ae')
+  })
+
+  test('ADU-05: Reset password utente @crud', async ({ page }) => {
+    test.setTimeout(60_000)
+    const { uid, row } = await createThrowawayUser(page, 'e2e_reset')
+
+    await row.locator('button[aria-label="Reset password"]').first().click()
+    await expect(page.locator('.q-dialog:has-text("Reset password")')).toBeVisible({ timeout: 5000 })
+    await page.locator('.q-dialog input').first().fill('NuovaPwd_2026!!')
+    const [patchResp] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/users/' + uid) && resp.request().method() === 'PATCH'),
+      page.locator('.q-dialog button:has-text("Salva password")').click()
+    ])
+    expect(patchResp.status()).toBe(200)
   })
 })

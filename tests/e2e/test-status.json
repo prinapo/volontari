@@ -1753,6 +1753,38 @@
       "mobile": "pass",
       "lastRun": "v3.24.0",
       "lastPassed": "v3.24.0"
+    },
+    "ADU-04": {
+      "name": "ADU-04: Cambio ruolo utente @crud",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "ADU-05": {
+      "name": "ADU-05: Reset password utente @crud",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "ELG-03": {
+      "name": "ELG-03: Segna errore come letto @crud",
+      "file": "error-log.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "ELG-04": {
+      "name": "ELG-04: Elimina errore @crud",
+      "file": "error-log.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
     }
   }
 }

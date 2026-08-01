@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
+import { apiLogin, apiGet, apiPost, apiDelete } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
@@ -113,5 +113,103 @@ test.describe('Error Log', () => {
     await expect(errorCell)
       .toBeVisible({ timeout: 5000 })
       .catch(() => {})
+  })
+
+  test('ELG-03: Segna errore come letto @crud', async ({ page }) => {
+    test.setTimeout(60_000)
+    const message = `ELG-03_${Date.now()}`
+    const created = await apiPost('ErrorLog', {
+      level: 'error',
+      message,
+      method: 'GET',
+      url: '/items/Test',
+      status: 500,
+      read: false,
+      timestamp: new Date().toISOString()
+    })
+    const elId = created?.data?.id
+    expect(elId).toBeTruthy()
+    _elCreatedIds.push(elId)
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page
+      .locator('.q-tab')
+      .filter({ hasText: /errori/i })
+      .click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    const searchInput = page.locator('input[placeholder="Cerca..."]')
+    if (await searchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await searchInput.fill(message)
+      await page.waitForLoadState('networkidle').catch(() => {})
+    }
+    const row = page
+      .locator('.q-table tbody tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
+      .filter({ hasText: message })
+      .first()
+    await expect(row).toBeVisible({ timeout: 10_000 })
+
+    const btn = row.locator('button[aria-label="Segna come letto"]').first()
+    await expect(btn).toBeVisible({ timeout: 5000 })
+    await btn.click()
+
+    let read = false
+    for (let i = 0; i < 10 && !read; i++) {
+      await page.waitForTimeout(500)
+      const check = await apiGet('ErrorLog/' + elId, { fields: 'read' }).catch(() => null)
+      read = check?.data?.read === true
+    }
+    expect(read).toBe(true)
+  })
+
+  test('ELG-04: Elimina errore @crud', async ({ page }) => {
+    test.setTimeout(60_000)
+    const message = `ELG-04_${Date.now()}`
+    const created = await apiPost('ErrorLog', {
+      level: 'warning',
+      message,
+      method: 'POST',
+      url: '/items/Test',
+      status: 400,
+      read: false,
+      timestamp: new Date().toISOString()
+    })
+    const elId = created?.data?.id
+    expect(elId).toBeTruthy()
+    _elCreatedIds.push(elId)
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page
+      .locator('.q-tab')
+      .filter({ hasText: /errori/i })
+      .click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    const searchInput = page.locator('input[placeholder="Cerca..."]')
+    if (await searchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await searchInput.fill(message)
+      await page.waitForLoadState('networkidle').catch(() => {})
+    }
+    const row = page
+      .locator('.q-table tbody tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
+      .filter({ hasText: message })
+      .first()
+    await expect(row).toBeVisible({ timeout: 10_000 })
+
+    const btn = row.locator('button[aria-label="Elimina"]').first()
+    await expect(btn).toBeVisible({ timeout: 5000 })
+    await btn.click()
+
+    let gone = false
+    for (let i = 0; i < 10 && !gone; i++) {
+      await page.waitForTimeout(500)
+      const after = await apiGet('ErrorLog/' + elId, { fields: 'id' }).catch(() => null)
+      gone = !after || after?.data?.id === undefined
+    }
+    expect(gone).toBe(true)
   })
 })

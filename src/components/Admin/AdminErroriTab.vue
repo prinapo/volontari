@@ -127,9 +127,22 @@
                 icon="mark_email_read"
                 color="grey"
                 size="sm"
+                aria-label="Segna come letto"
                 @click="handleMarkAsRead(props.row.id)"
                 ><q-tooltip>Segna come letto</q-tooltip></q-btn
               >
+              <q-btn
+                flat
+                round
+                dense
+                icon="delete"
+                color="negative"
+                size="sm"
+                aria-label="Elimina"
+                @click="handleDelete(props.row.id)"
+              >
+                <q-tooltip>Elimina</q-tooltip>
+              </q-btn>
             </div>
             <div class="text-caption q-mt-xs">{{ props.row.method }} {{ props.row.status }}</div>
             <div class="text-body2 q-mt-xs">{{ props.row.message }}</div>
