@@ -64,7 +64,7 @@ test.describe('Admin Page', () => {
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       await searchInput.fill(auth.admin.email)
       await page.waitForLoadState('networkidle').catch(() => {})
-      const rows = page.locator('.q-table tbody tr')
+      const rows = page.locator('.q-table tbody tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
       expect(await rows.count()).toBeGreaterThanOrEqual(1)
     }
   })
