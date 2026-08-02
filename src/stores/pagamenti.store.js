@@ -13,6 +13,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     proposti: [],
     inCorso: [],
     falliti: [],
+    annullati: [],
     batches: [],
     associazioni: [],
     budgetMap: {},
@@ -49,6 +50,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           this.fetchProposti(),
           this.fetchInCorso(),
           this.fetchFalliti(),
+          this.fetchAnnullati(),
           this.fetchBatches(),
           this.fetchListe()
         ])
@@ -97,7 +99,13 @@ export const usePagamentiStore = defineStore('pagamenti', {
           ricalcolaSet.add(pid)
         }
       } else if (esistente) {
-        writeOps.push(pagamentiService.deletePagamento(esistente.id))
+        writeOps.push(
+          pagamentiService.updatePagamento(esistente.id, {
+            Stato: STATO_PAGAMENTO.ANNULLATO,
+            NoteEsito: 'Proposta annullata: importo non più dovuto',
+            Batch: null
+          })
+        )
         ricalcolaSet.add(pid)
       }
     },
@@ -247,6 +255,38 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
+    async fetchAnnullati(search, motivo) {
+      this.error = null
+      try {
+        const params = {
+          fields: '*,Progetto.id_progetto,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
+          sort: '-DataProposta',
+          limit: -1
+        }
+        if (search || motivo) {
+          params['filter[_and][0][Stato][_eq]'] = STATO_PAGAMENTO.ANNULLATO
+          let idx = 1
+          if (motivo) {
+            params[`filter[_and][${idx}][NoteEsito][_eq]`] = motivo
+            idx++
+          }
+          if (search) {
+            params[`filter[_and][${idx}][_or][0][Famiglia][Nome_Famiglia][_icontains]`] = search
+            params[`filter[_and][${idx}][_or][1][IBAN][_icontains]`] = search
+            params[`filter[_and][${idx}][_or][2][NoteEsito][_icontains]`] = search
+          }
+        } else {
+          params['filter[Stato][_eq]'] = STATO_PAGAMENTO.ANNULLATO
+        }
+        const res = await pagamentiService.getPagamenti(params)
+        this.annullati = res.data.data || []
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento pagamenti annullati'
+        this.annullati = []
+      }
+    },
+
     async fetchBatches() {
       this.error = null
       try {
@@ -311,7 +351,11 @@ export const usePagamentiStore = defineStore('pagamenti', {
                 DataProposta: new Date().toISOString()
               }))
         } else if (esistente) {
-          await pagamentiService.deletePagamento(esistente.id)
+          await pagamentiService.updatePagamento(esistente.id, {
+            Stato: STATO_PAGAMENTO.ANNULLATO,
+            NoteEsito: 'Proposta annullata: importo non più dovuto',
+            Batch: null
+          })
         }
 
         await this.ricalcolaTotaliProgetto(progettoId)

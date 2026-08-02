@@ -1793,6 +1793,14 @@
       "mobile": "pass",
       "lastRun": "v3.24.0",
       "lastPassed": "v3.24.0"
+    },
+    "PAG-35": {
+      "name": "PAG-35: Annullati tab visibile con selettore motivo @smoke",
+      "file": "pagamenti-crud.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
     }
   }
 }

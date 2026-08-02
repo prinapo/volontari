@@ -17,6 +17,7 @@
         <q-tab name="proposti" label="Bonifici da fare" />
         <q-tab name="incorso" label="Da riscontrare" />
         <q-tab name="falliti" label="Falliti" />
+        <q-tab name="annullati" label="Annullati" />
         <q-tab name="liste" label="Liste esportazione" />
       </q-tabs>
       <q-space />
@@ -410,6 +411,68 @@ aria-label="Ripristina"
       </q-table>
     </template>
 
+    <!-- Sotto-vista: Annullati -->
+    <template v-if="subTab === 'annullati'">
+      <q-table
+        :rows="filteredAnnullati"
+        :columns="annullatiColumns"
+        row-key="id"
+        flat
+        bordered
+        class="bg-white"
+        :loading="store.loading"
+        :pagination="{ rowsPerPage: 0 }"
+        hide-pagination
+        :grid="$q.screen.lt.sm"
+        :dense="$q.screen.lt.md"
+      >
+        <template #top>
+          <div class="full-width">
+            <TableToolbar
+              v-model:search="searchAnnullati"
+              search-placeholder="Cerca famiglia, IBAN, motivo..."
+              :loading="store.loading"
+              refresh
+              @refresh="store.fetchAnnullati()"
+            >
+              <template #filters>
+                <q-select
+                  v-model="motivoAnnullati"
+                  :options="motiviAnnullati"
+                  label="Filtra per motivo"
+                  dense
+                  outlined
+                  clearable
+                  class="col-auto"
+                  style="min-width: 220px"
+                  emit-value
+                  map-options
+                />
+              </template>
+            </TableToolbar>
+          </div>
+        </template>
+
+        <template #body-cell-importo="props">
+          <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
+        </template>
+        <template #body-cell-data="props">
+          <q-td :props="props">{{ formatDate(props.row.DataProposta) }}</q-td>
+        </template>
+        <template #item="props">
+          <div class="q-pa-xs col-12">
+            <q-card flat bordered>
+              <q-card-section>
+                <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
+                <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
+                <div v-if="props.row.NoteEsito" class="text-caption text-grey-7">Motivo: {{ props.row.NoteEsito }}</div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </template>
+      </q-table>
+    </template>
+
     <!-- Sotto-vista: Liste esportazione -->
     <template v-if="subTab === 'liste'">
       <div class="text-caption text-grey-7 q-mb-md">
@@ -558,6 +621,12 @@ const batchFilter = ref(null)
 const searchInCorso = ref('')
 const searchProposti = ref('')
 const searchFalliti = ref('')
+const searchAnnullati = ref('')
+const motivoAnnullati = ref(null)
+const motiviAnnullati = [
+  { label: 'Rimosso dal gruppo', value: 'Rimosso dal gruppo' },
+  { label: 'Proposta annullata: importo non più dovuto', value: 'Proposta annullata: importo non più dovuto' }
+]
 const searchListe = ref('')
 let debounceTimer
  
@@ -586,6 +655,18 @@ const filteredFalliti = computed(() => {
   if (!searchFalliti.value) return store.falliti
   const q = searchFalliti.value.toLowerCase()
   return store.falliti.filter(p => {
+    const fam = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
+    const iban = (p.IBAN || '').toLowerCase()
+    const note = (p.NoteEsito || '').toLowerCase()
+    return fam.includes(q) || iban.includes(q) || note.includes(q)
+  })
+})
+
+const filteredAnnullati = computed(() => {
+  return store.annullati.filter(p => {
+    if (motivoAnnullati.value && (p.NoteEsito || '') !== motivoAnnullati.value) return false
+    if (!searchAnnullati.value) return true
+    const q = searchAnnullati.value.toLowerCase()
     const fam = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
     const iban = (p.IBAN || '').toLowerCase()
     const note = (p.NoteEsito || '').toLowerCase()
@@ -640,6 +721,15 @@ const fallitiColumns = [
   { name: 'intestatario', label: 'Intestatario', align: 'left' },
   { name: 'importo', label: 'Importo', align: 'right' },
   { name: 'note', label: 'Note', field: 'NoteEsito', align: 'left' }
+]
+
+const annullatiColumns = [
+  { name: 'famiglia', label: 'Famiglia', align: 'left', field: row => row.Famiglia?.Nome_Famiglia || '' },
+  { name: 'importo', label: 'Importo', align: 'right' },
+  { name: 'IBAN', label: 'IBAN', field: 'IBAN', align: 'left' },
+  { name: 'Intestatario', label: 'Intestatario', field: 'Intestatario', align: 'left' },
+  { name: 'data', label: 'Data', align: 'left' },
+  { name: 'note', label: 'Motivo', field: 'NoteEsito', align: 'left' }
 ]
 
 const listeColumns = [

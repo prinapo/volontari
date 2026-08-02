@@ -511,7 +511,7 @@ describe('pagamenti store', () => {
     )
   })
 
-  it('ricalcolaProposta deletes existing proposal when no amount remains', async () => {
+  it('ricalcolaProposta annulla proposta esistente quando non resta importo', async () => {
     mockGetProgettoById.mockResolvedValue({
       data: {
         data: {
@@ -528,14 +528,19 @@ describe('pagamenti store', () => {
     mockGetPagamenti
       .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '200' }] } })
       .mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto', Importo: '50' }] } })
-    mockDeletePagamento.mockResolvedValue({})
+    mockUpdatePagamento.mockResolvedValue({})
     const store = usePagamentiStore()
     const totalsSpy = vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     const propostiSpy = vi.spyOn(store, 'fetchProposti').mockResolvedValue()
 
     await store.ricalcolaProposta(12)
 
-    expect(mockDeletePagamento).toHaveBeenCalledWith('prop-1')
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
+      Stato: 'annullato',
+      NoteEsito: 'Proposta annullata: importo non più dovuto',
+      Batch: null
+    })
+    expect(mockDeletePagamento).not.toHaveBeenCalled()
     expect(totalsSpy).toHaveBeenCalledWith(12)
     expect(propostiSpy).toHaveBeenCalled()
   })
@@ -684,7 +689,7 @@ describe('pagamenti store', () => {
     expect(mockDeletePagamento).not.toHaveBeenCalled()
   })
 
-  it('ricalcolaProposta: residuo float cancella proposto esistente a zero', async () => {
+  it('ricalcolaProposta: residuo float annulla proposto esistente a zero', async () => {
     mockGetProgettoById.mockResolvedValue({
       data: {
         data: {
@@ -702,14 +707,19 @@ describe('pagamenti store', () => {
     mockGetPagamenti
       .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] } })
       .mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto', Importo: '0' }] } })
-    mockDeletePagamento.mockResolvedValue({})
+    mockUpdatePagamento.mockResolvedValue({})
     const store = usePagamentiStore()
     vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     vi.spyOn(store, 'fetchProposti').mockResolvedValue()
 
     await store.ricalcolaProposta(12)
 
-    expect(mockDeletePagamento).toHaveBeenCalledWith('prop-1')
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
+      Stato: 'annullato',
+      NoteEsito: 'Proposta annullata: importo non più dovuto',
+      Batch: null
+    })
+    expect(mockDeletePagamento).not.toHaveBeenCalled()
     expect(mockCreatePagamento).not.toHaveBeenCalled()
   })
 
@@ -763,7 +773,7 @@ describe('pagamenti store', () => {
     expect(mockCreatePagamento).not.toHaveBeenCalled()
   })
 
-  it('_ricalcolaPropostaSingola: residuo float con proposto esistente lo elimina', () => {
+  it('_ricalcolaPropostaSingola: residuo float con proposto esistente lo annulla', () => {
     const store = usePagamentiStore()
     const row = {
       idProgetto: 'X',
@@ -785,7 +795,42 @@ describe('pagamenti store', () => {
 
     store._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
 
-    expect(mockDeletePagamento).toHaveBeenCalledWith('prop-1')
+    expect(writeOps).toHaveLength(1)
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
+      Stato: 'annullato',
+      NoteEsito: 'Proposta annullata: importo non più dovuto',
+      Batch: null
+    })
+    expect(mockDeletePagamento).not.toHaveBeenCalled()
     expect(mockCreatePagamento).not.toHaveBeenCalled()
+  })
+
+  it('fetchAnnullati carica i pagamenti annullati', async () => {
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 1, Stato: 'annullato', NoteEsito: 'Rimosso dal gruppo' }] }
+    })
+    const store = usePagamentiStore()
+    await store.fetchAnnullati()
+    expect(store.annullati).toHaveLength(1)
+    expect(mockGetPagamenti).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'filter[Stato][_eq]': 'annullato',
+        sort: '-DataProposta',
+        limit: -1
+      })
+    )
+  })
+
+  it('fetchAnnullati filtra per motivo e ricerca', async () => {
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    const store = usePagamentiStore()
+    await store.fetchAnnullati('rossi', 'Rimosso dal gruppo')
+    expect(mockGetPagamenti).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'filter[_and][0][Stato][_eq]': 'annullato',
+        'filter[_and][1][NoteEsito][_eq]': 'Rimosso dal gruppo',
+        'filter[_and][2][_or][0][Famiglia][Nome_Famiglia][_icontains]': 'rossi'
+      })
+    )
   })
 })
