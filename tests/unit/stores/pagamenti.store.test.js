@@ -655,4 +655,137 @@ describe('pagamenti store', () => {
     await expect(store.chiudiProgetto(1, { automatica: false })).rejects.toThrow('fail')
     expect(store.error).toBe('fail')
   })
+
+  it('ricalcolaProposta: residuo float non crea proposto a zero (398*0.8 - 318.40)', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: {
+        data: {
+          id_progetto: 12,
+          Allocato: '875',
+          MassimaPercentualeErogabile: 80,
+          Famiglia: 'fam-1',
+          StatoProgetto: 'aperto'
+        }
+      }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '398' }] }
+    })
+    mockGetPagamenti
+      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] } })
+      .mockResolvedValueOnce({ data: { data: [] } })
+    const store = usePagamentiStore()
+    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
+    vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+
+    await store.ricalcolaProposta(12)
+
+    expect(mockCreatePagamento).not.toHaveBeenCalled()
+    expect(mockDeletePagamento).not.toHaveBeenCalled()
+  })
+
+  it('ricalcolaProposta: residuo float cancella proposto esistente a zero', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: {
+        data: {
+          id_progetto: 12,
+          Allocato: '875',
+          MassimaPercentualeErogabile: 80,
+          Famiglia: 'fam-1',
+          StatoProgetto: 'aperto'
+        }
+      }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '398' }] }
+    })
+    mockGetPagamenti
+      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] } })
+      .mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto', Importo: '0' }] } })
+    mockDeletePagamento.mockResolvedValue({})
+    const store = usePagamentiStore()
+    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
+    vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+
+    await store.ricalcolaProposta(12)
+
+    expect(mockDeletePagamento).toHaveBeenCalledWith('prop-1')
+    expect(mockCreatePagamento).not.toHaveBeenCalled()
+  })
+
+  it('ricalcolaProposta: importo legittimo arrotondato ai centesimi', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: {
+        data: {
+          id_progetto: 12,
+          Allocato: '1000',
+          MassimaPercentualeErogabile: 80,
+          Famiglia: 'fam-1',
+          StatoProgetto: 'aperto'
+        }
+      }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '125' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
+    const store = usePagamentiStore()
+    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
+    vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+
+    await store.ricalcolaProposta(12)
+
+    expect(mockCreatePagamento).toHaveBeenCalledTimes(1)
+    const payload = mockCreatePagamento.mock.calls[0][0]
+    expect(payload.Importo).toBe(100)
+  })
+
+  it('_ricalcolaPropostaSingola: residuo float non crea proposto a zero (398*0.8 - 318.40)', () => {
+    const store = usePagamentiStore()
+    const row = {
+      idProgetto: 'X',
+      idFamiglia: 'fam-1',
+      allocato: 875,
+      percentualeRimborso: 80,
+      iban: '',
+      intestatario: ''
+    }
+    const giustByProgetto = { X: [{ Stato: 'verificato', Importo: '398' }] }
+    const pagByProgetto = { X: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] }
+    const writeOps = []
+    const ricalcolaSet = new Set()
+
+    store._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
+
+    expect(writeOps).toHaveLength(0)
+    expect(mockCreatePagamento).not.toHaveBeenCalled()
+  })
+
+  it('_ricalcolaPropostaSingola: residuo float con proposto esistente lo elimina', () => {
+    const store = usePagamentiStore()
+    const row = {
+      idProgetto: 'X',
+      idFamiglia: 'fam-1',
+      allocato: 875,
+      percentualeRimborso: 80,
+      iban: '',
+      intestatario: ''
+    }
+    const giustByProgetto = { X: [{ Stato: 'verificato', Importo: '398' }] }
+    const pagByProgetto = {
+      X: [
+        { id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' },
+        { id: 'prop-1', Stato: 'proposto', Importo: '0' }
+      ]
+    }
+    const writeOps = []
+    const ricalcolaSet = new Set()
+
+    store._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
+
+    expect(mockDeletePagamento).toHaveBeenCalledWith('prop-1')
+    expect(mockCreatePagamento).not.toHaveBeenCalled()
+  })
 })

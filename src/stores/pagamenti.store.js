@@ -73,7 +73,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
 
       const fattore = (row.percentualeRimborso ?? 80) / 100
       const erogabile = Math.min(totaleVerificato * fattore, allocato)
-      const nuovoProposto = erogabile - totaleStorico
+      const nuovoProposto = Math.round((erogabile - totaleStorico) * 100) / 100
       const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
 
       if (nuovoProposto > 0) {
@@ -289,7 +289,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const allocato = Number.parseFloat(progetto.Allocato) || 0
         const pct = Math.min(100, Math.max(0, progetto.MassimaPercentualeErogabile ?? 80))
         const erogabile = Math.min(totaleVerificato * (pct / 100), allocato)
-        const nuovoProposto = erogabile - totaleStorico
+        const nuovoProposto = Math.round((erogabile - totaleStorico) * 100) / 100
 
         const esistenteRes = await pagamentiService.getPagamenti({
           'filter[Progetto][_eq]': progettoId,
