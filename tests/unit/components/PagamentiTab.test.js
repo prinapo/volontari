@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import PagamentiTab from 'src/components/Verifica/PagamentiTab.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockInit = vi.fn()
 const mockCreaBatch = vi.fn()
@@ -85,7 +85,7 @@ describe('PagamentiTab', () => {
       {
         id: 11,
         Importo: '20',
-        Batch: 'b1',
+        Batch: { id: 'b1', Nome: 'Batch 1' },
         Stato: 'in_pagamento',
         Famiglia: { Nome_Famiglia: 'Fam B' },
         IBAN: 'IT1',
@@ -94,7 +94,7 @@ describe('PagamentiTab', () => {
       {
         id: 12,
         Importo: '30',
-        Batch: 'b2',
+        Batch: { id: 'b2', Nome: 'Batch 2' },
         Stato: 'pagato',
         Famiglia: { Nome_Famiglia: 'Fam C' },
         IBAN: 'IT2',
@@ -134,7 +134,10 @@ describe('PagamentiTab', () => {
       { label: 'Assoc 1', value: 'Assoc 1' },
       { label: 'Assoc 2', value: 'Assoc 2' }
     ])
-    expect(wrapper.vm.batchOptions).toEqual([{ label: 'Batch 1', value: 'b1' }])
+    expect(wrapper.vm.batchOptions).toEqual([
+      { label: 'Batch 1', value: 'b1' },
+      { label: 'Batch 2', value: 'b2' }
+    ])
     expect(wrapper.vm.formatNumber('10.5')).toBe('10.50')
     expect(wrapper.vm.residuo('Assoc 1')).toBe(100)
     expect(wrapper.vm.selectedTotal).toBe(0)
@@ -217,5 +220,4 @@ describe('PagamentiTab', () => {
     expect(mockRipristinaProposto).toHaveBeenCalledWith(21)
     expect(mockNotifySuccess).toHaveBeenCalledWith(expect.anything(), '1 pagamenti ripristinati a Bonifici')
   })
-
 })

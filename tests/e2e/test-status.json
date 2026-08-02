@@ -1795,7 +1795,15 @@
       "lastPassed": "v3.24.0"
     },
     "PAG-35": {
-      "name": "PAG-35: Annullati tab visibile con selettore motivo @smoke",
+      "name": "PAG-35: Admin vede tab Annullati con selettore motivo @smoke",
+      "file": "pagamenti-crud.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "v3.24.0",
+      "lastPassed": "v3.24.0"
+    },
+    "PAG-36": {
+      "name": "PAG-36: Manager non vede tab Annullati @smoke",
       "file": "pagamenti-crud.spec.js",
       "chromium": "pass",
       "mobile": "pass",

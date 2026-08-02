@@ -17,7 +17,7 @@
         <q-tab name="proposti" label="Bonifici da fare" />
         <q-tab name="incorso" label="Da riscontrare" />
         <q-tab name="falliti" label="Falliti" />
-        <q-tab name="annullati" label="Annullati" />
+        <q-tab v-if="authStore.canAdmin" name="annullati" label="Annullati" />
         <q-tab name="liste" label="Liste esportazione" />
       </q-tabs>
       <q-space />
@@ -412,7 +412,7 @@ aria-label="Ripristina"
     </template>
 
     <!-- Sotto-vista: Annullati -->
-    <template v-if="subTab === 'annullati'">
+    <template v-if="subTab === 'annullati' && authStore.canAdmin">
       <q-table
         :rows="filteredAnnullati"
         :columns="annullatiColumns"
@@ -602,11 +602,13 @@ import { assetUrl } from 'src/utils/assets'
 import { formatDate } from 'src/utils/formatters'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
 import { usePagamentiStore } from 'stores/pagamenti.store'
 import { useVerificaStore } from 'stores/verifica.store'
 
 const $q = useQuasar()
 const store = usePagamentiStore()
+const authStore = useAuthStore()
 const verificaStore = useVerificaStore()
 
 const subTab = ref('proposti')
@@ -639,6 +641,10 @@ watch(searchInCorso, () => {
   debounceTimer = setTimeout(() => loadInCorso(), 300)
 })
 watch(batchFilter, () => loadInCorso())
+
+watch(subTab, val => {
+  if (val === 'annullati') store.fetchAnnullati()
+})
 
 const filteredProposti = computed(() => {
   if (!searchProposti.value) return store.proposti
@@ -686,7 +692,18 @@ const loadingVerifica = ref(false)
 
 const assocOptions = computed(() => store.associazioni.map(a => ({ label: a.Nome, value: a.Nome })))
 
-const batchOptions = computed(() => store.batches.map(b => ({ label: b.Nome, value: b.id })))
+const batchOptions = computed(() => {
+  const seen = new Set()
+  const opts = []
+  for (const p of store.inCorso) {
+    const b = p.Batch
+    if (b?.id && !seen.has(b.id)) {
+      seen.add(b.id)
+      opts.push({ label: b.Nome, value: b.id })
+    }
+  }
+  return opts
+})
 
 const batchAssociazioneLabel = computed(() => {
   const a = store.associazioni.find(a => a.Nome === batchAssociazione.value)

@@ -217,6 +217,7 @@ describe('pagamenti store', () => {
     mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
     mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     const store = usePagamentiStore()
+    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
     await store.ricalcolaProposta(1)
     expect(mockCreatePagamento).toHaveBeenCalled()
   })
@@ -532,6 +533,7 @@ describe('pagamenti store', () => {
     const store = usePagamentiStore()
     const totalsSpy = vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     const propostiSpy = vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
 
     await store.ricalcolaProposta(12)
 
@@ -682,6 +684,7 @@ describe('pagamenti store', () => {
     const store = usePagamentiStore()
     vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
 
     await store.ricalcolaProposta(12)
 
@@ -711,6 +714,7 @@ describe('pagamenti store', () => {
     const store = usePagamentiStore()
     vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
 
     await store.ricalcolaProposta(12)
 
@@ -744,6 +748,7 @@ describe('pagamenti store', () => {
     const store = usePagamentiStore()
     vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     vi.spyOn(store, 'fetchProposti').mockResolvedValue()
+    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
 
     await store.ricalcolaProposta(12)
 

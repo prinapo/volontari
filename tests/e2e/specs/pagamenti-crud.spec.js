@@ -85,8 +85,8 @@ test.describe('Pagamenti CRUD', () => {
     await expect(page.locator('.q-tab--active:has-text("Liste esportazione")')).toBeVisible({ timeout: 5000 })
   })
 
-  test('PAG-35: Annullati tab visibile con selettore motivo @smoke', async ({ page }) => {
-    await loginAs(page, 'manager', auth)
+  test('PAG-35: Admin vede tab Annullati con selettore motivo @smoke', async ({ page }) => {
+    await loginAs(page, 'admin', auth)
     await page.goto('/pagamenti')
     await page.waitForLoadState('networkidle')
     await page.locator('.q-tab:has-text("Annullati")').click()
@@ -95,6 +95,13 @@ test.describe('Pagamenti CRUD', () => {
     await expect(page.locator('.q-select:has-text("Filtra per motivo")'))
       .toBeVisible({ timeout: 5000 })
       .catch(() => {})
+  })
+
+  test('PAG-36: Manager non vede tab Annullati @smoke', async ({ page }) => {
+    await loginAs(page, 'manager', auth)
+    await page.goto('/pagamenti')
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.q-tab:has-text("Annullati")')).toHaveCount(0)
   })
 
   test('PAG-40: Filtro testuale in Da riscontrare @smoke', async ({ page }) => {
