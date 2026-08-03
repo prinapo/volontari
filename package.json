@@ -124,7 +124,7 @@
     "imapflow": "^1.4.7",
     "jscpd": "^5.0.12",
     "jsdom": "^29.1.1",
-    "knip": "^6.27.0",
+    "knip": "^6.31.0",
     "lint-staged": "^17.0.8",
     "mailparser": "^3.9.14",
     "markdownlint-cli": "^0.49.1",
