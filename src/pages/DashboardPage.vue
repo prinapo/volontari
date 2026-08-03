@@ -34,10 +34,6 @@
             </q-card-section>
             <q-card-section>
               <BaseChart :option="famiglieProgettiOption" :height="280" />
-              <div class="text-caption text-grey-7 q-mt-sm">
-                {{ metriche.progetti }} progetti · {{ metriche.famiglie }} famiglie
-                ({{ metriche.progetti - metriche.famiglie }} in meno)
-              </div>
             </q-card-section>
           </q-card>
         </div>
