@@ -40,7 +40,6 @@
 
     <q-drawer v-if="authStore.isAuthenticated" v-model="drawerOpen" show-if-above :width="240">
       <q-list padding>
-        <q-item-label header> Navigazione </q-item-label>
         <q-item
           v-if="authStore.hasFamiglieAccess"
           v-ripple
