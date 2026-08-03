@@ -190,7 +190,8 @@ const statoPagamentiOption = computed(() => {
   return radialBarOption([
     { name: 'Allocato', value: 100, importo: m.allocato, color: palette[0] },
     { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[1] },
-    { name: 'Somma pagamenti', value: store.pctTotale, importo: store.sommaPagamenti, color: palette[2] }
+    { name: 'Verificato', value: store.pctVerificato, importo: m.verificato, color: palette[2] },
+    { name: 'Somma pagamenti', value: store.pctTotale, importo: store.sommaPagamenti, color: palette[3] }
   ])
 })
 
