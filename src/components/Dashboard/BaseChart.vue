@@ -1,5 +1,5 @@
 <template>
-  <v-chart class="dashboard-chart" :option="option" autoresize />
+  <v-chart class="dashboard-chart" :style="{ height: `${height}px` }" :option="option" autoresize />
 </template>
 
 <script setup>
@@ -16,7 +16,8 @@ import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 
 defineProps({
-  option: { type: Object, required: true }
+  option: { type: Object, required: true },
+  height: { type: Number, default: 300 }
 })
 
 use([
@@ -36,6 +37,6 @@ use([
 <style scoped>
 .dashboard-chart {
   width: 100%;
-  height: 300px;
+  min-height: 300px;
 }
 </style>

@@ -33,7 +33,7 @@
               <div class="text-subtitle1">Progetti e Famiglie</div>
             </q-card-section>
             <q-card-section>
-              <BaseChart :option="famiglieProgettiOption" />
+              <BaseChart :option="famiglieProgettiOption" :height="280" />
               <div class="text-caption text-grey-7 q-mt-sm">
                 {{ metriche.progetti }} progetti · {{ metriche.famiglie }} famiglie
                 ({{ metriche.progetti - metriche.famiglie }} in meno)
@@ -132,18 +132,18 @@ const famiglieProgettiOption = computed(() => {
   if (!m) return {}
   return {
     tooltip: { trigger: 'item', formatter: p => `${p.name}: ${p.value}` },
-    grid: { left: 90, right: 56, top: 16, bottom: 8 },
+    grid: { left: 100, right: 56, top: 16, bottom: 8 },
     xAxis: { type: 'value', show: false },
-    yAxis: { type: 'category', data: ['Famiglie', 'Progetti'], axisLabel: { color: '#666666', fontSize: 11 } },
+    yAxis: { type: 'category', data: ['Famiglie', 'Progetti'], axisLabel: { color: '#666666', fontSize: 12 } },
     series: [
       {
         type: 'bar',
-        barWidth: 22,
+        barWidth: 40,
         data: [
-          { value: m.famiglie, name: 'Famiglie', itemStyle: { color: palette[1] } },
+          { value: m.famiglie, name: 'Famiglie', itemStyle: { color: palette[2] } },
           { value: m.progetti, name: 'Progetti', itemStyle: { color: palette[0] } }
         ],
-        label: { show: true, position: 'right', formatter: p => p.value }
+        label: { show: true, position: 'right', fontSize: 14, fontWeight: 600, formatter: p => p.value }
       }
     ]
   }
