@@ -112,6 +112,7 @@ describe('dashboard store', () => {
     expect(store.sommaPagamenti).toBe(700)
     expect(store.pctTotale).toBe(20)
     expect(store.pctPagato).toBe(14)
+    expect(store.pctInPagamento).toBe(6)
     expect(store.pctRendicontato).toBe(49)
     expect(store.pctVerificato).toBe(29)
     expect(store.residuoLive).toBe(2700)

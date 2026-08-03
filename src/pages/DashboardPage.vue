@@ -198,7 +198,7 @@ const incorsoPagatoOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
   return radialBarOption([
-    { name: 'In pagamento', value: store.pctTotale, importo: m.inPagamento, color: palette[2] },
+    { name: 'In pagamento', value: store.pctInPagamento, importo: m.inPagamento, color: palette[2] },
     { name: 'Pagato', value: store.pctPagato, importo: m.pagato, color: palette[3] }
   ])
 })

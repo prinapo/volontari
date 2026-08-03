@@ -163,6 +163,12 @@ export const useDashboardStore = defineStore('dashboard', {
       return Math.round((m.pagato / m.allocato) * 100)
     },
 
+    pctInPagamento: state => {
+      const m = state.metriche
+      if (!m || !m.allocato) return 0
+      return Math.round((m.inPagamento / m.allocato) * 100)
+    },
+
     pctRendicontato: state => {
       const m = state.metriche
       if (!m || !m.allocato) return 0
