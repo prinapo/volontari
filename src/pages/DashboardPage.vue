@@ -27,7 +27,7 @@
 
     <template v-if="metriche && !store.loading">
       <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Progetti e Famiglie</div>
@@ -37,23 +37,14 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
-              <div class="text-subtitle1">Allocato · {{ formatCurrency(metriche.allocato) }}</div>
+              <div class="text-subtitle1">Stato pagamenti</div>
+              <div class="text-caption text-grey-7">su allocato {{ formatCurrency(metriche.allocato) }}</div>
             </q-card-section>
             <q-card-section>
               <BaseChart :option="allocatoOption" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-4">
-          <q-card flat bordered class="q-mb-md">
-            <q-card-section>
-              <div class="text-subtitle1">Percentuali</div>
-            </q-card-section>
-            <q-card-section>
-              <BaseChart :option="percentualiOption" />
             </q-card-section>
           </q-card>
         </div>
@@ -149,6 +140,12 @@ const allocatoOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
   const data = [
+    {
+      name: 'In pagamento + Pagato',
+      value: store.pctTotale,
+      importo: store.sommaPagamenti,
+      color: palette[5]
+    },
     { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[0] },
     { name: 'Verificato', value: store.pctVerificato, importo: m.verificato, color: palette[1] },
     { name: 'In pagamento', value: store.pctTotale, importo: m.inPagamento, color: palette[2] },
@@ -173,30 +170,6 @@ const allocatoOption = computed(() => {
     ]
   }
 })
-
-const percentualiOption = computed(() => ({
-  tooltip: { formatter: p => `${p.name}: ${p.value}% dell'allocato` },
-  angleAxis: { type: 'value', max: 100, startAngle: 90, axisLabel: { show: false }, splitLine: { show: false } },
-  radiusAxis: {
-    type: 'category',
-    data: ['Impegnato + erogato', 'Già pagato'],
-    z: 10,
-    axisLabel: { color: '#666666', fontSize: 11 }
-  },
-  polar: {},
-  series: [
-    {
-      type: 'bar',
-      coordinateSystem: 'polar',
-      data: [
-        { value: store.pctTotale, name: 'Impegnato + erogato', itemStyle: { color: palette[0] } },
-        { value: store.pctPagato, name: 'Già pagato', itemStyle: { color: palette[4] } }
-      ],
-      barWidth: 14,
-      label: { show: true, position: 'right', rotate: 0, formatter: p => `${p.value}%` }
-    }
-  ]
-}))
 
 const barOption = computed(() => {
   const data = store.barProgressi

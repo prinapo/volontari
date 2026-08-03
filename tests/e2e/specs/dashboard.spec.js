@@ -9,7 +9,7 @@ test.describe('Dashboard', () => {
     await page.waitForLoadState('networkidle').catch(() => {})
     await expect(page.locator('.text-h5:has-text("Dashboard")')).toBeVisible({ timeout: 10_000 })
     await expect(page.locator('.text-subtitle1:has-text("Progetti e Famiglie")')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.text-subtitle1:has-text("Allocato")')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.text-subtitle1:has-text("Stato pagamenti")')).toBeVisible({ timeout: 10_000 })
     const canvases = page.locator('.dashboard-chart canvas')
     expect(await canvases.count()).toBeGreaterThanOrEqual(3)
   })
