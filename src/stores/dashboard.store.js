@@ -145,11 +145,32 @@ export const useDashboardStore = defineStore('dashboard', {
         .sort((a, b) => b.value - a.value)
     },
 
-    gauge: state => {
+    sommaPagamenti: state => {
+      const m = state.metriche
+      if (!m) return 0
+      return m.inPagamento + m.pagato
+    },
+
+    pctTotale: state => {
       const m = state.metriche
       if (!m || !m.allocato) return 0
-      const erogato = m.proposto + m.inPagamento + m.pagato
-      return Math.round((erogato / m.allocato) * 100)
+      return Math.round(((m.inPagamento + m.pagato) / m.allocato) * 100)
+    },
+
+    pctPagato: state => {
+      const m = state.metriche
+      if (!m || !m.allocato) return 0
+      return Math.round((m.pagato / m.allocato) * 100)
+    },
+
+    residuoLive: state => {
+      const m = state.metriche
+      if (!m) return 0
+      return Math.max(m.allocato - (m.proposto + m.inPagamento + m.pagato), 0)
+    },
+
+    gauge() {
+      return this.pctTotale
     }
   },
 

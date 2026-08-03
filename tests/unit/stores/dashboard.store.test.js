@@ -108,7 +108,11 @@ describe('dashboard store', () => {
     const m = store.metriche
     expect(m.progetti).toBe(3)
     expect(m.allocato).toBe(3500)
-    expect(store.gauge).toBe(23)
+    expect(store.gauge).toBe(20)
+    expect(store.sommaPagamenti).toBe(700)
+    expect(store.pctTotale).toBe(20)
+    expect(store.pctPagato).toBe(14)
+    expect(store.residuoLive).toBe(2700)
 
     expect(store.barProgressi).toHaveLength(2)
     expect(store.donutAmbito.length).toBeGreaterThanOrEqual(2)

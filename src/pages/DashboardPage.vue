@@ -32,6 +32,9 @@
             <q-card-section>
               <div class="text-caption text-grey-7">{{ card.label }}</div>
               <div class="text-h5 q-mt-xs">{{ card.value }}</div>
+              <div v-for="line in card.sub || []" :key="line" class="text-caption text-primary q-mt-xs">
+                {{ line }}
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -112,16 +115,20 @@ const metriche = computed(() => store.metriche)
 const metricCards = computed(() => {
   const m = metriche.value
   if (!m) return []
-  const pct = m.allocato ? Math.round(((m.proposto + m.inPagamento + m.pagato) / m.allocato) * 100) : 0
   return [
     { label: 'Progetti', value: String(m.progetti) },
     { label: 'Famiglie', value: String(m.famiglie) },
     { label: 'Allocato', value: formatCurrency(m.allocato) },
     { label: 'Rendicontato', value: formatCurrency(m.rendicontato) },
     { label: 'Verificato', value: formatCurrency(m.verificato) },
-    { label: 'Pagato', value: formatCurrency(m.pagato) },
-    { label: 'Residuo', value: formatCurrency(m.residuo) },
-    { label: 'Allocato erogato', value: `${pct}%` }
+    { label: 'In pagamento (impegnati)', value: formatCurrency(m.inPagamento) },
+    { label: 'Pagato (erogati)', value: formatCurrency(m.pagato) },
+    {
+      label: 'Somma (impegnati + erogati)',
+      value: formatCurrency(store.sommaPagamenti),
+      sub: [`${store.pctTotale}% dell'allocato`, `${store.pctPagato}% già pagato`]
+    },
+    { label: 'Residuo', value: formatCurrency(store.residuoLive) }
   ]
 })
 
@@ -151,7 +158,7 @@ const gaugeOption = computed(() => ({
       progress: { show: true, width: 14 },
       axisLine: { lineStyle: { width: 14 } },
       detail: { formatter: '{value}%' },
-      data: [{ value: store.gauge, name: 'Erogato' }]
+      data: [{ value: store.gauge, name: 'Impegnato + erogato' }]
     }
   ]
 }))
