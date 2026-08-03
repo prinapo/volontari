@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import js from '@eslint/js'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import pluginImportX from 'eslint-plugin-import-x'
@@ -7,6 +8,8 @@ import pluginSonarjs from 'eslint-plugin-sonarjs'
 import pluginUnicorn from 'eslint-plugin-unicorn'
 import pluginVue from 'eslint-plugin-vue'
 import pluginVueA11y from 'eslint-plugin-vuejs-accessibility'
+
+const srcDir = fileURLToPath(new URL('src', import.meta.url))
 
 export default [
   js.configs.recommended,
@@ -121,19 +124,19 @@ export default [
     },
     settings: {
       'import-x/resolver': {
-        alias: {
-          map: [
-            ['src', './src'],
-            ['app', './src'],
-            ['components', './src/components'],
-            ['pages', './src/pages'],
-            ['layouts', './src/layouts'],
-            ['assets', './src/assets'],
-            ['boot', './src/boot'],
-            ['stores', './src/stores'],
-            ['router', './src/router']
-          ],
-          extensions: ['.js', '.vue']
+        node: {
+          extensions: ['.mjs', '.js', '.json', '.node', '.vue'],
+          alias: {
+            src: [srcDir],
+            app: [srcDir],
+            components: [srcDir + '/components'],
+            pages: [srcDir + '/pages'],
+            layouts: [srcDir + '/layouts'],
+            assets: [srcDir + '/assets'],
+            boot: [srcDir + '/boot'],
+            stores: [srcDir + '/stores'],
+            router: [srcDir + '/router']
+          }
         }
       },
       'import-x/ignore': ['node_modules', String.raw`\.svg$`, String.raw`\.json$`]
