@@ -140,13 +140,13 @@ const allocatoOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
   const data = [
+    { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[0] },
     {
       name: 'In pagamento + Pagato',
       value: store.pctTotale,
       importo: store.sommaPagamenti,
       color: palette[5]
     },
-    { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[0] },
     { name: 'Verificato', value: store.pctVerificato, importo: m.verificato, color: palette[1] },
     { name: 'In pagamento', value: store.pctTotale, importo: m.inPagamento, color: palette[2] },
     { name: 'Pagato', value: store.pctPagato, importo: m.pagato, color: palette[3] }
