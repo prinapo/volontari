@@ -165,7 +165,7 @@ const allocatoOption = computed(() => {
         data: data.map(d => ({ value: d.value, name: d.name, importo: d.importo })),
         barWidth: 18,
         itemStyle: { color: params => data[params.dataIndex].color },
-        label: { show: true, position: 'end', rotate: 0, formatter: p => `${p.value}%`, fontSize: 13, fontWeight: 600 }
+        label: { show: true, position: 'outside', distance: 10, rotate: 0, formatter: p => `${p.value}%`, fontSize: 13, fontWeight: 600 }
       }
     ]
   }
