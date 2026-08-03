@@ -133,8 +133,8 @@ const annoOptions = computed(() => {
 
 const metriche = computed(() => store.metriche)
 
-const CHART_COLOR_VARS = ['--chart-1', '--chart-2', '--chart-3', '--chart-4']
-const CHART_COLOR_FALLBACK = ['#5070dd', '#f57901', '#b6d633', '#fac858']
+const CHART_COLOR_VARS = ['--chart-1', '--chart-2', '--chart-3', '--chart-4', '--chart-5', '--chart-6', '--chart-7', '--chart-8']
+const CHART_COLOR_FALLBACK = ['#5070dd', '#f57901', '#b6d633', '#fac858', '#9a60b4', '#3ba272', '#ea7ccc', '#73c0de']
 
 function readChartPalette() {
   const cs = getComputedStyle(document.documentElement)
