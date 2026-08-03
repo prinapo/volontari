@@ -276,28 +276,16 @@ const iseeOption = computed(() => {
   const data = store.iseeSerie
   return {
     tooltip: { trigger: 'axis' },
-    legend: { bottom: 0 },
-    grid: { left: 40, right: 64, top: 24, bottom: 48 },
+    grid: { left: 40, right: 24, top: 24, bottom: 48 },
     xAxis: { type: 'category', data: data.map(d => d.bucket), axisLabel: { fontSize: 10 } },
-    yAxis: [
-      { type: 'value', name: 'Progetti', minInterval: 1 },
-      { type: 'value', name: 'Allocato' }
-    ],
+    yAxis: { type: 'value', minInterval: 1 },
     series: [
       {
         name: 'Progetti',
         type: 'bar',
         data: data.map(d => d.count),
         itemStyle: { color: palette[1] },
-        barWidth: 30
-      },
-      {
-        name: 'Allocato',
-        type: 'line',
-        yAxisIndex: 1,
-        data: data.map(d => d.allocato),
-        itemStyle: { color: palette[0] },
-        smooth: true
+        barWidth: 40
       }
     ]
   }
