@@ -145,7 +145,7 @@ test.describe('Route Guards', () => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.manager.email, auth.manager.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15_000 })
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
 
     await page.goto('/admin')
     await page.waitForLoadState('networkidle').catch(() => {})

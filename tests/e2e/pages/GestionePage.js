@@ -32,6 +32,9 @@ export class GestionePage {
   }
 
   async selectContattiTab() {
+    if (!this.page.url().includes('/gestione')) {
+      await this.goto()
+    }
     await this.contattiTab.click()
     await this.#waitForContattiApi()
     await this.waitForTable()
@@ -156,7 +159,12 @@ export class GestionePage {
     // Attende che l'API di ricerca risponda E che la riga cercata appaia nella tabella
     await Promise.all([
       this.#waitForFamiglieApi(),
-      this.page.locator('.q-table tbody tr').filter({ hasText: text }).first().waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {})
+      this.page
+        .locator('.q-table tbody tr')
+        .filter({ hasText: text })
+        .first()
+        .waitFor({ state: 'visible', timeout: 15_000 })
+        .catch(() => {})
     ])
     await this.waitForTable()
   }
@@ -190,7 +198,12 @@ export class GestionePage {
         return true
       } catch {
         // Fallback: clicca via evaluate se waitFor fallisce
-        const clicked = await addBtn.evaluate(el => { el.click(); return true }).catch(() => false)
+        const clicked = await addBtn
+          .evaluate(el => {
+            el.click()
+            return true
+          })
+          .catch(() => false)
         if (clicked) {
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true
@@ -216,7 +229,12 @@ export class GestionePage {
           await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
           return true
         } catch {
-          const clicked = await addBtn.evaluate(el => { el.click(); return true }).catch(() => false)
+          const clicked = await addBtn
+            .evaluate(el => {
+              el.click()
+              return true
+            })
+            .catch(() => false)
           if (clicked) {
             await this.contattiDialog.waitFor({ state: 'visible', timeout: 5000 })
             return true

@@ -1,16 +1,16 @@
-import { test, expect } from '../helpers/console.js'
-import { GestionePage } from '../pages/GestionePage.js'
-import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiGet } from '../helpers/api.js'
+import { deleteContatti } from '../helpers/cleanup.js'
+import { test, expect } from '../helpers/console.js'
+import { loginAs } from '../helpers/login.js'
+import { createContattoViaUI } from '../helpers/pagina-gestione.js'
 import {
   creaFamigliaVolontarioProgetto,
   loginVolontarioConFamiglia,
   pulisciIds,
   loginGestore
 } from '../helpers/setup-atomico.js'
-import { deleteContatti } from '../helpers/cleanup.js'
-import { createContattoViaUI } from '../helpers/pagina-gestione.js'
+import { GestionePage } from '../pages/GestionePage.js'
 
 const expectedHeaders = ['Nome e Cognome', 'Email', 'Cellulare', 'Tipo', 'Stato account', 'Famiglie', 'Azioni']
 
@@ -18,7 +18,7 @@ async function expandFirstCardIfMobile(page) {
   const exp = page.locator('.q-expansion-item')
   if ((await exp.count()) > 0 && (await page.locator('.q-expansion-item--expanded').count()) === 0) {
     await exp.first().click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
   }
 }
 
@@ -46,7 +46,7 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
 
   test('CT-01: Pagina carica e tab Contatti selezionato @smoke', async ({ page }) => {
     const gp = new GestionePage(page)
-    await expect(gp.contattiTab).toBeVisible({ timeout: 10000 })
+    await expect(gp.contattiTab).toBeVisible({ timeout: 10_000 })
     await gp.waitForTable()
     await expect(gp.searchInput).toBeVisible({ timeout: 5000 })
     const count = await gp.getRowCount()
@@ -63,7 +63,7 @@ test.describe('ContattiTab — Caricamento e Layout', () => {
     })
     if (cont?.id_contatto) createdContattoIds.push(cont.id_contatto)
     await gp.search('TEST_CT_SS_FixedName')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(page).toHaveScreenshot('contatti-tab.png', { maxDiffPixels: 500, animations: 'disabled' })
   })
 
@@ -102,20 +102,20 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     await gp.waitForTable()
     const rowsBefore = await gp.getRowCount()
     if (rowsBefore < 2) {
-      }
+    }
 
     let searchTerm
     const hasDesktopRows = (await gp.tableRows.count()) > 0
     if (hasDesktopRows) {
       const firstNameCell = await gp.tableRows.first().locator('td').nth(0).innerText()
-      searchTerm = firstNameCell.trim().split(' ')[0]
+      searchTerm = firstNameCell.trim().split(' ', 1)[0]
     } else {
       const label = await page.locator('.q-expansion-item .q-item__label').first().innerText()
-      searchTerm = label.trim().split(' ')[0]
+      searchTerm = label.trim().split(' ', 1)[0]
     }
 
     if (!searchTerm || searchTerm === '—') {
-      }
+    }
 
     await gp.search(searchTerm)
     const rowsAfter = await gp.getRowCount()
@@ -126,11 +126,12 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
   })
 
   test('CT-05: Filtro tipo cambia risultati @crud', async ({ page }) => {
+    test.setTimeout(60_000)
     const gp = new GestionePage(page)
     await gp.waitForTable()
     const rowsAll = await gp.getRowCount()
     if (rowsAll === 0) {
-      }
+    }
 
     // Filter to Volontario — check it doesn't crash and returns <= total
     await gp.setTipoFilter('Volontario')
@@ -164,7 +165,7 @@ test.describe('ContattiTab — Ricerca e Filtri', () => {
     } else {
       // Espandi la prima card per vedere il badge
       await page.locator('.q-expansion-item').first().click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       const badge = page.locator('.q-expansion-item--expanded .q-badge').first()
       await expect(badge).toBeVisible()
       const text = await badge.innerText()
@@ -178,10 +179,11 @@ test.describe('ContattiTab — Directus 11 deep field fix', () => {
     await loginAs(page, 'manager', auth)
 
     const gp = new GestionePage(page)
+    await gp.goto()
     await gp.waitForTable()
     const rows = await gp.getRowCount()
     if (rows === 0) {
-      }
+    }
 
     const hasDesktopRows = (await gp.tableRows.count()) > 0
     if (hasDesktopRows) {
@@ -223,7 +225,7 @@ test.describe('ContattiTab — CRUD', () => {
   })
 
   test('CT-09: Crea contatto nuovo @crud', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(60_000)
     const timestamp = Date.now()
     const nome = `TEST_CT ${timestamp}`
     const cognome = 'TEST_AutoTest'
@@ -245,7 +247,7 @@ test.describe('ContattiTab — CRUD', () => {
     if (contattoId) createdContattoIds.push(contattoId)
 
     expect(postResp.status()).toBe(200)
-    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    await expect(dialog).not.toBeVisible({ timeout: 10_000 })
 
     const gp = new GestionePage(page)
     await gp.search(nome)
@@ -261,7 +263,7 @@ test.describe('ContattiTab — CRUD', () => {
   })
 
   test('CT-10: Modifica contatto esistente @crud', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     const timestamp = Date.now()
     const nome = `TEST_CT10 ${timestamp}`
     const cognome = 'TEST_AutoTest'
@@ -281,7 +283,7 @@ test.describe('ContattiTab — CRUD', () => {
     expect(postResp.status()).toBe(200)
     const ct10ContattoId = (await postResp.json())?.data?.id_contatto
     if (ct10ContattoId) createdContattoIds.push(ct10ContattoId)
-    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    await expect(dialog).not.toBeVisible({ timeout: 10_000 })
 
     // Modifica contatto
     const gp = new GestionePage(page)
@@ -302,7 +304,7 @@ test.describe('ContattiTab — CRUD', () => {
       dialog.locator('button:has-text("Salva")').click()
     ])
     expect(patchResp.status()).toBe(200)
-    await expect(dialog).not.toBeVisible({ timeout: 10000 })
+    await expect(dialog).not.toBeVisible({ timeout: 10_000 })
 
     // Verifica modifica persiste
     await gp.search(nomeMod)
@@ -318,12 +320,12 @@ test.describe('ContattiTab — CRUD', () => {
       await expect(dialog).toBeVisible({ timeout: 5000 })
       await dialog.locator('[data-testid="contatto-nome"]').fill(nome)
       await dialog.locator('button:has-text("Salva")').click()
-      await expect(dialog).not.toBeVisible({ timeout: 10000 })
+      await expect(dialog).not.toBeVisible({ timeout: 10_000 })
     }
   })
 
   test('CT-11: Elimina email da contatto @crud', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(60_000)
     const timestamp = Date.now()
     const nome = `TEST_DelEmail_${timestamp}`
 
@@ -352,7 +354,7 @@ test.describe('ContattiTab — CRUD', () => {
     expect(postResp.status()).toBe(200)
     const ct11ContattoId = (await postResp.json())?.data?.id_contatto
     if (ct11ContattoId) createdContattoIds.push(ct11ContattoId)
-    await expect(createDialog).not.toBeVisible({ timeout: 10000 })
+    await expect(createDialog).not.toBeVisible({ timeout: 10_000 })
 
     // Modifica contatto: aggiungi seconda email via UI
     await gp.search(nome)
@@ -381,8 +383,8 @@ test.describe('ContattiTab — CRUD', () => {
       }
       if (emailCountEdit < 2) {
         await editDialog.locator('button:has-text("Annulla")').click()
-        }
       }
+    }
 
     // Elimina la SECONDA email (non primaria)
     const deleteEmailBtns = editDialog.locator('[data-testid="btn-delete-email"]')
@@ -390,7 +392,7 @@ test.describe('ContattiTab — CRUD', () => {
     console.log(`[CT-11] bottoni delete: ${deleteBtnCount}`)
     if (deleteBtnCount < 2) {
       await editDialog.locator('button:has-text("Annulla")').click()
-      }
+    }
     await deleteEmailBtns.nth(1).click()
     await page.waitForTimeout(500)
 
@@ -399,7 +401,9 @@ test.describe('ContattiTab — CRUD', () => {
     expect(emailCountAfter).toBeLessThan(emailCountEdit)
 
     await editDialog.locator('button:has-text("Annulla")').click()
-    await expect(editDialog).not.toBeVisible({ timeout: 3000 }).catch(() => {})
+    await expect(editDialog)
+      .not.toBeVisible({ timeout: 3000 })
+      .catch(() => {})
   })
 
   test('CT-12: Aggiungi email a contatto @crud', async ({ page }) => {
@@ -423,14 +427,12 @@ test.describe('ContattiTab — CRUD', () => {
       createDialog.locator('button:has-text("Salva")').click()
     ])
     expect(postResp.status()).toBe(200)
-    await expect(createDialog).not.toBeVisible({ timeout: 10000 })
+    await expect(createDialog).not.toBeVisible({ timeout: 10_000 })
 
     const createdContatto = await postResp.json()
     const contattoId = createdContatto?.data?.[0]?.id_contatto || createdContatto?.data?.id_contatto
 
     if (contattoId) createdContattoIds.push(contattoId)
-
-    
 
     // Modifica contatto per aggiungere email
     const gp = new GestionePage(page)
@@ -469,7 +471,7 @@ test.describe('ContattiTab — CRUD', () => {
           dialog.locator('button:has-text("Salva")').click()
         ])
         expect(patchResp.status()).toBe(200)
-        await expect(dialog).not.toBeVisible({ timeout: 10000 })
+        await expect(dialog).not.toBeVisible({ timeout: 10_000 })
       } else {
         await dialog.locator('button:has-text("Annulla")').click()
         throw new Error('Input email non trovato')
@@ -480,5 +482,3 @@ test.describe('ContattiTab — CRUD', () => {
     }
   })
 })
-
-
