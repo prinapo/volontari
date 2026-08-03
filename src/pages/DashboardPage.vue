@@ -124,7 +124,7 @@ const annoOptions = computed(() => {
 const metriche = computed(() => store.metriche)
 
 const CHART_COLOR_VARS = ['--chart-1', '--chart-2', '--chart-3', '--chart-4']
-const CHART_COLOR_FALLBACK = ['#5470C6', '#EE6666', '#91CC75', '#FAC858']
+const CHART_COLOR_FALLBACK = ['#5070dd', '#f57901', '#b6d633', '#fac858']
 
 function readChartPalette() {
   const cs = getComputedStyle(document.documentElement)
