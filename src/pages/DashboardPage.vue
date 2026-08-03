@@ -245,14 +245,14 @@ const barOption = computed(() => {
 function donutOption(data) {
   return {
     tooltip: { trigger: 'item' },
-    legend: { type: 'scroll', orient: 'vertical', right: 0, top: 'middle' },
     series: [
       {
         type: 'pie',
         radius: ['40%', '65%'],
-        center: ['35%', '50%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         label: { show: false },
+        labelLine: { show: false },
         data: data.map((d, i) => ({ ...d, itemStyle: { color: palette[i % palette.length] } }))
       }
     ]
