@@ -27,7 +27,7 @@
 
     <template v-if="metriche && !store.loading">
       <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-4">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Progetti e Famiglie</div>
@@ -37,7 +37,7 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-4">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Stato pagamenti</div>
@@ -45,6 +45,17 @@
             </q-card-section>
             <q-card-section>
               <BaseChart :option="allocatoOption" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-4">
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section>
+              <div class="text-subtitle1">Stato pagamenti (esempio)</div>
+              <div class="text-caption text-grey-7">su allocato {{ formatCurrency(metriche.allocato) }}</div>
+            </q-card-section>
+            <q-card-section>
+              <BaseChart :option="gaugeRingOption" />
             </q-card-section>
           </q-card>
         </div>
@@ -139,34 +150,161 @@ const famiglieProgettiOption = computed(() => {
 const allocatoOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
-  const data = [
-    { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[0] },
-    { name: 'Verificato', value: store.pctVerificato, importo: m.verificato, color: palette[1] },
+  const items = [
     {
-      name: 'In pagamento + Pagato',
-      value: store.pctTotale,
-      importo: store.sommaPagamenti,
-      color: palette[5]
+      value: store.pctRendicontato,
+      name: 'Rendicontato',
+      importo: m.rendicontato,
+      color: palette[0],
+      titleOffset: ['0%', '42%'],
+      detailOffset: ['0%', '34%']
     },
-    { name: 'In pagamento', value: store.pctTotale, importo: m.inPagamento, color: palette[2] },
-    { name: 'Pagato', value: store.pctPagato, importo: m.pagato, color: palette[3] }
+    {
+      value: store.pctVerificato,
+      name: 'Verificato',
+      importo: m.verificato,
+      color: palette[1],
+      titleOffset: ['0%', '31%'],
+      detailOffset: ['0%', '24%']
+    },
+    {
+      value: store.pctTotale,
+      name: 'In pagamento + Pagato',
+      importo: store.sommaPagamenti,
+      color: palette[5],
+      titleOffset: ['0%', '20%'],
+      detailOffset: ['0%', '13%']
+    },
+    {
+      value: store.pctTotale,
+      name: 'In pagamento',
+      importo: m.inPagamento,
+      color: palette[2],
+      titleOffset: ['0%', '10%'],
+      detailOffset: ['0%', '3%']
+    },
+    {
+      value: store.pctPagato,
+      name: 'Pagato',
+      importo: m.pagato,
+      color: palette[3],
+      titleOffset: ['0%', '2%'],
+      detailOffset: ['0%', '-6%']
+    }
   ]
   return {
     tooltip: {
-      formatter: p => `${p.name}: ${formatCurrency(p.data.importo)} (${p.data.value}% dell'allocato)`
+      formatter: p => {
+        const item = items.find(i => i.name === p.name)
+        return `${p.name}: ${formatCurrency(item?.importo)} (${p.value}% dell'allocato)`
+      }
     },
-    angleAxis: { type: 'value', max: 100, startAngle: 90, axisLabel: { show: false }, splitLine: { show: false } },
-    radiusAxis: { type: 'category', data: data.map(d => d.name), z: 10, axisLabel: { show: false } },
-    polar: {},
     series: [
       {
-        type: 'bar',
-        coordinateSystem: 'polar',
-        data: data.map(d => ({ value: d.value, name: d.name, importo: d.importo })),
-        barWidth: 18,
-        itemStyle: { color: params => data[params.dataIndex].color },
-        label: { show: true, position: 'outside', distance: 20, rotate: 0, formatter: p => `${p.value}%`, fontSize: 13, fontWeight: 600 },
-        labelLayout: { hideOverlap: true }
+        type: 'gauge',
+        startAngle: 90,
+        endAngle: -270,
+        min: 0,
+        max: 100,
+        pointer: { show: false },
+        progress: { show: true, overlap: false, roundCap: true, clip: false },
+        axisLine: { lineStyle: { width: 16 } },
+        splitLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false },
+        title: { fontSize: 10 },
+        detail: { formatter: '{value}%', fontSize: 12, fontWeight: 600 },
+        data: items.map(i => ({
+          value: i.value,
+          name: i.name,
+          itemStyle: { color: i.color },
+          title: { offsetCenter: i.titleOffset },
+          detail: { offsetCenter: i.detailOffset }
+        }))
+      }
+    ]
+  }
+})
+
+const gaugeRingOption = computed(() => {
+  const m = metriche.value
+  if (!m) return {}
+  const items = [
+    {
+      value: store.pctRendicontato,
+      name: 'Rendicontato',
+      color: palette[0],
+      titleOffset: ['0%', '40%'],
+      detailOffset: ['0%', '32%']
+    },
+    {
+      value: store.pctVerificato,
+      name: 'Verificato',
+      color: palette[1],
+      titleOffset: ['0%', '29%'],
+      detailOffset: ['0%', '21%']
+    },
+    {
+      value: store.pctTotale,
+      name: 'In pagamento + Pagato',
+      color: palette[5],
+      titleOffset: ['0%', '18%'],
+      detailOffset: ['0%', '10%']
+    },
+    {
+      value: store.pctTotale,
+      name: 'In pagamento',
+      color: palette[2],
+      titleOffset: ['0%', '8%'],
+      detailOffset: ['0%', '0%']
+    },
+    {
+      value: store.pctPagato,
+      name: 'Pagato',
+      color: palette[3],
+      titleOffset: ['0%', '0%'],
+      detailOffset: ['0%', '-8%']
+    }
+  ]
+  return {
+    tooltip: {
+      formatter: p => `${p.name}: ${p.value}% dell'allocato`
+    },
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 90,
+        endAngle: -270,
+        pointer: { show: false },
+        progress: {
+          show: true,
+          overlap: false,
+          roundCap: true,
+          clip: false,
+          itemStyle: { borderWidth: 1, borderColor: '#464646' }
+        },
+        axisLine: { lineStyle: { width: 40 } },
+        splitLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false },
+        title: { fontSize: 13 },
+        detail: {
+          width: 56,
+          height: 16,
+          fontSize: 14,
+          color: 'inherit',
+          borderColor: 'inherit',
+          borderRadius: 20,
+          borderWidth: 1,
+          formatter: '{value}%'
+        },
+        data: items.map(i => ({
+          value: i.value,
+          name: i.name,
+          itemStyle: { color: i.color },
+          title: { offsetCenter: i.titleOffset },
+          detail: { offsetCenter: i.detailOffset }
+        }))
       }
     ]
   }
