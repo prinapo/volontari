@@ -30,10 +30,14 @@
         <div class="col-12 col-md-4">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
-              <div class="text-subtitle1">Famiglie e Progetti</div>
+              <div class="text-subtitle1">Progetti e Famiglie</div>
             </q-card-section>
             <q-card-section>
               <BaseChart :option="famiglieProgettiOption" />
+              <div class="text-caption text-grey-7 q-mt-sm">
+                {{ metriche.progetti }} progetti · {{ metriche.famiglie }} famiglie
+                ({{ metriche.progetti - metriche.famiglie }} in meno)
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -126,20 +130,38 @@ const palette = ['#2E5D6E', '#D4956A', '#4A7C59', '#E8B86D', '#C0503A', '#6B6B7B
 const famiglieProgettiOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
+  const diff = m.progetti - m.famiglie
+  const pctFam = m.progetti ? Math.round((m.famiglie / m.progetti) * 100) : 0
   return {
-    tooltip: { trigger: 'item', formatter: p => `${p.name}: ${p.value} (${p.percent}%)` },
-    legend: { bottom: 0 },
+    tooltip: {
+      trigger: 'item',
+      formatter: p => {
+        if (p.seriesName === 'Famiglie') {
+          return `Famiglie: ${m.famiglie} (${pctFam}% dei progetti)`
+        }
+        return `Famiglie in meno: ${diff}`
+      }
+    },
+    grid: { left: 8, right: 48, top: 16, bottom: 8 },
+    xAxis: { type: 'value', max: m.progetti, show: false },
+    yAxis: { type: 'category', data: ['Progetti'], show: false },
     series: [
       {
-        type: 'pie',
-        radius: ['40%', '65%'],
-        center: ['50%', '45%'],
-        avoidLabelOverlap: true,
-        label: { show: true, formatter: '{b}\n{c}' },
-        data: [
-          { name: 'Progetti', value: m.progetti, itemStyle: { color: palette[0] } },
-          { name: 'Famiglie', value: m.famiglie, itemStyle: { color: palette[1] } }
-        ]
+        name: 'Famiglie',
+        type: 'bar',
+        stack: 'tot',
+        barWidth: 26,
+        data: [m.famiglie],
+        itemStyle: { color: palette[0] },
+        label: { show: true, position: 'inside', color: '#ffffff', formatter: `${m.famiglie} famiglie` }
+      },
+      {
+        name: 'Famiglie in meno',
+        type: 'bar',
+        stack: 'tot',
+        data: [diff],
+        itemStyle: { color: '#BDBDBD' },
+        label: { show: diff > 0, position: 'right', formatter: `${diff} in meno` }
       }
     ]
   }
