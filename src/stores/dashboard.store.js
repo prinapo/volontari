@@ -162,7 +162,13 @@ export const useDashboardStore = defineStore('dashboard', {
       if (!m) return []
       return Object.entries(m.perISEE)
         .map(([bucket, v]) => ({ bucket, count: v.count, allocato: v.allocato }))
-        .sort((a, b) => a.bucket.localeCompare(b.bucket))
+        .sort((a, b) => {
+          const na = Number.parseInt(a.bucket, 10)
+          const nb = Number.parseInt(b.bucket, 10)
+          if (Number.isNaN(na)) return 1
+          if (Number.isNaN(nb)) return -1
+          return na - nb
+        })
     },
 
     serieProgettiStati: state => {
