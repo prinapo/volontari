@@ -76,7 +76,8 @@ describe('buildAggregati', () => {
     expect(d.byYear[2025].chiusi).toBe(1)
     expect(d.byYear[2025].perAmbito.Scolastico).toBe(1)
     expect(d.byYear[2025].perAmbito.Sociale).toBe(1)
-    expect(d.byYear[2025].perStatoRendicontazione.verificato).toBe(2)
+    expect(d.byYear[2025].perStatoRendicontazione.verificato).toBe(1)
+    expect(d.byYear[2025].perStatoRendicontazione.chiuso).toBe(1)
 
     expect(d.byYear[2026].progetti).toBe(1)
     expect(d.byYear[2026].famiglie).toBe(1)
@@ -118,8 +119,13 @@ describe('dashboard store', () => {
     expect(store.residuoLive).toBe(2700)
 
     expect(store.barProgressi).toHaveLength(2)
+    expect(store.serieProgettiStati).toEqual([
+      { anno: 2025, stati: { verificato: 1, chiuso: 1 } },
+      { anno: 2026, stati: { bozza: 1 } }
+    ])
     expect(store.donutAmbito.length).toBeGreaterThanOrEqual(2)
-    expect(store.donutStati.find(x => x.name === 'verificato').value).toBe(2)
+    expect(store.donutStati.find(x => x.name === 'verificato').value).toBe(1)
+    expect(store.donutStati.find(x => x.name === 'chiuso').value).toBe(1)
     expect(store.donutPagamenti.find(x => x.name === 'pagato').value).toBe(500)
   })
 

@@ -33,7 +33,7 @@ function addToMetric(metric, progetto) {
   if (progetto.StatoProgetto === 'chiuso') metric.chiusi++
   const ambito = progetto.Ambito || 'Senza ambito'
   metric.perAmbito[ambito] = (metric.perAmbito[ambito] || 0) + 1
-  const stato = progetto.StatoRendicontazione || 'nessuno'
+  const stato = progetto.StatoProgetto === 'chiuso' ? 'chiuso' : progetto.StatoRendicontazione || 'nessuno'
   metric.perStatoRendicontazione[stato] = (metric.perStatoRendicontazione[stato] || 0) + 1
 }
 
@@ -125,6 +125,15 @@ export const useDashboardStore = defineStore('dashboard', {
       return Object.entries(m.perAmbito)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value)
+    },
+
+    serieProgettiStati: state => {
+      if (!state.data) return []
+      return Object.keys(state.data.byYear)
+        .map(Number)
+        .filter(Number.isFinite)
+        .sort((a, b) => a - b)
+        .map(anno => ({ anno, stati: state.data.byYear[anno].perStatoRendicontazione }))
     },
 
     donutStati: state => {

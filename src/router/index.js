@@ -30,7 +30,10 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: { name: 'Famiglie' }
+        redirect: () => {
+          const authStore = useAuthStore()
+          return authStore.canManager ? { name: 'Dashboard' } : { name: 'Famiglie' }
+        }
       },
       {
         path: 'famiglie',
@@ -88,7 +91,10 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/famiglie'
+    redirect: () => {
+      const authStore = useAuthStore()
+      return authStore.canManager ? { name: 'Dashboard' } : { name: 'Famiglie' }
+    }
   }
 ]
 
@@ -105,11 +111,11 @@ router.beforeEach(to => {
   }
 
   if (authStore.isAuthenticated && to.meta.public) {
-    return authStore.canManager ? '/gestione' : '/famiglie'
+    return authStore.canManager ? '/dashboard' : '/famiglie'
   }
 
   if (authStore.isAuthenticated && to.path === '/' && authStore.canManager) {
-    return '/gestione'
+    return '/dashboard'
   }
 
   if (!authStore.isAuthenticated && to.meta.requiresAuth) {

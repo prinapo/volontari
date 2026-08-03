@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import LoginPage from 'src/pages/LoginPage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockPush = vi.fn()
 const mockLogin = vi.fn()
@@ -60,14 +60,14 @@ describe('LoginPage', () => {
     expect(mockLogin).toHaveBeenCalledWith('mario@test.it', 'Secret123!')
   })
 
-  it('redirects to gestione after login for manager role', async () => {
+  it('redirects to dashboard after login for manager role', async () => {
     mockLogin.mockResolvedValue(true)
     mockAuthStore.canManager = true
     const wrapper = quasarMount(LoginPage)
 
     await wrapper.vm.handleLogin()
 
-    expect(mockPush).toHaveBeenCalledWith('/gestione')
+    expect(mockPush).toHaveBeenCalledWith('/dashboard')
   })
 
   it('redirects to famiglie after generic successful login', async () => {

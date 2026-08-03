@@ -140,7 +140,7 @@ const sendingReset = ref(false)
 async function handleLogin() {
   try {
     await authStore.login(email.value.toLowerCase(), password.value)
-    if (authStore.canManager) return router.push('/gestione')
+    if (authStore.canManager) return router.push('/dashboard')
     router.push('/famiglie')
   } catch {
     // error already set in authStore.error

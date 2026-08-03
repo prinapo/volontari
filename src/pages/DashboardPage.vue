@@ -65,7 +65,7 @@
         <div class="col-12">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
-              <div class="text-subtitle1">Avanzamento per anno (€)</div>
+              <div class="text-subtitle1">Progetti per stato e anno</div>
             </q-card-section>
             <q-card-section>
               <BaseChart :option="barOption" />
@@ -204,20 +204,40 @@ const incorsoPagatoOption = computed(() => {
   ])
 })
 
+const STATI_ORDINE = ['nessuno', 'bozza', 'in_attesa', 'parziale', 'verificato', 'chiuso']
+const STATI_LABEL = {
+  nessuno: 'Nessuno',
+  bozza: 'Bozza',
+  in_attesa: 'In attesa',
+  parziale: 'Parziale',
+  verificato: 'Verificato',
+  chiuso: 'Chiuso'
+}
+const STATI_COLOR = {
+  nessuno: '#9E9E9E',
+  bozza: palette[3],
+  in_attesa: palette[1],
+  parziale: palette[0],
+  verificato: palette[2],
+  chiuso: '#607D8B'
+}
+
 const barOption = computed(() => {
-  const data = store.barProgressi
+  const data = store.serieProgettiStati
   return {
-    tooltip: { trigger: 'axis', valueFormatter: v => formatCurrency(v) },
-    legend: { bottom: 0 },
-    grid: { left: 60, right: 16, top: 24, bottom: 48 },
-    xAxis: { type: 'category', data: data.map(d => d.anno) },
-    yAxis: { type: 'value', axisLabel: { formatter: v => v >= 1000 ? `${v / 1000}k` : v } },
-    series: [
-      { name: 'Allocato', type: 'bar', data: data.map(d => d.allocato), itemStyle: { color: palette[0] } },
-      { name: 'Verificato', type: 'bar', data: data.map(d => d.verificato), itemStyle: { color: palette[1] } },
-      { name: 'Pagato', type: 'bar', data: data.map(d => d.pagato), itemStyle: { color: palette[2] } },
-      { name: 'Residuo', type: 'bar', data: data.map(d => d.residuo), itemStyle: { color: palette[3] } }
-    ]
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { bottom: 0, data: STATI_ORDINE.map(s => STATI_LABEL[s]) },
+    grid: { left: 8, right: 40, top: 16, bottom: 48 },
+    xAxis: { type: 'value', minInterval: 1 },
+    yAxis: { type: 'category', data: data.map(d => d.anno) },
+    series: STATI_ORDINE.map(s => ({
+      name: STATI_LABEL[s],
+      type: 'bar',
+      stack: 'tot',
+      barWidth: 70,
+      itemStyle: { color: STATI_COLOR[s] },
+      data: data.map(d => d.stati[s] || 0)
+    }))
   }
 })
 

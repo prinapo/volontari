@@ -106,13 +106,13 @@ test.describe('Route Guards', () => {
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(auth.manager.email, auth.manager.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15_000 })
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
 
     const loginPage2 = new LoginPage(page)
     await page.evaluate(() => localStorage.clear())
     await loginPage2.goto()
     await loginPage2.login(auth.manager.email, auth.manager.password)
-    await expect(page).toHaveURL(/\/gestione/, { timeout: 15_000 })
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
   })
 
   test('RG-05: Admin accede a /admin @smoke', async ({ page }) => {
