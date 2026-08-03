@@ -8,6 +8,7 @@ on:
 
 jobs:
   socket:
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -18,7 +19,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Socket Security scan
-        run: npx --yes socket scan create --json > socket-report.json
+        run: npx --yes socket scan create --report --report-level error --json > socket-report.json
         env:
           SOCKET_SECURITY_API_KEY: ${{ secrets.SOCKET_SECURITY_API_KEY }}
 
