@@ -1,9 +1,13 @@
 @import 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap';
 
 :root {
-  --color-primary-dark: #c2185b;
+  --color-primary-dark: #274f5d;
   --color-bg-page: #f5f0e9;
   --color-border: #e0e0e0;
+}
+
+body {
+  --color-primary-dark: color-mix(in srgb, var(--q-primary) 85%, black);
 }
 
 * {
