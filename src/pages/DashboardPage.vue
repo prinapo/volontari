@@ -96,10 +96,20 @@
         <div class="col-12 col-md-4">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
-              <div class="text-subtitle1">Importi pagamenti per stato</div>
+              <div class="text-subtitle1">Indice gravità disabilità</div>
             </q-card-section>
             <q-card-section>
-              <BaseChart :option="pagamentiOption" />
+              <BaseChart :option="gravitaOption" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-4">
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section>
+              <div class="text-subtitle1">Gruppi ISEE</div>
+            </q-card-section>
+            <q-card-section>
+              <BaseChart :option="iseeOption" />
             </q-card-section>
           </q-card>
         </div>
@@ -261,7 +271,37 @@ function donutOption(data) {
 
 const ambitoOption = computed(() => donutOption(store.donutAmbito))
 const statiOption = computed(() => donutOption(store.donutStati))
-const pagamentiOption = computed(() => donutOption(store.donutPagamenti))
+const gravitaOption = computed(() => donutOption(store.donutGravita))
+const iseeOption = computed(() => {
+  const data = store.iseeSerie
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    grid: { left: 40, right: 64, top: 24, bottom: 48 },
+    xAxis: { type: 'category', data: data.map(d => d.bucket), axisLabel: { fontSize: 10 } },
+    yAxis: [
+      { type: 'value', name: 'Progetti', minInterval: 1 },
+      { type: 'value', name: 'Allocato' }
+    ],
+    series: [
+      {
+        name: 'Progetti',
+        type: 'bar',
+        data: data.map(d => d.count),
+        itemStyle: { color: palette[1] },
+        barWidth: 30
+      },
+      {
+        name: 'Allocato',
+        type: 'line',
+        yAxisIndex: 1,
+        data: data.map(d => d.allocato),
+        itemStyle: { color: palette[0] },
+        smooth: true
+      }
+    ]
+  }
+})
 
 onMounted(() => {
   store.fetchDashboard()

@@ -16,7 +16,9 @@ function emptyMetric() {
     residuo: 0,
     chiusi: 0,
     perAmbito: {},
-    perStatoRendicontazione: {}
+    perStatoRendicontazione: {},
+    perGravita: {},
+    perISEE: {}
   }
 }
 
@@ -35,6 +37,26 @@ function addToMetric(metric, progetto) {
   metric.perAmbito[ambito] = (metric.perAmbito[ambito] || 0) + 1
   const stato = progetto.StatoProgetto === 'chiuso' ? 'chiuso' : progetto.StatoRendicontazione || 'nessuno'
   metric.perStatoRendicontazione[stato] = (metric.perStatoRendicontazione[stato] || 0) + 1
+
+  const gravita = Number(progetto.Indice_Gravita_Disabilita)
+  if (Number.isFinite(gravita)) {
+    metric.perGravita[String(gravita)] = (metric.perGravita[String(gravita)] || 0) + 1
+  }
+
+  const isee = Number.parseFloat(progetto.ISEE)
+  if (Number.isFinite(isee)) {
+    let bucket
+    if (isee > 50_000) {
+      bucket = 'oltre 50000'
+    } else {
+      const floor = Math.floor(isee / 5000) * 5000
+      bucket = `${floor}-${floor + 5000}`
+    }
+    const entry = metric.perISEE[bucket] || { count: 0, allocato: 0 }
+    entry.count++
+    entry.allocato += toNum(progetto.Allocato)
+    metric.perISEE[bucket] = entry
+  }
 }
 
 export function buildAggregati(progetti, pagamenti) {
@@ -125,6 +147,22 @@ export const useDashboardStore = defineStore('dashboard', {
       return Object.entries(m.perAmbito)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value)
+    },
+
+    donutGravita: state => {
+      const m = state.metriche
+      if (!m) return []
+      return Object.entries(m.perGravita)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    },
+
+    iseeSerie: state => {
+      const m = state.metriche
+      if (!m) return []
+      return Object.entries(m.perISEE)
+        .map(([bucket, v]) => ({ bucket, count: v.count, allocato: v.allocato }))
+        .sort((a, b) => a.bucket.localeCompare(b.bucket))
     },
 
     serieProgettiStati: state => {

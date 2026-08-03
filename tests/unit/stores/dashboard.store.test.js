@@ -25,7 +25,9 @@ const progetti = [
     StatoProgetto: 'aperto',
     StatoRendicontazione: 'verificato',
     Ambito: 'Scolastico',
-    Famiglia: 'F1'
+    Famiglia: 'F1',
+    Indice_Gravita_Disabilita: 3,
+    ISEE: 12_000
   },
   {
     id_progetto: 'P2',
@@ -40,7 +42,9 @@ const progetti = [
     StatoProgetto: 'chiuso',
     StatoRendicontazione: 'verificato',
     Ambito: 'Sociale',
-    Famiglia: 'F1'
+    Famiglia: 'F1',
+    Indice_Gravita_Disabilita: 2,
+    ISEE: 60_000
   },
   {
     id_progetto: 'P3',
@@ -55,7 +59,9 @@ const progetti = [
     StatoProgetto: 'aperto',
     StatoRendicontazione: 'bozza',
     Ambito: 'Sociale',
-    Famiglia: 'F2'
+    Famiglia: 'F2',
+    Indice_Gravita_Disabilita: 3,
+    ISEE: 4500
   }
 ]
 
@@ -126,6 +132,15 @@ describe('dashboard store', () => {
     expect(store.donutAmbito.length).toBeGreaterThanOrEqual(2)
     expect(store.donutStati.find(x => x.name === 'verificato').value).toBe(1)
     expect(store.donutStati.find(x => x.name === 'chiuso').value).toBe(1)
+    expect(store.donutGravita).toEqual([
+      { name: '2', value: 1 },
+      { name: '3', value: 2 }
+    ])
+    expect(store.iseeSerie).toEqual([
+      { bucket: '0-5000', count: 1, allocato: 2000 },
+      { bucket: '10000-15000', count: 1, allocato: 1000 },
+      { bucket: 'oltre 50000', count: 1, allocato: 500 }
+    ])
     expect(store.donutPagamenti.find(x => x.name === 'pagato').value).toBe(500)
   })
 

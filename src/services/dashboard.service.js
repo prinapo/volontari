@@ -20,7 +20,9 @@ export const dashboardService = {
           'Ambito',
           'Famiglia',
           'MassimaPercentualeErogabile',
-          'TotaleGiustificativi'
+          'TotaleGiustificativi',
+          'Indice_Gravita_Disabilita',
+          'ISEE'
         ]
       }
     })
