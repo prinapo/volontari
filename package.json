@@ -110,7 +110,7 @@
     "@quasar/app-vite": "^3.3.0",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
-    "basic-ftp": "^6.0.1",
+    "basic-ftp": "^6.0.2",
     "cspell": "^10.0.1",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
