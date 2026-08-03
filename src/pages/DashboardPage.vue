@@ -123,7 +123,15 @@ const annoOptions = computed(() => {
 
 const metriche = computed(() => store.metriche)
 
-const palette = ['#2E5D6E', '#D4956A', '#4A7C59', '#E8B86D', '#C0503A', '#6B6B7B', '#9C27B0', '#607D8B']
+const CHART_COLOR_VARS = ['--chart-1', '--chart-2', '--chart-3', '--chart-4']
+const CHART_COLOR_FALLBACK = ['#5470C6', '#EE6666', '#91CC75', '#FAC858']
+
+function readChartPalette() {
+  const cs = getComputedStyle(document.documentElement)
+  return CHART_COLOR_VARS.map((v, i) => cs.getPropertyValue(v).trim() || CHART_COLOR_FALLBACK[i])
+}
+
+const palette = readChartPalette()
 
 const famiglieProgettiOption = computed(() => {
   const m = metriche.value
@@ -180,8 +188,8 @@ const statoPagamentiOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
   return radialBarOption([
-    { name: 'Allocato', value: 100, importo: m.allocato, color: palette[5] },
-    { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[0] },
+    { name: 'Allocato', value: 100, importo: m.allocato, color: palette[0] },
+    { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[1] },
     { name: 'Somma pagamenti', value: store.pctTotale, importo: store.sommaPagamenti, color: palette[2] }
   ])
 })
@@ -204,10 +212,10 @@ const barOption = computed(() => {
     xAxis: { type: 'category', data: data.map(d => d.anno) },
     yAxis: { type: 'value', axisLabel: { formatter: v => v >= 1000 ? `${v / 1000}k` : v } },
     series: [
-      { name: 'Allocato', type: 'bar', data: data.map(d => d.allocato), itemStyle: { color: '#2E5D6E' } },
-      { name: 'Verificato', type: 'bar', data: data.map(d => d.verificato), itemStyle: { color: '#D4956A' } },
-      { name: 'Pagato', type: 'bar', data: data.map(d => d.pagato), itemStyle: { color: '#4A7C59' } },
-      { name: 'Residuo', type: 'bar', data: data.map(d => d.residuo), itemStyle: { color: '#BDBDBD' } }
+      { name: 'Allocato', type: 'bar', data: data.map(d => d.allocato), itemStyle: { color: palette[0] } },
+      { name: 'Verificato', type: 'bar', data: data.map(d => d.verificato), itemStyle: { color: palette[1] } },
+      { name: 'Pagato', type: 'bar', data: data.map(d => d.pagato), itemStyle: { color: palette[2] } },
+      { name: 'Residuo', type: 'bar', data: data.map(d => d.residuo), itemStyle: { color: palette[3] } }
     ]
   }
 })
