@@ -254,7 +254,7 @@ const barOption = computed(() => {
 
 function donutOption(data) {
   return {
-    tooltip: { trigger: 'item' },
+    tooltip: { trigger: 'item', confine: true },
     series: [
       {
         type: 'pie',
