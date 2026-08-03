@@ -85,12 +85,23 @@ const result = ref(null)
 const confirmOpen = ref(false)
 
 const COUNT_LABELS = {
+  Associazioni: 'Associazioni',
   Famiglie: 'Famiglie',
+  contatti: 'Contatti',
   Progetti: 'Progetti',
+  BatchPagamenti: 'Batch',
+  ListePagamenti: 'Liste esportazione',
+  Rendicontazioni: 'Rendicontazioni',
   Pagamenti: 'Pagamenti',
   Giustificativi: 'Giustificativi',
-  contatti: 'Contatti',
-  Rendicontazioni: 'Rendicontazioni',
+  InviiGiustificativiNoLogin: 'Invii pubblici',
+  Famiglie_Contatti: 'Legami famiglia-contatto',
+  Volontari_Referenti: 'Volontari-referenti',
+  Progetti_files: 'Allegati progetto',
+  Progetti_files_1: 'Allegati ISEE',
+  Progetti_files_2: 'Allegati giustificativi',
+  email: 'Email contatti',
+  ErrorLog: 'Errori registrati',
   utenti: 'Utenti',
   file: 'File'
 }
@@ -111,10 +122,9 @@ const formattedDate = computed(() => {
 const confirmMessage = computed(() => {
   if (!snapshot.value) return ''
   const counts = snapshot.value.counts || {}
-  const parts = []
-  for (const key of ['Famiglie', 'Progetti', 'Pagamenti', 'Giustificativi', 'contatti', 'utenti']) {
-    if (counts[key] !== undefined) parts.push(`${key}: ${counts[key]}`)
-  }
+  const parts = Object.keys(COUNT_LABELS)
+    .filter(key => counts[key] !== undefined)
+    .map(key => `${COUNT_LABELS[key]}: ${counts[key]}`)
   return `L'operazione SOVRASCRIVE tutti i dati attuali di dev (${parts.join(', ')}). Viene creato automaticamente un backup del DB attuale. Continuare?`
 })
 
