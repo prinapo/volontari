@@ -103,13 +103,13 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Gruppi ISEE</div>
             </q-card-section>
             <q-card-section>
-              <BaseChart :option="iseeOption" />
+              <BaseChart :option="iseeOption" :height="340" />
             </q-card-section>
           </q-card>
         </div>
