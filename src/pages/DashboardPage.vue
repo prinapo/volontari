@@ -159,16 +159,16 @@ const allocatoOption = computed(() => {
       formatter: p => `${p.name}: ${formatCurrency(p.data.importo)} (${p.data.value}% dell'allocato)`
     },
     angleAxis: { type: 'value', max: 100, startAngle: 90, axisLabel: { show: false }, splitLine: { show: false } },
-    radiusAxis: { type: 'category', data: data.map(d => d.name), z: 10, axisLabel: { color: '#666666', fontSize: 11 } },
+    radiusAxis: { type: 'category', data: data.map(d => d.name), z: 10, axisLabel: { show: false } },
     polar: {},
     series: [
       {
         type: 'bar',
         coordinateSystem: 'polar',
         data: data.map(d => ({ value: d.value, name: d.name, importo: d.importo })),
-        barWidth: 12,
+        barWidth: 18,
         itemStyle: { color: params => data[params.dataIndex].color },
-        label: { show: true, position: 'right', formatter: p => `${p.value}%` }
+        label: { show: true, position: 'end', rotate: 0, formatter: p => `${p.value}%`, fontSize: 13, fontWeight: 600 }
       }
     ]
   }
@@ -193,7 +193,7 @@ const percentualiOption = computed(() => ({
         { value: store.pctPagato, name: 'Già pagato', itemStyle: { color: palette[4] } }
       ],
       barWidth: 14,
-      label: { show: true, position: 'right', formatter: p => `${p.value}%` }
+      label: { show: true, position: 'right', rotate: 0, formatter: p => `${p.value}%` }
     }
   ]
 }))
