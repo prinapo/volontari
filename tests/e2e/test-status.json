@@ -1811,7 +1811,7 @@
       "lastPassed": "3.25.0"
     },
     "DBD-01": {
-      "name": "DBD-01: Manager vede dashboard con metriche e grafici @smoke",
+      "name": "DBD-01: Manager vede dashboard con cerchi e grafici @smoke",
       "file": "dashboard.spec.js",
       "chromium": "pass",
       "mobile": "pass",

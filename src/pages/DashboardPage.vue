@@ -27,37 +27,46 @@
 
     <template v-if="metriche && !store.loading">
       <div class="row q-col-gutter-md q-mb-md">
-        <div v-for="card in metricCards" :key="card.label" class="col-6 col-sm-4 col-md-3">
-          <q-card flat bordered class="dashboard-card">
+        <div class="col-12 col-md-4">
+          <q-card flat bordered class="q-mb-md">
             <q-card-section>
-              <div class="text-caption text-grey-7">{{ card.label }}</div>
-              <div class="text-h5 q-mt-xs">{{ card.value }}</div>
-              <div v-for="line in card.sub || []" :key="line" class="text-caption text-primary q-mt-xs">
-                {{ line }}
-              </div>
+              <div class="text-subtitle1">Famiglie e Progetti</div>
+            </q-card-section>
+            <q-card-section>
+              <BaseChart :option="famiglieProgettiOption" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-4">
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section>
+              <div class="text-subtitle1">Allocato · {{ formatCurrency(metriche.allocato) }}</div>
+            </q-card-section>
+            <q-card-section>
+              <BaseChart :option="allocatoOption" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-4">
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section>
+              <div class="text-subtitle1">Percentuali</div>
+            </q-card-section>
+            <q-card-section>
+              <BaseChart :option="percentualiOption" />
             </q-card-section>
           </q-card>
         </div>
       </div>
 
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-lg-7">
+        <div class="col-12">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Avanzamento per anno (€)</div>
             </q-card-section>
             <q-card-section>
               <BaseChart :option="barOption" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-lg-5">
-          <q-card flat bordered class="q-mb-md">
-            <q-card-section>
-              <div class="text-subtitle1">% allocato erogato</div>
-            </q-card-section>
-            <q-card-section>
-              <BaseChart :option="gaugeOption" />
             </q-card-section>
           </q-card>
         </div>
@@ -112,25 +121,82 @@ const annoOptions = computed(() => {
 
 const metriche = computed(() => store.metriche)
 
-const metricCards = computed(() => {
+const palette = ['#2E5D6E', '#D4956A', '#4A7C59', '#E8B86D', '#C0503A', '#6B6B7B', '#9C27B0', '#607D8B']
+
+const famiglieProgettiOption = computed(() => {
   const m = metriche.value
-  if (!m) return []
-  return [
-    { label: 'Progetti', value: String(m.progetti) },
-    { label: 'Famiglie', value: String(m.famiglie) },
-    { label: 'Allocato', value: formatCurrency(m.allocato) },
-    { label: 'Rendicontato', value: formatCurrency(m.rendicontato) },
-    { label: 'Verificato', value: formatCurrency(m.verificato) },
-    { label: 'In pagamento (impegnati)', value: formatCurrency(m.inPagamento) },
-    { label: 'Pagato (erogati)', value: formatCurrency(m.pagato) },
-    {
-      label: 'Somma (impegnati + erogati)',
-      value: formatCurrency(store.sommaPagamenti),
-      sub: [`${store.pctTotale}% dell'allocato`, `${store.pctPagato}% già pagato`]
-    },
-    { label: 'Residuo', value: formatCurrency(store.residuoLive) }
-  ]
+  if (!m) return {}
+  return {
+    tooltip: { trigger: 'item', formatter: p => `${p.name}: ${p.value} (${p.percent}%)` },
+    legend: { bottom: 0 },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '65%'],
+        center: ['50%', '45%'],
+        avoidLabelOverlap: true,
+        label: { show: true, formatter: '{b}\n{c}' },
+        data: [
+          { name: 'Progetti', value: m.progetti, itemStyle: { color: palette[0] } },
+          { name: 'Famiglie', value: m.famiglie, itemStyle: { color: palette[1] } }
+        ]
+      }
+    ]
+  }
 })
+
+const allocatoOption = computed(() => {
+  const m = metriche.value
+  if (!m) return {}
+  const data = [
+    { name: 'Rendicontato', value: store.pctRendicontato, importo: m.rendicontato, color: palette[0] },
+    { name: 'Verificato', value: store.pctVerificato, importo: m.verificato, color: palette[1] },
+    { name: 'In pagamento', value: store.pctTotale, importo: m.inPagamento, color: palette[2] },
+    { name: 'Pagato', value: store.pctPagato, importo: m.pagato, color: palette[3] }
+  ]
+  return {
+    tooltip: {
+      formatter: p => `${p.name}: ${formatCurrency(p.data.importo)} (${p.data.value}% dell'allocato)`
+    },
+    angleAxis: { type: 'value', max: 100, startAngle: 90, axisLabel: { show: false }, splitLine: { show: false } },
+    radiusAxis: { type: 'category', data: data.map(d => d.name), z: 10, axisLabel: { color: '#666666', fontSize: 11 } },
+    polar: {},
+    series: [
+      {
+        type: 'bar',
+        coordinateSystem: 'polar',
+        data: data.map(d => ({ value: d.value, name: d.name, importo: d.importo })),
+        barWidth: 12,
+        itemStyle: { color: params => data[params.dataIndex].color },
+        label: { show: true, position: 'right', formatter: p => `${p.value}%` }
+      }
+    ]
+  }
+})
+
+const percentualiOption = computed(() => ({
+  tooltip: { formatter: p => `${p.name}: ${p.value}% dell'allocato` },
+  angleAxis: { type: 'value', max: 100, startAngle: 90, axisLabel: { show: false }, splitLine: { show: false } },
+  radiusAxis: {
+    type: 'category',
+    data: ['Impegnato + erogato', 'Già pagato'],
+    z: 10,
+    axisLabel: { color: '#666666', fontSize: 11 }
+  },
+  polar: {},
+  series: [
+    {
+      type: 'bar',
+      coordinateSystem: 'polar',
+      data: [
+        { value: store.pctTotale, name: 'Impegnato + erogato', itemStyle: { color: palette[0] } },
+        { value: store.pctPagato, name: 'Già pagato', itemStyle: { color: palette[4] } }
+      ],
+      barWidth: 14,
+      label: { show: true, position: 'right', formatter: p => `${p.value}%` }
+    }
+  ]
+}))
 
 const barOption = computed(() => {
   const data = store.barProgressi
@@ -149,21 +215,6 @@ const barOption = computed(() => {
   }
 })
 
-const gaugeOption = computed(() => ({
-  series: [
-    {
-      type: 'gauge',
-      min: 0,
-      max: 100,
-      progress: { show: true, width: 14 },
-      axisLine: { lineStyle: { width: 14 } },
-      detail: { formatter: '{value}%' },
-      data: [{ value: store.gauge, name: 'Impegnato + erogato' }]
-    }
-  ]
-}))
-
-const palette = ['#2E5D6E', '#D4956A', '#4A7C59', '#E8B86D', '#C0503A', '#6B6B7B', '#9C27B0', '#607D8B']
 
 function donutOption(data) {
   return {
