@@ -9,10 +9,21 @@ on:
 jobs:
   socket:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
 
-      - uses: socketdev/socket-action@v3
+      - uses: actions/setup-node@v5
         with:
-          npm-cache: false
+          node-version-file: .nvmrc
+
+      - name: Socket Security scan
+        run: npx --yes socket scan create --json > socket-report.json
+        env:
+          SOCKET_SECURITY_API_KEY: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: socket-report
+          path: socket-report.json
