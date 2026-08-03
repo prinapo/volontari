@@ -1809,6 +1809,22 @@
       "mobile": "pass",
       "lastRun": "3.25.0",
       "lastPassed": "3.25.0"
+    },
+    "DBD-01": {
+      "name": "DBD-01: Manager vede dashboard con metriche e grafici @smoke",
+      "file": "dashboard.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "3.25.1",
+      "lastPassed": "3.25.1"
+    },
+    "DBD-02": {
+      "name": "DBD-02: Volontario non accede a /dashboard @regression",
+      "file": "dashboard.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "3.25.1",
+      "lastPassed": "3.25.1"
     }
   }
 }

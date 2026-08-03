@@ -38,6 +38,12 @@ const routes = [
         component: () => import('pages/FamigliePage.vue')
       },
       {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('pages/DashboardPage.vue'),
+        meta: { requiredRole: ROUTE_ROLES.MANAGER }
+      },
+      {
         path: 'verifica',
         name: 'Verifica',
         component: () => import('pages/VerificaPage.vue'),

@@ -59,6 +59,20 @@
           v-if="authStore.canManager"
           v-ripple
           clickable
+          :active="$route.name === 'Dashboard'"
+          active-class="text-white"
+          to="/dashboard"
+        >
+          <q-item-section avatar>
+            <q-icon name="dashboard" />
+          </q-item-section>
+          <q-item-section>Dashboard</q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="authStore.canManager"
+          v-ripple
+          clickable
           :active="$route.name === 'Verifica'"
           active-class="text-white"
           to="/verifica"
