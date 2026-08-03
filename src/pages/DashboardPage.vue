@@ -130,38 +130,20 @@ const palette = ['#2E5D6E', '#D4956A', '#4A7C59', '#E8B86D', '#C0503A', '#6B6B7B
 const famiglieProgettiOption = computed(() => {
   const m = metriche.value
   if (!m) return {}
-  const diff = m.progetti - m.famiglie
-  const pctFam = m.progetti ? Math.round((m.famiglie / m.progetti) * 100) : 0
   return {
-    tooltip: {
-      trigger: 'item',
-      formatter: p => {
-        if (p.seriesName === 'Famiglie') {
-          return `Famiglie: ${m.famiglie} (${pctFam}% dei progetti)`
-        }
-        return `Famiglie in meno: ${diff}`
-      }
-    },
-    grid: { left: 8, right: 48, top: 16, bottom: 8 },
-    xAxis: { type: 'value', max: m.progetti, show: false },
-    yAxis: { type: 'category', data: ['Progetti'], show: false },
+    tooltip: { trigger: 'item', formatter: p => `${p.name}: ${p.value}` },
+    grid: { left: 90, right: 56, top: 16, bottom: 8 },
+    xAxis: { type: 'value', show: false },
+    yAxis: { type: 'category', data: ['Famiglie', 'Progetti'], axisLabel: { color: '#666666', fontSize: 11 } },
     series: [
       {
-        name: 'Famiglie',
         type: 'bar',
-        stack: 'tot',
-        barWidth: 26,
-        data: [m.famiglie],
-        itemStyle: { color: palette[0] },
-        label: { show: true, position: 'inside', color: '#ffffff', formatter: `${m.famiglie} famiglie` }
-      },
-      {
-        name: 'Famiglie in meno',
-        type: 'bar',
-        stack: 'tot',
-        data: [diff],
-        itemStyle: { color: '#BDBDBD' },
-        label: { show: diff > 0, position: 'right', formatter: `${diff} in meno` }
+        barWidth: 22,
+        data: [
+          { value: m.famiglie, name: 'Famiglie', itemStyle: { color: palette[1] } },
+          { value: m.progetti, name: 'Progetti', itemStyle: { color: palette[0] } }
+        ],
+        label: { show: true, position: 'right', formatter: p => p.value }
       }
     ]
   }
