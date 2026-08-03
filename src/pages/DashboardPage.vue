@@ -261,8 +261,8 @@ function donutOption(data) {
         radius: ['40%', '65%'],
         center: ['50%', '50%'],
         avoidLabelOverlap: true,
-        label: { show: false },
-        labelLine: { show: false },
+        label: { show: true, position: 'outside', formatter: '{b}', fontSize: 11 },
+        labelLine: { show: true, length: 10, length2: 10 },
         data: data.map((d, i) => ({ ...d, itemStyle: { color: palette[i % palette.length] } }))
       }
     ]
@@ -285,7 +285,8 @@ const iseeOption = computed(() => {
         type: 'bar',
         data: data.map(d => d.count),
         itemStyle: { color: palette[1] },
-        barWidth: 40
+        barWidth: 40,
+        label: { show: true, position: 'top', formatter: p => p.value, fontSize: 12, fontWeight: 600 }
       }
     ]
   }
