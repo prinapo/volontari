@@ -63,6 +63,17 @@
               label="Anno bando"
               style="min-width: 140px"
             />
+            <q-btn
+              icon="download"
+              label="Esporta Excel"
+              color="primary"
+              dense
+              :loading="loading"
+              :disable="loading"
+              @click="store.exportExcel"
+            >
+              <q-tooltip>Esporta tutti i progetti in Excel (con dettagli contatti e giustificativi)</q-tooltip>
+            </q-btn>
           </template>
         </TableToolbar>
       </div>

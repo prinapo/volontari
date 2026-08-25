@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default function quasarConfig(ctx) {
   return {
-    boot: ['axios', 'auth'],
+    boot: ['axios', 'auth', 'material-icons'],
     css: ['app.scss'],
     extras: ['material-icons'],
     build: {

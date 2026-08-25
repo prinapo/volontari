@@ -2,4 +2,6 @@
   <router-view />
 </template>
 
-<script setup></script>
+<script setup>
+import '@quasar/extras/material-icons/material-icons.css'
+</script>

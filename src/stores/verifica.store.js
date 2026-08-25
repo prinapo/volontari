@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import { Notify } from 'quasar'
+import * as XLSX from 'xlsx'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
@@ -234,6 +236,96 @@ export const useVerificaStore = defineStore('verifica', {
         this.anniBandoList = [...new Set(anni)].sort((a, b) => b - a)
       } catch {
         this.anniBandoList = []
+      }
+    },
+
+    async exportExcel() {
+      this.loading = true
+      this.error = null
+      try {
+        await this.fetchAllPages()
+
+        const rows = this.rows.map(row => {
+          const base = {
+            'ID Progetto': row.idProgetto,
+            Anno: row.annoBando,
+            Titolo: row.titolo,
+            Famiglia: row.famiglia,
+            Allocato: row.allocato,
+            Rendicontato: row.totaleRendicontato,
+            Pagato: row.totalePagato,
+            'Stato Rendicontazione': row.statoRendicontazione,
+            'Stato Progetto': row.statoProgetto,
+            'Data Inizio': row.dataInizio,
+            'Data Fine': row.dataFine,
+            Eta: row.eta,
+            Descrizione: row.descrizioneProgetto,
+            Ambito: row.ambito,
+            IBAN: row.iban,
+            Intestatario: row.intestatario,
+            Stato: this.statoRiga(row).label,
+            'Totale Rendicontato': row.totaleRendicontato,
+            'Totale Pagato': row.totalePagato,
+            'Residuo Allocato': row.residuoAllocato
+          }
+
+          const contatti = (row.contatti || [])
+            .sort((a, b) => new Date(b.DataCreazione) - new Date(a.DataCreazione))
+            .slice(0, 8)
+            .map(c => ({
+              Nome: c.Nome || '',
+              Cognome: c.Cognome || '',
+              Email: c.email?.find?.(e => e.Primary)?.email_address || c.email?.[0]?.email_address || '',
+              Ruolo: c.IsGenitore ? 'Genitore' : c.IsVolontario ? 'Volontario' : c.IsReferente ? 'Referente' : ''
+            }))
+
+          for (let i = 0; i < 8; i++) {
+            const c = contatti[i]
+            base[`C${i + 1}_Nome`] = c?.Nome || ''
+            base[`C${i + 1}_Cognome`] = c?.Cognome || ''
+            base[`C${i + 1}_Email`] = c?.Email || ''
+            base[`C${i + 1}_Ruolo`] = c?.Ruolo || ''
+          }
+
+          const giustificativi = (row.giustificativi || [])
+            .filter(g => !g.Invalidato)
+            .sort((a, b) => new Date(b.Data) - new Date(a.Data))
+            .slice(0, 12)
+
+          for (let i = 0; i < 12; i++) {
+            const g = giustificativi[i]
+            base[`G${i + 1}_Descrizione`] = g?.Descrizione || ''
+            base[`G${i + 1}_Importo`] = g?.Importo || ''
+            base[`G${i + 1}_Data`] = g?.Data || ''
+            base[`G${i + 1}_Stato`] = g?.Stato || ''
+            base[`G${i + 1}_Rendicontazione`] = g?.Rendicontazione || ''
+            base[`G${i + 1}_Allegato`] = g?.Allegato || ''
+          }
+
+          return base
+        })
+
+        const wb = XLSX.utils.book_new()
+        const ws = XLSX.utils.json_to_sheet(rows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Verifica')
+
+        const fileName = `Verifica_Export_${new Date().toISOString().slice(0, 10)}.xlsx`
+        XLSX.writeFile(wb, fileName)
+
+        Notify.create({
+          type: 'positive',
+          message: 'Export Excel completato',
+          caption: `Esportati ${rows.length} progetti`
+        })
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || "Errore durante l'export Excel"
+        Notify.create({
+          type: 'negative',
+          message: 'Errore export Excel',
+          caption: error.message
+        })
+      } finally {
+        this.loading = false
       }
     },
 
