@@ -63,6 +63,26 @@ function normalizeProject(project, famiglia = {}) {
   }
 }
 
+async function fetchReferentiByFamiglia(famigliaId) {
+  if (!famigliaId) return []
+  try {
+    const res = await famiglieService.getReferentiByFamiglia(famigliaId)
+    const referenti = res.data.data || []
+    const ids = referenti.map(i => i.Contatto?.id_contatto).filter(Boolean)
+    if (ids.length > 0) {
+      const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
+      for (const item of referenti) {
+        if (item.Contatto?.id_contatto) {
+          item._emails = emailMap[item.Contatto.id_contatto] || []
+        }
+      }
+    }
+    return referenti
+  } catch {
+    return []
+  }
+}
+
 function recalculateRowTotals(row) {
   let totaleRendicontato = 0
 
@@ -245,6 +265,31 @@ export const useVerificaStore = defineStore('verifica', {
       try {
         await this.fetchAllPages()
 
+        const famIds = [...new Set(this.rows.map(r => r.idFamiglia).filter(Boolean))]
+        const contactsByFam = {}
+        await Promise.all(
+          famIds.map(async fid => {
+            const { genitori, volontari } = await this.loadFamigliaContacts(fid)
+            const referenti = await fetchReferentiByFamiglia(fid)
+            const tagged = [
+              ...genitori.map(item => ({ ...item, _ruolo: 'Genitore' })),
+              ...volontari.map(item => ({ ...item, _ruolo: 'Volontario' })),
+              ...referenti.map(item => ({ ...item, _ruolo: 'Referente' }))
+            ]
+            contactsByFam[fid] = tagged.map(item => ({
+              Nome: item.Contatto?.Nome || '',
+              Cognome: item.Contatto?.Cognome || '',
+              email: item._emails || [],
+              Ruolo: item._ruolo,
+              DataCreazione: item.DataCreazione
+            }))
+          })
+        )
+        this.rows.forEach(row => {
+          row.contatti = contactsByFam[row.idFamiglia] || []
+        })
+
+
         const rows = this.rows.map(row => {
           const base = {
             'ID Progetto': row.idProgetto,
@@ -263,7 +308,14 @@ export const useVerificaStore = defineStore('verifica', {
             Ambito: row.ambito,
             IBAN: row.iban,
             Intestatario: row.intestatario,
-            Stato: this.statoRiga(row).label,
+            Stato: (() => {
+              if (row.totaleRendicontato === 0) return 'Non ricevuta'
+              if (!row.iban || !row.intestatario) return 'Dati bancari mancanti'
+              if ((row.giustificativi || []).some(g => g.Stato === 'inviato')) return 'Da verificare'
+              const validGiust = (row.giustificativi || []).filter(g => !g.Invalidato)
+              if (validGiust.length > 0 && validGiust.every(g => g.Stato === 'verificato')) return 'Pronto'
+              return 'Da completare'
+            })(),
             'Totale Rendicontato': row.totaleRendicontato,
             'Totale Pagato': row.totalePagato,
             'Residuo Allocato': row.residuoAllocato
@@ -276,7 +328,7 @@ export const useVerificaStore = defineStore('verifica', {
               Nome: c.Nome || '',
               Cognome: c.Cognome || '',
               Email: c.email?.find?.(e => e.Primary)?.email_address || c.email?.[0]?.email_address || '',
-              Ruolo: c.IsGenitore ? 'Genitore' : c.IsVolontario ? 'Volontario' : c.IsReferente ? 'Referente' : ''
+              Ruolo: c.Ruolo || ''
             }))
 
           for (let i = 0; i < 8; i++) {

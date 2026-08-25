@@ -68,8 +68,8 @@
               label="Esporta Excel"
               color="primary"
               dense
-              :loading="loading"
-              :disable="loading"
+              :loading="store.loading"
+              :disable="store.loading"
               @click="store.exportExcel"
             >
               <q-tooltip>Esporta tutti i progetti in Excel (con dettagli contatti e giustificativi)</q-tooltip>

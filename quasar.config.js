@@ -8,7 +8,7 @@ export default function quasarConfig(ctx) {
   return {
     boot: ['axios', 'auth', 'material-icons'],
     css: ['app.scss'],
-    extras: ['material-icons'],
+    extras: ['roboto-font', 'material-icons'],
     build: {
       distDir: 'dist/spa',
       vueRouterMode: 'history',
@@ -57,7 +57,8 @@ export default function quasarConfig(ctx) {
     },
     devServer: {
       port: 9000,
-      open: false
+      open: false,
+      allowedHosts: ['development.sostienilsostegno.com', 'localhost']
     },
     framework: {
       iconSet: 'material-icons',
