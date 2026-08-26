@@ -289,7 +289,6 @@ export const useVerificaStore = defineStore('verifica', {
           row.contatti = contactsByFam[row.idFamiglia] || []
         })
 
-
         const rows = this.rows.map(row => {
           const base = {
             'ID Progetto': row.idProgetto,
@@ -299,7 +298,7 @@ export const useVerificaStore = defineStore('verifica', {
             Allocato: row.allocato,
             Rendicontato: row.totaleRendicontato,
             Pagato: row.totalePagato,
-            'Stato Rendicontazione': row.statoRendicontazione,
+            'Stato Rendicontazione': calcolaStatoRendicontazione(row.giustificativi),
             'Stato Progetto': row.statoProgetto,
             'Data Inizio': row.dataInizio,
             'Data Fine': row.dataFine,
