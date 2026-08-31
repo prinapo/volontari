@@ -95,6 +95,24 @@ describe('buildAggregati', () => {
     expect(d.pagByStato.pagato).toBe(500)
     expect(d.pagByYear[2026].fallito).toBe(50)
   })
+
+  it('conta rimborso_parziale come chiuso', () => {
+    const progettiParziali = [
+      {
+        id_progetto: 'P4',
+        AnnoBando: 2025,
+        Allocato: '1000',
+        TotalePagato: '400',
+        StatoProgetto: 'rimborso_parziale',
+        StatoRendicontazione: 'verificato',
+        Ambito: 'Sociale',
+        Famiglia: 'F3'
+      }
+    ]
+    const d = buildAggregati(progettiParziali, [])
+    expect(d.totali.chiusi).toBe(1)
+    expect(d.totali.perStatoRendicontazione.chiuso).toBe(1)
+  })
 })
 
 describe('dashboard store', () => {

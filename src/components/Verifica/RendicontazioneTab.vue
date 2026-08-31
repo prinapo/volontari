@@ -63,6 +63,17 @@
               label="Anno bando"
               style="min-width: 140px"
             />
+            <q-select
+              v-model="selectedStatoProgetto"
+              :options="statoProgettoOptions"
+              emit-value
+              map-options
+              outlined
+              dense
+              clearable
+              label="Stato progetto"
+              style="min-width: 160px"
+            />
             <q-btn
               icon="download"
               label="Esporta Excel"
@@ -140,8 +151,9 @@
                 <div class="text-body2 text-weight-medium">{{ formatCurrency(props.row.totalePagato) }}</div>
                 <div class="text-caption text-grey-7">/ {{ formatCurrency(props.row.allocato) }}</div>
                 <q-space />
-                <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline>Chiuso</q-badge>
-                <q-badge v-else color="positive" outline>Aperto</q-badge>
+                <q-badge :color="statoProgettoColor(props.row.statoProgetto)" outline>
+                  {{ statoProgettoLabel(props.row.statoProgetto) }}
+                </q-badge>
               </div>
               <div class="row items-center q-gutter-x-sm q-mb-sm">
                 <q-badge :color="statoRiga(props.row).color">
@@ -370,7 +382,7 @@ aria-label="Ripristina"
                 <q-tooltip>Dettaglio progetto</q-tooltip>
               </q-btn>
               <q-btn
-                v-if="canVerifica && props.row.statoProgetto === 'aperto'"
+                v-if="canVerifica && isStatoOperativo(props.row.statoProgetto)"
                 flat
                 round
                 dense
@@ -383,7 +395,7 @@ aria-label="Ripristina"
                 <q-tooltip>Chiudi progetto</q-tooltip>
               </q-btn>
               <q-btn
-                v-if="canVerifica && props.row.statoProgetto === 'chiuso'"
+                v-if="canVerifica && isStatoFinale(props.row.statoProgetto)"
                 flat
                 round
                 dense
@@ -444,8 +456,8 @@ aria-label="Ripristina"
             <q-badge :color="statoRiga(props.row).color">
               {{ statoRiga(props.row).label }}
             </q-badge>
-            <q-badge v-if="props.row.statoProgetto === 'chiuso'" color="grey-6" outline class="q-ml-xs">
-              Chiuso
+            <q-badge :color="statoProgettoColor(props.row.statoProgetto)" outline class="q-ml-xs">
+              {{ statoProgettoLabel(props.row.statoProgetto) }}
             </q-badge>
           </template>
 
@@ -484,7 +496,7 @@ aria-label="Ripristina"
               <q-tooltip>Dettaglio progetto</q-tooltip>
             </q-btn>
             <q-btn
-              v-if="canVerifica && props.row.statoProgetto === 'aperto'"
+              v-if="canVerifica && isStatoOperativo(props.row.statoProgetto)"
               flat
               round
               dense
@@ -497,7 +509,7 @@ aria-label="Ripristina"
               <q-tooltip>Chiudi progetto</q-tooltip>
             </q-btn>
             <q-btn
-              v-if="canVerifica && props.row.statoProgetto === 'chiuso'"
+              v-if="canVerifica && isStatoFinale(props.row.statoProgetto)"
               flat
               round
               dense
@@ -817,7 +829,15 @@ import TableToolbar from 'components/TableToolbar.vue'
 import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { assetUrl } from 'src/utils/assets'
-import { ACTION_VERIFY, ACTION_REJECT, statoColor, statoLabel } from 'src/utils/badges'
+import {
+  ACTION_VERIFY,
+  ACTION_REJECT,
+  statoColor,
+  statoLabel,
+  statoProgettoColor,
+  statoProgettoLabel
+} from 'src/utils/badges'
+import { STATO_PROGETTO } from 'src/utils/constants'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
@@ -830,6 +850,7 @@ const store = useVerificaStore()
 const authStore = useAuthStore()
 
 const selectedAnno = ref(null)
+const selectedStatoProgetto = ref(null)
 const verifyingId = ref(null)
 const rejectingId = ref(null)
 const savingField = ref(null)
@@ -868,6 +889,7 @@ const {
   searchTerm,
   onRequest,
   onSearchChange,
+  setFilters,
   loadData
 } = useServerTable(
   async (params) => {
@@ -876,7 +898,8 @@ const {
       limit: params.limit,
       sort: params.sort,
       search: params.search,
-      anno: selectedAnno.value || undefined
+      anno: selectedAnno.value || undefined,
+      statoProgettoFilter: params.statoProgettoFilter || undefined
     })
     return { rows: store.rows, total: store.filterCount }
   },
@@ -892,7 +915,18 @@ const annoOptions = computed(() =>
   }))
 )
 
+const statoProgettoOptions = ['proposto', 'validato', 'approvato', 'accettato', 'in_rendicontazione', 'chiuso', 'rimborso_parziale'].map(
+  v => ({ label: statoProgettoLabel(v), value: v })
+)
+
 const canVerifica = computed(() => authStore.canManager)
+
+const isStatoOperativo = stato => {
+  const s = stato === 'aperto' ? 'accettato' : stato
+  return s === 'accettato' || s === 'in_rendicontazione'
+}
+
+const isStatoFinale = stato => stato === 'chiuso' || stato === 'rimborso_parziale'
 
 const columns = [
   { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },
@@ -939,6 +973,10 @@ onMounted(() => {
 
 watch(selectedAnno, () => {
   onSearchChange()
+})
+
+watch(selectedStatoProgetto, val => {
+  setFilters({ statoProgettoFilter: val || undefined })
 })
 
 function hasPendingGiustificativi(row) {
@@ -1027,10 +1065,15 @@ function openChiudiProgetto(row) {
 async function handleChiudiProgetto() {
   savingChiudiProgetto.value = true
   try {
+    const row = chiudiProgettoRow.value
+    const pagato = Number(row?.totalePagato) || 0
+    const allocato = Number(row?.allocato) || 0
+    const stato = pagato < allocato ? STATO_PROGETTO.RIMBORSO_PARZIALE : STATO_PROGETTO.CHIUSO
     const { usePagamentiStore } = await import('stores/pagamenti.store')
     const pagStore = usePagamentiStore()
     await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
       automatica: false,
+      stato,
       motivo: chiudiProgettoNota.value || null
     })
     notifySuccess($q, 'Progetto chiuso')

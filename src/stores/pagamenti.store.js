@@ -6,7 +6,14 @@ import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STATO_PAGAMENTO, STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
+import {
+  STATI_PROGETTO_FINALI,
+  STATI_PROGETTO_OPERATIVI,
+  STATO_PAGAMENTO,
+  STATO_PROGETTO,
+  STORAGE_KEYS
+} from 'src/utils/constants'
+import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
 
 export const usePagamentiStore = defineStore('pagamenti', {
   state: () => ({
@@ -113,7 +120,11 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async ricalcolaPropostiDaProgetti(progetti) {
       this.error = null
       if (!progetti?.length) return
-      const aperti = progetti.filter(r => r.statoProgetto !== 'chiuso')
+      const aperti = progetti.filter(
+        r =>
+          r.statoProgetto != null &&
+          STATI_PROGETTO_OPERATIVI.includes(r.statoProgetto === 'aperto' ? 'accettato' : r.statoProgetto)
+      )
       if (!aperti.length) return
       const ids = aperti.map(r => r.idProgetto)
 
@@ -308,7 +319,10 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         const progRes = await progettiService.getById(progettoId)
         const progetto = progRes.data.data
-        if (!progetto || progetto.StatoProgetto === STATO_PROGETTO.CHIUSO) return
+        if (!progetto) return
+        const statEffettivo =
+          progetto.StatoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : progetto.StatoProgetto
+        if (STATI_PROGETTO_FINALI.includes(statEffettivo)) return
 
         const giustRes = await verificaService.getGiustificativiByProgetto(progettoId)
         const giustificativi = giustRes.data.data || []
@@ -408,8 +422,17 @@ export const usePagamentiStore = defineStore('pagamenti', {
           ResiduoAllocato: Math.max(0, residuo)
         })
 
-        if (pagato >= allocato && progetto.StatoProgetto === STATO_PROGETTO.APERTO) {
-          await this.chiudiProgetto(id, { automatica: true })
+        const statoProgettoAttuale =
+          progetto.StatoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : progetto.StatoProgetto
+        const statoProgettoCalcolato = calcolaStatoProgetto({
+          statoProgetto: statoProgettoAttuale,
+          allocato,
+          rimborsato: pagato,
+          giustificativi
+        })
+
+        if (statoProgettoCalcolato !== statoProgettoAttuale) {
+          await this.chiudiProgetto(id, { automatica: true, stato: statoProgettoCalcolato })
         }
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
@@ -681,12 +704,16 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {
+    async chiudiProgetto(progettoId, { automatica = false, motivo = null, stato = STATO_PROGETTO.CHIUSO } = {}) {
       try {
         await progettiService.updateStats(progettoId, {
-          StatoProgetto: STATO_PROGETTO.CHIUSO,
+          StatoProgetto: stato,
           DataChiusura: new Date().toISOString(),
-          MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
+          MotivoChiusura: automatica
+            ? stato === STATO_PROGETTO.RIMBORSO_PARZIALE
+              ? motivo || 'Chiusura parziale'
+              : 'Importo allocato interamente pagato'
+            : motivo
         })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
@@ -697,7 +724,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async riapriProgetto(progettoId) {
       try {
         await progettiService.updateStats(progettoId, {
-          StatoProgetto: STATO_PROGETTO.APERTO,
+          StatoProgetto: STATO_PROGETTO.ACCETTATO,
           DataChiusura: null,
           MotivoChiusura: null
         })

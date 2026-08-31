@@ -117,13 +117,10 @@ describe('services', () => {
     })
 
     await contattiService.search('test', true)
+    const paramsSearch = { filter: expect.stringContaining('user_id') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('user_id')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsSearch) })
     )
 
     await contattiService.query({
@@ -133,45 +130,31 @@ describe('services', () => {
       isVolontario: true,
       stato: 'Attivi'
     })
+    const paramsVolontario = { offset: 10, meta: 'filter_count', filter: expect.stringContaining('IsVolontario') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          offset: 10,
-          meta: 'filter_count',
-          filter: expect.stringContaining('IsVolontario')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsVolontario) })
     )
 
     await contattiService.query({ isGenitore: true })
+    const paramsGenitore = { filter: expect.stringContaining('IsGenitore') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('IsGenitore')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsGenitore) })
     )
 
     await contattiService.query({ isReferente: true })
+    const paramsReferente = { filter: expect.stringContaining('IsReferente') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('IsReferente')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsReferente) })
     )
 
     await contattiService.query({ isVolontario: false, isGenitore: false, isReferente: false, stato: 'Disattivati' })
+    const paramsSospesi = { filter: expect.stringContaining('suspended') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('suspended')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsSospesi) })
     )
 
     await contattiService.getVolontariSenzaUtente()
@@ -226,13 +209,10 @@ describe('services', () => {
     await famiglieService.getVolontariByFamiglia('fam-1')
     expect(mockGet).toHaveBeenCalledWith('/items/Famiglie_Contatti', expect.any(Object))
     await famiglieService.getFamiglieByContatto('c-1')
+    const paramsFamiglieContatto = { filter: expect.stringContaining('"Contatto"') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Famiglie_Contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('"Contatto"')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsFamiglieContatto) })
     )
   })
 
@@ -291,30 +271,22 @@ describe('services', () => {
       })
     )
     await gestioneService.getFamiglieByContatto('cont-1')
+    const paramsGeFC = { filter: expect.stringContaining('"Contatto"') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Famiglie_Contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('"Contatto"')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsGeFC) })
     )
     await gestioneService.queryFamiglieContatti(['cont-1', 'cont-2'])
+    const paramsQFC = { filter: expect.stringContaining('"Contatto"'), limit: -1 }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Famiglie_Contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          filter: expect.stringContaining('"Contatto"'),
-          limit: -1
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsQFC) })
     )
     await gestioneService.getContattiByFamiglia('fam-1')
+    const paramsGcBF = { filter: expect.stringContaining('fam-1') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Famiglie_Contatti',
-      expect.objectContaining({
-        params: expect.objectContaining({ filter: expect.stringContaining('fam-1') })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsGcBF) })
     )
 
     mockGet.mockResolvedValueOnce({ data: { data: [{ id: 'active-1' }] } })
@@ -508,14 +480,19 @@ describe('services', () => {
       rendicontazioneFilter: 'verificato',
       meta: 'filter_count'
     })
+    const paramsVerificato = { meta: 'filter_count', filter: expect.stringContaining('verificato') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/Progetti',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          meta: 'filter_count',
-          filter: expect.stringContaining('verificato')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsVerificato) })
+    )
+
+    await verificaService.getProgetti({
+      statoProgettoFilter: 'in_rendicontazione'
+    })
+    const paramsStatoProgetto = { filter: expect.stringContaining('in_rendicontazione') }
+    expect(mockGet).toHaveBeenCalledWith(
+      '/items/Progetti',
+      expect.objectContaining({ params: expect.objectContaining(paramsStatoProgetto) })
     )
   })
 
@@ -561,21 +538,16 @@ describe('services', () => {
       })
     )
     await verificaService.getSubmissions({ includeScartati: true })
+    const paramsScartato = { filter: expect.stringContaining('scartato') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/InviiGiustificativiNoLogin',
-      expect.objectContaining({
-        params: expect.objectContaining({ filter: expect.stringContaining('scartato') })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsScartato) })
     )
     await verificaService.getSubmissions({ includeScartati: false, meta: 'filter_count' })
+    const paramsInAttesa = { meta: 'filter_count', filter: expect.stringContaining('in_attesa') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/InviiGiustificativiNoLogin',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          meta: 'filter_count',
-          filter: expect.stringContaining('in_attesa')
-        })
-      })
+      expect.objectContaining({ params: expect.objectContaining(paramsInAttesa) })
     )
     await verificaService.getSubmissionsInAttesa()
     expect(mockGet).toHaveBeenCalledWith(
@@ -608,7 +580,7 @@ describe('services', () => {
         'filter[Nome_Famiglia][_icontains]': 'test'
       })
     )
-    await verificaService.searchFamiglie('   ')
+    await verificaService.searchFamiglie(' '.repeat(3))
     expect(mockGet).toHaveBeenCalledWith('/items/Famiglie', {
       limit: 20,
       fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC'

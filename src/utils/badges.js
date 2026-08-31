@@ -79,3 +79,43 @@ export const DOWNLOAD_PRIMARY_ICON = 'download'
  */
 export const ACTION_VERIFY = 'positive'
 export const ACTION_REJECT = 'negative'
+
+/**
+ * Colore Quasar per lo stato del progetto (StatOProgetto).
+ *
+ * Standard:
+ * - proposto           -> grey      (in attesa di valutazione)
+ * - validato           -> info      (contenuti validati)
+ * - approvato          -> primary   (approvato dalla commissione)
+ * - accettato          -> positive  (presentatore ha accettato)
+ * - in_rendicontazione -> orange    (in corso)
+ * - chiuso             -> grey/negative
+ * - rimborso_parziale  -> warning
+ */
+export function statoProgettoColor(stato) {
+  if (stato === 'accettato') return 'positive'
+  if (stato === 'in_rendicontazione') return 'orange'
+  if (stato === 'rimborso_parziale') return 'warning'
+  if (stato === 'chiuso') return 'grey'
+  if (stato === 'valido') return 'info'
+  if (stato === 'proposto') return 'grey'
+  if (stato === 'approvato') return 'primary'
+  return 'grey'
+}
+
+/**
+ * Etichetta testuale per lo stato del progetto.
+ */
+export function statoProgettoLabel(stato) {
+  const labels = {
+    proposto: 'Proposto',
+    validato: 'Validato',
+    approvato: 'Approvato',
+    accettato: 'Accettato',
+    in_rendicontazione: 'In rendicontazione',
+    chiuso: 'Chiuso',
+    rimborso_parziale: 'Rimborso parziale',
+    aperto: 'Accettato'
+  }
+  return labels[stato] || stato || '—'
+}

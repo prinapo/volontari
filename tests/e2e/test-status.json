@@ -1,6 +1,6 @@
 {
-  "version": "4.0.1",
-  "updated": "2026-08-03T19:38:54.998Z",
+  "version": "4.0.4",
+  "updated": "2026-08-31",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",

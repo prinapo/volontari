@@ -294,6 +294,32 @@ describe('verifica store', () => {
     expect(store.error).toBe('add fail')
   })
 
+  it('addGiustificativo blocks non-operativo progetto', async () => {
+    const store = useVerificaStore()
+    store.rows = [{ idProgetto: 1, statoProgetto: 'proposto' }]
+    await expect(
+      store.addGiustificativo({ Descrizione: 'x', Importo: 1, Progetto: 1, Famiglia: 'fam-1' })
+    ).rejects.toThrow('Progetto non operativo')
+    expect(mockCreateGiust).not.toHaveBeenCalled()
+  })
+
+  it('addGiustificativo allows legacy aperto (operativo)', async () => {
+    mockCreateGiust.mockResolvedValue({ data: { data: { id: 'g-legacy' } } })
+    mockGetProgetti.mockResolvedValue({ data: { data: [], meta: {} } })
+    mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
+    mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
+    const store = useVerificaStore()
+    store.rows = [{ idProgetto: 2, statoProgetto: 'aperto' }]
+    await store.addGiustificativo({
+      Descrizione: 'x',
+      Importo: 1,
+      Progetto: 2,
+      Famiglia: 'fam-1',
+      AnnoBando: 2025
+    })
+    expect(mockCreateGiust).toHaveBeenCalled()
+  })
+
   it('fetchSubmissions loads submissions', async () => {
     mockGetSubmissions.mockResolvedValue({
       data: { data: [{ id: 's-1', email: 'test@r.it' }], meta: { filter_count: 1 } }

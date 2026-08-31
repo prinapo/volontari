@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { quasarMount } from '../quasar-mount'
 import RendicontazioneTab from 'src/components/Verifica/RendicontazioneTab.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockFetchAnni = vi.fn()
 const mockFetchPage = vi.fn()
@@ -136,9 +136,7 @@ describe('RendicontazioneTab', () => {
     wrapper.vm.searchTerm = 'rossi'
     wrapper.vm.selectedAnno = 2026
     await wrapper.vm.loadData()
-    expect(mockFetchPage).toHaveBeenCalledWith(
-      expect.objectContaining({ search: 'rossi', page: 1, limit: 25 })
-    )
+    expect(mockFetchPage).toHaveBeenCalledWith(expect.objectContaining({ search: 'rossi', page: 1, limit: 25 }))
 
     wrapper.vm.searchTerm = ''
     wrapper.vm.selectedAnno = null
@@ -235,7 +233,11 @@ describe('RendicontazioneTab', () => {
     wrapper.vm.openChiudiProgetto({ idProgetto: 'p1' })
     wrapper.vm.chiudiProgettoNota = 'completato'
     await wrapper.vm.handleChiudiProgetto()
-    expect(mockChiudiProgetto).toHaveBeenCalledWith('p1', { automatica: false, motivo: 'completato' })
+    expect(mockChiudiProgetto).toHaveBeenCalledWith('p1', {
+      automatica: false,
+      motivo: 'completato',
+      stato: 'chiuso'
+    })
     expect(mockFetchPage).toHaveBeenCalled()
 
     await wrapper.vm.handleVerify('p1', { id: 'g1' })

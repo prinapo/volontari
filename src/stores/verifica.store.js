@@ -8,10 +8,12 @@ import { filesService } from 'src/services/files.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { verificaService } from 'src/services/verifica.service'
-import { FOLDERS } from 'src/utils/constants'
+import { statoProgettoLabel } from 'src/utils/badges'
+import { FOLDERS, STATI_PROGETTO_OPERATIVI } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
+import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
 import { useAuthStore } from './auth.store'
 import { usePagamentiStore } from './pagamenti.store'
 
@@ -42,7 +44,7 @@ function normalizeProject(project, famiglia = {}) {
     statoRendicontazione: project.StatoRendicontazione || 'nessuno',
     totaleGiustificativi: project.TotaleGiustificativi || 0,
     totaleImporto: toNumber(project.TotaleImporto),
-    statoProgetto: project.StatoProgetto || 'aperto',
+    statoProgetto: project.StatoProgetto || 'accettato',
     totaleVerificato: toNumber(project.TotaleVerificato),
     totaleProposto: toNumber(project.TotaleProposto),
     totaleInPagamento: toNumber(project.TotaleInPagamento),
@@ -183,7 +185,7 @@ export const useVerificaStore = defineStore('verifica', {
       }
     },
 
-    async fetchPage({ page, limit, search, anno, rendicontazioneFilter } = {}) {
+    async fetchPage({ page, limit, search, anno, rendicontazioneFilter, statoProgettoFilter } = {}) {
       if (page !== undefined) this.page = page
       if (limit !== undefined) this.limit = limit
 
@@ -199,6 +201,7 @@ export const useVerificaStore = defineStore('verifica', {
           search: search === undefined ? undefined : search,
           anno: anno === undefined ? undefined : anno,
           rendicontazioneFilter: rendicontazioneFilter === undefined ? undefined : rendicontazioneFilter,
+          statoProgettoFilter: statoProgettoFilter === undefined ? undefined : statoProgettoFilter,
           meta: 'filter_count'
         })
 
@@ -299,7 +302,7 @@ export const useVerificaStore = defineStore('verifica', {
             Rendicontato: row.totaleRendicontato,
             Pagato: row.totalePagato,
             'Stato Rendicontazione': calcolaStatoRendicontazione(row.giustificativi),
-            'Stato Progetto': row.statoProgetto,
+            'Stato Progetto': statoProgettoLabel(row.statoProgetto),
             'Data Inizio': row.dataInizio,
             'Data Fine': row.dataFine,
             Eta: row.eta,
@@ -429,11 +432,22 @@ export const useVerificaStore = defineStore('verifica', {
           .filter(g => !g.Invalidato)
           .reduce((sum, g) => sum + toNumber(g.Importo), 0)
         const statoRendicontazione = calcolaStatoRendicontazione(row.giustificativi)
-        await verificaService.updateProgetto(progettoId, {
+        const statoProgetto = calcolaStatoProgetto({
+          statoProgetto: row.statoProgetto,
+          allocato: row.allocato,
+          rimborsato: row.totalePagato,
+          giustificativi: row.giustificativi
+        })
+        const payload = {
           TotaleGiustificativi: giustCount,
           TotaleImporto: totaleImporto,
           StatoRendicontazione: statoRendicontazione
-        })
+        }
+        if (statoProgetto && statoProgetto !== row.statoProgetto) {
+          payload.StatoProgetto = statoProgetto
+          row.statoProgetto = statoProgetto
+        }
+        await verificaService.updateProgetto(progettoId, payload)
       } catch {
         /* silent */
       }
@@ -729,6 +743,13 @@ export const useVerificaStore = defineStore('verifica', {
     },
 
     async addGiustificativo(formData, file) {
+      const row = this.rows.find(r => r.idProgetto === formData.Progetto)
+      const statRaw = row?.statoProgetto
+      const statNorm = statRaw === 'aperto' ? 'accettato' : statRaw
+      if (row && !STATI_PROGETTO_OPERATIVI.includes(statNorm)) {
+        this.error = 'Non è possibile caricare giustificativi finché il progetto non è accettato.'
+        throw new Error('Progetto non operativo')
+      }
       try {
         let allegatoId = null
         if (file) {

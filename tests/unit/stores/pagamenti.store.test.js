@@ -575,7 +575,7 @@ describe('pagamenti store', () => {
       TotalePagato: 100,
       ResiduoAllocato: 0
     })
-    expect(closeSpy).toHaveBeenCalledWith(21, { automatica: true })
+    expect(closeSpy).toHaveBeenCalledWith(21, { automatica: true, stato: 'chiuso' })
   })
 
   it('ricalcolaTotaliProgetto returns early without project and stores fetch errors', async () => {

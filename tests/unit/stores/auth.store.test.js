@@ -9,6 +9,7 @@ const mockGetByUserId = vi.fn()
 const mockGetFamiglieByVolontario = vi.fn()
 const mockGetProgetti = vi.fn()
 const mockGetGiustificativiByProgetti = vi.fn()
+const mockUpdateProgetto = vi.fn()
 
 vi.mock('src/services/auth.service', () => ({
   authService: {
@@ -34,12 +35,13 @@ vi.mock('src/services/famiglie.service', () => ({
 vi.mock('src/services/verifica.service', () => ({
   verificaService: {
     getProgetti: (...args) => mockGetProgetti(...args),
-    getGiustificativiByProgetti: (...args) => mockGetGiustificativiByProgetti(...args)
+    getGiustificativiByProgetti: (...args) => mockGetGiustificativiByProgetti(...args),
+    updateProgetto: (...args) => mockUpdateProgetto(...args)
   }
 }))
 
 function createTokenPayload(role) {
-  const payload = { role, exp: 9999999999, iat: 0 }
+  const payload = { role, exp: 9_999_999_999, iat: 0 }
   const encoded = btoa(JSON.stringify(payload))
   return `header.${encoded}.signature`
 }
@@ -124,7 +126,6 @@ describe('auth store', () => {
   })
 
   describe('user and role getters', () => {
-
     it('returns userId and contattoId getters', () => {
       const store = useAuthStore()
       store.user = { id: 'user-1' }
@@ -330,7 +331,7 @@ describe('auth store', () => {
 
     it('does nothing when role is empty string', async () => {
       const store = useAuthStore()
-      store.token = 'header.' + btoa(JSON.stringify({ role: '', exp: 9999999999 })) + '.sig'
+      store.token = 'header.' + btoa(JSON.stringify({ role: '', exp: 9_999_999_999 })) + '.sig'
       store.user = { id: 'user-1', role: '' }
       await store.resolveUserRole()
       expect(store.user.role).toBe('')
@@ -465,6 +466,77 @@ describe('auth store', () => {
       await store.checkRendicontazioneConsistency()
       expect(store.rendicontazioneCheck.ok).toBe(false)
       expect(store.rendicontazioneCheck.discrepancies[0]).toEqual({ errore: true, messaggio: 'service down' })
+    })
+
+    it('checkStatoProgettoConsistency exits when not admin', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'volontario' } }
+      await store.checkStatoProgettoConsistency()
+      expect(mockGetProgetti).not.toHaveBeenCalled()
+    })
+
+    it('checkStatoProgettoConsistency detects zona discrepanza rendicontazione', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'admin' } }
+      mockGetProgetti.mockResolvedValue({
+        data: {
+          data: [
+            {
+              id_progetto: 'p10',
+              StatoProgetto: 'accettato',
+              Allocato: '1000',
+              TotalePagato: '0',
+              Cognome_Beneficiario: 'Bianchi',
+              AnnoBando: 2025
+            }
+          ]
+        }
+      })
+      mockGetGiustificativiByProgetti.mockResolvedValue({
+        data: {
+          data: [{ id: 'g1', Progetto: { id_progetto: 'p10' }, Stato: 'verificato', Importo: '50' }]
+        }
+      })
+
+      await store.checkStatoProgettoConsistency()
+      expect(store.statoProgettoCheck.checked).toBe(true)
+      expect(store.statoProgettoCheck.ok).toBe(false)
+      expect(store.statoProgettoCheck.discrepancies).toHaveLength(1)
+      expect(store.statoProgettoCheck.discrepancies[0]).toEqual(
+        expect.objectContaining({ progettoId: 'p10', statoDB: 'accettato', statoCalcolato: 'in_rendicontazione' })
+      )
+    })
+
+    it('checkStatoProgettoConsistency considers legacy aperto coerente', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'admin' } }
+      mockGetProgetti.mockResolvedValue({
+        data: {
+          data: [{ id_progetto: 'p11', StatoProgetto: 'aperto', Allocato: '500', TotalePagato: '0' }]
+        }
+      })
+      mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
+
+      await store.checkStatoProgettoConsistency()
+      expect(store.statoProgettoCheck.ok).toBe(true)
+      expect(store.statoProgettoCheck.discrepancies).toEqual([])
+    })
+
+    it('fixStatoProgettoDiscrepancies riallinea solo transizioni automatiche', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'admin' } }
+      store.statoProgettoCheck = {
+        discrepancies: [
+          { progettoId: 'p12', statoCalcolato: 'in_rendicontazione' },
+          { progettoId: 'p13', statoCalcolato: 'validato' }
+        ]
+      }
+      mockUpdateProgetto.mockResolvedValue({})
+      const res = await store.fixStatoProgettoDiscrepancies()
+      expect(res.fixed).toBe(1)
+      expect(res.skipped).toBe(1)
+      expect(mockUpdateProgetto).toHaveBeenCalledWith('p12', { StatoProgetto: 'in_rendicontazione' })
+      expect(mockUpdateProgetto).not.toHaveBeenCalledWith('p13', expect.anything())
     })
   })
 })

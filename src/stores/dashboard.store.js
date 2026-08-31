@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { dashboardService } from 'src/services/dashboard.service'
+import { STATI_PROGETTO_FINALI, STATO_PROGETTO } from 'src/utils/constants'
 
 const toNum = v => Number.parseFloat(v) || 0
 
@@ -32,10 +33,14 @@ function addToMetric(metric, progetto) {
   metric.inPagamento += toNum(progetto.TotaleInPagamento)
   metric.pagato += toNum(progetto.TotalePagato)
   metric.residuo += toNum(progetto.ResiduoAllocato)
-  if (progetto.StatoProgetto === 'chiuso') metric.chiusi++
+  const statoProgettoEff =
+    progetto.StatoProgetto === STATO_PROGETTO.APERTO
+      ? STATO_PROGETTO.ACCETTATO
+      : progetto.StatoProgetto || STATO_PROGETTO.ACCETTATO
+  if (STATI_PROGETTO_FINALI.includes(statoProgettoEff)) metric.chiusi++
   const ambito = progetto.Ambito || 'Senza ambito'
   metric.perAmbito[ambito] = (metric.perAmbito[ambito] || 0) + 1
-  const stato = progetto.StatoProgetto === 'chiuso' ? 'chiuso' : progetto.StatoRendicontazione || 'nessuno'
+  const stato = STATI_PROGETTO_FINALI.includes(statoProgettoEff) ? 'chiuso' : progetto.StatoRendicontazione || 'nessuno'
   metric.perStatoRendicontazione[stato] = (metric.perStatoRendicontazione[stato] || 0) + 1
 
   const gravita = Number(progetto.Indice_Gravita_Disabilita)

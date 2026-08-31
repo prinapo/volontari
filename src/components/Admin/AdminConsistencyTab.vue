@@ -183,6 +183,86 @@ icon="refresh"
     >
       Verifica consistenza Volontari
     </q-btn>
+
+    <q-banner
+      v-if="authStore.statoProgettoCheck?.checked"
+      class="bg-grey-2 text-dark q-mb-md rounded-borders"
+      rounded
+    >
+      <template #avatar>
+        <q-icon name="timeline" color="primary" />
+      </template>
+      <div class="text-weight-medium q-mb-xs">Verifica coerenza Stato Progetto</div>
+      <div class="text-body2 q-mb-sm text-grey-7">
+        Discrepanze trovate: {{ authStore.statoProgettoCheck.discrepancies.length }}
+      </div>
+
+      <template v-if="authStore.statoProgettoCheck.discrepancies.length > 0">
+        <q-separator class="q-mb-sm" />
+        <q-list dense>
+          <q-item
+            v-for="d in authStore.statoProgettoCheck.discrepancies"
+            :key="d.progettoId"
+            dense
+            class="q-px-none"
+          >
+            <q-item-section>
+              <q-item-label>{{ d.beneficiario }} ({{ d.annoBando }})</q-item-label>
+              <q-item-label caption>
+                DB: {{ d.statoDB }} → Calcolato: {{ d.statoCalcolato }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                flat
+                round
+                dense
+                icon="sync"
+                color="primary"
+                size="sm"
+                :loading="fixingCheck"
+                @click="fixStatoProgetto"
+              >
+                <q-tooltip>Sistema discrepanze automatiche</q-tooltip>
+              </q-btn>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </template>
+
+      <template v-else>
+        <div class="text-body2 text-positive">Nessuna discrepanza di stato progetto.</div>
+      </template>
+
+      <template #action>
+        <q-btn
+          flat
+          round
+          dense
+          size="sm"
+          icon="refresh"
+          :loading="checkingCheck"
+          @click="runStatoProgettoCheck"
+        >
+          <q-tooltip>Riesegui verifica stato progetto</q-tooltip>
+        </q-btn>
+      </template>
+    </q-banner>
+
+    <q-btn
+      v-else
+      flat
+      round
+      dense
+      size="sm"
+      icon="timeline"
+      color="primary"
+      class="q-mb-md"
+      :loading="checkingCheck"
+      @click="runStatoProgettoCheck"
+    >
+      Verifica coerenza Stato Progetto
+    </q-btn>
   </div>
 </template>
 
@@ -193,11 +273,15 @@ import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
+import { useAuthStore } from 'stores/auth.store'
 
 const $q = useQuasar()
 const store = useAdminStore()
+const authStore = useAuthStore()
 
 const savingVolontario = ref(false)
+const checkingCheck = ref(false)
+const fixingCheck = ref(false)
 
 const totalAnomalie = computed(() => {
   if (!store.volontariCheck) return -1
@@ -295,6 +379,31 @@ async function assignVolontarioRole(c) {
     await runConsistencyCheck()
   } catch {
     notifyError($q, store.error || 'Errore assegnazione ruolo')
+  }
+}
+
+async function runStatoProgettoCheck() {
+  checkingCheck.value = true
+  try {
+    await authStore.checkStatoProgettoConsistency()
+    notifySuccess($q, 'Verifica stato progetto completata')
+  } catch {
+    notifyError($q, authStore.error || 'Errore verifica stato progetto')
+  } finally {
+    checkingCheck.value = false
+  }
+}
+
+async function fixStatoProgetto() {
+  fixingCheck.value = true
+  try {
+    const res = await authStore.fixStatoProgettoDiscrepancies()
+    notifySuccess($q, `Corretti ${res.fixed}, saltati ${res.skipped}`)
+    await runStatoProgettoCheck()
+  } catch {
+    notifyError($q, authStore.error || 'Errore nel riallineamento stato progetto')
+  } finally {
+    fixingCheck.value = false
   }
 }
 

@@ -1,7 +1,7 @@
 import api from './api'
 
 export const verificaService = {
-  getProgetti({ page = 1, limit = 25, sort, search, anno, rendicontazioneFilter, meta } = {}) {
+  getProgetti({ page = 1, limit = 25, sort, search, anno, rendicontazioneFilter, statoProgettoFilter, meta } = {}) {
     const params = {
       limit,
       page,
@@ -44,6 +44,7 @@ export const verificaService = {
     if (search) filter.Famiglia = { Nome_Famiglia: { _icontains: search } }
     if (anno) filter.AnnoBando = { _eq: anno }
     if (rendicontazioneFilter) filter.StatoRendicontazione = { _eq: rendicontazioneFilter }
+    if (statoProgettoFilter) filter.StatoProgetto = { _eq: statoProgettoFilter }
     if (Object.keys(filter).length) params.filter = JSON.stringify(filter)
     return api.get('/items/Progetti', { params })
   },

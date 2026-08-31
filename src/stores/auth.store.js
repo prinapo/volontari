@@ -3,10 +3,11 @@ import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STORAGE_KEYS } from 'src/utils/constants'
+import { STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 import { logSessionEvent } from 'src/utils/session-log'
+import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
 
 const AUTH_MODE = 'cookie'
 
@@ -48,6 +49,12 @@ export const useAuthStore = defineStore('auth', {
     error: null,
     initialized: false,
     rendicontazioneCheck: {
+      checked: false,
+      ok: true,
+      discrepancies: [],
+      lastChecked: null
+    },
+    statoProgettoCheck: {
       checked: false,
       ok: true,
       discrepancies: [],
@@ -297,6 +304,104 @@ export const useAuthStore = defineStore('auth', {
           lastChecked: new Date().toISOString()
         }
       }
+    },
+
+    async checkStatoProgettoConsistency() {
+      if (!this.canAdmin) return
+
+      this.statoProgettoCheck = { checked: false, ok: true, discrepancies: [], lastChecked: null }
+
+      try {
+        const projRes = await verificaService.getProgetti({ limit: -1 })
+        const projects = projRes.data.data || []
+
+        const progettoIds = projects.map(p => p.id_progetto).filter(Boolean)
+        if (progettoIds.length === 0) {
+          this.statoProgettoCheck = {
+            checked: true,
+            ok: true,
+            discrepancies: [],
+            lastChecked: new Date().toISOString()
+          }
+          return
+        }
+
+        const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
+        const allGiust = giustRes.data.data || []
+
+        const giustByProject = {}
+        for (const g of allGiust) {
+          if (g.Invalidato) continue
+          const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
+          if (!pid) continue
+          if (!giustByProject[pid]) giustByProject[pid] = []
+          giustByProject[pid].push(g)
+        }
+
+        const discrepancies = []
+        for (const project of projects) {
+          const projId = project.id_progetto
+          const statoDBraw = project.StatoProgetto || STATO_PROGETTO.ACCETTATO
+          const statoDB = statoDBraw === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : statoDBraw
+          const calcolato = calcolaStatoProgetto({
+            statoProgetto: statoDB,
+            allocato: project.Allocato,
+            rimborsato: project.TotalePagato,
+            giustificativi: giustByProject[projId] || []
+          })
+          if (calcolato !== statoDB) {
+            discrepancies.push({
+              progettoId: projId,
+              beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
+              annoBando: project.AnnoBando || '',
+              statoDB,
+              statoCalcolato: calcolato
+            })
+          }
+        }
+
+        this.statoProgettoCheck = {
+          checked: true,
+          ok: discrepancies.length === 0,
+          discrepancies,
+          lastChecked: new Date().toISOString()
+        }
+      } catch (error) {
+        this.statoProgettoCheck = {
+          checked: true,
+          ok: false,
+          discrepancies: [{ errore: true, messaggio: error.message }],
+          lastChecked: new Date().toISOString()
+        }
+      }
+    },
+
+    /**
+     * Tool admin: riallinea il DB al valore calcolato per le discrepanze di
+     * StatoProgetto. Applica SOLO le transizioni automatiche (accettato /
+     * in_rendicontazione / chiuso / rimborso_parziale). Le fasi manuali
+     * (proposto / validato / approvato) vengono saltate: si confermano a mano.
+     */
+    async fixStatoProgettoDiscrepancies() {
+      if (!this.canAdmin) return
+      const discrepanze = this.statoProgettoCheck?.discrepancies || []
+      const manuali = new Set([STATO_PROGETTO.PROPOSTO, STATO_PROGETTO.VALIDATO, STATO_PROGETTO.APPROVATO])
+      let fixed = 0
+      let skipped = 0
+      for (const d of discrepanze) {
+        if (manuali.has(d.statoCalcolato)) {
+          skipped++
+          continue
+        }
+        try {
+          await verificaService.updateProgetto(d.progettoId, { StatoProgetto: d.statoCalcolato })
+          fixed++
+        } catch (error) {
+          this.error = error.response?.data?.errors?.[0]?.message || error.message
+          throw error
+        }
+      }
+      return { fixed, skipped }
     },
 
     async logout() {
