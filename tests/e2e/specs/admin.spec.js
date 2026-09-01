@@ -335,7 +335,10 @@ test.describe('Admin — Trasformazioni Stato Progetto', () => {
     }
 
     await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
-    const primaRiga = page.locator('.q-expansion-item', { hasText: '→ Accettato' }).locator('.q-item').first()
+    const primaRiga = page
+      .locator('.q-expansion-item', { hasText: '→ Accettato' })
+      .locator('.q-expansion-item__content .q-item')
+      .first()
     await expect(primaRiga.locator('.q-badge:has-text("Aperto (legacy)")')).toBeVisible({ timeout: 10_000 })
     await expect(primaRiga.locator('.q-badge:has-text("Accettato")')).toBeVisible()
   })
@@ -360,7 +363,7 @@ test.describe('Admin — Trasformazioni Stato Progetto', () => {
     expect(Number.isFinite(before)).toBe(true)
 
     await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
-    const applyBtn = page.getByRole('button', { description: 'Applica trasformazione', exact: true }).first()
+    const applyBtn = page.locator('.q-expansion-item__content .q-btn:has(i:has-text("check"))').first()
     await expect(applyBtn).toBeVisible({ timeout: 10_000 })
     await applyBtn.click()
 
