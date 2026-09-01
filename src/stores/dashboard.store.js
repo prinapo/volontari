@@ -17,6 +17,7 @@ function emptyMetric() {
     residuo: 0,
     chiusi: 0,
     perAmbito: {},
+    perStatoProgetto: {},
     perStatoRendicontazione: {},
     perGravita: {},
     perISEE: {}
@@ -38,6 +39,7 @@ function addToMetric(metric, progetto) {
       ? STATO_PROGETTO.ACCETTATO
       : progetto.StatoProgetto || STATO_PROGETTO.ACCETTATO
   if (STATI_PROGETTO_FINALI.includes(statoProgettoEff)) metric.chiusi++
+  metric.perStatoProgetto[statoProgettoEff] = (metric.perStatoProgetto[statoProgettoEff] || 0) + 1
   const ambito = progetto.Ambito || 'Senza ambito'
   metric.perAmbito[ambito] = (metric.perAmbito[ambito] || 0) + 1
   const stato = STATI_PROGETTO_FINALI.includes(statoProgettoEff) ? 'chiuso' : progetto.StatoRendicontazione || 'nessuno'
@@ -176,13 +178,13 @@ export const useDashboardStore = defineStore('dashboard', {
         })
     },
 
-    serieProgettiStati: state => {
+    serieProgettiStatoProgetto: state => {
       if (!state.data) return []
       return Object.keys(state.data.byYear)
         .map(Number)
         .filter(Number.isFinite)
         .sort((a, b) => a - b)
-        .map(anno => ({ anno, stati: state.data.byYear[anno].perStatoRendicontazione }))
+        .map(anno => ({ anno, stati: state.data.byYear[anno].perStatoProgetto }))
     },
 
     donutStati: state => {

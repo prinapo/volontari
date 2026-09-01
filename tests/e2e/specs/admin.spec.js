@@ -311,6 +311,67 @@ test.describe('Admin — Impersonazione', () => {
   })
 })
 
+test.describe('Admin — Trasformazioni Stato Progetto', () => {
+  test('AD-CHECK-03: Tool trasformazioni mostra gruppi e badge legacy @smoke', async ({ page }) => {
+    test.setTimeout(60_000)
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.locator('.q-tab:has-text("Check")').click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    const calcBtn = page
+      .getByRole('button', { description: 'Calcola trasformazioni stato progetto' })
+      .or(page.locator('button:has-text("swap_horiz")').first())
+    await calcBtn.click()
+
+    const badge = page.locator('.q-badge').filter({ hasText: 'da trasformare' })
+    await expect(badge).toBeVisible({ timeout: 20_000 })
+
+    const targetLabels = ['→ Accettato', '→ In rendicontazione', '→ Rimborso parziale', '→ Chiuso']
+    for (const label of targetLabels) {
+      await expect(page.locator('.q-expansion-item', { hasText: label }).first()).toBeVisible({ timeout: 10_000 })
+    }
+
+    await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
+    const primaRiga = page.locator('.q-expansion-item', { hasText: '→ Accettato' }).locator('.q-item').first()
+    await expect(primaRiga.locator('.q-badge:has-text("Aperto (legacy)")')).toBeVisible({ timeout: 10_000 })
+    await expect(primaRiga.locator('.q-badge:has-text("Accettato")')).toBeVisible()
+  })
+
+  test('AD-CHECK-04: Applica trasformazione rimuove riga e decrementa conteggio @crud', async ({ page }) => {
+    test.setTimeout(60_000)
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.locator('.q-tab:has-text("Check")').click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    const calcBtn = page
+      .getByRole('button', { description: 'Calcola trasformazioni stato progetto' })
+      .or(page.locator('button:has-text("swap_horiz")').first())
+    await calcBtn.click()
+
+    const badge = page.locator('.q-badge').filter({ hasText: 'da trasformare' })
+    await expect(badge).toBeVisible({ timeout: 20_000 })
+    const before = Number((await badge.innerText()).match(/(\d+) da trasformare/)?.[1])
+    expect(Number.isFinite(before)).toBe(true)
+
+    await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
+    const applyBtn = page.getByRole('button', { description: 'Applica trasformazione', exact: true }).first()
+    await expect(applyBtn).toBeVisible({ timeout: 10_000 })
+    await applyBtn.click()
+
+    await expect(page.locator('.q-notification').filter({ hasText: 'trasformato in' }).first()).toBeVisible({
+      timeout: 10_000
+    })
+    await expect(badge).toHaveText(`${before - 1} da trasformare`, { timeout: 10_000 })
+    expect(page.url()).toContain('/admin')
+  })
+})
+
 test.describe('Admin — Utenti CRUD', () => {
   const ids = { users: [] }
 

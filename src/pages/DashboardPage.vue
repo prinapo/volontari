@@ -121,6 +121,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import BaseChart from 'components/Dashboard/BaseChart.vue'
+import { statoProgettoLabel } from 'src/utils/badges'
 import { formatCurrency } from 'src/utils/formatters'
 import { useDashboardStore } from 'stores/dashboard.store'
 
@@ -214,38 +215,31 @@ const incorsoPagatoOption = computed(() => {
   ])
 })
 
-const STATI_ORDINE = ['nessuno', 'bozza', 'in_attesa', 'parziale', 'verificato', 'chiuso']
-const STATI_LABEL = {
-  nessuno: 'Nessuno',
-  bozza: 'Bozza',
-  in_attesa: 'In attesa',
-  parziale: 'Parziale',
-  verificato: 'Verificato',
-  chiuso: 'Chiuso'
-}
-const STATI_COLOR = {
-  nessuno: '#9E9E9E',
-  bozza: palette[3],
-  in_attesa: palette[1],
-  parziale: palette[0],
-  verificato: palette[2],
+const STATI_PROGETTO_ORDINE = ['proposto', 'validato', 'approvato', 'accettato', 'in_rendicontazione', 'rimborso_parziale', 'chiuso']
+const STATI_PROGETTO_COLOR = {
+  proposto: '#9E9E9E',
+  validato: palette[3],
+  approvato: palette[1],
+  accettato: palette[0],
+  in_rendicontazione: palette[2],
+  rimborso_parziale: palette[4],
   chiuso: '#607D8B'
 }
 
 const barOption = computed(() => {
-  const data = store.serieProgettiStati
+  const data = store.serieProgettiStatoProgetto
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { bottom: 0, data: STATI_ORDINE.map(s => STATI_LABEL[s]) },
-    grid: { left: 8, right: 40, top: 16, bottom: 48 },
+    legend: { top: 4, data: STATI_PROGETTO_ORDINE.map(s => statoProgettoLabel(s)) },
+    grid: { left: 8, right: 40, top: 60, bottom: 24 },
     xAxis: { type: 'value', minInterval: 1 },
     yAxis: { type: 'category', data: data.map(d => d.anno) },
-    series: STATI_ORDINE.map(s => ({
-      name: STATI_LABEL[s],
+    series: STATI_PROGETTO_ORDINE.map(s => ({
+      name: statoProgettoLabel(s),
       type: 'bar',
       stack: 'tot',
       barWidth: 70,
-      itemStyle: { color: STATI_COLOR[s] },
+      itemStyle: { color: STATI_PROGETTO_COLOR[s] },
       data: data.map(d => d.stati[s] || 0)
     }))
   }

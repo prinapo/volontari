@@ -184,85 +184,82 @@ icon="refresh"
       Verifica consistenza Volontari
     </q-btn>
 
-    <q-banner
-      v-if="authStore.statoProgettoCheck?.checked"
-      class="bg-grey-2 text-dark q-mb-md rounded-borders"
-      rounded
-    >
-      <template #avatar>
-        <q-icon name="timeline" color="primary" />
-      </template>
-      <div class="text-weight-medium q-mb-xs">Verifica coerenza Stato Progetto</div>
-      <div class="text-body2 q-mb-sm text-grey-7">
-        Discrepanze trovate: {{ authStore.statoProgettoCheck.discrepancies.length }}
-      </div>
+    <div class="row items-center q-gutter-sm q-mb-sm">
+      <q-btn
+        flat
+        round
+        dense
+        size="sm"
+        icon="swap_horiz"
+        color="primary"
+        :loading="checkingCheck"
+        @click="runStatoProgettoTool"
+      >
+        <q-tooltip>Calcola trasformazioni stato progetto</q-tooltip>
+      </q-btn>
+      <span class="text-weight-medium">Trasformazioni Stato Progetto</span>
+      <q-badge
+        v-if="authStore.statoProjettoTool?.checked && !hasToolError"
+        :label="authStore.statoProjettoTool.count + ' da trasformare'"
+        :color="authStore.statoProjettoTool.count > 0 ? 'warning' : 'positive'"
+        outline
+      />
+    </div>
 
-      <template v-if="authStore.statoProgettoCheck.discrepancies.length > 0">
-        <q-separator class="q-mb-sm" />
-        <q-list dense>
-          <q-item
-            v-for="d in authStore.statoProgettoCheck.discrepancies"
-            :key="d.progettoId"
-            dense
-            class="q-px-none"
-          >
+    <q-list v-if="authStore.statoProjettoTool?.checked && !hasToolError" bordered separator class="q-mb-md">
+      <q-expansion-item
+        v-for="stato in statiTarget"
+        :key="stato"
+        :icon="'circle'"
+        :color="statoProgettoColor(stato)"
+        :label="'→ ' + statoProgettoLabel(stato)"
+        :caption="(groups[stato]?.length || 0) + ' progetti'"
+        :default-opened="false"
+      >
+        <template v-if="groups[stato]?.length > 0">
+          <q-item v-for="c in groups[stato]" :key="c.progettoId" dense class="q-pl-md">
             <q-item-section>
-              <q-item-label>{{ d.beneficiario }} ({{ d.annoBando }})</q-item-label>
-              <q-item-label caption>
-                DB: {{ d.statoDB }} → Calcolato: {{ d.statoCalcolato }}
-              </q-item-label>
+              <q-item-label class="text-body2">{{ c.beneficiario }}</q-item-label>
+              <q-item-label caption>{{ c.annoBando }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn
-                flat
-                round
-                dense
-                icon="sync"
-                color="primary"
-                size="sm"
-                :loading="fixingCheck"
-                @click="fixStatoProgetto"
-              >
-                <q-tooltip>Sistema discrepanze automatiche</q-tooltip>
-              </q-btn>
+              <div class="row items-center q-gutter-sm">
+                <q-badge :color="statoProgettoColor(c.statoDB)" :label="statoDBLabel(c.statoDB)" />
+                <q-icon name="arrow_forward" size="16px" />
+                <q-badge
+                  :color="statoProgettoColor(c.statoCalcolato)"
+                  :label="statoProgettoLabel(c.statoCalcolato)"
+                />
+                <q-btn
+                  flat
+                  round
+                  dense
+                  size="sm"
+                  icon="check"
+                  color="positive"
+                  :loading="applyingId === c.progettoId"
+                  @click="applicaTrasformazione(c)"
+                >
+                  <q-tooltip>Applica trasformazione</q-tooltip>
+                </q-btn>
+              </div>
             </q-item-section>
           </q-item>
-        </q-list>
-      </template>
+        </template>
+        <q-item v-else dense class="q-pl-md text-grey-7">
+          <q-item-section>
+            <q-item-label class="text-body2">Nessun progetto con questa trasformazione.</q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+    </q-list>
 
-      <template v-else>
-        <div class="text-body2 text-positive">Nessuna discrepanza di stato progetto.</div>
+    <q-banner v-else-if="hasToolError" class="bg-negative text-white q-mb-md rounded-borders" rounded>
+      <template #avatar>
+        <q-icon name="error" />
       </template>
-
-      <template #action>
-        <q-btn
-          flat
-          round
-          dense
-          size="sm"
-          icon="refresh"
-          :loading="checkingCheck"
-          @click="runStatoProgettoCheck"
-        >
-          <q-tooltip>Riesegui verifica stato progetto</q-tooltip>
-        </q-btn>
-      </template>
+      <div class="text-body2">Errore nel calcolo delle trasformazioni.</div>
     </q-banner>
-
-    <q-btn
-      v-else
-      flat
-      round
-      dense
-      size="sm"
-      icon="timeline"
-      color="primary"
-      class="q-mb-md"
-      :loading="checkingCheck"
-      @click="runStatoProgettoCheck"
-    >
-      Verifica coerenza Stato Progetto
-    </q-btn>
   </div>
 </template>
 
@@ -271,6 +268,8 @@ import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
+import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
+import { STATO_PROGETTO } from 'src/utils/constants'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
 import { useAuthStore } from 'stores/auth.store'
@@ -281,7 +280,19 @@ const authStore = useAuthStore()
 
 const savingVolontario = ref(false)
 const checkingCheck = ref(false)
-const fixingCheck = ref(false)
+const applyingId = ref(null)
+
+const statiTarget = ['accettato', 'in_rendicontazione', 'rimborso_parziale', 'chiuso']
+
+const groups = computed(() => authStore.statoProjettoTool?.groups || {})
+
+const hasToolError = computed(() => !!groups.value.error)
+
+function statoDBLabel(stato) {
+  if (stato === STATO_PROGETTO.APERTO) return 'Aperto (legacy)'
+  if (stato == null) return 'Nessuno'
+  return statoProgettoLabel(stato)
+}
 
 const totalAnomalie = computed(() => {
   if (!store.volontariCheck) return -1
@@ -382,28 +393,29 @@ async function assignVolontarioRole(c) {
   }
 }
 
-async function runStatoProgettoCheck() {
+async function runStatoProgettoTool() {
   checkingCheck.value = true
   try {
-    await authStore.checkStatoProgettoConsistency()
-    notifySuccess($q, 'Verifica stato progetto completata')
-  } catch {
-    notifyError($q, authStore.error || 'Errore verifica stato progetto')
+    await authStore.computeStatoProgettoCandidates()
+    if (!hasToolError.value) {
+      notifySuccess($q, 'Calcolo trasformazioni completato')
+    }
+  } catch (error) {
+    notifyError($q, authStore.error || error.message || 'Errore calcolo trasformazioni')
   } finally {
     checkingCheck.value = false
   }
 }
 
-async function fixStatoProgetto() {
-  fixingCheck.value = true
+async function applicaTrasformazione(c) {
+  applyingId.value = c.progettoId
   try {
-    const res = await authStore.fixStatoProgettoDiscrepancies()
-    notifySuccess($q, `Corretti ${res.fixed}, saltati ${res.skipped}`)
-    await runStatoProgettoCheck()
-  } catch {
-    notifyError($q, authStore.error || 'Errore nel riallineamento stato progetto')
+    await authStore.applyStatoProgettoById(c.progettoId, c.statoCalcolato)
+    notifySuccess($q, `${c.beneficiario}: trasformato in ${statoProgettoLabel(c.statoCalcolato)}`)
+  } catch (error) {
+    notifyError($q, authStore.error || error.message || 'Errore applicazione trasformazione')
   } finally {
-    fixingCheck.value = false
+    applyingId.value = null
   }
 }
 

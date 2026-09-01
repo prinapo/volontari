@@ -1,6 +1,6 @@
 {
-  "version": "4.0.4",
-  "updated": "2026-08-31",
+  "version": "4.0.5",
+  "updated": "2026-09-01",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1825,6 +1825,38 @@
       "mobile": "pass",
       "lastRun": "4.0.1",
       "lastPassed": "4.0.1"
+    },
+    "AD-CHECK-03": {
+      "name": "AD-CHECK-03: Tool trasformazioni mostra gruppi e badge legacy @smoke",
+      "file": "admin.spec.js",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": "",
+      "lastPassed": ""
+    },
+    "AD-CHECK-04": {
+      "name": "AD-CHECK-04: Applica trasformazione rimuove riga e decrementa conteggio @crud",
+      "file": "admin.spec.js",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": "",
+      "lastPassed": ""
+    },
+    "DBD-03": {
+      "name": "DBD-03: Grafico Progetti per stato e anno renderizzato @smoke",
+      "file": "dashboard.spec.js",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": "",
+      "lastPassed": ""
+    },
+    "VER-CHIUSO-01": {
+      "name": "VER-CHIUSO-01: Chiuso è l ultima opzione del filtro stato progetto @smoke",
+      "file": "verifica.spec.js",
+      "chromium": "untested",
+      "mobile": "untested",
+      "lastRun": "",
+      "lastPassed": ""
     }
   }
 }

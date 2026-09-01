@@ -915,7 +915,7 @@ const annoOptions = computed(() =>
   }))
 )
 
-const statoProgettoOptions = ['proposto', 'validato', 'approvato', 'accettato', 'in_rendicontazione', 'chiuso', 'rimborso_parziale'].map(
+const statoProgettoOptions = ['proposto', 'validato', 'approvato', 'accettato', 'in_rendicontazione', 'rimborso_parziale', 'chiuso'].map(
   v => ({ label: statoProgettoLabel(v), value: v })
 )
 

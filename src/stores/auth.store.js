@@ -54,10 +54,10 @@ export const useAuthStore = defineStore('auth', {
       discrepancies: [],
       lastChecked: null
     },
-    statoProgettoCheck: {
+    statoProjettoTool: {
       checked: false,
-      ok: true,
-      discrepancies: [],
+      groups: {},
+      count: 0,
       lastChecked: null
     },
     isImpersonating: false,
@@ -306,10 +306,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async checkStatoProgettoConsistency() {
+    async computeStatoProgettoCandidates() {
       if (!this.canAdmin) return
 
-      this.statoProgettoCheck = { checked: false, ok: true, discrepancies: [], lastChecked: null }
+      this.statoProjettoTool = { checked: false, groups: {}, count: 0, lastChecked: null }
 
       try {
         const projRes = await verificaService.getProgetti({ limit: -1 })
@@ -317,10 +317,10 @@ export const useAuthStore = defineStore('auth', {
 
         const progettoIds = projects.map(p => p.id_progetto).filter(Boolean)
         if (progettoIds.length === 0) {
-          this.statoProgettoCheck = {
+          this.statoProjettoTool = {
             checked: true,
-            ok: true,
-            discrepancies: [],
+            groups: {},
+            count: 0,
             lastChecked: new Date().toISOString()
           }
           return
@@ -338,70 +338,66 @@ export const useAuthStore = defineStore('auth', {
           giustByProject[pid].push(g)
         }
 
-        const discrepancies = []
+        const groups = {}
         for (const project of projects) {
           const projId = project.id_progetto
-          const statoDBraw = project.StatoProgetto || STATO_PROGETTO.ACCETTATO
-          const statoDB = statoDBraw === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : statoDBraw
+          const statoDBraw = project.StatoProgetto || STATO_PROGETTO.APERTO
           const calcolato = calcolaStatoProgetto({
-            statoProgetto: statoDB,
+            statoProgetto: statoDBraw,
             allocato: project.Allocato,
             rimborsato: project.TotalePagato,
             giustificativi: giustByProject[projId] || []
           })
-          if (calcolato !== statoDB) {
-            discrepancies.push({
-              progettoId: projId,
-              beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
-              annoBando: project.AnnoBando || '',
-              statoDB,
-              statoCalcolato: calcolato
-            })
+          if (calcolato === statoDBraw) continue
+          const entry = {
+            progettoId: projId,
+            beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
+            annoBando: project.AnnoBando || '',
+            statoDB: statoDBraw,
+            statoCalcolato: calcolato
           }
+          if (!groups[calcolato]) groups[calcolato] = []
+          groups[calcolato].push(entry)
         }
 
-        this.statoProgettoCheck = {
+        const count = Object.values(groups).reduce((sum, list) => sum + list.length, 0)
+        this.statoProjettoTool = {
           checked: true,
-          ok: discrepancies.length === 0,
-          discrepancies,
+          groups,
+          count,
           lastChecked: new Date().toISOString()
         }
       } catch (error) {
-        this.statoProgettoCheck = {
+        this.statoProjettoTool = {
           checked: true,
-          ok: false,
-          discrepancies: [{ errore: true, messaggio: error.message }],
+          groups: { error: [{ errore: true, messaggio: error.message }] },
+          count: 1,
           lastChecked: new Date().toISOString()
         }
+        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore generico'
       }
     },
 
     /**
-     * Tool admin: riallinea il DB al valore calcolato per le discrepanze di
-     * StatoProgetto. Applica SOLO le transizioni automatiche (accettato /
-     * in_rendicontazione / chiuso / rimborso_parziale). Le fasi manuali
-     * (proposto / validato / approvato) vengono saltate: si confermano a mano.
+     * Tool admin: applica la trasformazione di stato proposta per un singolo
+     * progetto. Aggiorna il DB e rimuove il candidato localmente (nessun
+     * re-fetch: la riga sparisce subito senza ricaricare l'interfaccia).
      */
-    async fixStatoProgettoDiscrepancies() {
+    async applyStatoProgettoById(progettoId, nuovoStato) {
       if (!this.canAdmin) return
-      const discrepanze = this.statoProgettoCheck?.discrepancies || []
-      const manuali = new Set([STATO_PROGETTO.PROPOSTO, STATO_PROGETTO.VALIDATO, STATO_PROGETTO.APPROVATO])
-      let fixed = 0
-      let skipped = 0
-      for (const d of discrepanze) {
-        if (manuali.has(d.statoCalcolato)) {
-          skipped++
-          continue
+      await verificaService.updateProgetto(progettoId, { StatoProgetto: nuovoStato })
+      if (this.statoProjettoTool?.groups) {
+        const groups = {}
+        for (const [key, list] of Object.entries(this.statoProjettoTool.groups)) {
+          const filtrati = (list || []).filter(c => c.progettoId !== progettoId)
+          if (filtrati.length > 0) groups[key] = filtrati
         }
-        try {
-          await verificaService.updateProgetto(d.progettoId, { StatoProgetto: d.statoCalcolato })
-          fixed++
-        } catch (error) {
-          this.error = error.response?.data?.errors?.[0]?.message || error.message
-          throw error
+        this.statoProjettoTool = {
+          ...this.statoProjettoTool,
+          groups,
+          count: Object.values(groups).reduce((sum, list) => sum + list.length, 0)
         }
       }
-      return { fixed, skipped }
     },
 
     async logout() {
