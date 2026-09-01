@@ -82,11 +82,14 @@ describe('buildAggregati', () => {
     expect(d.byYear[2025].chiusi).toBe(1)
     expect(d.byYear[2025].perAmbito.Scolastico).toBe(1)
     expect(d.byYear[2025].perAmbito.Sociale).toBe(1)
+    expect(d.byYear[2025].perStatoProgetto.accettato).toBe(1)
+    expect(d.byYear[2025].perStatoProgetto.chiuso).toBe(1)
     expect(d.byYear[2025].perStatoRendicontazione.verificato).toBe(1)
     expect(d.byYear[2025].perStatoRendicontazione.chiuso).toBe(1)
 
     expect(d.byYear[2026].progetti).toBe(1)
     expect(d.byYear[2026].famiglie).toBe(1)
+    expect(d.byYear[2026].perStatoProgetto.accettato).toBe(1)
 
     expect(d.totali.progetti).toBe(3)
     expect(d.totali.famiglie).toBe(2)
@@ -111,6 +114,7 @@ describe('buildAggregati', () => {
     ]
     const d = buildAggregati(progettiParziali, [])
     expect(d.totali.chiusi).toBe(1)
+    expect(d.totali.perStatoProgetto.rimborso_parziale).toBe(1)
     expect(d.totali.perStatoRendicontazione.chiuso).toBe(1)
   })
 })
@@ -143,9 +147,9 @@ describe('dashboard store', () => {
     expect(store.residuoLive).toBe(2700)
 
     expect(store.barProgressi).toHaveLength(2)
-    expect(store.serieProgettiStati).toEqual([
-      { anno: 2025, stati: { verificato: 1, chiuso: 1 } },
-      { anno: 2026, stati: { bozza: 1 } }
+    expect(store.serieProgettiStatoProgetto).toEqual([
+      { anno: 2025, stati: { accettato: 1, chiuso: 1 } },
+      { anno: 2026, stati: { accettato: 1 } }
     ])
     expect(store.donutAmbito.length).toBeGreaterThanOrEqual(2)
     expect(store.donutStati.find(x => x.name === 'verificato').value).toBe(1)

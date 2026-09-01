@@ -89,6 +89,41 @@ describe('calcolaStatoProgetto', () => {
     })
   })
 
+  describe('rimborso_parziale automatico', () => {
+    it('NULL con pagamento parziale assume rimborso_parziale', () => {
+      expect(calcolaStatoProgetto({ allocato: 1000, rimborsato: 300 })).toBe('rimborso_parziale')
+    })
+
+    it('accettato con pagamento parziale assume rimborso_parziale', () => {
+      expect(calcolaStatoProgetto({ statoProgetto: 'accettato', allocato: 1000, rimborsato: 176 })).toBe(
+        'rimborso_parziale'
+      )
+    })
+
+    it('in_rendicontazione con pagamento parziale assume rimborso_parziale', () => {
+      expect(
+        calcolaStatoProgetto({
+          statoProgetto: 'in_rendicontazione',
+          allocato: 1000,
+          rimborsato: 176,
+          giustificativi: giust
+        })
+      ).toBe('rimborso_parziale')
+    })
+
+    it('chiuso con pagato < allocato retrocede a rimborso_parziale', () => {
+      expect(calcolaStatoProgetto({ statoProgetto: 'chiuso', allocato: 875, rimborsato: 176 })).toBe(
+        'rimborso_parziale'
+      )
+    })
+
+    it('rimborso_parziale che completa il pagamento avanza a chiuso', () => {
+      expect(calcolaStatoProgetto({ statoProgetto: 'rimborso_parziale', allocato: 875, rimborsato: 875 })).toBe(
+        'chiuso'
+      )
+    })
+  })
+
   describe('in_rendicontazione', () => {
     it('passa a in_rendicontazione con prima fattura', () => {
       expect(

@@ -468,14 +468,14 @@ describe('auth store', () => {
       expect(store.rendicontazioneCheck.discrepancies[0]).toEqual({ errore: true, messaggio: 'service down' })
     })
 
-    it('checkStatoProgettoConsistency exits when not admin', async () => {
+    it('computeStatoProgettoCandidates exits when not admin', async () => {
       const store = useAuthStore()
       store.user = { role: { name: 'volontario' } }
-      await store.checkStatoProgettoConsistency()
+      await store.computeStatoProgettoCandidates()
       expect(mockGetProgetti).not.toHaveBeenCalled()
     })
 
-    it('checkStatoProgettoConsistency detects zona discrepanza rendicontazione', async () => {
+    it('computeStatoProgettoCandidates groups projects by target state', async () => {
       const store = useAuthStore()
       store.user = { role: { name: 'admin' } }
       mockGetProgetti.mockResolvedValue({
@@ -483,11 +483,27 @@ describe('auth store', () => {
           data: [
             {
               id_progetto: 'p10',
-              StatoProgetto: 'accettato',
+              StatoProgetto: null,
               Allocato: '1000',
               TotalePagato: '0',
               Cognome_Beneficiario: 'Bianchi',
               AnnoBando: 2025
+            },
+            {
+              id_progetto: 'p11',
+              StatoProgetto: null,
+              Allocato: '1000',
+              TotalePagato: '300',
+              Cognome_Beneficiario: 'Rossi',
+              AnnoBando: 2025
+            },
+            {
+              id_progetto: 'p12',
+              StatoProgetto: 'chiuso',
+              Allocato: '1000',
+              TotalePagato: '1000',
+              Cognome_Beneficiario: 'Verdi',
+              AnnoBando: 2024
             }
           ]
         }
@@ -498,45 +514,134 @@ describe('auth store', () => {
         }
       })
 
-      await store.checkStatoProgettoConsistency()
-      expect(store.statoProgettoCheck.checked).toBe(true)
-      expect(store.statoProgettoCheck.ok).toBe(false)
-      expect(store.statoProgettoCheck.discrepancies).toHaveLength(1)
-      expect(store.statoProgettoCheck.discrepancies[0]).toEqual(
-        expect.objectContaining({ progettoId: 'p10', statoDB: 'accettato', statoCalcolato: 'in_rendicontazione' })
+      await store.computeStatoProgettoCandidates()
+      expect(store.statoProjettoTool.checked).toBe(true)
+      expect(store.statoProjettoTool.groups['in_rendicontazione']).toHaveLength(1)
+      expect(store.statoProjettoTool.groups['in_rendicontazione'][0]).toEqual(
+        expect.objectContaining({ progettoId: 'p10', statoDB: 'aperto', statoCalcolato: 'in_rendicontazione' })
       )
+      expect(store.statoProjettoTool.groups['rimborso_parziale']).toHaveLength(1)
+      expect(store.statoProjettoTool.groups['rimborso_parziale'][0]).toEqual(
+        expect.objectContaining({ progettoId: 'p11', statoDB: 'aperto', statoCalcolato: 'rimborso_parziale' })
+      )
+      expect(store.statoProjettoTool.groups['chiuso']).toBeUndefined()
+      expect(store.statoProjettoTool.count).toBe(2)
     })
 
-    it('checkStatoProgettoConsistency considers legacy aperto coerente', async () => {
+    it('computeStatoProgettoCandidates groups legacy chiuso parziale into rimborso_parziale', async () => {
       const store = useAuthStore()
       store.user = { role: { name: 'admin' } }
       mockGetProgetti.mockResolvedValue({
         data: {
-          data: [{ id_progetto: 'p11', StatoProgetto: 'aperto', Allocato: '500', TotalePagato: '0' }]
+          data: [
+            {
+              id_progetto: 'p13',
+              StatoProgetto: 'chiuso',
+              Allocato: '875',
+              TotalePagato: '176',
+              Cognome_Beneficiario: 'Bruzzi',
+              AnnoBando: 2023
+            }
+          ]
         }
       })
       mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
 
-      await store.checkStatoProgettoConsistency()
-      expect(store.statoProgettoCheck.ok).toBe(true)
-      expect(store.statoProgettoCheck.discrepancies).toEqual([])
+      await store.computeStatoProgettoCandidates()
+      expect(store.statoProjettoTool.groups['rimborso_parziale']).toHaveLength(1)
+      expect(store.statoProjettoTool.groups['rimborso_parziale'][0]).toEqual(
+        expect.objectContaining({ progettoId: 'p13', statoDB: 'chiuso', statoCalcolato: 'rimborso_parziale' })
+      )
     })
 
-    it('fixStatoProgettoDiscrepancies riallinea solo transizioni automatiche', async () => {
+    it('computeStatoProgettoCandidates stores error group on failure', async () => {
       const store = useAuthStore()
       store.user = { role: { name: 'admin' } }
-      store.statoProgettoCheck = {
-        discrepancies: [
-          { progettoId: 'p12', statoCalcolato: 'in_rendicontazione' },
-          { progettoId: 'p13', statoCalcolato: 'validato' }
-        ]
+      mockGetProgetti.mockRejectedValue({ message: 'service down' })
+
+      await store.computeStatoProgettoCandidates()
+      expect(store.statoProjettoTool.checked).toBe(true)
+      expect(store.statoProjettoTool.groups.error).toHaveLength(1)
+      expect(store.error).toContain('service down')
+    })
+
+    it('applyStatoProgettoById exits when not admin', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'volontario' } }
+      await store.applyStatoProgettoById('p10', 'chiuso')
+      expect(mockUpdateProgetto).not.toHaveBeenCalled()
+    })
+
+    it('applyStatoProgettoById patches the project and removes the candidate locally', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'admin' } }
+      store.statoProjettoTool = {
+        checked: true,
+        groups: {
+          rimborso_parziale: [
+            {
+              progettoId: 'p10',
+              beneficiario: 'Bianchi',
+              annoBando: '2025',
+              statoDB: 'aperto',
+              statoCalcolato: 'rimborso_parziale'
+            },
+            {
+              progettoId: 'p11',
+              beneficiario: 'Rossi',
+              annoBando: '2025',
+              statoDB: 'aperto',
+              statoCalcolato: 'rimborso_parziale'
+            }
+          ],
+          accettato: [
+            {
+              progettoId: 'p12',
+              beneficiario: 'Verdi',
+              annoBando: '2025',
+              statoDB: 'aperto',
+              statoCalcolato: 'accettato'
+            }
+          ]
+        },
+        count: 3,
+        lastChecked: '2026-01-01T00:00:00.000Z'
       }
       mockUpdateProgetto.mockResolvedValue({})
-      const res = await store.fixStatoProgettoDiscrepancies()
-      expect(res.fixed).toBe(1)
-      expect(res.skipped).toBe(1)
-      expect(mockUpdateProgetto).toHaveBeenCalledWith('p12', { StatoProgetto: 'in_rendicontazione' })
-      expect(mockUpdateProgetto).not.toHaveBeenCalledWith('p13', expect.anything())
+
+      await store.applyStatoProgettoById('p10', 'rimborso_parziale')
+      expect(mockUpdateProgetto).toHaveBeenCalledWith('p10', { StatoProgetto: 'rimborso_parziale' })
+      expect(store.statoProjettoTool.groups['rimborso_parziale']).toHaveLength(1)
+      expect(store.statoProjettoTool.groups['rimborso_parziale'][0].progettoId).toBe('p11')
+      expect(store.statoProjettoTool.groups['accettato']).toHaveLength(1)
+      expect(store.statoProjettoTool.count).toBe(2)
+      expect(mockGetProgetti).not.toHaveBeenCalled()
+    })
+
+    it('applyStatoProgettoById drops the group when its last candidate is removed', async () => {
+      const store = useAuthStore()
+      store.user = { role: { name: 'admin' } }
+      store.statoProjettoTool = {
+        checked: true,
+        groups: {
+          accettato: [
+            {
+              progettoId: 'p12',
+              beneficiario: 'Verdi',
+              annoBando: '2025',
+              statoDB: 'aperto',
+              statoCalcolato: 'accettato'
+            }
+          ]
+        },
+        count: 1,
+        lastChecked: '2026-01-01T00:00:00.000Z'
+      }
+      mockUpdateProgetto.mockResolvedValue({})
+
+      await store.applyStatoProgettoById('p12', 'accettato')
+      expect(store.statoProjettoTool.groups['accettato']).toBeUndefined()
+      expect(store.statoProjettoTool.count).toBe(0)
     })
   })
 })
