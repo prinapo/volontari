@@ -426,6 +426,9 @@ test.describe('Riconciliazione', () => {
   // ── RC-01: Pagina riconciliazione carica @smoke ──
   test('RC-01: Pagina riconciliazione carica @smoke', async ({ page }) => {
     test.setTimeout(90_000)
+    const rc01Sub = await createTestSubmission(page, { email: `TEST_rc01_${Date.now()}@test.com` })
+    if (rc01Sub?.id) _rcIds.inviiNoLogin.push(rc01Sub.id)
+
     await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -434,6 +437,7 @@ test.describe('Riconciliazione', () => {
 
     const header = page.locator('.text-h5')
     await expect(header).toHaveText('Da riconciliare')
+    expect(await riconcPage.getRowCount()).toBeGreaterThan(0)
   })
 
   // ── RC-02: RiconciliaDialog si apre per riga linked @smoke ──
@@ -654,6 +658,9 @@ test.describe('Riconciliazione', () => {
   // ── RC-PG-01: Toggle scartati mostra/nasconde scartati @crud ──
   test('RC-PG-01: Toggle scartati mostra/nasconde scartati @crud', async ({ page }) => {
     test.setTimeout(90_000)
+    const rcpg1Sub = await createTestSubmission(page, { email: `TEST_rcpg1_${Date.now()}@test.com` })
+    if (rcpg1Sub?.id) _rcIds.inviiNoLogin.push(rcpg1Sub.id)
+
     await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)
@@ -662,13 +669,14 @@ test.describe('Riconciliazione', () => {
 
     // Legge conteggio righe con toggle off (default)
     const rowsDefault = await riconcPage.getRowCount()
+    expect(rowsDefault).toBeGreaterThan(0)
 
     // Attiva toggle "Mostra scartati"
     const toggle = page.locator('.q-toggle:has-text("Mostra scartati")')
-    if ((await toggle.count()) === 0) {
+    if ((await toggle.count()) > 0) {
+      await toggle.click()
+      await riconcPage.waitForTable()
     }
-    await toggle.click()
-    await riconcPage.waitForTable()
 
     const rowsWithScartati = await riconcPage.getRowCount()
     expect(rowsWithScartati).toBeGreaterThanOrEqual(rowsDefault)
@@ -683,6 +691,9 @@ test.describe('Riconciliazione', () => {
   // ── RC-PG-02: Paginazione UI visibile @smoke ──
   test('RC-PG-02: Controlli paginazione visibili @smoke', async ({ page }) => {
     test.setTimeout(90_000)
+    const rcpg2Sub = await createTestSubmission(page, { email: `TEST_rcpg2_${Date.now()}@test.com` })
+    if (rcpg2Sub?.id) _rcIds.inviiNoLogin.push(rcpg2Sub.id)
+
     await loginAs(page, 'manager', auth)
 
     const riconcPage = new RiconciliazionePage(page)

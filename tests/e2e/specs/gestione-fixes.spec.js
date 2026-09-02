@@ -1,11 +1,11 @@
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { apiLogin, apiDelete } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
+import { creaFamigliaVolontarioProgetto, pulisciIds, loginGestore } from '../helpers/setup-atomico.js'
 import { GestionePage } from '../pages/GestionePage.js'
 import { RiconciliazionePage } from '../pages/RiconciliazionePage.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin } from '../helpers/api.js'
-import { creaFamigliaVolontarioProgetto, pulisciIds, loginGestore } from '../helpers/setup-atomico.js'
 
 test.describe('Gestione Fixes', () => {
   test.beforeAll(async () => {
@@ -13,7 +13,7 @@ test.describe('Gestione Fixes', () => {
   })
 
   test('GF-01: Disattivo filter — soft-delete non mostrato @regression', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     const ids = {}
     await loginGestore(page)
     await creaFamigliaVolontarioProgetto(page, ids)
@@ -21,9 +21,9 @@ test.describe('Gestione Fixes', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.famiglieTab.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await gestionePage.searchFamiglie(ids.prefix + 'Fam')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const clicked = await gestionePage.clickContactsOnFamiglia(ids.prefix + 'Fam')
     if (!clicked) throw new Error('clickContactsOnFamiglia fallito')
@@ -36,12 +36,12 @@ test.describe('Gestione Fixes', () => {
   })
 
   test('GF-02: Email editabile quando contatto not found @regression', async ({ page }) => {
-    test.setTimeout(60000)
+    test.setTimeout(60_000)
     const randomEmail = `TEST_no_esiste_${Date.now()}@test.com`
 
     const submitPage = new SubmitPage(page)
     await submitPage.goto()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     await submitPage.fillForm({
       nome_richiedente: 'TEST_NoEsiste',
@@ -55,7 +55,7 @@ test.describe('Gestione Fixes', () => {
     })
 
     await submitPage.clickAddGiustificativo()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     await submitPage.fillGiustificativo(0, {
       descrizione: 'TEST_Giustificativo',
@@ -77,7 +77,7 @@ test.describe('Gestione Fixes', () => {
     const refreshBtn = page.locator('button[aria-label="Aggiorna"]')
     if (await refreshBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
       await refreshBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
     }
 
     const rows = riconcPage.rowLocator
@@ -106,8 +106,52 @@ test.describe('Gestione Fixes', () => {
   })
 
   test('GF-03: Telefono visibile nella lista submission @smoke', async ({ page }) => {
-    await loginAs(page, 'manager', auth)
+    test.setTimeout(120_000)
+    const randomEmail = `TEST_GF03_${Date.now()}@test.com`
+    const submitPage = new SubmitPage(page)
+    await submitPage.goto()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await submitPage.fillForm({
+      nome_richiedente: 'TEST_GF03',
+      cognome_richiedente: 'TEST_Submitter',
+      email: randomEmail,
+      telefono: '3331234567',
+      iban: 'IT60X0000000000000000000',
+      intestatario: 'TEST_Intestatario',
+      nome_beneficiario: 'TEST_Luigi',
+      cognome_beneficiario: 'TEST_Rossi'
+    })
+    await submitPage.clickAddGiustificativo()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await submitPage.fillGiustificativo(0, {
+      descrizione: 'TEST_GF03',
+      importo: 100,
+      data: '2026-01-15'
+    })
+    await page.waitForTimeout(2000)
+    const [postResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST'
+      ),
+      submitPage.clickSubmit()
+    ])
+    await submitPage.waitForSuccess()
+    let subId = null
+    try {
+      const respData = await postResp.json()
+      subId = respData?.data?.id || respData?.data?.[0]?.id
+    } catch {
+      /* body vuoto */
+    }
+    if (subId) {
+      try {
+        await apiDelete('InviiGiustificativiNoLogin', subId)
+      } catch {
+        /* */
+      }
+    }
 
+    await loginAs(page, 'manager', auth)
     const riconcPage = new RiconciliazionePage(page)
     await page.goto('/riconciliazione')
     await riconcPage.waitForTable()
@@ -116,23 +160,23 @@ test.describe('Gestione Fixes', () => {
     const phoneVisibleDesktop = await phoneHeader.isVisible({ timeout: 3000 }).catch(() => false)
     if (phoneVisibleDesktop) {
       expect(phoneVisibleDesktop).toBe(true)
-      return
+    } else {
+      // Su mobile: il testo Telefono è nella card header/caption
+      const hasTelefono = (await page.locator('.q-expansion-item:has-text("Telefono")').count()) > 0
+      expect(hasTelefono).toBe(true)
     }
-    // Su mobile: il testo Telefono è nella card header/caption
-    const hasTelefono = (await page.locator('.q-expansion-item:has-text("Telefono")').count()) > 0
-    expect(hasTelefono).toBe(true)
   })
 
   test('GF-04: Tabella famiglie si carica con righe @smoke', async ({ page }) => {
     await loginAs(page, 'manager', auth)
     await page.goto('/gestione')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     // Cerca il contenuto della tabella: q-table su desktop, q-expansion-item su mobile grid
     const table = page.locator('.q-table')
     const gridContent = page.locator('.q-expansion-item')
     const hasTable = (await table.count()) > 0
     if (hasTable) {
-      await expect(table).toBeVisible({ timeout: 10000 })
+      await expect(table).toBeVisible({ timeout: 10_000 })
       const isGrid = (await page.locator('.q-table--grid').count()) > 0
       if (isGrid) {
         await expect(gridContent.first()).toBeVisible({ timeout: 5000 })
@@ -140,17 +184,17 @@ test.describe('Gestione Fixes', () => {
         await expect(table.locator('tbody tr').first()).toBeVisible({ timeout: 5000 })
       }
     } else {
-      await expect(gridContent.first()).toBeVisible({ timeout: 10000 })
+      await expect(gridContent.first()).toBeVisible({ timeout: 10_000 })
     }
   })
 
   test('GF-05: Tabella contatti si carica con righe @smoke', async ({ page }) => {
     await loginAs(page, 'manager', auth)
     await page.goto('/gestione')
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await page.locator('.q-tab:has-text("Contatti")').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     // Tab attivo
-    await expect(page.locator('.q-tab--active:has-text("Contatti")')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.q-tab--active:has-text("Contatti")')).toBeVisible({ timeout: 10_000 })
   })
 })
