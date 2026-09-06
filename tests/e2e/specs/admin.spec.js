@@ -2,12 +2,14 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import {
   apiLogin,
   apiGet,
+  apiPost,
   apiDelete,
   apiDeleteSystem,
   apiGetSystem,
   apiPatchSystem,
   apiPostSystem
 } from '../helpers/api.js'
+import { deleteFamiglie, deleteProgetti } from '../helpers/cleanup.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 
@@ -312,6 +314,46 @@ test.describe('Admin — Impersonazione', () => {
 })
 
 test.describe('Admin — Trasformazioni Stato Progetto', () => {
+  let seed = { famiglia: null, progetto: null, nome: '' }
+
+  // Il tool mostra il gruppo "→ Accettato" con badge "Aperto (legacy)" solo se
+  // in dev esiste almeno un progetto con stato DB raw 'aperto' (legacy).
+  // Appena le trasformazioni vengono applicate quei record spariscono, quindi il
+  // test crea ad-hoc una famiglia + progetto legacy e li ripulisce a fine test.
+  test.beforeAll(async () => {
+    await apiLogin(auth.admin.email, auth.admin.password)
+  })
+
+  test.beforeEach(async () => {
+    seed.nome = `TEST_ADCHECK_${Date.now()}`
+    const fam = await apiPost('Famiglie', {
+      id_famiglia: 'TEST_ADCHECK_FAM_' + Date.now(),
+      Nome_Famiglia: seed.nome,
+      IBAN: `IT60X${Date.now()}0000123456`,
+      Intestatario_CC: seed.nome
+    })
+    seed.famiglia = fam?.data?.id_famiglia
+    const proj = await apiPost('Progetti', {
+      id_progetto: 'TEST_ADCHECK_PROG_' + Date.now(),
+      Famiglia: seed.famiglia,
+      Cognome_Beneficiario: seed.nome,
+      Nome_Beneficiario: 'Benef',
+      AnnoBando: new Date().getFullYear(),
+      Allocato: 5000,
+      Data_Inizio_Progetto: '2026-01-01',
+      Data_Fine_Progetto: '2026-12-31',
+      StatoProgetto: 'aperto'
+    })
+    seed.progetto = proj?.data?.id_progetto
+    expect(seed.progetto).toBeTruthy()
+  })
+
+  test.afterEach(async () => {
+    if (seed.progetto) await deleteProgetti(seed.progetto).catch(() => {})
+    if (seed.famiglia) await deleteFamiglie(seed.famiglia).catch(() => {})
+    seed = { famiglia: null, progetto: null, nome: '' }
+  })
+
   test('AD-CHECK-03: Tool trasformazioni mostra gruppi e badge legacy @smoke', async ({ page }) => {
     test.setTimeout(60_000)
 
