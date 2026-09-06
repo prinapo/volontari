@@ -13,7 +13,7 @@ import { FOLDERS, STATI_PROGETTO_OPERATIVI } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
-import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
+import { calcolaDisallineati, calcolaStatoProgetto } from 'src/utils/statoProgetto'
 import { useAuthStore } from './auth.store'
 import { usePagamentiStore } from './pagamenti.store'
 
@@ -112,7 +112,8 @@ export const useVerificaStore = defineStore('verifica', {
     submissionsLoading: false,
     submissionsTotalCount: 0,
     includeScartati: false,
-    anniBandoList: []
+    anniBandoList: [],
+    statoDisallineati: []
   }),
 
   getters: {
@@ -155,6 +156,37 @@ export const useVerificaStore = defineStore('verifica', {
 
       this.rows = [...rowsByProject.values()]
       this.rows.forEach(rec => recalculateRowTotals(rec))
+    },
+
+    async checkStatoDisallineati() {
+      try {
+        const projRes = await verificaService.getProgetti({ limit: -1 })
+        const projects = projRes.data.data || []
+        const projIds = projects.map(p => p.id_progetto).filter(Boolean)
+        let giustByProject = {}
+        if (projIds.length > 0) {
+          const giustRes = await verificaService.getGiustificativiByProgetti(projIds)
+          giustByProject = {}
+          for (const g of giustRes.data.data || []) {
+            const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
+            if (!pid) continue
+            if (!giustByProject[pid]) giustByProject[pid] = []
+            giustByProject[pid].push(g)
+          }
+        }
+        const rows = projects.map(p => ({
+          idProgetto: p.id_progetto,
+          beneficiario: [p.Cognome_Beneficiario, p.Nome_Beneficiario].filter(Boolean).join(' ') || '',
+          statoProgetto: p.StatoProgetto,
+          allocato: p.Allocato,
+          totalePagato: p.TotalePagato,
+          giustificativi: giustByProject[p.id_progetto] || []
+        }))
+        this.statoDisallineati = calcolaDisallineati(rows)
+      } catch {
+        /* il warning è informativo: in caso di errore non blocca la pagina */
+        this.statoDisallineati = []
+      }
     },
 
     async _fetchGiustificativi(progettoIds) {

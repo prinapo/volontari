@@ -22,6 +22,7 @@ const verificaState = {
   anniBando: [],
   loading: false,
   filterCount: 0,
+  statoDisallineati: [],
   fetchAnni: (...a) => mockFetchAnni(...a),
   fetchPage: (...a) => mockFetchPage(...a),
   loadFamigliaContacts: (...a) => mockLoadFamigliaContacts(...a),
@@ -30,7 +31,8 @@ const verificaState = {
   verifyGiustificativo: (...a) => mockVerifyGiustificativo(...a),
   updateGiustificativoField: (...a) => mockUpdateGiustificativoField(...a),
   addGiustificativo: (...a) => mockAddGiustificativo(...a),
-  rejectGiustificativo: (...a) => mockRejectGiustificativo(...a)
+  rejectGiustificativo: (...a) => mockRejectGiustificativo(...a),
+  checkStatoDisallineati: vi.fn()
 }
 
 const authState = { canManager: true, initialized: true }

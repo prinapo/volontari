@@ -26,6 +26,27 @@
     {{ store.error }}
   </q-banner>
 
+  <q-banner
+    v-if="store.statoDisallineati.length > 0"
+    class="bg-warning-2 text-dark q-mb-md"
+    rounded
+    dense
+  >
+    <template #avatar>
+      <q-icon name="error_outline" color="warning" />
+    </template>
+    Alcuni progetti hanno uno stato non allineato ai dati. Segnalali all'amministratore
+    (Admin → Consistenza → Trasformazioni) per verificarli.
+    <ul class="q-mt-sm q-mb-none q-pl-md">
+      <li v-for="d in store.statoDisallineati" :key="d.idProgetto">
+        <span class="text-weight-medium">{{ d.beneficiario || d.idProgetto }}</span>
+        <q-badge :color="statoProgettoColor(d.statoDB)" :label="statoProgettoLabel(d.statoDB)" outline class="q-mx-xs" />
+        →
+        <q-badge :color="statoProgettoColor(d.statoCalcolato)" :label="statoProgettoLabel(d.statoCalcolato)" outline class="q-ml-xs" />
+      </li>
+    </ul>
+  </q-banner>
+
   <q-table
     v-model:pagination="pagination"
     v-model:expanded="expandedRows"
@@ -969,6 +990,7 @@ const summary = computed(() => [
 onMounted(() => {
   store.fetchAnni()
   loadData()
+  store.checkStatoDisallineati()
 })
 
 watch(selectedAnno, () => {

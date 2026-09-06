@@ -19,6 +19,14 @@ function hasValidGiustificativi(giustificativi = []) {
 }
 
 /**
+ * Stato effettivo mostrato/atteso a partire dal valore grezzo salvato in DB.
+ * Legacy: 'aperto' e NULL/NIL equivalgono alla base 'accettato'.
+ */
+export function statoProgettoEffettivo(statoProgetto) {
+  return !statoProgetto || statoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : statoProgetto
+}
+
+/**
  * Calcola lo stato progetto atteso.
  *
  * Ordine regole:
@@ -71,4 +79,37 @@ export function calcolaStatoProgetto({ statoProgetto, allocato = 0, rimborsato =
 
   // 7. Default: accettato
   return STATO_PROGETTO.ACCETTATO
+}
+
+/**
+ * Confronta lo stato salvato in DB con quello calcolato e restituisce l'elenco
+ * dei progetti disallineati. Sola lettura: non scrive nulla.
+ *
+ * Lo stato DB è normalizzato con statoProgettoEffettivo (legacy 'aperto'/NULL
+ * → 'accettato'), così il confronto riflette lo stato mostrato all'utente.
+ *
+ * @param {Array} rows - Righe Verifica (idProgetto, beneficiario, statoProgetto,
+ *                       allocato, totalePagato, giustificativi)
+ * @returns {Array<{idProgetto, beneficiario, statoDB, statoCalcolato}>}
+ */
+export function calcolaDisallineati(rows = []) {
+  const disallineati = []
+  for (const row of rows) {
+    const statoDB = statoProgettoEffettivo(row.statoProgetto)
+    const statoCalcolato = calcolaStatoProgetto({
+      statoProgetto: row.statoProgetto,
+      allocato: row.allocato,
+      rimborsato: row.totalePagato,
+      giustificativi: row.giustificativi
+    })
+    if (statoCalcolato !== statoDB) {
+      disallineati.push({
+        idProgetto: row.idProgetto,
+        beneficiario: row.beneficiario,
+        statoDB,
+        statoCalcolato
+      })
+    }
+  }
+  return disallineati
 }

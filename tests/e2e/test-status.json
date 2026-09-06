@@ -1857,6 +1857,14 @@
       "mobile": "pass",
       "lastRun": "4.0.5",
       "lastPassed": "4.0.5"
+    },
+    "VER-ALLINE-01": {
+      "name": "VER-ALLINE-01: banner warning per progetto stato non allineato @smoke",
+      "file": "verifica.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.5",
+      "lastPassed": "4.0.5"
     }
   }
 }

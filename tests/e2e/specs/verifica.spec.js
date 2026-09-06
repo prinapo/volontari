@@ -795,4 +795,38 @@ test.describe('Filtro stato progetto', () => {
 
     await page.keyboard.press('Escape').catch(() => {})
   })
+
+  test('VER-ALLINE-01: banner warning per progetto stato non allineato @smoke', async ({ page }) => {
+    test.setTimeout(60_000)
+
+    const listRes = await apiGet('Progetti', {
+      limit: 1,
+      sort: 'id_progetto',
+      filter: { TotalePagato: { _eq: 0 } },
+      fields: 'id_progetto,StatoProgetto,Allocato,TotalePagato,Cognome_Beneficiario,Nome_Beneficiario'
+    })
+    const proj = listRes?.data?.[0]
+    expect(proj?.id_progetto).toBeTruthy()
+    const id = proj.id_progetto
+    const beneficiary = [proj.Cognome_Beneficiario, proj.Nome_Beneficiario].filter(Boolean).join(' ')
+    const originalState = proj.StatoProgetto
+
+    await loginAs(page, 'manager', auth)
+    await page.goto('/verifica')
+    const vp = new VerificaPage(page)
+    await vp.waitForTable()
+
+    try {
+      // Forza un disallineamento: rimborso_parziale è impossibile con TotalePagato 0
+      await apiPatch('Progetti', id, { StatoProgetto: 'rimborso_parziale' })
+      await page.reload()
+      await vp.waitForTable()
+
+      await expect(page.getByText('stato non allineato', { exact: false })).toBeVisible({ timeout: 10_000 })
+      await expect(page.getByText(beneficiary, { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    } finally {
+      await apiPatch('Progetti', id, { StatoProgetto: originalState || null }).catch(() => {})
+      await page.reload().catch(() => {})
+    }
+  })
 })
