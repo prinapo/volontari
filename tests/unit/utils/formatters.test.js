@@ -45,6 +45,8 @@ describe('statoLabel', () => {
     expect(statoLabel('inviato')).toBe('Inviato')
     expect(statoLabel('verificato')).toBe('Verificato')
     expect(statoLabel('rifiutato')).toBe('Rifiutato')
+    expect(statoLabel('pagato')).toBe('Pagato')
+    expect(statoLabel('in_pagamento')).toBe('In pagamento')
   })
 
   it('falls back to Bozza for unknown states', () => {
@@ -58,6 +60,8 @@ describe('statoColor', () => {
     expect(statoColor('inviato')).toBe('orange')
     expect(statoColor('verificato')).toBe('positive')
     expect(statoColor('rifiutato')).toBe('negative')
+    expect(statoColor('pagato')).toBe('primary')
+    expect(statoColor('in_pagamento')).toBe('secondary')
   })
 
   it('returns grey for unknown states', () => {

@@ -379,7 +379,7 @@ test.describe('Admin — Trasformazioni Stato Progetto', () => {
     await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
     const primaRiga = page
       .locator('.q-expansion-item', { hasText: '→ Accettato' })
-      .locator('.q-expansion-item__content .q-item')
+      .locator('.q-expansion-item__content .q-item', { hasText: seed.nome })
       .first()
     await expect(primaRiga.locator('.q-badge:has-text("Aperto (legacy)")')).toBeVisible({ timeout: 10_000 })
     await expect(primaRiga.locator('.q-badge:has-text("Accettato")')).toBeVisible()

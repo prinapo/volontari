@@ -288,8 +288,8 @@
                           <div v-else class="text-grey-5">—</div>
                         </div>
                         <div class="col-3 col-sm-1">
-                          <q-badge :color="statoColor(g.Stato)" outline>
-                            {{ statoLabel(g.Stato) }}
+                          <q-badge :color="statoColor(getGiustStato(props.row, g).Stato)" outline>
+                            {{ statoLabel(getGiustStato(props.row, g).Stato) }}
                           </q-badge>
                         </div>
                         <div class="col-12 col-sm-5">
@@ -477,7 +477,10 @@ aria-label="Ripristina"
             <q-badge :color="statoRiga(props.row).color">
               {{ statoRiga(props.row).label }}
             </q-badge>
-            <q-badge :color="statoProgettoColor(props.row.statoProgetto)" outline class="q-ml-xs">
+          </template>
+
+          <template v-else-if="col.name === 'statoProgetto'">
+            <q-badge :color="statoProgettoColor(props.row.statoProgetto)" outline>
               {{ statoProgettoLabel(props.row.statoProgetto) }}
             </q-badge>
           </template>
@@ -700,8 +703,8 @@ aria-label="Ripristina"
                 </q-item-section>
 
                 <q-item-section class="col-1">
-                  <q-badge :color="statoColor(g.Stato)" outline>
-                    {{ statoLabel(g.Stato) }}
+                  <q-badge :color="statoColor(getGiustStato(props.row, g).Stato)" outline>
+                    {{ statoLabel(getGiustStato(props.row, g).Stato) }}
                   </q-badge>
                 </q-item-section>
 
@@ -861,6 +864,7 @@ import {
 import { STATO_PROGETTO } from 'src/utils/constants'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { calcolaStatoRiga, statoGiustificativoEff } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
 import ProgettoDetailDialog from './ProgettoDetailDialog.vue'
@@ -929,6 +933,16 @@ const {
 
 const filteredRows = computed(() => store.rows)
 
+// Stato di riga memoizzato: ricalcolato solo quando le righe cambiano (evita
+// di risommare i giustificativi a ogni render per ogni badge).
+const rowStati = computed(() => {
+  const m = new Map()
+  for (const row of filteredRows.value) {
+    m.set(row.idProgetto, calcolaStatoRiga(row))
+  }
+  return m
+})
+
 const annoOptions = computed(() =>
   store.anniBando.map(anno => ({
     label: String(anno),
@@ -955,7 +969,8 @@ const columns = [
   { name: 'allocato', label: 'Allocato', field: 'allocato', align: 'right', sortable: true },
   { name: 'rendicontato', label: 'Rendicontato', field: 'totaleRendicontato', align: 'right', sortable: true },
   { name: 'pagato', label: 'Pagato', field: 'totalePagato', align: 'right' },
-  { name: 'stato', label: 'Stato', field: 'id', align: 'left' },
+  { name: 'stato', label: 'Stato rendicontazione', field: 'id', align: 'left' },
+  { name: 'statoProgetto', label: 'Stato progetto', field: 'statoProgetto', align: 'left' },
   { name: 'actions', label: '', field: 'id', align: 'right' }
 ]
 
@@ -1001,33 +1016,18 @@ watch(selectedStatoProgetto, val => {
   setFilters({ statoProgettoFilter: val || undefined })
 })
 
-function hasPendingGiustificativi(row) {
-  return (row.giustificativi || []).some(g => g.Stato === 'inviato')
-}
-
 function totalGiustificativi(row) {
   return (row.giustificativi || []).filter(g => !g.Invalidato).length
 }
 
-function allVerified(row) {
-  const validGiust = (row.giustificativi || []).filter(g => !g.Invalidato)
-  return validGiust.length > 0 && validGiust.every(g => g.Stato === 'verificato')
+function statoRiga(row) {
+  return rowStati.value.get(row.idProgetto) || calcolaStatoRiga(row)
 }
 
-function statoRiga(row) {
-  if (row.totaleRendicontato === 0) {
-    return { label: 'Non ricevuta', color: 'grey' }
-  }
-  if (!row.iban || !row.intestatario) {
-    return { label: 'Dati bancari mancanti', color: 'warning' }
-  }
-  if (hasPendingGiustificativi(row)) {
-    return { label: 'Da verificare', color: 'orange' }
-  }
-  if (allVerified(row)) {
-    return { label: 'Pronto', color: 'positive' }
-  }
-  return { label: 'Da completare', color: 'warning' }
+function getGiustStato(row, g) {
+  const key = rowStati.value.get(row.idProgetto)?.key ?? calcolaStatoRiga(row).key
+  const eff = statoGiustificativoEff(g, key)
+  return eff === null ? g : { Stato: eff }
 }
 
 async function loadFamigliaContatti(famigliaId) {

@@ -222,11 +222,11 @@ aria-label="Chiudi">
           Giustificativi ({{ (progetto.giustificativi || []).length }})
         </div>
         <q-table
-          v-if="(progetto.giustificativi || []).length > 0"
+          v-if="giustificativi.length > 0"
           flat
           bordered
           dense
-          :rows="progetto.giustificativi"
+          :rows="giustificativi"
           :columns="giustColumns"
           row-key="id"
           hide-pagination
@@ -316,6 +316,7 @@ data-testid="detail-chiudi" />
 import { computed } from 'vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, statoLabel, statoColor } from 'src/utils/formatters'
+import { calcolaStatoRiga, statoGiustificativoEff } from 'src/utils/statoRiga'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -328,6 +329,16 @@ const visible = computed({
   get: () => props.modelValue,
   set: val => emit('update:modelValue', val)
 })
+
+function giustStatoEff(g) {
+  const eff = statoGiustificativoEff(g, statoProgettoKey.value)
+  return eff === null ? g : { Stato: eff }
+}
+
+// Stato di riga derivato una sola volta per apertura del dialogo.
+const statoProgettoKey = computed(() => calcolaStatoRiga(props.progetto).key)
+
+const giustificativi = computed(() => (props.progetto.giustificativi || []).map(giustStatoEff))
 
 const giustColumns = [
   { name: 'Descrizione', label: 'Descrizione', field: 'Descrizione', align: 'left' },

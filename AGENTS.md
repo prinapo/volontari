@@ -62,6 +62,43 @@ Commit message → conventional-changelog
 - Getters solo per derivare stato esistente, mai per eseguire side effect o chiamate
 - Riferimento canonico: `error-log.store.js`
 
+## Use Case (layer di business)
+
+Ogni **azione di business** (scrittura con side-effect) ha UNA sola
+implementazione in `src/usecases/`, invocata da qualunque entry point (UI
+volontario, modulo libero, verificatore, admin…). Gli ultimi fix hanno
+evidenziato il problema che questo strato risolve: la stessa azione (es. "crea
+giustificativo") era implementata in store diverse con side-effect incoerenti.
+
+### Struttura a strati
+
+- `src/usecases/` — casi d'uso: una funzione per azione, firma `fn(payload, { origine })`
+- `src/services/` — solo chiamate API Directus (regola invariata)
+- `src/utils/` — solo funzioni pure (derivazioni)
+- `src/stores/` — **adapter UI**: stato locale Pinia + chiamata allo use case + aggiornamento dal risultato. Niente logica di business duplicata.
+- Componenti/Page — solo presentazione (chiamano lo store, mai API dirette)
+
+### Regole
+
+1. Nuova azione di business → nuovo use case in `src/usecases/`, mai logica in store/componenti.
+2. Lo use case orchestera: validazione/guardie → scrittura via service → **side-effect obbligatori** → return del risultato.
+3. `origine` identifica il punto di ingresso (`volontario`/`modulo_libero`/`verificatore`/…): serve SOLO per audit/permessi, MAI per eseguire logica diversa — ogni azione fa esattamente la stessa cosa da qualunque parte venga innescata.
+4. Guardie e side-effect obbligatori stanno nello use case (es. `creaGiustificativo` applica la guardia "progetto non operativo" e termina sempre con `syncProgettoAggregati`).
+5. Side-effect per **composizione diretta** nello use case, NON via event bus (determinismo e testabilità; a questo volume un bus è overkill).
+6. I fetch/read NON sono use case (nessun side-effect): restano nelle store o nei service.
+7. **Auth è escluso** dal layer use case: `login`/`logout`/sessione restano in `auth.store` (infrastruttura).
+8. Ogni use case ha unit test (uno per azione); per le azioni multi-ingresso, stesso esito asserito per ogni origine.
+9. Il catalogo completo azioni → entry point è in `docs/usecases-catalog.md`. Allinearlo a ogni nuova azione/spostamento.
+
+### Invariante giustificativi
+
+Ogni mutazione di giustificativo termina con `syncProgettoAggregati(progettoId)`
+(`src/usecases/progetti.js`): ricalcola `TotaleGiustificativi`, `TotaleImporto`,
+`StatoRendicontazione`, `StatoProgetto` da dati **freschi** (mai da stato UI) e
+li PATCHa su `Progetti`. È idempotente: può girare più volte senza effetti.
+La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped
+(solo i 4 campi derivati — vedi "Permesso Volontario su Progetti").
+
 ## Services (Directus)
 
 - Ogni chiamata a Directus passa da src/services/, mai da componenti o store direttamente
@@ -148,6 +185,13 @@ la gestione le fa il manager.
   - Invio email reale di notifica pagamento (il PATCH a `pagato` è verificato,
     l'email Brevo/SMTP no)
   - Edge: 413 file troppo grande, network error, refresh token concorrente
+  - Stato riga Verifica derivato "Pagato"/"In pagamento" (residuo erogabile
+    ≤ 0.01) e badge per-giustificativo derivato: la logica è coperta da unit
+    test e verificata a mano su dev; manca un E2E che crei uno scenario pagato
+    (il flusso PAG-50 lo rende fattibile riusando il pattern
+    creaBatch → segnaPagato, ma va aggiunto quando ne vale la pena).
+    L'helper `VerificaPage.getStatoRiga` accetta già i label 'Pagato' e
+    'In pagamento'.
 - Nota PAG-50: `segnaPagato` spedisce un'email (POST /mail); il test verifica lo
   stato `pagato` via API con retry (25s) per non dipendere dal timing dell'email.
 
@@ -212,6 +256,14 @@ la gestione le fa il manager.
   Manager di dev il permesso `update` su `Progetti` (il flusso "Chiudi
   progetto" e il ricalcolo aggregati PATCHano `/items/Progetti/{id}` e senza
   il permesso il manager riceve 403). Vale solo per il DB di dev.
+- **Permesso Volontario su `Progetti` (dev E prod, DB non git)**: la policy
+  "Volontario" ha `update` su `Progetti` limitato ai SOLI campi derivati
+  `StatoProgetto,StatoRendicontazione,TotaleGiustificativi,TotaleImporto`
+  (field-scoped). È l'abilitatore di `syncProgettoAggregati` (verifica.store):
+  ogni mutazione di giustificativo — anche dal flusso volontario — ricalcola e
+  PATCHa questi campi dal frontend. Una PATCH volontario con altri campi
+  (es. `Allocato`) riceve 403. Va applicato a mano via UI Admin o SQL su dev e
+  prod (UUID policy `e7242c87-4b9e-4f34-a539-1f9c10ce71fb`).
 - **E2E**: test `SY-01`/`SY-02` in `admin.spec.js` verificano la tab Sync e il
   download da produzione (solo lettura, NON l'import che è distruttivo).
 - **Snapshot/backup**: dentro `directus-dev/db-sync/` (host), montato come

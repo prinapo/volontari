@@ -191,7 +191,9 @@ describe('gestione store', () => {
 
   it('createFamiglia sends and refetches', async () => {
     mockCreateFamiglia.mockResolvedValue({})
-    mockGetFamiglie.mockResolvedValue({ data: { data: [{ id_famiglia: 'FAM_1', Nome_Famiglia: 'Fam Test' }], meta: { filter_count: 1 } } })
+    mockGetFamiglie.mockResolvedValue({
+      data: { data: [{ id_famiglia: 'FAM_1', Nome_Famiglia: 'Fam Test' }], meta: { filter_count: 1 } }
+    })
     const store = useGestioneStore()
     await store.createFamiglia({ Nome_Famiglia: 'Fam Test' })
     expect(mockCreateFamiglia).toHaveBeenCalledWith(
@@ -206,7 +208,9 @@ describe('gestione store', () => {
 
   it('updateFamiglia updates and refetches', async () => {
     mockUpdateFamiglia.mockResolvedValue({})
-    mockGetFamiglie.mockResolvedValue({ data: { data: [{ id_famiglia: 1, Nome_Famiglia: 'New' }], meta: { filter_count: 1 } } })
+    mockGetFamiglie.mockResolvedValue({
+      data: { data: [{ id_famiglia: 1, Nome_Famiglia: 'New' }], meta: { filter_count: 1 } }
+    })
     const store = useGestioneStore()
     await store.updateFamiglia(1, { Nome_Famiglia: 'New' })
     expect(mockUpdateFamiglia).toHaveBeenCalledWith(1, { Nome_Famiglia: 'New' })
@@ -347,31 +351,6 @@ describe('gestione store', () => {
     await store.creaUtentePerVolontario('c-1')
     expect(mockCreateUser).toHaveBeenCalled()
     expect(store.saving).toBe(false)
-  })
-
-  it('_findOrCreateUser covers missing contact, existing user, missing email and missing role', async () => {
-    const store = useGestioneStore()
-
-    mockGetContattoById.mockResolvedValueOnce({ data: { data: null } })
-    expect(await store._findOrCreateUser('c-0')).toEqual({ error: 'Contatto non trovato' })
-
-    mockGetContattoById.mockResolvedValueOnce({ data: { data: { id_contatto: 'c-1', user_id: 'u-1' } } })
-    expect(await store._findOrCreateUser('c-1')).toEqual({
-      success: true,
-      contatto: { id_contatto: 'c-1', user_id: 'u-1' }
-    })
-
-    mockGetContattoById.mockResolvedValueOnce({ data: { data: { id_contatto: 'c-2', email: [] } } })
-    expect(await store._findOrCreateUser('c-2')).toEqual({ error: 'Email mancante' })
-
-    mockGetContattoById.mockResolvedValueOnce({
-      data: { data: { id_contatto: 'c-3', email: [{ email_address: 'a@b.it', Primary: true }] } }
-    })
-    mockSearchEmail.mockResolvedValueOnce({ data: { data: [] } })
-    mockGetRoleByName.mockResolvedValueOnce({ data: { data: [] } })
-    expect(await store._findOrCreateUser('c-3')).toEqual({
-      error: "Ruolo Volontario non trovato in Directus. Contatta l'amministratore."
-    })
   })
 
   it('assignToFamiglia and markAsReferente expose friendly email-missing errors', async () => {

@@ -3,6 +3,8 @@ import { useVerificaStore } from 'src/stores/verifica.store'
 
 const mockGetProgetti = vi.fn()
 const mockGetGiustificativiByProgetti = vi.fn()
+const mockGetGiustificativiByProgetto = vi.fn()
+const mockGetProgettoById = vi.fn()
 const mockGetGiustificativiByProgettiLight = vi.fn()
 const mockGetRendicontazioniBatch = vi.fn()
 const mockUpdateProgetto = vi.fn()
@@ -40,6 +42,8 @@ vi.mock('src/services/verifica.service', () => ({
   verificaService: {
     getProgetti: (...a) => mockGetProgetti(...a),
     getGiustificativiByProgetti: (...a) => mockGetGiustificativiByProgetti(...a),
+    getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
+    getProgettoById: (...a) => mockGetProgettoById(...a),
     getGiustificativiByProgettiLight: (...a) => mockGetGiustificativiByProgettiLight(...a),
     getRendicontazioniBatch: (...a) => mockGetRendicontazioniBatch(...a),
     updateProgetto: (...a) => mockUpdateProgetto(...a),
@@ -114,6 +118,24 @@ vi.mock('src/stores/pagamenti.store', () => ({
   usePagamentiStore: () => ({
     ricalcolaProposta: (...a) => mockRicalcolaProposta(...a)
   })
+}))
+
+const mockVerificaGiustificativo = vi.fn()
+const mockAggiornaCampoGiustificativo = vi.fn()
+const mockRifiutaGiustificativo = vi.fn()
+const mockCreaGiustificativo = vi.fn()
+const mockRiconciliaSubmission = vi.fn()
+const mockScartaSubmission = vi.fn()
+const mockRipristinaSubmission = vi.fn()
+
+vi.mock('src/usecases/giustificativi', () => ({
+  verificaGiustificativo: (...a) => mockVerificaGiustificativo(...a),
+  aggiornaCampoGiustificativo: (...a) => mockAggiornaCampoGiustificativo(...a),
+  rifiutaGiustificativo: (...a) => mockRifiutaGiustificativo(...a),
+  creaGiustificativo: (...a) => mockCreaGiustificativo(...a),
+  riconciliaSubmission: (...a) => mockRiconciliaSubmission(...a),
+  scartaSubmission: (...a) => mockScartaSubmission(...a),
+  ripristinaSubmission: (...a) => mockRipristinaSubmission(...a)
 }))
 
 describe('verifica store', () => {
@@ -194,63 +216,72 @@ describe('verifica store', () => {
   })
 
   it('verifyGiustificativo verifies and recalculates', async () => {
-    mockVerifyGiust.mockResolvedValue({})
-    mockUpdateProgetto.mockResolvedValue({})
+    mockVerificaGiustificativo.mockResolvedValue()
     const store = useVerificaStore()
     store.rows = [{ idProgetto: 1, giustificativi: [{ id: 'g-1', Stato: 'inviato', Importo: '100' }] }]
     await store.verifyGiustificativo(1, 'g-1')
-    expect(mockVerifyGiust).toHaveBeenCalledWith('g-1')
+    expect(mockVerificaGiustificativo).toHaveBeenCalledWith({ id: 'g-1', progettoId: 1 })
+    expect(store.rows[0].giustificativi[0].Stato).toBe('verificato')
     expect(mockRicalcolaProposta).toHaveBeenCalled()
   })
 
   it('verifyGiustificativo returns early when row or item is missing', async () => {
-    mockVerifyGiust.mockResolvedValue({})
+    mockVerificaGiustificativo.mockResolvedValue()
     const store = useVerificaStore()
     store.rows = [{ idProgetto: 2, giustificativi: [{ id: 'g-x', Stato: 'inviato', Importo: '50' }] }]
 
     await store.verifyGiustificativo(1, 'g-1')
     await store.verifyGiustificativo(2, 'g-1')
-    expect(mockVerifyGiust).toHaveBeenCalledTimes(2)
+    expect(mockVerificaGiustificativo).toHaveBeenCalledTimes(2)
   })
 
   it('updateGiustificativoField updates and recalculates', async () => {
-    mockUpdateGiust.mockResolvedValue({})
-    mockUpdateProgetto.mockResolvedValue({})
+    mockAggiornaCampoGiustificativo.mockResolvedValue()
     const store = useVerificaStore()
     store.rows = [{ idProgetto: 1, giustificativi: [{ id: 'g-1', Importo: '100', Stato: 'draft' }] }]
     await store.updateGiustificativoField(1, 'g-1', 'Importo', '200')
-    expect(mockUpdateGiust).toHaveBeenCalledWith('g-1', { Importo: '200' })
+    expect(mockAggiornaCampoGiustificativo).toHaveBeenCalledWith({
+      id: 'g-1',
+      field: 'Importo',
+      value: '200',
+      progettoId: 1
+    })
+    expect(store.rows[0].giustificativi[0].Importo).toBe('200')
   })
 
   it('updateGiustificativoField returns early for missing row/item and throws friendly errors', async () => {
-    mockUpdateGiust.mockResolvedValueOnce({})
+    mockAggiornaCampoGiustificativo.mockResolvedValueOnce()
     const store = useVerificaStore()
     store.rows = [{ idProgetto: 2, giustificativi: [{ id: 'g-x', Importo: '10', Stato: 'draft' }] }]
     await store.updateGiustificativoField(1, 'g-1', 'Importo', '20')
 
-    mockUpdateGiust.mockResolvedValueOnce({})
+    mockAggiornaCampoGiustificativo.mockResolvedValueOnce()
     await store.updateGiustificativoField(2, 'g-1', 'Importo', '20')
 
-    mockUpdateGiust.mockRejectedValueOnce(new Error('boom'))
+    mockAggiornaCampoGiustificativo.mockRejectedValueOnce(new Error('boom'))
     await expect(store.updateGiustificativoField(2, 'g-1', 'Importo', '20')).rejects.toBeTruthy()
     expect(store.error).toBe("Errore nell'aggiornamento del campo Importo")
   })
 
   it('rejectGiustificativo rejects and marks file', async () => {
-    mockRejectGiust.mockResolvedValue({})
-    mockUpdateProgetto.mockResolvedValue({})
+    mockRifiutaGiustificativo.mockResolvedValue()
     const store = useVerificaStore()
     store.rows = [
       { idProgetto: 1, giustificativi: [{ id: 'g-1', Stato: 'draft', Importo: '100', Allegato: 'file-1' }] }
     ]
     await store.rejectGiustificativo(1, 'g-1', 'Nota errata')
-    expect(mockRejectGiust).toHaveBeenCalledWith('g-1', 'Nota errata')
+    expect(mockRifiutaGiustificativo).toHaveBeenCalledWith({
+      id: 'g-1',
+      nota: 'Nota errata',
+      allegato: 'file-1',
+      progettoId: 1
+    })
     expect(store.rows[0].giustificativi[0].Stato).toBe('rifiutato')
     expect(store.rows[0].giustificativi[0].NotaRifiuto).toBe('Nota errata')
   })
 
   it('rejectGiustificativo reports service errors', async () => {
-    mockRejectGiust.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'reject fail' }] } } })
+    mockRifiutaGiustificativo.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'reject fail' }] } } })
     const store = useVerificaStore()
     await expect(store.rejectGiustificativo(1, 'g-1', 'Nota')).rejects.toBeTruthy()
     expect(store.error).toBe('reject fail')
@@ -273,7 +304,7 @@ describe('verifica store', () => {
   })
 
   it('addGiustificativo creates with file', async () => {
-    mockCreateGiust.mockResolvedValue({ data: { data: { id: 'g-1' } } })
+    mockCreaGiustificativo.mockResolvedValue({ id: 'g-1' })
     mockGetProgetti.mockResolvedValue({ data: { data: [], meta: {} } })
     mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
     mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
@@ -282,11 +313,14 @@ describe('verifica store', () => {
       { Descrizione: 'test', Importo: 50, Progetto: 1, Famiglia: 'fam-1' },
       new File([], 'x.pdf')
     )
-    expect(mockCreateGiust).toHaveBeenCalled()
+    expect(mockCreaGiustificativo).toHaveBeenCalledWith(
+      expect.objectContaining({ Progetto: 1, file: expect.any(File) }),
+      { origine: 'verificatore' }
+    )
   })
 
   it('addGiustificativo stores error and throws on failure', async () => {
-    mockCreateGiust.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'add fail' }] } } })
+    mockCreaGiustificativo.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'add fail' }] } } })
     const store = useVerificaStore()
     await expect(
       store.addGiustificativo({ Descrizione: 'x', Importo: 1, Progetto: 1, Famiglia: 'fam-1' })
@@ -294,22 +328,21 @@ describe('verifica store', () => {
     expect(store.error).toBe('add fail')
   })
 
-  it('addGiustificativo blocks non-operativo progetto', async () => {
+  it('addGiustificativo mappa la guardia progetto non operativo', async () => {
+    mockCreaGiustificativo.mockRejectedValueOnce(new Error('Progetto non operativo'))
     const store = useVerificaStore()
-    store.rows = [{ idProgetto: 1, statoProgetto: 'proposto' }]
     await expect(
       store.addGiustificativo({ Descrizione: 'x', Importo: 1, Progetto: 1, Famiglia: 'fam-1' })
     ).rejects.toThrow('Progetto non operativo')
-    expect(mockCreateGiust).not.toHaveBeenCalled()
+    expect(store.error).toBe('Non è possibile caricare giustificativi finché il progetto non è accettato.')
   })
 
   it('addGiustificativo allows legacy aperto (operativo)', async () => {
-    mockCreateGiust.mockResolvedValue({ data: { data: { id: 'g-legacy' } } })
+    mockCreaGiustificativo.mockResolvedValue({ id: 'g-legacy' })
     mockGetProgetti.mockResolvedValue({ data: { data: [], meta: {} } })
     mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
     mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
     const store = useVerificaStore()
-    store.rows = [{ idProgetto: 2, statoProgetto: 'aperto' }]
     await store.addGiustificativo({
       Descrizione: 'x',
       Importo: 1,
@@ -317,7 +350,7 @@ describe('verifica store', () => {
       Famiglia: 'fam-1',
       AnnoBando: 2025
     })
-    expect(mockCreateGiust).toHaveBeenCalled()
+    expect(mockCreaGiustificativo).toHaveBeenCalled()
   })
 
   it('fetchSubmissions loads submissions', async () => {
@@ -407,27 +440,27 @@ describe('verifica store', () => {
   })
 
   it('scartaSubmission discards submission and reports errors', async () => {
-    mockUpdateSubmission.mockResolvedValueOnce({})
+    mockScartaSubmission.mockResolvedValueOnce()
     mockGetSubmissions.mockResolvedValueOnce({ data: { data: [], meta: {} } })
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [] } })
     const store = useVerificaStore()
     await store.scartaSubmission('s-1', 'Non valido')
-    expect(mockUpdateSubmission).toHaveBeenCalledWith('s-1', { stato: 'scartato', note_riconciliazione: 'Non valido' })
+    expect(mockScartaSubmission).toHaveBeenCalledWith({ id: 's-1', nota: 'Non valido' })
 
-    mockUpdateSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'scarto fail' }] } } })
+    mockScartaSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'scarto fail' }] } } })
     await expect(store.scartaSubmission('s-2', 'x')).rejects.toBeTruthy()
     expect(store.error).toBe('scarto fail')
   })
 
   it('ripristinaSubmission restores submission and reports errors', async () => {
-    mockUpdateSubmission.mockResolvedValueOnce({})
+    mockRipristinaSubmission.mockResolvedValueOnce()
     mockGetSubmissions.mockResolvedValueOnce({ data: { data: [], meta: {} } })
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [] } })
     const store = useVerificaStore()
     await store.ripristinaSubmission('s-1')
-    expect(mockUpdateSubmission).toHaveBeenCalledWith('s-1', { stato: 'in_attesa', note_riconciliazione: null })
+    expect(mockRipristinaSubmission).toHaveBeenCalledWith({ id: 's-1' })
 
-    mockUpdateSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'ripristino fail' }] } } })
+    mockRipristinaSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'ripristino fail' }] } } })
     await expect(store.ripristinaSubmission('s-2')).rejects.toBeTruthy()
     expect(store.error).toBe('ripristino fail')
   })
@@ -573,15 +606,12 @@ describe('verifica store', () => {
     const store = useVerificaStore()
     store.submissions = [{ id: 's-1', email: 'test@r.it', descrizione: 'test', importo: 100 }]
 
-    mockFindProgettoByFamiglia.mockResolvedValue({ data: { data: [{ id_progetto: 1, AnnoBando: 2024 }] } })
-    mockCreateGiust.mockResolvedValue({ data: { data: { id: 'g-1' } } })
-    mockUpdateSubmission.mockResolvedValue({})
+    mockRiconciliaSubmission.mockResolvedValue('g-1')
     mockGetSubmissions.mockResolvedValue({ data: { data: [], meta: {} } })
     mockGetContattoByEmails.mockResolvedValue({ data: { data: [] } })
     mockGetProgetti.mockResolvedValue({ data: { data: [], meta: {} } })
     mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
     mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
-    mockUpdateProgetto.mockResolvedValue({})
 
     await store.reconcileSubmission({
       submissionId: 's-1',
@@ -593,8 +623,15 @@ describe('verifica store', () => {
       copiedFields: ['Nome', 'Cognome'],
       rightValues: { Nome: 'M', Cognome: 'R' }
     })
-    expect(mockCreateGiust).toHaveBeenCalled()
-    expect(mockUpdateSubmission).toHaveBeenCalled()
+    expect(mockRiconciliaSubmission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        submissionId: 's-1',
+        contattoId: 'c-1',
+        famigliaId: 'fam-1',
+        progettoId: 1,
+        descrizione: 'riconciliato'
+      })
+    )
   })
 
   it('reconcileSubmission rejects missing submissions', async () => {
@@ -606,27 +643,16 @@ describe('verifica store', () => {
     expect(store.error).toBe('Errore nella riconciliazione')
   })
 
-  it('reconcileSubmission patches copied fields and renames attachments', async () => {
+  it('reconcileSubmission delega lo use case con i valori risolti', async () => {
     const store = useVerificaStore()
     store.submissions = [{ id: 's-2', email: 'full@test.it', descrizione: 'orig', importo: 75, data: '2026-01-02' }]
 
-    mockUpdateContatto.mockResolvedValue({})
-    mockUpdateEmail.mockResolvedValue({})
-    mockUpdateFamiglia.mockResolvedValue({})
-    mockUpdateFolder.mockResolvedValue({})
-    mockGetFamiglieBatch.mockResolvedValue({
-      data: { data: [{ id_famiglia: 'fam-9', Nome_Famiglia: 'FamigliaNove' }] }
-    })
-    mockGetFile.mockResolvedValue({ data: { data: { filename_download: 'doc.pdf' } } })
-    mockRenameFile.mockResolvedValue({})
-    mockFindProgettoByFamiglia.mockResolvedValue({ data: { data: [{ id_progetto: 9, AnnoBando: 2026 }] } })
-    mockCreateGiust.mockResolvedValue({ data: { data: { id: 'g-9' } } })
-    mockUpdateSubmission.mockResolvedValue({})
+    mockRiconciliaSubmission.mockResolvedValue('g-9')
     mockGetSubmissions.mockResolvedValue({ data: { data: [], meta: {} } })
     mockGetContattoByEmails.mockResolvedValue({ data: { data: [] } })
     mockGetProgetti.mockResolvedValue({ data: { data: [], meta: {} } })
+    mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
     mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
-    mockUpdateProgetto.mockResolvedValue({})
 
     await store.reconcileSubmission({
       submissionId: 's-2',
@@ -647,28 +673,27 @@ describe('verifica store', () => {
       }
     })
 
-    expect(mockUpdateContatto).toHaveBeenCalledWith('c-9', {
-      Nome: 'Mario',
-      Cognome: 'Rossi',
-      Numero_di_cellulare: '+39123'
-    })
-    expect(mockUpdateEmail).toHaveBeenCalledWith('email-9', { email_address: 'new@test.it' })
-    expect(mockUpdateFamiglia).toHaveBeenCalledWith('fam-9', {
-      IBAN: 'IT60X',
-      Intestatario_CC: 'Mario Rossi'
-    })
-    expect(mockUpdateFolder).toHaveBeenCalledWith('file-9', '91a9c958-206f-4e1c-8143-e67f85398d0c')
-    expect(mockRenameFile).toHaveBeenCalledWith('file-9', 'FamigliaNove_doc.pdf')
-    expect(mockCreateGiust).toHaveBeenCalledWith(
-      expect.objectContaining({ Allegato: 'file-9', Progetto: 9, Famiglia: 'fam-9', AnnoBando: 2026 })
+    expect(mockRiconciliaSubmission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        submissionId: 's-2',
+        contattoId: 'c-9',
+        emailRecordId: 'email-9',
+        famigliaId: 'fam-9',
+        progettoId: 9,
+        note: 'ok',
+        allegato: 'file-9',
+        descrizione: 'orig',
+        importo: 75,
+        data: '2026-01-02',
+        rightValues: expect.objectContaining({ Email: 'new@test.it' })
+      })
     )
   })
 
   it('reconcileSubmission stores API error messages from downstream failures', async () => {
     const store = useVerificaStore()
     store.submissions = [{ id: 's-3', email: 'err@test.it', descrizione: 'orig', importo: 10 }]
-    mockFindProgettoByFamiglia.mockResolvedValueOnce({ data: { data: [] } })
-    mockCreateGiust.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'giust fail' }] } } })
+    mockRiconciliaSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'giust fail' }] } } })
 
     await expect(
       store.reconcileSubmission({

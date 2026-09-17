@@ -1,25 +1,11 @@
-import { loginAs } from './login.js'
-import { apiGet } from './api.js'
 import { VerificaPage } from '../pages/VerificaPage.js'
-import {
-  createFamigliaViaUI,
-  createContattoViaUI,
-  assegnaContattoAFamigliaViaUI,
-  rimuoviContattoDaFamigliaViaUI
-} from './pagina-gestione.js'
-import { selezionaFamiglia } from './pagina-famiglie.js'
+import { apiGet } from './api.js'
 import { createGiustificativoViaDialog } from './giustificativo.js'
-
-export {
-  createFamigliaViaUI,
-  createContattoViaUI,
-  assegnaContattoAFamigliaViaUI,
-  rimuoviContattoDaFamigliaViaUI
-}
+import { loginAs } from './login.js'
+import { selezionaFamiglia } from './pagina-famiglie.js'
+import { assegnaContattoAFamigliaViaUI } from './pagina-gestione.js'
 
 export { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
-
-export { createGiustificativoViaDialog }
 
 export { createTestSubmission } from './submission.js'
 
@@ -47,10 +33,10 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
 
   for (const g of giustificativi) {
     await loginAs(page, 'volontario_nofam', auth)
-    await page.goto('/famiglie', { timeout: 15000 }).catch(() => {})
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.goto('/famiglie', { timeout: 15_000 }).catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await selezionaFamiglia(page, prefix)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const result = await createGiustificativoViaDialog(page, {
       descrizione: g.descrizione,
       importo: g.importo,
@@ -69,14 +55,20 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
       await vp.waitForTable()
       await vp.searchFamiglia(prefix)
       await vp.expandRow(0)
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
 
       if (g.stato === 'verificato') {
-        await page.locator('[data-testid="btn-verify"]').first().evaluate(el => el.click())
-        await page.waitForLoadState("networkidle").catch(() => {})
+        await page
+          .locator('[data-testid="btn-verify"]')
+          .first()
+          .evaluate(el => el.click())
+        await page.waitForLoadState('networkidle').catch(() => {})
       } else {
-        await page.locator('[data-testid="btn-reject"]').first().evaluate(el => el.click())
-        await page.waitForLoadState("networkidle").catch(() => {})
+        await page
+          .locator('[data-testid="btn-reject"]')
+          .first()
+          .evaluate(el => el.click())
+        await page.waitForLoadState('networkidle').catch(() => {})
         const rejectDialog = page.locator('.q-dialog:visible').last()
         if (await rejectDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
           const textarea = rejectDialog.locator('textarea').first()
@@ -85,10 +77,34 @@ export async function setupGiustificativiConStato(page, { prefix, giustificativi
             .locator('button')
             .filter({ hasText: /rifiut|conferma/i })
             .last()
+          const targetId = ids.giustificativi?.at(-1)
+          const patchPromise = targetId
+            ? page
+                .waitForResponse(
+                  resp =>
+                    resp.url().includes(`/items/Giustificativi/${targetId}`) && resp.request().method() === 'PATCH',
+                  { timeout: 15_000 }
+                )
+                .catch(() => null)
+            : null
           await rifiutaBtn.evaluate(el => el.click())
-          await page.waitForLoadState("networkidle").catch(() => {})
+          await page.waitForLoadState('networkidle').catch(() => {})
+          if (patchPromise) {
+            const patchResp = await patchPromise
+            if (!patchResp || patchResp.status() >= 400) {
+              throw new Error(`Reject PATCH non completato per giustificativo ${targetId}`)
+            }
+          }
         }
       }
     }
   }
 }
+
+export {
+  assegnaContattoAFamigliaViaUI,
+  createFamigliaViaUI,
+  createContattoViaUI,
+  rimuoviContattoDaFamigliaViaUI
+} from './pagina-gestione.js'
+export { createGiustificativoViaDialog } from './giustificativo.js'

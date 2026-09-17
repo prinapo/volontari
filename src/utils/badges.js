@@ -14,6 +14,14 @@
  * - Inviato      -> orange  (in corso / da verificare)
  * - Verificato   -> positive
  * - Rifiutato    -> negative
+ * - Pagato       -> primary (badge DERIVATO, solo per-giustificativo:
+ *                  lo stato DB resta 'verificato', la promozione a
+ *                  "Pagato" è calcolata quando il residuo erogabile
+ *                  della riga è esaurito)
+ * - In pagamento -> secondary (badge DERIVATO come sopra: residuo coperto
+ *                  solo da importi in pagamento, totalePagato < erogabile.
+ *                  secondary evita la collisione con primary, che in
+ *                  produzione coincide con info)
  *
  * NOTA: questo standard SOSTITUISCE la vecchia versione in formatters.js
  * che usava draft=warning / inviato=primary.
@@ -23,6 +31,8 @@ export function statoColor(stato) {
   if (stato === 'verificato') return 'positive'
   if (stato === 'inviato') return 'orange'
   if (stato === 'rifiutato') return 'negative'
+  if (stato === 'pagato') return 'primary'
+  if (stato === 'in_pagamento') return 'secondary'
   if (stato) console.warn(`[badges] stato giustificativo non riconosciuto: "${stato}"`)
   return 'grey'
 }
@@ -35,6 +45,8 @@ export function statoLabel(stato) {
   if (stato === 'verificato') return 'Verificato'
   if (stato === 'inviato') return 'Inviato'
   if (stato === 'rifiutato') return 'Rifiutato'
+  if (stato === 'pagato') return 'Pagato'
+  if (stato === 'in_pagamento') return 'In pagamento'
   return 'Bozza'
 }
 

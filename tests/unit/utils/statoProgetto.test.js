@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { calcolaDisallineati, calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
+import {
+  calcolaAggregatiProgetto,
+  calcolaDisallineati,
+  calcolaStatoProgetto,
+  statoProgettoEffettivo
+} from 'src/utils/statoProgetto'
 
 describe('calcolaStatoProgetto', () => {
   const giust = [{ Stato: 'verificato' }]
@@ -155,6 +160,36 @@ describe('calcolaStatoProgetto', () => {
       ).toBe('accettato')
     })
   })
+
+  describe('draft esclusi dal calcolo', () => {
+    it('un solo draft non porta a in_rendicontazione', () => {
+      expect(
+        calcolaStatoProgetto({
+          statoProgetto: 'accettato',
+          allocato: 500,
+          rimborsato: 0,
+          giustificativi: [{ Stato: 'draft' }]
+        })
+      ).toBe('accettato')
+    })
+
+    it('stato vuoto non conta come giustificativo valido', () => {
+      expect(
+        calcolaStatoProgetto({ statoProgetto: 'accettato', allocato: 500, rimborsato: 0, giustificativi: [{}] })
+      ).toBe('accettato')
+    })
+
+    it('con un inviato accanto al draft va a in_rendicontazione', () => {
+      expect(
+        calcolaStatoProgetto({
+          statoProgetto: 'accettato',
+          allocato: 500,
+          rimborsato: 0,
+          giustificativi: [{ Stato: 'draft' }, { Stato: 'inviato' }]
+        })
+      ).toBe('in_rendicontazione')
+    })
+  })
 })
 
 describe('statoProgettoEffettivo', () => {
@@ -220,5 +255,44 @@ describe('calcolaDisallineati', () => {
 
   it('gestisce input vuoto', () => {
     expect(calcolaDisallineati([])).toEqual([])
+  })
+})
+
+describe('calcolaAggregatiProgetto', () => {
+  it('calcola conteggio, importo e stati dai giustificativi', () => {
+    const res = calcolaAggregatiProgetto({ StatoProgetto: 'accettato', Allocato: 1000, TotalePagato: 0 }, [
+      { Stato: 'inviato', Importo: '100' },
+      { Stato: 'verificato', Importo: 50 },
+      { Stato: 'draft', Importo: '999' }
+    ])
+    expect(res.TotaleGiustificativi).toBe(3)
+    expect(res.TotaleImporto).toBe(1149)
+    expect(res.StatoRendicontazione).toBe('in_attesa')
+    expect(res.StatoProgetto).toBe('in_rendicontazione')
+  })
+
+  it('esclude gli invalidati da conteggio e importo', () => {
+    const res = calcolaAggregatiProgetto({ Allocato: 1000, TotalePagato: 0 }, [
+      { Stato: 'verificato', Importo: '100' },
+      { Stato: 'verificato', Importo: '200', Invalidato: true }
+    ])
+    expect(res.TotaleGiustificativi).toBe(1)
+    expect(res.TotaleImporto).toBe(100)
+    expect(res.StatoRendicontazione).toBe('verificato')
+  })
+
+  it('senza giustificativi resta accettato con rendicontazione nessuno', () => {
+    const res = calcolaAggregatiProgetto({ StatoProgetto: null, Allocato: 500, TotalePagato: 0 }, [])
+    expect(res.TotaleGiustificativi).toBe(0)
+    expect(res.TotaleImporto).toBe(0)
+    expect(res.StatoRendicontazione).toBe('nessuno')
+    expect(res.StatoProgetto).toBe('accettato')
+  })
+
+  it('rispetta le fasi manuali', () => {
+    const res = calcolaAggregatiProgetto({ StatoProgetto: 'proposto', Allocato: 500, TotalePagato: 0 }, [
+      { Stato: 'verificato', Importo: '100' }
+    ])
+    expect(res.StatoProgetto).toBe('proposto')
   })
 })

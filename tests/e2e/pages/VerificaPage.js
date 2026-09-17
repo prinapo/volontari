@@ -22,16 +22,21 @@ export class VerificaPage {
   async waitForTable() {
     await this.table.waitFor({ state: 'visible', timeout: 15_000 })
     // Wait for actual data rows to load (desktop: tbody tr, mobile: .q-expansion-item)
-    await this.page.waitForFunction(() => {
-      const table = document.querySelector('.verifica-table')
-      if (!table) return false
-      const grid = table.classList.contains('q-table--grid')
-      const rows = grid
-        ? table.querySelectorAll('.q-expansion-item')
-        : table.querySelectorAll('tbody tr')
-      if (rows.length > 0) return true
-      return document.body.innerText.includes('Nessun dato disponibile')
-    }, { timeout: 15_000 }).catch(() => {})
+    await this.page
+      .waitForFunction(
+        () => {
+          const table = document.querySelector('.verifica-table')
+          if (!table) return false
+          const grid = table.classList.contains('q-table--grid')
+          const rows = grid
+            ? table.querySelectorAll(':scope .q-expansion-item')
+            : table.querySelectorAll(':scope tbody tr')
+          if (rows.length > 0) return true
+          return document.body.innerText.includes('Nessun dato disponibile')
+        },
+        { timeout: 15_000 }
+      )
+      .catch(() => {})
   }
 
   async getRowCount() {
@@ -74,24 +79,30 @@ export class VerificaPage {
     // Wait for Quasar debounce and search API call(s) to complete
     await this.page.waitForTimeout(500)
     await this.page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
-    await this.page.waitForFunction(searchText => {
-      const table = document.querySelector('.verifica-table')
-      if (!table) return true
-      const isGrid = table.classList.contains('q-table--grid')
-      if (isGrid && table.querySelectorAll('.q-expansion-item').length > 0) {
-        const items = table.querySelectorAll('.q-expansion-item')
-        for (const item of items) {
-          if (item.textContent.includes(searchText)) return true
-        }
-      }
-      if (!isGrid) {
-        const rows = table.querySelectorAll('tbody tr')
-        for (const row of rows) {
-          if (row.textContent.includes(searchText)) return true
-        }
-      }
-      return document.body.innerText.includes('Nessun dato disponibile')
-    }, text, { timeout: 10_000 }).catch(() => {})
+    await this.page
+      .waitForFunction(
+        searchText => {
+          const table = document.querySelector('.verifica-table')
+          if (!table) return true
+          const isGrid = table.classList.contains('q-table--grid')
+          if (isGrid && table.querySelectorAll('.q-expansion-item').length > 0) {
+            const items = table.querySelectorAll('.q-expansion-item')
+            for (const item of items) {
+              if (item.textContent.includes(searchText)) return true
+            }
+          }
+          if (!isGrid) {
+            const rows = table.querySelectorAll(':scope tbody tr')
+            for (const row of rows) {
+              if (row.textContent.includes(searchText)) return true
+            }
+          }
+          return document.body.innerText.includes('Nessun dato disponibile')
+        },
+        text,
+        { timeout: 10_000 }
+      )
+      .catch(() => {})
   }
 
   async expandRow(index = 0) {
@@ -106,7 +117,7 @@ export class VerificaPage {
       }
     }
 
-    const isGrid = await this.page.locator('.q-table--grid').count() > 0
+    const isGrid = (await this.page.locator('.q-table--grid').count()) > 0
     if (isGrid) {
       await this.page.waitForTimeout(500)
     } else {
@@ -129,7 +140,17 @@ export class VerificaPage {
     const count = await badges.count()
     for (let i = 0; i < count; i++) {
       const text = await badges.nth(i).innerText()
-      if (['Non ricevuta', 'Pronto', 'Da verificare', 'Da completare', 'Dati bancari mancanti'].includes(text)) {
+      if (
+        [
+          'Non ricevuta',
+          'Pronto',
+          'Pagato',
+          'In pagamento',
+          'Da verificare',
+          'Da completare',
+          'Dati bancari mancanti'
+        ].includes(text)
+      ) {
         return text
       }
     }

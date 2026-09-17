@@ -78,6 +78,30 @@ vi.mock('src/services/liste-pagamenti.service', () => ({
   }
 }))
 
+const mockSegnaPagato = vi.fn()
+const mockSegnaFallito = vi.fn()
+const mockSegnaAnnullato = vi.fn()
+const mockRicalcolaProposta = vi.fn()
+const mockRicalcolaTotaliProgetto = vi.fn()
+const mockRipristinaProposto = vi.fn()
+const mockRipristinaInPagamento = vi.fn()
+const mockCorreggiDati = vi.fn()
+const mockChiudiProgetto = vi.fn()
+const mockRiapriProgetto = vi.fn()
+
+vi.mock('src/usecases/pagamenti', () => ({
+  segnaPagato: (...a) => mockSegnaPagato(...a),
+  segnaFallito: (...a) => mockSegnaFallito(...a),
+  segnaAnnullato: (...a) => mockSegnaAnnullato(...a),
+  ricalcolaProposta: (...a) => mockRicalcolaProposta(...a),
+  ricalcolaTotaliProgetto: (...a) => mockRicalcolaTotaliProgetto(...a),
+  ripristinaProposto: (...a) => mockRipristinaProposto(...a),
+  ripristinaInPagamento: (...a) => mockRipristinaInPagamento(...a),
+  correggiDati: (...a) => mockCorreggiDati(...a),
+  chiudiProgetto: (...a) => mockChiudiProgetto(...a),
+  riapriProgetto: (...a) => mockRiapriProgetto(...a)
+}))
+
 vi.mock('stores/verifica.store', () => ({
   useVerificaStore: () => mockVerificaStore
 }))
@@ -189,37 +213,13 @@ describe('pagamenti store', () => {
     expect(store.residuoAssociazione('A')).toBe(700)
   })
 
-  it('ricalcolaProposta creates missing proposal', async () => {
-    mockGetProgettoById.mockResolvedValue({
-      data: {
-        data: {
-          id_progetto: 1,
-          Allocato: '1000',
-          Famiglia: 'fam-1',
-          IBAN: '',
-          Intestatario_CC: '',
-          StatoProgetto: 'aperto'
-        }
-      }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({
-      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '800' }] }
-    })
-    mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ Importo: '200', Stato: 'in_pagamento' }] } })
-      .mockResolvedValueOnce({ data: { data: [] } })
-    mockGetProgettoById.mockResolvedValue({
-      data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [{ Stato: 'verificato', Importo: '800' }] } })
-    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
-    mockUpdateProgettoStats.mockResolvedValue({})
-    mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
+  it('ricalcolaProposta delega allo use case e aggiorna proposti/annullati', async () => {
+    mockRicalcolaProposta.mockResolvedValue()
     mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     const store = usePagamentiStore()
-    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
     await store.ricalcolaProposta(1)
-    expect(mockCreatePagamento).toHaveBeenCalled()
+    expect(mockRicalcolaProposta).toHaveBeenCalledWith(1, {})
+    expect(mockGetPagamenti).toHaveBeenCalled()
   })
 
   it('creaBatch creates batch for proposals', async () => {
@@ -270,61 +270,44 @@ describe('pagamenti store', () => {
     expect(initSpy).toHaveBeenCalled()
   })
 
-  it('segnaPagato marks as paid', async () => {
-    mockGetPagamenti
-      .mockResolvedValueOnce({
-        data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 1, Famiglia: 'fam-1', Importo: 100 }] }
-      })
-      .mockResolvedValue({ data: { data: [] } })
-    mockUpdatePagamento.mockResolvedValue({})
-    mockGetProgettoById.mockResolvedValue({
-      data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
-    mockUpdateProgettoStats.mockResolvedValue({})
-    mockGetFamigliaVolontari.mockResolvedValue({ data: { data: [] } })
-    mockGetFamigliaGenitori.mockResolvedValue({ data: { data: [] } })
+  it('segnaPagato delega allo use case e aggiorna', async () => {
+    mockSegnaPagato.mockResolvedValue({})
     mockGetAssociazioni.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockGetBatches.mockResolvedValue({ data: { data: [] } })
+    mockGetListe.mockResolvedValue([])
     const store = usePagamentiStore()
     await store.segnaPagato('p-1')
-    expect(mockUpdatePagamento).toHaveBeenCalled()
+    expect(mockSegnaPagato).toHaveBeenCalledWith('p-1')
     expect(store.loading).toBe(false)
   })
 
-  it('segnaPagato rejects invalid states and stores update errors', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-x', Stato: 'fallito', Progetto: 1 }] } })
+  it('segnaPagato propaga gli errori dello use case', async () => {
+    mockSegnaPagato.mockRejectedValueOnce(new Error('Solo pagamenti in_pagamento possono essere segnati come pagati'))
     const store = usePagamentiStore()
     await expect(store.segnaPagato('p-x')).rejects.toThrow(
       'Solo pagamenti in_pagamento possono essere segnati come pagati'
     )
     expect(store.error).toBe('Solo pagamenti in_pagamento possono essere segnati come pagati')
 
-    mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-y', Stato: 'in_pagamento', Progetto: 1 }] } })
-    mockUpdatePagamento.mockRejectedValueOnce(new Error('update pay fail'))
+    mockSegnaPagato.mockRejectedValueOnce(new Error('update pay fail'))
     await expect(store.segnaPagato('p-y')).rejects.toThrow('update pay fail')
     expect(store.error).toBe('update pay fail')
   })
 
-  it('segnaFallito marks as failed', async () => {
-    mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 1 }] } })
-      .mockResolvedValue({ data: { data: [] } })
-    mockUpdatePagamento.mockResolvedValue({})
-    mockGetProgettoById.mockResolvedValue({
-      data: { data: { id_progetto: 1, Allocato: '1000', StatoProgetto: 'aperto' } }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
-    mockUpdateProgettoStats.mockResolvedValue({})
+  it('segnaFallito delega e aggiorna la lista batch', async () => {
+    mockSegnaFallito.mockResolvedValue({ Batch: null })
     mockGetAssociazioni.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockGetBatches.mockResolvedValue({ data: { data: [] } })
+    mockGetListe.mockResolvedValue([])
     const store = usePagamentiStore()
     await store.segnaFallito('p-1', 'IBAN errato')
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', expect.objectContaining({ Stato: 'fallito' }))
+    expect(mockSegnaFallito).toHaveBeenCalledWith('p-1', 'IBAN errato')
   })
 
-  it('segnaFallito rejects invalid states', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'pagato', Progetto: 1 }] } })
+  it('segnaFallito propaga gli errori dello use case', async () => {
+    mockSegnaFallito.mockRejectedValueOnce(new Error('Solo pagamenti in_pagamento possono essere segnati come falliti'))
     const store = usePagamentiStore()
     await expect(store.segnaFallito('p-1', 'bad')).rejects.toThrow(
       'Solo pagamenti in_pagamento possono essere segnati come falliti'
@@ -332,81 +315,31 @@ describe('pagamenti store', () => {
     expect(store.error).toBe('Solo pagamenti in_pagamento possono essere segnati come falliti')
   })
 
-  it('correggiDati fixes failed payment', async () => {
-    mockGetPagamenti.mockResolvedValue({
-      data: { data: [{ id: 'p-1', Stato: 'fallito', Famiglia: 'fam-1', Progetto: 1, Importo: 100 }] }
-    })
-    mockUpdatePagamento.mockResolvedValue({})
-    mockGetAssociazioni.mockResolvedValue({ data: { data: [] } })
+  it('correggiDati delega e aggiorna i falliti', async () => {
+    mockCorreggiDati.mockResolvedValue()
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     const store = usePagamentiStore()
-    vi.doMock('src/services/famiglie.service', () => ({
-      famiglieService: { update: vi.fn().mockResolvedValue({}) }
-    }))
     await store.correggiDati('p-1', { iban: 'IT00X', intestatario: 'Mario' })
-    expect(mockUpdatePagamento).toHaveBeenCalled()
+    expect(mockCorreggiDati).toHaveBeenCalledWith('p-1', { iban: 'IT00X', intestatario: 'Mario' })
     expect(store.loading).toBe(false)
   })
 
-  it('correggiDati rejects non-failed payments and stores service errors', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-2', Stato: 'pagato', Famiglia: 'fam-1', Progetto: 1 }] }
-    })
+  it('correggiDati propaga gli errori dello use case', async () => {
+    mockCorreggiDati.mockRejectedValueOnce(new Error('Solo pagamenti falliti sono modificabili'))
     const store = usePagamentiStore()
     await store.correggiDati('p-2', { iban: 'IT00X', intestatario: 'Mario' })
     expect(store.error).toBe('Solo pagamenti falliti sono modificabili')
 
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-3', Stato: 'fallito', Famiglia: 'fam-1', Progetto: 1 }] }
-    })
-    mockUpdatePagamento.mockRejectedValueOnce(new Error('patch fail'))
+    mockCorreggiDati.mockRejectedValueOnce(new Error('patch fail'))
     await store.correggiDati('p-3', { iban: 'IT00Y', intestatario: 'Luigi' })
     expect(store.error).toBe('patch fail')
   })
 
-  it('chiudiProgetto sets closed state', async () => {
-    mockUpdateProgettoStats.mockResolvedValue({})
+  it('chiudiProgetto delega allo use case', async () => {
+    mockChiudiProgetto.mockResolvedValue()
     const store = usePagamentiStore()
     await store.chiudiProgetto(1, { automatica: true })
-    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(1, expect.objectContaining({ StatoProgetto: 'chiuso' }))
-  })
-
-  it('inviaNotificaPagamento sends email to volontario', async () => {
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
-    mockGetFamigliaVolontari.mockResolvedValue({
-      data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
-    })
-    mockGetFamigliaById.mockResolvedValue({ data: { data: { Nome_Famiglia: 'Fam Test' } } })
-    mockSendEmail.mockResolvedValue({})
-    mockUpdatePagamento.mockResolvedValue({})
-    const store = usePagamentiStore()
-    await store.inviaNotificaPagamento({ id: 'p-1', Famiglia: 'fam-1', Importo: 100, NotificaInviata: false })
-    expect(mockSendEmail).toHaveBeenCalled()
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', { NotificaInviata: true })
-  })
-
-  it('inviaNotificaPagamento skips if already sent', async () => {
-    const store = usePagamentiStore()
-    await store.inviaNotificaPagamento({ NotificaInviata: true })
-    expect(mockGetProgettoById).not.toHaveBeenCalled()
-  })
-
-  it('inviaNotificaPagamento logs errors when email delivery fails', async () => {
-    mockGetProgettoById.mockResolvedValueOnce({ data: { data: { id_progetto: 1 } } })
-    mockGetFamigliaVolontari.mockResolvedValueOnce({
-      data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
-    })
-    mockGetFamigliaById.mockResolvedValueOnce({ data: { data: { Nome_Famiglia: 'Fam Test' } } })
-    mockSendEmail.mockRejectedValueOnce(new Error('smtp down'))
-    const store = usePagamentiStore()
-
-    await store.inviaNotificaPagamento({
-      id: 'p-err',
-      Progetto: 1,
-      Famiglia: 'fam-1',
-      Importo: 100,
-      NotificaInviata: false
-    })
-    expect(store.error).toBeTruthy()
+    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null, stato: 'chiuso' })
   })
 
   it('fetchAssociazioni handles error silently', async () => {
@@ -444,55 +377,6 @@ describe('pagamenti store', () => {
     expect(store.batches).toEqual([])
   })
 
-  it('segnaAnnullato updates in_pagamento payments and refreshes derived data', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 7 }] }
-    })
-    mockUpdatePagamento.mockResolvedValue({})
-    const store = usePagamentiStore()
-    const totalsSpy = vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
-    const propostaSpy = vi.spyOn(store, 'ricalcolaProposta').mockResolvedValue()
-    const initSpy = vi.spyOn(store, 'init').mockResolvedValue()
-
-    await store.segnaAnnullato('p-1')
-
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', {
-      Stato: 'annullato',
-      Batch: null,
-      NoteEsito: 'Rimosso dal gruppo'
-    })
-    expect(totalsSpy).toHaveBeenCalledWith(7)
-    expect(propostaSpy).toHaveBeenCalledWith(7, { iban: undefined, intestatario: undefined })
-    expect(initSpy).toHaveBeenCalled()
-  })
-
-  it('segnaAnnullato accepts fallito and rejects invalid states', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-2', Stato: 'fallito', Progetto: 9 }] }
-    })
-    mockUpdatePagamento.mockResolvedValue({})
-    const store = usePagamentiStore()
-    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
-    vi.spyOn(store, 'ricalcolaProposta').mockResolvedValue()
-    vi.spyOn(store, 'init').mockResolvedValue()
-
-    await store.segnaAnnullato('p-2')
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-2', {
-      Stato: 'annullato',
-      Batch: null,
-      NoteEsito: 'Rimosso dal gruppo'
-    })
-    expect(store.error).toBeFalsy()
-
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-3', Stato: 'pagato', Progetto: 9 }] }
-    })
-    await expect(store.segnaAnnullato('p-3')).rejects.toThrow(
-      'Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo'
-    )
-    expect(store.error).toBe('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
-  })
-
   it('creaBatch rejects non-proposed payments and insufficient budget', async () => {
     const store = usePagamentiStore()
     store.budgetMap = { A: 50 }
@@ -510,124 +394,6 @@ describe('pagamenti store', () => {
     await expect(store.creaBatch({ nome: 'B2', associazione: 'A', pagamentoIds: ['p-2'] })).rejects.toThrow(
       'Capienza insufficiente per A. Disponibile: €50.00, richiesto: €100.00'
     )
-  })
-
-  it('ricalcolaProposta annulla proposta esistente quando non resta importo', async () => {
-    mockGetProgettoById.mockResolvedValue({
-      data: {
-        data: {
-          id_progetto: 12,
-          Allocato: '1000',
-          Famiglia: 'fam-1',
-          StatoProgetto: 'aperto'
-        }
-      }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({
-      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '100' }] }
-    })
-    mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '200' }] } })
-      .mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto', Importo: '50' }] } })
-    mockUpdatePagamento.mockResolvedValue({})
-    const store = usePagamentiStore()
-    const totalsSpy = vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
-    const propostiSpy = vi.spyOn(store, 'fetchProposti').mockResolvedValue()
-    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
-
-    await store.ricalcolaProposta(12)
-
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
-      Stato: 'annullato',
-      NoteEsito: 'Proposta annullata: importo non più dovuto',
-      Batch: null
-    })
-    expect(mockDeletePagamento).not.toHaveBeenCalled()
-    expect(totalsSpy).toHaveBeenCalledWith(12)
-    expect(propostiSpy).toHaveBeenCalled()
-  })
-
-  it('ricalcolaTotaliProgetto updates stats and auto-closes fully paid projects', async () => {
-    mockGetProgettoById.mockResolvedValue({
-      data: { data: { id_progetto: 21, Allocato: '100', StatoProgetto: 'aperto' } }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({
-      data: { data: [{ Stato: 'verificato', Importo: '100' }] }
-    })
-    mockGetPagamenti.mockResolvedValue({
-      data: {
-        data: [
-          { id: 'prop-1', Stato: 'proposto', Importo: '0' },
-          { id: 'paid-1', Stato: 'pagato', Importo: '100' }
-        ]
-      }
-    })
-    mockUpdateProgettoStats.mockResolvedValue({})
-    const store = usePagamentiStore()
-    const closeSpy = vi.spyOn(store, 'chiudiProgetto').mockResolvedValue()
-
-    await store.ricalcolaTotaliProgetto(21)
-
-    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(21, {
-      TotaleVerificato: 100,
-      TotaleProposto: 0,
-      TotaleInPagamento: 0,
-      TotalePagato: 100,
-      ResiduoAllocato: 0
-    })
-    expect(closeSpy).toHaveBeenCalledWith(21, { automatica: true, stato: 'chiuso' })
-  })
-
-  it('ricalcolaTotaliProgetto returns early without project and stores fetch errors', async () => {
-    mockGetProgettoById.mockResolvedValueOnce({ data: { data: null } })
-    const store = usePagamentiStore()
-    await store.ricalcolaTotaliProgetto(99)
-    expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
-
-    mockGetProgettoById.mockRejectedValueOnce(new Error('totali fail'))
-    await expect(store.ricalcolaTotaliProgetto(100)).rejects.toThrow('totali fail')
-    expect(store.error).toBe('totali fail')
-  })
-
-  it('inviaNotificaPagamento falls back to a genitore and skips when nobody is reachable', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const store = usePagamentiStore()
-
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
-    mockGetFamigliaVolontari.mockResolvedValueOnce({ data: { data: [{ Contatto: { email: [] } }] } })
-    mockGetFamigliaGenitori.mockResolvedValueOnce({
-      data: {
-        data: [{ Contatto: { email: [{ email_address: 'gen@test.it', Primary: true }] } }]
-      }
-    })
-    mockGetFamigliaById.mockResolvedValueOnce({ data: { data: { Nome_Famiglia: 'Famiglia Uno' } } })
-    mockSendEmail.mockResolvedValueOnce({})
-    mockUpdatePagamento.mockResolvedValueOnce({})
-
-    await store.inviaNotificaPagamento({
-      id: 'p-1',
-      Progetto: 1,
-      Famiglia: 'fam-1',
-      Importo: 100,
-      NotificaInviata: false
-    })
-    expect(mockSendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'gen@test.it', subject: 'Pagamento effettuato' })
-    )
-
-    mockGetProgettoById.mockResolvedValueOnce({ data: { data: { id_progetto: 1 } } })
-    mockGetFamigliaVolontari.mockResolvedValueOnce({ data: { data: [] } })
-    mockGetFamigliaGenitori.mockResolvedValueOnce({ data: { data: [] } })
-
-    await store.inviaNotificaPagamento({
-      id: 'p-2',
-      Progetto: 1,
-      Famiglia: 'fam-2',
-      Importo: 50,
-      NotificaInviata: false
-    })
-    expect(warnSpy).toHaveBeenCalled()
-    warnSpy.mockRestore()
   })
 
   it('fetchListe loads data and handles service errors', async () => {
@@ -656,105 +422,11 @@ describe('pagamenti store', () => {
     expect(store.error).toBe('delete fail')
   })
 
-  it('chiudiProgetto handles error', async () => {
-    mockUpdateProgettoStats.mockRejectedValue(new Error('fail'))
+  it('chiudiProgetto propaga gli errori dello use case', async () => {
+    mockChiudiProgetto.mockRejectedValue(new Error('fail'))
     const store = usePagamentiStore()
     await expect(store.chiudiProgetto(1, { automatica: false })).rejects.toThrow('fail')
     expect(store.error).toBe('fail')
-  })
-
-  it('ricalcolaProposta: residuo float non crea proposto a zero (398*0.8 - 318.40)', async () => {
-    mockGetProgettoById.mockResolvedValue({
-      data: {
-        data: {
-          id_progetto: 12,
-          Allocato: '875',
-          MassimaPercentualeErogabile: 80,
-          Famiglia: 'fam-1',
-          StatoProgetto: 'aperto'
-        }
-      }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({
-      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '398' }] }
-    })
-    mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] } })
-      .mockResolvedValueOnce({ data: { data: [] } })
-    const store = usePagamentiStore()
-    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
-    vi.spyOn(store, 'fetchProposti').mockResolvedValue()
-    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
-
-    await store.ricalcolaProposta(12)
-
-    expect(mockCreatePagamento).not.toHaveBeenCalled()
-    expect(mockDeletePagamento).not.toHaveBeenCalled()
-  })
-
-  it('ricalcolaProposta: residuo float annulla proposto esistente a zero', async () => {
-    mockGetProgettoById.mockResolvedValue({
-      data: {
-        data: {
-          id_progetto: 12,
-          Allocato: '875',
-          MassimaPercentualeErogabile: 80,
-          Famiglia: 'fam-1',
-          StatoProgetto: 'aperto'
-        }
-      }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({
-      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '398' }] }
-    })
-    mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] } })
-      .mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto', Importo: '0' }] } })
-    mockUpdatePagamento.mockResolvedValue({})
-    const store = usePagamentiStore()
-    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
-    vi.spyOn(store, 'fetchProposti').mockResolvedValue()
-    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
-
-    await store.ricalcolaProposta(12)
-
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
-      Stato: 'annullato',
-      NoteEsito: 'Proposta annullata: importo non più dovuto',
-      Batch: null
-    })
-    expect(mockDeletePagamento).not.toHaveBeenCalled()
-    expect(mockCreatePagamento).not.toHaveBeenCalled()
-  })
-
-  it('ricalcolaProposta: importo legittimo arrotondato ai centesimi', async () => {
-    mockGetProgettoById.mockResolvedValue({
-      data: {
-        data: {
-          id_progetto: 12,
-          Allocato: '1000',
-          MassimaPercentualeErogabile: 80,
-          Famiglia: 'fam-1',
-          StatoProgetto: 'aperto'
-        }
-      }
-    })
-    mockGetGiustificativiByProgetto.mockResolvedValue({
-      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '125' }] }
-    })
-    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
-    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
-    mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
-    const store = usePagamentiStore()
-    vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
-    vi.spyOn(store, 'fetchProposti').mockResolvedValue()
-    vi.spyOn(store, 'fetchAnnullati').mockResolvedValue()
-
-    await store.ricalcolaProposta(12)
-
-    expect(mockCreatePagamento).toHaveBeenCalledTimes(1)
-    const payload = mockCreatePagamento.mock.calls[0][0]
-    expect(payload.Importo).toBe(100)
   })
 
   it('_ricalcolaPropostaSingola: residuo float non crea proposto a zero (398*0.8 - 318.40)', () => {

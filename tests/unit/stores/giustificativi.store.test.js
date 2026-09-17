@@ -2,40 +2,28 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useGiustificativiStore } from 'src/stores/giustificativi.store'
 
 const mockGetByProgetto = vi.fn()
-const mockCreate = vi.fn()
-const mockUpdate = vi.fn()
-const mockSubmit = vi.fn()
-const mockInvalidate = vi.fn()
 const mockFindByProject = vi.fn()
 const mockCreateRendicontazione = vi.fn()
-const mockUpload = vi.fn()
-const mockMarkFileObsolete = vi.fn()
-const mockGetFile = vi.fn()
-const mockRenameFile = vi.fn()
+const mockCreaGiustificativo = vi.fn()
+const mockInviaGiustificativo = vi.fn()
+const mockAggiornaGiustificativo = vi.fn()
+const mockAggiornaCampoGiustificativo = vi.fn()
+const mockInvalidaGiustificativo = vi.fn()
 
 vi.mock('src/services/giustificativi.service', () => ({
   giustificativiService: {
     getByProgetto: (...a) => mockGetByProgetto(...a),
-    create: (...a) => mockCreate(...a),
-    update: (...a) => mockUpdate(...a),
-    submit: (...a) => mockSubmit(...a),
-    invalidate: (...a) => mockInvalidate(...a),
     findByProject: (...a) => mockFindByProject(...a),
     createRendicontazione: (...a) => mockCreateRendicontazione(...a)
   }
 }))
 
-vi.mock('src/utils/file-naming', () => ({
-  uploadAndPrefixFile: (...a) => mockUpload(...a),
-  markFileObsolete: (...a) => mockMarkFileObsolete(...a)
-}))
-
-vi.mock('src/services/files.service', () => ({
-  filesService: {
-    upload: (...a) => mockUpload(...a),
-    getFile: (...a) => mockGetFile(...a),
-    renameFile: (...a) => mockRenameFile(...a)
-  }
+vi.mock('src/usecases/giustificativi', () => ({
+  creaGiustificativo: (...a) => mockCreaGiustificativo(...a),
+  inviaGiustificativo: (...a) => mockInviaGiustificativo(...a),
+  aggiornaGiustificativo: (...a) => mockAggiornaGiustificativo(...a),
+  aggiornaCampoGiustificativo: (...a) => mockAggiornaCampoGiustificativo(...a),
+  invalidaGiustificativo: (...a) => mockInvalidaGiustificativo(...a)
 }))
 
 describe('giustificativi store', () => {
@@ -68,57 +56,52 @@ describe('giustificativi store', () => {
     expect(store.error).toBe('Err')
   })
 
-  it('createGiustificativo creates with file and rendicontazione', async () => {
-    mockFindByProject.mockResolvedValue({ data: { data: [] } })
-    mockCreateRendicontazione.mockResolvedValue({ data: { data: { id: 'rend-1' } } })
-    mockUpload.mockResolvedValue('file-1')
-    mockCreate.mockResolvedValue({ data: { data: { Descrizione: 'test' } } })
+  it('createGiustificativo delega allo use case con origine volontario', async () => {
+    mockCreaGiustificativo.mockResolvedValue({ id: 'g-1' })
     const store = useGiustificativiStore()
     await store.createGiustificativo(
       { Progetto: 1, Famiglia: 'fam-1', Descrizione: 'test', Importo: 10 },
       new File([], 'x')
     )
-    expect(mockCreate).toHaveBeenCalled()
+    expect(mockCreaGiustificativo).toHaveBeenCalledWith(
+      expect.objectContaining({ Progetto: 1, Famiglia: 'fam-1', file: expect.any(File) }),
+      { origine: 'volontario' }
+    )
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()
   })
 
-  it('createGiustificativo throws on mismatched response and service errors', async () => {
-    mockFindByProject.mockResolvedValueOnce({ data: { data: [{ id: 'rend-existing' }] } })
-    mockCreate.mockResolvedValueOnce({ data: { data: { Descrizione: 'other' } } })
+  it('createGiustificativo mappa gli errori senza chiamare servizi', async () => {
+    mockCreaGiustificativo.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'create fail' }] } } })
     const store = useGiustificativiStore()
-
-    await expect(store.createGiustificativo(
-      { Progetto: 1, Famiglia: 'fam-1', Descrizione: 'test', Importo: 10 }
-    )).rejects.toThrow()
-    expect(mockUpload).not.toHaveBeenCalled()
-
-    mockFindByProject.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'create fail' }] } } })
-    await expect(store.createGiustificativo(
-      { Progetto: 1, Famiglia: 'fam-1', Descrizione: 'test', Importo: 10 }
-    )).rejects.toThrow()
+    await expect(
+      store.createGiustificativo({ Progetto: 1, Famiglia: 'fam-1', Descrizione: 'test', Importo: 10 })
+    ).rejects.toThrow()
+    expect(mockFindByProject).not.toHaveBeenCalled()
+    expect(mockCreateRendicontazione).not.toHaveBeenCalled()
     expect(store.error).toBe('create fail')
   })
 
-  it('submitGiustificativo sends submit', async () => {
-    mockSubmit.mockResolvedValue({ data: { data: { id: 1, Stato: 'inviato' } } })
+  it('submitGiustificativo invia e aggiorna localmente', async () => {
+    mockInviaGiustificativo.mockResolvedValue({ id: 1, Stato: 'inviato' })
     const store = useGiustificativiStore()
-    store.data = [{ id: 1, Stato: 'draft' }]
+    store.data = [{ id: 1, Stato: 'draft', Progetto: 5 }]
     await store.submitGiustificativo(1)
+    expect(mockInviaGiustificativo).toHaveBeenCalledWith({ id: 1, progettoId: 5 })
     expect(store.data[0].Stato).toBe('inviato')
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()
   })
 
-  it('submitGiustificativo handles without updated payload and throws on errors', async () => {
-    mockSubmit.mockResolvedValueOnce({ data: { data: null } })
+  it('submitGiustificativo gestisce payload mancante ed errori', async () => {
+    mockInviaGiustificativo.mockResolvedValueOnce(null)
     const store = useGiustificativiStore()
-    store.data = [{ id: 1, Stato: 'draft' }]
+    store.data = [{ id: 1, Stato: 'draft', Progetto: 5 }]
     await store.submitGiustificativo(1)
     expect(store.data[0].Stato).toBe('draft')
     expect(store.error).toBeNull()
 
-    mockSubmit.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'submit fail' }] } } })
+    mockInviaGiustificativo.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'submit fail' }] } } })
     await expect(store.submitGiustificativo(1)).rejects.toThrow()
     expect(store.error).toBe('submit fail')
   })
@@ -131,30 +114,40 @@ describe('giustificativi store', () => {
     expect(store.editingItem).toBeNull()
   })
 
-  it('saveInlineEdit updates field and handles errors', async () => {
-    mockUpdate.mockResolvedValueOnce({ data: { data: { id: 1, Descrizione: 'new' } } })
+  it('saveInlineEdit aggiorna campo via use case', async () => {
+    mockAggiornaCampoGiustificativo.mockResolvedValueOnce({ id: 1, Descrizione: 'new' })
     const store = useGiustificativiStore()
-    store.data = [{ id: 1, Descrizione: 'old' }]
+    store.data = [{ id: 1, Descrizione: 'old', Progetto: 8 }]
     await store.saveInlineEdit(1, 'Descrizione', 'new')
+    expect(mockAggiornaCampoGiustificativo).toHaveBeenCalledWith({
+      id: 1,
+      field: 'Descrizione',
+      value: 'new',
+      progettoId: 8
+    })
     expect(store.data[0].Descrizione).toBe('new')
     expect(store.error).toBeNull()
 
-    mockUpdate.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'inline fail' }] } } })
+    mockAggiornaCampoGiustificativo.mockRejectedValueOnce({
+      response: { data: { errors: [{ message: 'inline fail' }] } }
+    })
     await expect(store.saveInlineEdit(1, 'Descrizione', 'bad')).rejects.toThrow()
     expect(store.error).toBe('inline fail')
   })
 
-  it('invalidateGiustificativo marks invalidated and handles errors', async () => {
-    mockInvalidate.mockResolvedValueOnce({})
+  it('invalidateGiustificativo marca invalidato via use case', async () => {
+    mockInvalidaGiustificativo.mockResolvedValueOnce()
     const store = useGiustificativiStore()
-    store.data = [{ id: 1, Allegato: 'file-1' }]
+    store.data = [{ id: 1, Allegato: 'file-1', Progetto: 9 }]
     await store.invalidateGiustificativo(1)
-    expect(mockMarkFileObsolete).toHaveBeenCalledWith('file-1')
+    expect(mockInvalidaGiustificativo).toHaveBeenCalledWith({ id: 1, allegato: 'file-1', progettoId: 9 })
     expect(store.data[0].Invalidato).toBe(true)
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()
 
-    mockInvalidate.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'invalidate fail' }] } } })
+    mockInvalidaGiustificativo.mockRejectedValueOnce({
+      response: { data: { errors: [{ message: 'invalidate fail' }] } }
+    })
     await expect(store.invalidateGiustificativo(1)).rejects.toThrow()
     expect(store.error).toBe('invalidate fail')
   })
@@ -189,44 +182,35 @@ describe('giustificativi store', () => {
     expect(store.canEdit(99)).toBeFalsy()
   })
 
-  it('updateGiustificativo with new file', async () => {
-    mockUpload.mockResolvedValueOnce('new-file')
-    mockUpdate.mockResolvedValueOnce({ data: { data: { id: 1, Descrizione: 'upd' } } })
+  it('updateGiustificativo aggiorna via use case', async () => {
+    mockAggiornaGiustificativo.mockResolvedValueOnce({ id: 1, Descrizione: 'upd' })
     const store = useGiustificativiStore()
-    store.data = [{ id: 1, Descrizione: 'old', Allegato: 'old-file', Famiglia: 'fam-1' }]
+    store.data = [{ id: 1, Descrizione: 'old', Allegato: 'old-file', Famiglia: 'fam-1', Progetto: 7 }]
     await store.updateGiustificativo(1, { Descrizione: 'upd' }, new File([], 'x.pdf'))
-    expect(mockMarkFileObsolete).toHaveBeenCalledWith('old-file')
+    expect(mockAggiornaGiustificativo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 1,
+        file: expect.any(File),
+        allegatoAttuale: 'old-file',
+        famigliaId: 'fam-1',
+        progettoId: 7
+      })
+    )
     expect(store.data[0].Descrizione).toBe('upd')
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()
   })
 
-  it('updateGiustificativo handles missing updated payload and service errors', async () => {
-    mockUpdate.mockResolvedValueOnce({ data: { data: null } })
+  it('updateGiustificativo gestisce payload mancante ed errori', async () => {
+    mockAggiornaGiustificativo.mockResolvedValueOnce(null)
     const store = useGiustificativiStore()
-    store.data = [{ id: 1, Descrizione: 'old', Allegato: null, Famiglia: 'fam-1' }]
+    store.data = [{ id: 1, Descrizione: 'old', Allegato: null, Famiglia: 'fam-1', Progetto: 7 }]
     await store.updateGiustificativo(1, { Descrizione: 'upd' })
     expect(store.data[0].Descrizione).toBe('old')
     expect(store.error).toBeNull()
 
-    mockUpdate.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'update fail' }] } } })
+    mockAggiornaGiustificativo.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'update fail' }] } } })
     await expect(store.updateGiustificativo(1, { Descrizione: 'err' })).rejects.toThrow()
     expect(store.error).toBe('update fail')
-  })
-
-  it('_ensureRendicontazione reuses existing, creates new and returns null without ids', async () => {
-    mockFindByProject.mockResolvedValueOnce({ data: { data: [{ id: 'rend-existing' }] } })
-    const store = useGiustificativiStore()
-    let id = await store._ensureRendicontazione({ Famiglia: 'fam-1', Progetto: 1 })
-    expect(id).toBe('rend-existing')
-    expect(mockCreateRendicontazione).not.toHaveBeenCalled()
-
-    mockFindByProject.mockResolvedValueOnce({ data: { data: [] } })
-    mockCreateRendicontazione.mockResolvedValueOnce({ data: { data: { id: 'rend-new' } } })
-    id = await store._ensureRendicontazione({ Famiglia: 'fam-1', Progetto: 1, AnnoBando: 2026 })
-    expect(id).toBe('rend-new')
-
-    id = await store._ensureRendicontazione({ Famiglia: null, Progetto: 1 })
-    expect(id).toBeNull()
   })
 })

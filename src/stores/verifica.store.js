@@ -4,16 +4,22 @@ import * as XLSX from 'xlsx'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
-import { filesService } from 'src/services/files.service'
 import { gestioneService } from 'src/services/gestione.service'
-import { giustificativiService } from 'src/services/giustificativi.service'
 import { verificaService } from 'src/services/verifica.service'
+import {
+  aggiornaCampoGiustificativo,
+  creaGiustificativo,
+  riconciliaSubmission,
+  rifiutaGiustificativo,
+  ripristinaSubmission,
+  scartaSubmission,
+  verificaGiustificativo
+} from 'src/usecases/giustificativi'
 import { statoProgettoLabel } from 'src/utils/badges'
-import { FOLDERS, STATI_PROGETTO_OPERATIVI } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
-import { markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
-import { calcolaDisallineati, calcolaStatoProgetto } from 'src/utils/statoProgetto'
+import { calcolaDisallineati } from 'src/utils/statoProgetto'
+import { calcolaStatoRiga } from 'src/utils/statoRiga'
 import { useAuthStore } from './auth.store'
 import { usePagamentiStore } from './pagamenti.store'
 
@@ -342,14 +348,7 @@ export const useVerificaStore = defineStore('verifica', {
             Ambito: row.ambito,
             IBAN: row.iban,
             Intestatario: row.intestatario,
-            Stato: (() => {
-              if (row.totaleRendicontato === 0) return 'Non ricevuta'
-              if (!row.iban || !row.intestatario) return 'Dati bancari mancanti'
-              if ((row.giustificativi || []).some(g => g.Stato === 'inviato')) return 'Da verificare'
-              const validGiust = (row.giustificativi || []).filter(g => !g.Invalidato)
-              if (validGiust.length > 0 && validGiust.every(g => g.Stato === 'verificato')) return 'Pronto'
-              return 'Da completare'
-            })(),
+            Stato: calcolaStatoRiga(row).label,
             'Totale Rendicontato': row.totaleRendicontato,
             'Totale Pagato': row.totalePagato,
             'Residuo Allocato': row.residuoAllocato
@@ -417,14 +416,13 @@ export const useVerificaStore = defineStore('verifica', {
 
     async verifyGiustificativo(progettoId, giustId) {
       try {
-        await giustificativiService.verify(giustId)
+        await verificaGiustificativo({ id: giustId, progettoId })
         const row = this.rows.find(r => r.idProgetto === progettoId)
         if (!row) return
         const item = row.giustificativi.find(g => g.id === giustId)
         if (!item) return
         item.Stato = 'verificato'
         recalculateRowTotals(row)
-        await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
         if (useAuthStore().canManager) {
           await pagStore.ricalcolaProposta(progettoId)
@@ -437,14 +435,13 @@ export const useVerificaStore = defineStore('verifica', {
 
     async updateGiustificativoField(progettoId, giustId, field, value) {
       try {
-        await giustificativiService.update(giustId, { [field]: value })
+        await aggiornaCampoGiustificativo({ id: giustId, field, value, progettoId })
         const row = this.rows.find(r => r.idProgetto === progettoId)
         if (!row) return
         const item = row.giustificativi.find(g => g.id === giustId)
         if (!item) return
         item[field] = value
         recalculateRowTotals(row)
-        await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
         if (useAuthStore().canManager) {
           await pagStore.ricalcolaProposta(progettoId)
@@ -452,36 +449,6 @@ export const useVerificaStore = defineStore('verifica', {
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || `Errore nell'aggiornamento del campo ${field}`
         throw error
-      }
-    },
-
-    async patchProgettoAggregates(progettoId) {
-      try {
-        const row = this.rows.find(r => r.idProgetto === progettoId)
-        if (!row) return
-        const giustCount = row.giustificativi.filter(g => !g.Invalidato).length
-        const totaleImporto = row.giustificativi
-          .filter(g => !g.Invalidato)
-          .reduce((sum, g) => sum + toNumber(g.Importo), 0)
-        const statoRendicontazione = calcolaStatoRendicontazione(row.giustificativi)
-        const statoProgetto = calcolaStatoProgetto({
-          statoProgetto: row.statoProgetto,
-          allocato: row.allocato,
-          rimborsato: row.totalePagato,
-          giustificativi: row.giustificativi
-        })
-        const payload = {
-          TotaleGiustificativi: giustCount,
-          TotaleImporto: totaleImporto,
-          StatoRendicontazione: statoRendicontazione
-        }
-        if (statoProgetto && statoProgetto !== row.statoProgetto) {
-          payload.StatoProgetto = statoProgetto
-          row.statoProgetto = statoProgetto
-        }
-        await verificaService.updateProgetto(progettoId, payload)
-      } catch {
-        /* silent */
       }
     },
 
@@ -599,47 +566,6 @@ export const useVerificaStore = defineStore('verifica', {
       }
     },
 
-    _patchContattoFromCopied(contattoId, copiedFields, rightValues) {
-      const contattoPatch = {}
-      if (copiedFields.includes('Nome')) contattoPatch.Nome = rightValues.Nome
-      if (copiedFields.includes('Cognome')) contattoPatch.Cognome = rightValues.Cognome
-      if (copiedFields.includes('Telefono')) contattoPatch.Numero_di_cellulare = rightValues.Telefono
-      return Object.keys(contattoPatch).length > 0
-        ? contattiService.update(contattoId, contattoPatch)
-        : Promise.resolve()
-    },
-
-    _patchFamigliaFromCopied(famigliaId, copiedFields, rightValues) {
-      const famPatch = {}
-      if (copiedFields.includes('IBAN')) famPatch.IBAN = rightValues.IBAN
-      if (copiedFields.includes('Intestatario')) famPatch.Intestatario_CC = rightValues.Intestatario
-      return Object.keys(famPatch).length > 0 ? famiglieService.update(famigliaId, famPatch) : Promise.resolve()
-    },
-
-    async _handleAllegatoRiconciliazione(allegato, famigliaId) {
-      if (!allegato) return
-      const fileId = typeof allegato === 'object' ? allegato?.id : allegato
-      if (!fileId) return
-      await filesService.updateFolder(fileId, FOLDERS.GIUSTIFICATIVI).catch(() => {})
-      const famRes = await famiglieService.getFamiglieBatch([famigliaId])
-      const nomeFamiglia = famRes.data.data?.[0]?.Nome_Famiglia || ''
-      if (!nomeFamiglia) return
-      const fileRes = await filesService.getFile(fileId)
-      const origName = fileRes.data.data?.filename_download || 'file'
-      await filesService.renameFile(fileId, `${nomeFamiglia}_${origName}`)
-    },
-
-    async _createGiustificativoDaRiconciliazione(giustData, famigliaId, progettoId) {
-      const progRes = await verificaService.findProgettoByFamiglia(famigliaId)
-      const progetti = progRes.data.data || []
-      const progetto = progetti.find(p => p.id_progetto === progettoId)
-      if (progetto?.AnnoBando) giustData.AnnoBando = progetto.AnnoBando
-      const createRes = await giustificativiService.create(giustData)
-      const id = createRes?.data?.data?.id
-      if (!id) throw new Error('Errore nella creazione del giustificativo')
-      return id
-    },
-
     async reconcileSubmission({
       submissionId,
       contattoId,
@@ -659,44 +585,23 @@ export const useVerificaStore = defineStore('verifica', {
         const submission = this.submissions.find(s => s.id === submissionId)
         if (!submission) throw new Error('Submission not found')
 
-        if (contattoId && copiedFields?.length > 0) {
-          await this._patchContattoFromCopied(contattoId, copiedFields, rightValues)
-          if (copiedFields.includes('Email') && emailRecordId) {
-            await emailService.updateSafe(emailRecordId, { email_address: rightValues.Email.toLowerCase() })
-          }
-        }
-
-        if (famigliaId && copiedFields?.length > 0) {
-          await this._patchFamigliaFromCopied(famigliaId, copiedFields, rightValues)
-        }
-
-        await this._handleAllegatoRiconciliazione(allegato, famigliaId)
-
-        const giustificativoId = await this._createGiustificativoDaRiconciliazione(
-          {
-            Descrizione: descrizione ?? submission.descrizione,
-            Importo: importo ?? submission.importo,
-            Data: data ?? submission.data,
-            Allegato: allegato,
-            Progetto: progettoId,
-            Famiglia: famigliaId,
-            Stato: 'inviato'
-          },
+        await riconciliaSubmission({
+          submissionId,
+          contattoId,
+          emailRecordId,
           famigliaId,
-          progettoId
-        )
-
-        await verificaService.updateSubmission(submissionId, {
-          stato: 'riconciliato',
-          famiglia_riconciliata: famigliaId,
-          progetto_riconciliato: progettoId,
-          giustificativo_creato: giustificativoId,
-          note_riconciliazione: note || null
+          progettoId,
+          note,
+          descrizione: descrizione ?? submission.descrizione,
+          importo: importo ?? submission.importo,
+          data: data ?? submission.data,
+          allegato,
+          rightValues,
+          copiedFields
         })
 
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
         await this.fetchPage({})
-        await this.patchProgettoAggregates(progettoId)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella riconciliazione'
         throw error
@@ -706,10 +611,7 @@ export const useVerificaStore = defineStore('verifica', {
     async scartaSubmission(id, note) {
       this.error = null
       try {
-        await verificaService.updateSubmission(id, {
-          stato: 'scartato',
-          note_riconciliazione: note
-        })
+        await scartaSubmission({ id, nota: note })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nello scarto'
@@ -720,10 +622,7 @@ export const useVerificaStore = defineStore('verifica', {
     async ripristinaSubmission(id) {
       this.error = null
       try {
-        await verificaService.updateSubmission(id, {
-          stato: 'in_attesa',
-          note_riconciliazione: null
-        })
+        await ripristinaSubmission({ id })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel ripristino'
@@ -733,18 +632,13 @@ export const useVerificaStore = defineStore('verifica', {
 
     async rejectGiustificativo(progettoId, giustId, nota) {
       try {
-        await giustificativiService.reject(giustId, nota)
         const row = this.rows.find(r => r.idProgetto === progettoId)
-        if (!row) return
-        const item = row.giustificativi.find(g => g.id === giustId)
-        if (!item) return
-        if (item.Allegato) {
-          await markFileRejected(item.Allegato).catch(() => {})
-        }
+        const item = row?.giustificativi.find(g => g.id === giustId)
+        await rifiutaGiustificativo({ id: giustId, nota, allegato: item?.Allegato, progettoId })
+        if (!row || !item) return
         item.Stato = 'rifiutato'
         item.NotaRifiuto = nota
         recalculateRowTotals(row)
-        await this.patchProgettoAggregates(progettoId)
         const pagStore = usePagamentiStore()
         if (useAuthStore().canManager) {
           await pagStore.ricalcolaProposta(progettoId)
@@ -775,33 +669,15 @@ export const useVerificaStore = defineStore('verifica', {
     },
 
     async addGiustificativo(formData, file) {
-      const row = this.rows.find(r => r.idProgetto === formData.Progetto)
-      const statRaw = row?.statoProgetto
-      const statNorm = statRaw === 'aperto' ? 'accettato' : statRaw
-      if (row && !STATI_PROGETTO_OPERATIVI.includes(statNorm)) {
-        this.error = 'Non è possibile caricare giustificativi finché il progetto non è accettato.'
-        throw new Error('Progetto non operativo')
-      }
       try {
-        let allegatoId = null
-        if (file) {
-          allegatoId = await uploadAndPrefixFile(file, formData.Famiglia, FOLDERS.GIUSTIFICATIVI)
-        }
-        await giustificativiService.create({
-          Descrizione: formData.Descrizione,
-          Importo: formData.Importo,
-          Data: formData.Data,
-          Stato: formData.Stato || 'draft',
-          NotaVolontario: formData.NotaVolontario || '',
-          Progetto: formData.Progetto,
-          Famiglia: formData.Famiglia,
-          AnnoBando: formData.AnnoBando,
-          Allegato: allegatoId
-        })
+        await creaGiustificativo({ ...formData, file }, { origine: 'verificatore' })
         await this.fetchPage({})
-        await this.patchProgettoAggregates(formData.Progetto)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
+        if (error.message === 'Progetto non operativo') {
+          this.error = 'Non è possibile caricare giustificativi finché il progetto non è accettato.'
+        } else {
+          this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
+        }
         throw error
       }
     },

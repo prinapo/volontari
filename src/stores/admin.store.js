@@ -2,17 +2,15 @@ import { defineStore } from 'pinia'
 import { Notify } from 'quasar'
 import { adminService } from 'src/services/admin.service'
 import { contattiService } from 'src/services/contatti.service'
-import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { usersService } from 'src/services/users.service'
+import {
+  aggiornaRuolo as aggiornaRuoloUseCase,
+  creaUtente as creaUtenteUseCase,
+  inviaEmailCustom as inviaEmailCustomUseCase,
+  resetPasswordUtente as resetPasswordUtenteUseCase
+} from 'src/usecases/utenti'
 import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
-
-function generatePassword(length = 16) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
-  const array = new Uint32Array(length)
-  crypto.getRandomValues(array)
-  return Array.from(array, v => chars[v % chars.length]).join('')
-}
 
 export const useAdminStore = defineStore('admin', {
   state: () => ({
@@ -78,28 +76,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       this.nuovaPassword = ''
       try {
-        if (!this.contattoTrovato) {
-          const contattoRes = await contattiService.create({
-            Nome: firstName || '',
-            Cognome: lastName || ''
-          })
-          const contattoId = contattoRes.data.data?.id_contatto
-          await emailService.createSafe({
-            email_address: email.toLowerCase(),
-            Contatto_Relation: contattoId,
-            Primary: true
-          })
-        }
-
-        const pwd = generatePassword()
-        await usersService.create({
-          email,
-          password: pwd,
-          role,
-          first_name: firstName || this.contattoTrovato?.Nome || '',
-          last_name: lastName || this.contattoTrovato?.Cognome || ''
-        })
-
+        const pwd = await creaUtenteUseCase(email, role, firstName, lastName, this.contattoTrovato)
         this.nuovaPassword = pwd
         await this.fetchUsers()
       } catch (error) {
@@ -114,7 +91,7 @@ export const useAdminStore = defineStore('admin', {
       this.saving = true
       this.error = null
       try {
-        await usersService.update(userId, { role: roleId })
+        await aggiornaRuoloUseCase(userId, roleId)
         await this.fetchUsers()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del ruolo"
@@ -128,7 +105,7 @@ export const useAdminStore = defineStore('admin', {
       this.saving = true
       this.error = null
       try {
-        await usersService.update(userId, { password })
+        await resetPasswordUtenteUseCase(userId, password)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
         throw error
@@ -141,15 +118,7 @@ export const useAdminStore = defineStore('admin', {
       this.sending = true
       this.error = null
       try {
-        const resolvedBody = body
-          .replaceAll('{email}', to)
-          .replaceAll('{link_login}', globalThis.location.origin + '/login')
-        await adminService.sendEmail({
-          to,
-          subject,
-          body: resolvedBody,
-          type: 'html'
-        })
+        await inviaEmailCustomUseCase(to, subject, body)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'email"
         throw error
@@ -363,7 +332,12 @@ export const useAdminStore = defineStore('admin', {
           error.response?.data?.errors?.[0]?.message || error.message || "Errore nell'avvio dell'impersonazione"
         // Notify diretto perché i chiamanti sono fire-and-forget
         // (@click senza await/try-catch) — eccezione alla regola "store non fa UI"
-        Notify.create({ type: 'negative', message: this.error, timeout: 0, actions: [{ icon: 'close', color: 'white', round: true }] })
+        Notify.create({
+          type: 'negative',
+          message: this.error,
+          timeout: 0,
+          actions: [{ icon: 'close', color: 'white', round: true }]
+        })
       }
     },
 
@@ -388,7 +362,12 @@ export const useAdminStore = defineStore('admin', {
           error.response?.data?.errors?.[0]?.message || error.message || "Errore nel termine dell'impersonazione"
         // Notify diretto perché i chiamanti sono fire-and-forget
         // (@click senza await/try-catch) — eccezione alla regola "store non fa UI"
-        Notify.create({ type: 'negative', message: this.error, timeout: 0, actions: [{ icon: 'close', color: 'white', round: true }] })
+        Notify.create({
+          type: 'negative',
+          message: this.error,
+          timeout: 0,
+          actions: [{ icon: 'close', color: 'white', round: true }]
+        })
       }
     }
   }

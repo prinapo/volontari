@@ -13,9 +13,14 @@
  * assume questo stato indipendentemente dallo stato precedente.
  */
 import { STATO_PROGETTO } from './constants'
+import { calcolaStatoRendicontazione } from './rendicontazione'
+
+// Un giustificativo conta per lo stato progetto solo se è stato inviato o
+// verificato: i draft (o stati vuoti) non sono ancora rendicontazione.
+const STATI_GIUSTIFICATIVO_VALIDI = new Set(['inviato', 'verificato'])
 
 function hasValidGiustificativi(giustificativi = []) {
-  return giustificativi.some(g => !g.Invalidato)
+  return giustificativi.some(g => !g.Invalidato && STATI_GIUSTIFICATIVO_VALIDI.has(String(g.Stato || '').toLowerCase()))
 }
 
 /**
@@ -112,4 +117,29 @@ export function calcolaDisallineati(rows = []) {
     }
   }
   return disallineati
+}
+
+/**
+ * Campi derivati del progetto da persistere dopo ogni mutazione dei suoi
+ * giustificativi. Fonte unica usata da `syncProgettoAggregati`: calcola gli
+ * aggregati e lo stato progetto/rendicontazione a partire dai dati grezzi.
+ *
+ * @param {Object} progetto - Progetto con StatoProgetto, Allocato, TotalePagato
+ * @param {Array}  giustificativi - Giustificativi del progetto
+ * @returns {{TotaleGiustificativi: number, TotaleImporto: number, StatoRendicontazione: string, StatoProgetto: string}}
+ */
+export function calcolaAggregatiProgetto(progetto = {}, giustificativi = []) {
+  const validi = giustificativi.filter(g => !g.Invalidato)
+  const totaleImporto = validi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
+  return {
+    TotaleGiustificativi: validi.length,
+    TotaleImporto: totaleImporto,
+    StatoRendicontazione: calcolaStatoRendicontazione(giustificativi),
+    StatoProgetto: calcolaStatoProgetto({
+      statoProgetto: progetto.StatoProgetto,
+      allocato: progetto.Allocato,
+      rimborsato: progetto.TotalePagato,
+      giustificativi
+    })
+  }
 }

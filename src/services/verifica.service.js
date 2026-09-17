@@ -75,6 +75,14 @@ export const verificaService = {
     })
   },
 
+  getProgettoById(progettoId) {
+    return api.get(`/items/Progetti/${progettoId}`, {
+      params: {
+        fields: 'id_progetto,Allocato,StatoProgetto,TotalePagato'
+      }
+    })
+  },
+
   getAnniBando() {
     return api.get('/items/Progetti', {
       params: {

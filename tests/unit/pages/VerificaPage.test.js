@@ -145,43 +145,139 @@ describe('RendicontazioneTab', () => {
     await flushAll()
   })
 
-  it('covers row state helpers across branches', () => {
+  it('covers statoRiga helpers across branches', () => {
     const wrapper = mountTab()
-    expect(wrapper.vm.statoRiga({ totaleRendicontato: 0, iban: '', intestatario: '', giustificativi: [] })).toEqual({
+    const base = {
+      allocato: 5000,
+      totaleVerificato: 0,
+      totalePagato: 0,
+      totaleInPagamento: 0,
+      percentualeRimborso: 80
+    }
+    expect(wrapper.vm.statoRiga({ ...base, totaleRendicontato: 0, giustificativi: [] })).toMatchObject({
       label: 'Non ricevuta',
       color: 'grey'
     })
-    expect(wrapper.vm.statoRiga({ totaleRendicontato: 100, iban: '', intestatario: '', giustificativi: [] })).toEqual({
-      label: 'Dati bancari mancanti',
-      color: 'warning'
-    })
+    expect(
+      wrapper.vm.statoRiga({ ...base, totaleRendicontato: 0, giustificativi: [{ Stato: 'draft' }] })
+    ).toMatchObject({ label: 'Non ricevuta', color: 'grey' })
     expect(
       wrapper.vm.statoRiga({
+        ...base,
+        totaleRendicontato: 0,
+        iban: '',
+        intestatario: '',
+        giustificativi: [{ Stato: 'verificato', Invalidato: true }]
+      })
+    ).toMatchObject({ label: 'Non ricevuta', color: 'grey' })
+    expect(
+      wrapper.vm.statoRiga({
+        ...base,
+        totaleRendicontato: 100,
+        iban: '',
+        intestatario: '',
+        giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+      })
+    ).toMatchObject({ label: 'Dati bancari mancanti', color: 'warning' })
+    expect(
+      wrapper.vm.statoRiga({
+        ...base,
         totaleRendicontato: 100,
         iban: 'IT',
         intestatario: 'Mario',
         giustificativi: [{ Stato: 'inviato', Invalidato: false }]
       })
-    ).toEqual({ label: 'Da verificare', color: 'orange' })
+    ).toMatchObject({ label: 'Da verificare', color: 'orange' })
     expect(
       wrapper.vm.statoRiga({
+        ...base,
         totaleRendicontato: 100,
+        totaleVerificato: 100,
         iban: 'IT',
         intestatario: 'Mario',
         giustificativi: [{ Stato: 'verificato', Invalidato: false }]
       })
-    ).toEqual({ label: 'Pronto', color: 'positive' })
+    ).toMatchObject({ label: 'Pronto', color: 'positive' })
     expect(
       wrapper.vm.statoRiga({
+        ...base,
+        totaleRendicontato: 80,
+        iban: 'IT',
+        intestatario: 'Mario',
+        totaleVerificato: 100,
+        totalePagato: 100,
+        giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+      })
+    ).toMatchObject({ label: 'Pagato', color: 'grey' })
+    expect(
+      wrapper.vm.statoRiga({
+        ...base,
+        totaleRendicontato: 80,
+        totaleVerificato: 100,
+        totaleInPagamento: 80,
+        iban: 'IT',
+        intestatario: 'Mario',
+        giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+      })
+    ).toMatchObject({ label: 'In pagamento', color: 'secondary' })
+    expect(
+      wrapper.vm.statoRiga({
+        ...base,
         totaleRendicontato: 100,
         iban: 'IT',
         intestatario: 'Mario',
-        giustificativi: [{ Stato: 'draft', Invalidato: false }]
+        giustificativi: [
+          { Stato: 'draft', Invalidato: false },
+          { Stato: 'verificato', Invalidato: false }
+        ]
       })
-    ).toEqual({ label: 'Da completare', color: 'warning' })
-    expect(wrapper.vm.hasPendingGiustificativi({ giustificativi: [{ Stato: 'inviato' }] })).toBe(true)
+    ).toMatchObject({ label: 'Da completare', color: 'warning' })
     expect(wrapper.vm.totalGiustificativi({ giustificativi: [{ Invalidato: false }, { Invalidato: true }] })).toBe(1)
-    expect(wrapper.vm.allVerified({ giustificativi: [{ Stato: 'verificato', Invalidato: false }] })).toBe(true)
+    expect(
+      wrapper.vm.getGiustStato(
+        {
+          allocato: 100,
+          totaleVerificato: 100,
+          totalePagato: 100,
+          totaleInPagamento: 0,
+          totaleRendicontato: 100,
+          iban: 'IT',
+          intestatario: 'Mario',
+          giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+        },
+        { Stato: 'verificato' }
+      ).Stato
+    ).toBe('pagato')
+    expect(
+      wrapper.vm.getGiustStato(
+        {
+          allocato: 5000,
+          totaleVerificato: 100,
+          totalePagato: 0,
+          totaleInPagamento: 0,
+          totaleRendicontato: 100,
+          iban: 'IT',
+          intestatario: 'Mario',
+          giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+        },
+        { Stato: 'verificato' }
+      ).Stato
+    ).toBe('verificato')
+    expect(
+      wrapper.vm.getGiustStato(
+        {
+          allocato: 5000,
+          totaleVerificato: 100,
+          totalePagato: 0,
+          totaleInPagamento: 80,
+          totaleRendicontato: 100,
+          iban: 'IT',
+          intestatario: 'Mario',
+          giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+        },
+        { Stato: 'verificato' }
+      ).Stato
+    ).toBe('in_pagamento')
   })
 
   it('loads family contacts, caches them and handles failures', async () => {
