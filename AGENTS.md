@@ -72,7 +72,7 @@ giustificativo") era implementata in store diverse con side-effect incoerenti.
 
 ### Struttura a strati
 
-- `src/usecases/` — casi d'uso: una funzione per azione, firma `fn(payload, { origine })`
+- `src/usecases/` — casi d'uso: una funzione per azione. Firma `fn(payload, ctx)` dove `ctx` (`{ origine }`) è presente SOLO per le azioni con più punti di ingresso (oggi `creaGiustificativo`); le altre hanno firma `fn(payload)`.
 - `src/services/` — solo chiamate API Directus (regola invariata)
 - `src/utils/` — solo funzioni pure (derivazioni)
 - `src/stores/` — **adapter UI**: stato locale Pinia + chiamata allo use case + aggiornamento dal risultato. Niente logica di business duplicata.
@@ -82,13 +82,12 @@ giustificativo") era implementata in store diverse con side-effect incoerenti.
 
 1. Nuova azione di business → nuovo use case in `src/usecases/`, mai logica in store/componenti.
 2. Lo use case orchestera: validazione/guardie → scrittura via service → **side-effect obbligatori** → return del risultato.
-3. `origine` identifica il punto di ingresso (`volontario`/`modulo_libero`/`verificatore`/…): serve SOLO per audit/permessi, MAI per eseguire logica diversa — ogni azione fa esattamente la stessa cosa da qualunque parte venga innescata.
-4. Guardie e side-effect obbligatori stanno nello use case (es. `creaGiustificativo` applica la guardia "progetto non operativo" e termina sempre con `syncProgettoAggregati`).
-5. Side-effect per **composizione diretta** nello use case, NON via event bus (determinismo e testabilità; a questo volume un bus è overkill).
-6. I fetch/read NON sono use case (nessun side-effect): restano nelle store o nei service.
-7. **Auth è escluso** dal layer use case: `login`/`logout`/sessione restano in `auth.store` (infrastruttura).
-8. Ogni use case ha unit test (uno per azione); per le azioni multi-ingresso, stesso esito asserito per ogni origine.
-9. Il catalogo completo azioni → entry point è in `docs/usecases-catalog.md`. Allinearlo a ogni nuova azione/spostamento.
+3. `origine` identifica il punto di ingresso (`volontario`/`modulo_libero`/`verificatore`/…): serve SOLO per audit/permessi, MAI per eseguire logica diversa — ogni azione fa esattamente la stessa cosa da qualunque parte venga innescata.4. Guardie e side-effect obbligatori stanno nello use case (es. `creaGiustificativo` applica la guardia "progetto non operativo" e termina sempre con `syncProgettoAggregati`).
+4. Side-effect per **composizione diretta** nello use case, NON via event bus (determinismo e testabilità; a questo volume un bus è overkill).
+5. I fetch/read NON sono use case (nessun side-effect): restano nelle store o nei service.
+6. **Auth è escluso** dal layer use case: `login`/`logout`/sessione restano in `auth.store` (infrastruttura).
+7. Ogni use case ha unit test (uno per azione); per le azioni multi-ingresso, stesso esito asserito per ogni origine.
+8. Il catalogo completo azioni → entry point è in `docs/usecases-catalog.md`. Allinearlo a ogni nuova azione/spostamento.
 
 ### Invariante giustificativi
 
@@ -98,6 +97,21 @@ Ogni mutazione di giustificativo termina con `syncProgettoAggregati(progettoId)`
 li PATCHa su `Progetti`. È idempotente: può girare più volte senza effetti.
 La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped
 (solo i 4 campi derivati — vedi "Permesso Volontario su Progetti").
+
+### Creazione giustificativo (primitivo unico)
+
+La scrittura di un giustificativo passa da UN solo primitivo interno,
+`_creaGiustificativoRecord` (`src/usecases/giustificativi.js`): applica la
+**guardia "progetto operativo"**, crea il record e termina con
+`syncProgettoAggregati`. Lo usano `creaGiustificativo` (volontario/verificatore,
+con rendicontazione + upload file) e `riconciliaSubmission` (riconciliazione,
+Stato `inviato`, con guardia inclusa). La guardia vale quindi per **tutti** gli
+ingressi.
+
+**Modulo libero (utente non loggato)**: NON crea giustificativi. `creaSubmission`
+accoda la richiesta in `InviiGiustificativiNoLogin` (`in_attesa`); la
+materializzazione in giustificativo avviene solo alla riconciliazione (manager).
+SubmitPage passa dallo `submit.store` → `creaSubmission` (mai il service diretto).
 
 ## Services (Directus)
 

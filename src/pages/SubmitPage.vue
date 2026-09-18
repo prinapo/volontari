@@ -228,12 +228,13 @@ import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import GiustificativoFilePicker from 'components/Giustificativi/GiustificativoFilePicker.vue'
 import { filesService } from 'src/services/files.service'
-import { submitService } from 'src/services/submit.service'
+import { useSubmitStore } from 'src/stores/submit.store'
 import { FOLDERS } from 'src/utils/constants'
 import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
+const submitStore = useSubmitStore()
 const saving = ref(false)
 
 const today = new Date().toISOString().slice(0, 10)
@@ -285,15 +286,12 @@ async function handleSubmit() {
       const files = uploadRes.data.data
       const allegatoId = Array.isArray(files) ? files[0]?.id : files?.id
 
-      await submitService.createSubmission({
+      await submitStore.inviaSubmission({
         ...form,
-        email: (form.email || '').toLowerCase(),
         descrizione: g.descrizione,
         importo: Number.parseFloat(g.importo),
         data: g.data,
-        allegato: allegatoId,
-        stato: 'in_attesa',
-        data_invio: new Date().toISOString()
+        allegato: allegatoId
       })
     }
 

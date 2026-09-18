@@ -76,8 +76,6 @@ export function tipoBadgeColor(tipo) {
  *
  * Applicare questa distinzione a ogni nuova occorrenza di download.
  */
-export const DOWNLOAD_ICON = 'file_download'
-export const DOWNLOAD_PRIMARY_ICON = 'download'
 
 /**
  * COLORI AZIONE (bottoni, non badge):

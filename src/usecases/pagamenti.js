@@ -3,7 +3,8 @@ import { famiglieService } from 'src/services/famiglie.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STATI_PROGETTO_FINALI, STATO_PAGAMENTO, STATO_PROGETTO } from 'src/utils/constants'
+import { STATI_PROGETTO_FINALI, STATI_PROGETTO_OPERATIVI, STATO_PAGAMENTO, STATO_PROGETTO } from 'src/utils/constants'
+import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
 import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
 
 function parseNum(v) {
@@ -94,9 +95,12 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
   const totaleStorico = (pagamentiRes.data.data || []).reduce((s, p) => s + parseNum(p.Importo), 0)
 
   const allocato = parseNum(progetto.Allocato)
-  const pct = Math.min(100, Math.max(0, progetto.MassimaPercentualeErogabile ?? 80))
-  const erogabile = Math.min(totaleVerificato * (pct / 100), allocato)
-  const nuovoProposto = Math.round((erogabile - totaleStorico) * 100) / 100
+  const erogabile = calcolaErogabile({
+    allocato,
+    totaleVerificato,
+    percentualeRimborso: progetto.MassimaPercentualeErogabile ?? 80
+  })
+  const nuovoProposto = residuoDaCoprire(erogabile, totaleStorico)
 
   const esistenteRes = await pagamentiService.getPagamenti({
     'filter[Progetto][_eq]': progettoId,
@@ -126,6 +130,101 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
   }
 
   await ricalcolaTotaliProgetto(progettoId)
+}
+
+/**
+ * Calcola le scritture necessarie per la proposta di UN progetto (senza
+ * eseguirle): ritorna l'elenco di promise da awaitare. Fonte unica della
+ * formula erogabile (util `calcolaErogabile`).
+ */
+function _ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto) {
+  const pid = row.idProgetto
+  const giustificativi = giustByProgetto[pid] || []
+  const pagamenti = pagByProgetto[pid] || []
+
+  const totaleVerificato = giustificativi
+    .filter(g => g.Stato === 'verificato')
+    .reduce((s, g) => s + parseNum(g.Importo), 0)
+  const totaleStorico = pagamenti
+    .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
+    .reduce((s, p) => s + parseNum(p.Importo), 0)
+
+  const erogabile = calcolaErogabile({
+    allocato: row.allocato,
+    totaleVerificato,
+    percentualeRimborso: row.percentualeRimborso ?? 80
+  })
+  const nuovoProposto = residuoDaCoprire(erogabile, totaleStorico)
+  const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
+
+  const writeOps = []
+  if (nuovoProposto > 0) {
+    if (esistente) {
+      if (parseNum(esistente.Importo) !== nuovoProposto) {
+        writeOps.push(pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }))
+      }
+    } else {
+      writeOps.push(
+        pagamentiService.createPagamento({
+          Progetto: pid,
+          Famiglia: row.idFamiglia,
+          Importo: nuovoProposto,
+          Stato: STATO_PAGAMENTO.PROPOSTO,
+          IBAN: row.iban || '',
+          Intestatario: row.intestatario || '',
+          DataProposta: new Date().toISOString()
+        })
+      )
+    }
+  } else if (esistente) {
+    writeOps.push(
+      pagamentiService.updatePagamento(esistente.id, {
+        Stato: STATO_PAGAMENTO.ANNULLATO,
+        NoteEsito: 'Proposta annullata: importo non più dovuto',
+        Batch: null
+      })
+    )
+  }
+  return writeOps
+}
+
+/**
+ * Ricalcola in blocco le proposte di pagamento per i progetti operativi forniti
+ * (righe Verifica). Esegue le scritture necessarie in un'unica tornata.
+ */
+export async function ricalcolaPropostiDaProgetti(progetti) {
+  if (!progetti?.length) return
+  const aperti = progetti.filter(
+    r =>
+      r.statoProgetto != null &&
+      STATI_PROGETTO_OPERATIVI.includes(r.statoProgetto === 'aperto' ? 'accettato' : r.statoProgetto)
+  )
+  if (!aperti.length) return
+  const ids = aperti.map(r => r.idProgetto)
+
+  const [giustRes, pagRes] = await Promise.all([
+    verificaService.getGiustificativiByProgetti(ids),
+    pagamentiService.getPagamenti({ 'filter[Progetto][_in]': ids.join(','), limit: -1 })
+  ])
+
+  const giustByProgetto = {}
+  for (const g of giustRes.data.data || []) {
+    const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
+    if (!pid) continue
+    ;(giustByProgetto[pid] ||= []).push(g)
+  }
+  const pagByProgetto = {}
+  for (const p of pagRes.data.data || []) {
+    const pid = typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto
+    if (!pid) continue
+    ;(pagByProgetto[pid] ||= []).push(p)
+  }
+
+  const writeOps = []
+  for (const row of aperti) {
+    writeOps.push(..._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto))
+  }
+  if (writeOps.length > 0) await Promise.all(writeOps)
 }
 
 /**

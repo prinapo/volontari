@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import SubmitPage from 'src/pages/SubmitPage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockUploadFile = vi.fn()
 const mockCreateSubmission = vi.fn()
@@ -43,7 +43,7 @@ describe('SubmitPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUploadFile.mockResolvedValue({ data: { data: { id: 'file-1' } } })
-    mockCreateSubmission.mockResolvedValue({})
+    mockCreateSubmission.mockResolvedValue({ data: { data: { id: 's-1' } } })
   })
 
   it('adds and removes giustificativi', () => {

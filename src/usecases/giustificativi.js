@@ -3,6 +3,7 @@ import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { filesService } from 'src/services/files.service'
 import { giustificativiService } from 'src/services/giustificativi.service'
+import { submitService } from 'src/services/submit.service'
 import { verificaService } from 'src/services/verifica.service'
 import { FOLDERS, STATI_PROGETTO_OPERATIVI } from 'src/utils/constants'
 import { markFileObsolete, markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
@@ -40,18 +41,18 @@ async function _ensureRendicontazione({ Famiglia, Progetto, AnnoBando }) {
 }
 
 /**
- * Crea un giustificativo. UNICO entry point per volontario, modulo libero e
- * verificatore. Applica la guardia "progetto non operativo", garantisce la
- * rendicontazione, gestisce il file e termina con syncProgettoAggregati.
+ * PRIMITIVO UNICO di scrittura di un giustificativo, condiviso da tutti gli
+ * ingressi (volontario, verificatore, riconciliazione). Applica la guardia
+ * "progetto operativo", gestisce l'eventuale nuovo file (o usa un allegato già
+ * caricato) e termina SEMPRE con `syncProgettoAggregati`.
  *
- * @param {Object} payload - { Progetto, Famiglia, Descrizione, Importo, Data, Stato, NotaVolontario, AnnoBando, file }
+ * @param {Object} payload - { Progetto, Famiglia, Descrizione, Importo, Data, Stato, NotaVolontario, AnnoBando, Rendicontazione } + (file | Allegato)
  * @param {Object} _ctx - { origine } per audit/permessi (riservato: non altera la logica)
  * @returns {Promise<Object>} il giustificativo creato
  */
-export async function creaGiustificativo(payload, _ctx = {}) {
+async function _creaGiustificativoRecord(payload, _ctx = {}) {
   await guardiaProgettoOperativo(payload.Progetto)
-  const rendicontazioneId = await _ensureRendicontazione(payload)
-  let allegatoId = null
+  let allegatoId = payload.Allegato ?? null
   if (payload.file) {
     allegatoId = await uploadAndPrefixFile(payload.file, payload.Famiglia, FOLDERS.GIUSTIFICATIVI)
   }
@@ -65,14 +66,46 @@ export async function creaGiustificativo(payload, _ctx = {}) {
     Famiglia: payload.Famiglia,
     AnnoBando: payload.AnnoBando,
     Allegato: allegatoId,
-    Rendicontazione: rendicontazioneId
+    Rendicontazione: payload.Rendicontazione ?? null
   })
   const created = createRes.data.data
-  if (!created || created.Descrizione !== payload.Descrizione) {
+  if (!created?.id) {
     throw new Error('Creazione giustificativo fallita')
   }
   await syncProgettoAggregati(payload.Progetto)
   return created
+}
+
+/**
+ * Crea un giustificativo dal flusso volontario/verificatore. UNICO entry point
+ * per quei due ingressi. Garantisce la rendicontazione e delega al primitivo.
+ *
+ * @param {Object} payload - { Progetto, Famiglia, Descrizione, Importo, Data, Stato, NotaVolontario, AnnoBando, file }
+ * @param {Object} _ctx - { origine } per audit/permessi
+ * @returns {Promise<Object>} il giustificativo creato
+ */
+export async function creaGiustificativo(payload, _ctx = {}) {
+  const rendicontazioneId = await _ensureRendicontazione(payload)
+  return _creaGiustificativoRecord(
+    { ...payload, Stato: payload.Stato || 'draft', Rendicontazione: rendicontazioneId },
+    _ctx
+  )
+}
+
+/**
+ * Submission pubblica (modulo libero, utente non loggato). NON crea un
+ * giustificativo: accoda la richiesta in `InviiGiustificativiNoLogin` con stato
+ * `in_attesa`. La materializzazione in giustificativo avviene alla
+ * riconciliazione (manager). Nessuna guardia: la submission non ha un progetto.
+ */
+export async function creaSubmission(payload, _ctx = {}) {
+  const res = await submitService.createSubmission({
+    ...payload,
+    email: payload.email ? payload.email.toLowerCase() : payload.email,
+    stato: 'in_attesa',
+    data_invio: new Date().toISOString()
+  })
+  return res.data.data
 }
 
 export async function inviaGiustificativo({ id, progettoId }) {
@@ -164,21 +197,10 @@ async function _handleAllegatoRiconciliazione(allegato, famigliaId) {
   await filesService.renameFile(fileId, `${nomeFamiglia}_${origName}`)
 }
 
-async function _creaGiustificativoDaRiconciliazione(giustData, famigliaId, progettoId) {
-  const progRes = await verificaService.findProgettoByFamiglia(famigliaId)
-  const progetti = progRes.data.data || []
-  const progetto = progetti.find(p => p.id_progetto === progettoId)
-  if (progetto?.AnnoBando) giustData.AnnoBando = progetto.AnnoBando
-  const createRes = await giustificativiService.create(giustData)
-  const id = createRes?.data?.data?.id
-  if (!id) throw new Error('Errore nella creazione del giustificativo')
-  return id
-}
-
 /**
  * Riconciliazione di una submission del modulo libero: copia campi eventuali,
- * gestisce l'allegato, crea il giustificativo, marca la submission come
- * riconciliata e sincronizza gli aggregati del progetto.
+ * gestisce l'allegato, crea il giustificativo (via primitivo, con guardia),
+ * marca la submission come riconciliata e sincronizza gli aggregati.
  */
 export async function riconciliaSubmission({
   submissionId,
@@ -207,7 +229,9 @@ export async function riconciliaSubmission({
 
   await _handleAllegatoRiconciliazione(allegato, famigliaId)
 
-  const giustificativoId = await _creaGiustificativoDaRiconciliazione(
+  const progRes = await verificaService.findProgettoByFamiglia(famigliaId)
+  const progetto = (progRes.data.data || []).find(p => p.id_progetto === progettoId)
+  const created = await _creaGiustificativoRecord(
     {
       Descrizione: descrizione,
       Importo: importo,
@@ -215,11 +239,12 @@ export async function riconciliaSubmission({
       Allegato: allegato,
       Progetto: progettoId,
       Famiglia: famigliaId,
+      AnnoBando: progetto?.AnnoBando,
       Stato: 'inviato'
     },
-    famigliaId,
-    progettoId
+    { origine: 'modulo_libero' }
   )
+  const giustificativoId = created.id
 
   await verificaService.updateSubmission(submissionId, {
     stato: 'riconciliato',
@@ -229,6 +254,5 @@ export async function riconciliaSubmission({
     note_riconciliazione: note || null
   })
 
-  await syncProgettoAggregati(progettoId)
   return giustificativoId
 }

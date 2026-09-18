@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   inviaNotificaPagamento,
   ricalcolaProposta,
+  ricalcolaPropostiDaProgetti,
   ricalcolaTotaliProgetto,
   segnaAnnullato,
   segnaPagato
@@ -14,6 +15,7 @@ const mockDeletePagamento = vi.fn()
 const mockGetProgettoById = vi.fn()
 const mockUpdateProgettoStats = vi.fn()
 const mockGetGiustificativiByProgetto = vi.fn()
+const mockGetGiustificativiByProgetti = vi.fn()
 const mockGetFamigliaVolontari = vi.fn()
 const mockGetFamigliaGenitori = vi.fn()
 const mockGetFamigliaById = vi.fn()
@@ -38,7 +40,8 @@ vi.mock('src/services/progetti.service', () => ({
 
 vi.mock('src/services/verifica.service', () => ({
   verificaService: {
-    getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a)
+    getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
+    getGiustificativiByProgetti: (...a) => mockGetGiustificativiByProgetti(...a)
   }
 }))
 
@@ -331,5 +334,57 @@ describe('segnaPagato', () => {
   it('rifiuta pagamenti non in_pagamento', async () => {
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-2', Stato: 'proposto' }] } })
     await expect(segnaPagato('p-2')).rejects.toThrow('Solo pagamenti in_pagamento possono essere segnati come pagati')
+  })
+})
+
+describe('ricalcolaPropostiDaProgetti', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  const row = extra => ({
+    idProgetto: 'X',
+    idFamiglia: 'fam-1',
+    allocato: 875,
+    percentualeRimborso: 80,
+    iban: '',
+    intestatario: '',
+    statoProgetto: 'accettato',
+    ...extra
+  })
+
+  it('residuo float non crea proposto a zero (398*0.8 - 318.40)', async () => {
+    mockGetGiustificativiByProgetti.mockResolvedValue({
+      data: { data: [{ Progetto: 'X', Stato: 'verificato', Importo: '398' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'paid-1', Progetto: 'X', Stato: 'in_pagamento', Importo: '318.40' }] }
+    })
+
+    await ricalcolaPropostiDaProgetti([row()])
+
+    expect(mockCreatePagamento).not.toHaveBeenCalled()
+    expect(mockUpdatePagamento).not.toHaveBeenCalled()
+  })
+
+  it('residuo float con proposto esistente lo annulla', async () => {
+    mockGetGiustificativiByProgetti.mockResolvedValue({
+      data: { data: [{ Progetto: 'X', Stato: 'verificato', Importo: '398' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: {
+        data: [
+          { id: 'paid-1', Progetto: 'X', Stato: 'in_pagamento', Importo: '318.40' },
+          { id: 'prop-1', Progetto: 'X', Stato: 'proposto', Importo: '0' }
+        ]
+      }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+
+    await ricalcolaPropostiDaProgetti([row()])
+
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
+      Stato: 'annullato',
+      NoteEsito: 'Proposta annullata: importo non più dovuto',
+      Batch: null
+    })
   })
 })

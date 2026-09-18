@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   creaGiustificativo,
+  creaSubmission,
   riconciliaSubmission,
   verificaGiustificativo,
   inviaGiustificativo
@@ -17,6 +18,7 @@ const mockCreateRendicontazione = vi.fn()
 const mockVerify = vi.fn()
 const mockSubmit = vi.fn()
 const mockUpload = vi.fn()
+const mockSubmitService = vi.fn()
 
 vi.mock('src/services/verifica.service', () => ({
   verificaService: {
@@ -25,6 +27,12 @@ vi.mock('src/services/verifica.service', () => ({
     updateProgetto: (...a) => mockUpdateProgetto(...a),
     findProgettoByFamiglia: (...a) => mockFindProgettoByFamiglia(...a),
     updateSubmission: (...a) => mockUpdateSubmission(...a)
+  }
+}))
+
+vi.mock('src/services/submit.service', () => ({
+  submitService: {
+    createSubmission: (...a) => mockSubmitService(...a)
   }
 }))
 
@@ -124,6 +132,8 @@ describe('riconciliaSubmission', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('crea il giustificativo, marca la submission e sincronizza', async () => {
+    mockGetProgettoById.mockResolvedValue(operativo)
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockFindProgettoByFamiglia.mockResolvedValue({ data: { data: [{ id_progetto: 9, AnnoBando: 2026 }] } })
     mockCreate.mockResolvedValue({ data: { data: { id: 'g-9' } } })
     mockUpdateSubmission.mockResolvedValue({})
@@ -147,5 +157,35 @@ describe('riconciliaSubmission', () => {
     )
     expect(mockUpdateProgetto).toHaveBeenCalledWith(9, expect.anything())
     expect(id).toBe('g-9')
+  })
+
+  it('applica la guardia progetto non operativo anche in riconciliazione', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { StatoProgetto: 'proposto' } } })
+    mockFindProgettoByFamiglia.mockResolvedValue({ data: { data: [{ id_progetto: 9, AnnoBando: 2026 }] } })
+    await expect(
+      riconciliaSubmission({
+        submissionId: 's-1',
+        famigliaId: 'fam-9',
+        progettoId: 9,
+        descrizione: 'x',
+        importo: 1,
+        copiedFields: []
+      })
+    ).rejects.toThrow('Progetto non operativo')
+    expect(mockCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('creaSubmission (pubblico non loggato)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('accoda la submission con stato in_attesa e email lowercase', async () => {
+    mockSubmitService.mockResolvedValue({ data: { data: { id: 's-1' } } })
+    const res = await creaSubmission({ email: 'Mario@Example.IT', descrizione: 'x', importo: 10 })
+    expect(res).toEqual({ id: 's-1' })
+    const payload = mockSubmitService.mock.calls[0][0]
+    expect(payload.email).toBe('mario@example.it')
+    expect(payload.stato).toBe('in_attesa')
+    expect(payload.data_invio).toBeTruthy()
   })
 })

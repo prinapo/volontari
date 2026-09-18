@@ -9,17 +9,18 @@
  * - importo già interamente pagato (totalePagato >= erogabile) → 'pagato'
  * - residuo coperto solo da importi in pagamento → 'in_pagamento'
  */
+import { calcolaErogabile, residuoDaCoprire } from './erogabile'
+
 /**
- * Calcolo erogabile/residuo del progetto. I tuoi dati non superano mai il cap
- * dell'allocato: l'importo erogabile è il minore tra il verificato al
- * percentualeRimborso e l'allocato.
+ * Calcolo erogabile/residuo del progetto. I dati non superano mai il cap
+ * dell'allocato: l'importo erogabile è il minore tra il verificato al netto
+ * della percentuale di rimborso e l'allocato.
  *
  * @param {Object} row - Riga Verifica (allocato, totaleVerificato, totalePagato,
  *                       totaleInPagamento, percentualeRimborso, giustificativi)
  * @returns {{erogabile: number, pagato: number, residuo: number}}
  */
 function calcoloErogabile(row) {
-  const allocato = Number.parseFloat(row.allocato) || 0
   // Il campo di riga (aggregato DB) è la fonte canonica; ma per progetti creati
   // di fresco il trigger non ha ancora ricalcolato `totaleVerificato` (resta 0),
   // quindi si ripiega sulla somma dei giustificativi verificati della riga.
@@ -29,11 +30,14 @@ function calcoloErogabile(row) {
     0
   )
   const totaleVerificato = dbVerificato || giustVerificato
-  const pct = Math.min(100, Math.max(0, Number.parseFloat(row.percentualeRimborso) || 80)) / 100
-  const erogabile = Math.min(totaleVerificato * pct, allocato)
+  const erogabile = calcolaErogabile({
+    allocato: row.allocato,
+    totaleVerificato,
+    percentualeRimborso: row.percentualeRimborso
+  })
   const pagato = Number.parseFloat(row.totalePagato) || 0
   const inPagamento = Number.parseFloat(row.totaleInPagamento) || 0
-  return { erogabile, pagato, residuo: Math.round((erogabile - pagato - inPagamento) * 100) / 100 }
+  return { erogabile, pagato, residuo: residuoDaCoprire(erogabile, pagato + inPagamento) }
 }
 
 /**

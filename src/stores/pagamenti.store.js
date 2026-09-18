@@ -2,12 +2,12 @@ import { defineStore } from 'pinia'
 import { associazioniService } from 'src/services/associazioni.service'
 import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
-import { verificaService } from 'src/services/verifica.service'
 import {
   chiudiProgetto as chiudiProgettoUseCase,
   correggiDati as correggiDatiUseCase,
   riapriProgetto as riapriProgettoUseCase,
   ricalcolaProposta as ricalcolaPropostaUseCase,
+  ricalcolaPropostiDaProgetti as ricalcolaPropostiDaProgettiUseCase,
   ricalcolaTotaliProgetto as ricalcolaTotaliProgettoUseCase,
   ripristinaInPagamento as ripristinaInPagamentoUseCase,
   ripristinaProposto as ripristinaPropostoUseCase,
@@ -15,7 +15,7 @@ import {
   segnaFallito as segnaFallitoUseCase,
   segnaPagato as segnaPagatoUseCase
 } from 'src/usecases/pagamenti'
-import { STATI_PROGETTO_OPERATIVI, STATO_PAGAMENTO, STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
+import { STATO_PAGAMENTO, STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
 
 export const usePagamentiStore = defineStore('pagamenti', {
   state: () => ({
@@ -68,93 +68,10 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    _ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet) {
-      const pid = row.idProgetto
-      const allocato = Number.parseFloat(row.allocato) || 0
-      const giustificativi = giustByProgetto[pid] || []
-      const pagamenti = pagByProgetto[pid] || []
-
-      const totaleVerificato = giustificativi
-        .filter(g => g.Stato === 'verificato')
-        .reduce((s, g) => s + (Number.parseFloat(g.Importo) || 0), 0)
-
-      const totaleStorico = pagamenti
-        .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
-        .reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
-
-      const fattore = (row.percentualeRimborso ?? 80) / 100
-      const erogabile = Math.min(totaleVerificato * fattore, allocato)
-      const nuovoProposto = Math.round((erogabile - totaleStorico) * 100) / 100
-      const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
-
-      if (nuovoProposto > 0) {
-        if (esistente) {
-          if (Number.parseFloat(esistente.Importo) !== nuovoProposto) {
-            writeOps.push(pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }))
-            ricalcolaSet.add(pid)
-          }
-        } else {
-          writeOps.push(
-            pagamentiService.createPagamento({
-              Progetto: pid,
-              Famiglia: row.idFamiglia,
-              Importo: nuovoProposto,
-              Stato: STATO_PAGAMENTO.PROPOSTO,
-              IBAN: row.iban || '',
-              Intestatario: row.intestatario || '',
-              DataProposta: new Date().toISOString()
-            })
-          )
-          ricalcolaSet.add(pid)
-        }
-      } else if (esistente) {
-        writeOps.push(
-          pagamentiService.updatePagamento(esistente.id, {
-            Stato: STATO_PAGAMENTO.ANNULLATO,
-            NoteEsito: 'Proposta annullata: importo non più dovuto',
-            Batch: null
-          })
-        )
-        ricalcolaSet.add(pid)
-      }
-    },
-
     async ricalcolaPropostiDaProgetti(progetti) {
       this.error = null
-      if (!progetti?.length) return
-      const aperti = progetti.filter(
-        r =>
-          r.statoProgetto != null &&
-          STATI_PROGETTO_OPERATIVI.includes(r.statoProgetto === 'aperto' ? 'accettato' : r.statoProgetto)
-      )
-      if (!aperti.length) return
-      const ids = aperti.map(r => r.idProgetto)
-
       try {
-        const [giustRes, pagRes] = await Promise.all([
-          verificaService.getGiustificativiByProgetti(ids),
-          pagamentiService.getPagamenti({ 'filter[Progetto][_in]': ids.join(','), limit: -1 })
-        ])
-        const giustByProgetto = {}
-        for (const g of giustRes.data.data || []) {
-          const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
-          if (!giustByProgetto[pid]) giustByProgetto[pid] = []
-          giustByProgetto[pid].push(g)
-        }
-        const pagByProgetto = {}
-        for (const p of pagRes.data.data || []) {
-          const pid = typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto
-          if (!pagByProgetto[pid]) pagByProgetto[pid] = []
-          pagByProgetto[pid].push(p)
-        }
-
-        const writeOps = []
-        const ricalcolaSet = new Set()
-        for (const row of aperti) {
-          this._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
-        }
-
-        if (writeOps.length > 0) await Promise.all(writeOps)
+        await ricalcolaPropostiDaProgettiUseCase(progetti)
         await this.fetchProposti()
         await this.fetchAnnullati()
       } catch (error) {

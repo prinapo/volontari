@@ -429,59 +429,6 @@ describe('pagamenti store', () => {
     expect(store.error).toBe('fail')
   })
 
-  it('_ricalcolaPropostaSingola: residuo float non crea proposto a zero (398*0.8 - 318.40)', () => {
-    const store = usePagamentiStore()
-    const row = {
-      idProgetto: 'X',
-      idFamiglia: 'fam-1',
-      allocato: 875,
-      percentualeRimborso: 80,
-      iban: '',
-      intestatario: ''
-    }
-    const giustByProgetto = { X: [{ Stato: 'verificato', Importo: '398' }] }
-    const pagByProgetto = { X: [{ id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' }] }
-    const writeOps = []
-    const ricalcolaSet = new Set()
-
-    store._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
-
-    expect(writeOps).toHaveLength(0)
-    expect(mockCreatePagamento).not.toHaveBeenCalled()
-  })
-
-  it('_ricalcolaPropostaSingola: residuo float con proposto esistente lo annulla', () => {
-    const store = usePagamentiStore()
-    const row = {
-      idProgetto: 'X',
-      idFamiglia: 'fam-1',
-      allocato: 875,
-      percentualeRimborso: 80,
-      iban: '',
-      intestatario: ''
-    }
-    const giustByProgetto = { X: [{ Stato: 'verificato', Importo: '398' }] }
-    const pagByProgetto = {
-      X: [
-        { id: 'paid-1', Stato: 'in_pagamento', Importo: '318.40' },
-        { id: 'prop-1', Stato: 'proposto', Importo: '0' }
-      ]
-    }
-    const writeOps = []
-    const ricalcolaSet = new Set()
-
-    store._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto, writeOps, ricalcolaSet)
-
-    expect(writeOps).toHaveLength(1)
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
-      Stato: 'annullato',
-      NoteEsito: 'Proposta annullata: importo non più dovuto',
-      Batch: null
-    })
-    expect(mockDeletePagamento).not.toHaveBeenCalled()
-    expect(mockCreatePagamento).not.toHaveBeenCalled()
-  })
-
   it('fetchAnnullati carica i pagamenti annullati', async () => {
     mockGetPagamenti.mockResolvedValue({
       data: { data: [{ id: 1, Stato: 'annullato', NoteEsito: 'Rimosso dal gruppo' }] }

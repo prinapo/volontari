@@ -30,23 +30,28 @@ punto di ingresso (es. `volontario`, `modulo_libero`, `verificatore`) e serve
 
 ## Area Giustificativi — `src/usecases/giustificativi.js` ✅ estratto
 
-L'azione "crea giustificativo" ha **3 ingressi**: volontario (FamigliePage →
-GiustificativoList), verificatore (VerificaPage → RendicontazioneTab) e modulo
-libero (SubmitPage → coda → RiconciliazionePage). Tutti passano dallo stesso
-use case.
+La creazione di un giustificativo passa da UN solo primitivo interno
+`_creaGiustificativoRecord` (`src/usecases/giustificativi.js`): guardia
+"progetto operativo" + create + `syncProgettoAggregati`. Gli ingressi reali sono:
+volontario (FamigliePage → GiustificativoList → `creaGiustificativo`),
+verificatore (VerificaPage → RendicontazioneTab → `creaGiustificativo`) e
+riconciliazione (RiconciliazionePage → `riconciliaSubmission`, che usa il
+primitivo). Il **modulo libero (non loggato)** NON crea giustificativi: accoda
+con `creaSubmission` e la materializzazione avviene alla riconciliazione (manager).
 
-| Azione                  | Use case                      | Entry point                                               | Stato    |
-| ----------------------- | ----------------------------- | --------------------------------------------------------- | -------- |
-| Crea giustificativo     | `creaGiustificativo`          | GiustificativoList / RendicontazioneTab / Riconciliazione | estratto |
-| Invia giustificativo    | `inviaGiustificativo`         | GiustificativoList                                        | estratto |
-| Aggiorna giustificativo | `aggiornaGiustificativo`      | GiustificativoList                                        | estratto |
-| Aggiorna campo          | `aggiornaCampoGiustificativo` | GiustificativoList / RendicontazioneTab                   | estratto |
-| Invalida giustificativo | `invalidaGiustificativo`      | GiustificativoList                                        | estratto |
-| Verifica giustificativo | `verificaGiustificativo`      | RendicontazioneTab                                        | estratto |
-| Rifiuta giustificativo  | `rifiutaGiustificativo`       | RendicontazioneTab                                        | estratto |
-| Riconcilia submission   | `riconciliaSubmission`        | RiconciliazionePage                                       | estratto |
-| Scarta submission       | `scartaSubmission`            | RiconciliazionePage                                       | estratto |
-| Ripristina submission   | `ripristinaSubmission`        | RiconciliazionePage                                       | estratto |
+| Azione                  | Use case                      | Entry point                               | Stato    |
+| ----------------------- | ----------------------------- | ----------------------------------------- | -------- |
+| Crea giustificativo     | `creaGiustificativo`          | GiustificativoList / RendicontazioneTab   | estratto |
+| Invia giustificativo    | `inviaGiustificativo`         | GiustificativoList                        | estratto |
+| Aggiorna giustificativo | `aggiornaGiustificativo`      | GiustificativoList                        | estratto |
+| Aggiorna campo          | `aggiornaCampoGiustificativo` | GiustificativoList / RendicontazioneTab   | estratto |
+| Invalida giustificativo | `invalidaGiustificativo`      | GiustificativoList                        | estratto |
+| Verifica giustificativo | `verificaGiustificativo`      | RendicontazioneTab                        | estratto |
+| Rifiuta giustificativo  | `rifiutaGiustificativo`       | RendicontazioneTab                        | estratto |
+| Riconcilia submission   | `riconciliaSubmission`        | RiconciliazionePage (usa il primitivo)    | estratto |
+| Scarta submission       | `scartaSubmission`            | RiconciliazionePage                       | estratto |
+| Ripristina submission   | `ripristinaSubmission`        | RiconciliazionePage                       | estratto |
+| Crea submission         | `creaSubmission`              | SubmitPage (pubblico, non loggato → coda) | estratto |
 
 ### Invariante condiviso
 
@@ -57,9 +62,10 @@ La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped.
 
 ### Guardia comune
 
-`creaGiustificativo` applica la guardia **progetto non operativo** (stato in
-`STATI_PROGETTO_OPERATIVI`), identica per tutti gli ingressi. I **draft** non
-contano come giustificativi validi per lo stato (`hasValidGiustificativi`).
+La guardia **progetto non operativo** (stato in `STATI_PROGETTO_OPERATIVI`) è nel
+primitivo `_creaGiustificativoRecord`: vale per **tutti** gli ingressi, inclusa la
+riconciliazione. I **draft** non contano come giustificativi validi per lo stato
+(`hasValidGiustificativi`).
 
 ---
 
@@ -77,20 +83,21 @@ contano come giustificativi validi per lo stato (`hasValidGiustificativi`).
 
 ## Area Pagamenti — `src/usecases/pagamenti.js` ✅ estratto (core)
 
-| Azione                    | Use case                  | Entry point                                   | Stato                                            |
-| ------------------------- | ------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| Ricalcola proposta        | `ricalcolaProposta`       | Verifica / PagamentiTab                       | estratto                                         |
-| Ricalcola totali progetto | `ricalcolaTotaliProgetto` | `segnaPagato`/`segnaFallito`/`segnaAnnullato` | estratto                                         |
-| Ripristina proposto       | `ripristinaProposto`      | PagamentiTab                                  | estratto                                         |
-| Segna pagato              | `segnaPagato`             | PagamentiTab                                  | estratto (side-effect: `inviaNotificaPagamento`) |
-| Segna fallito             | `segnaFallito`            | PagamentiTab                                  | estratto                                         |
-| Segna annullato           | `segnaAnnullato`          | PagamentiTab                                  | estratto                                         |
-| Ripristina in pagamento   | `ripristinaInPagamento`   | PagamentiTab                                  | estratto                                         |
-| Correggi dati pagamento   | `correggiDati`            | PagamentiTab                                  | estratto                                         |
-| Invia notifica pagamento  | `inviaNotificaPagamento`  | side-effect di `segnaPagato`                  | estratto                                         |
-| Crea batch                | `creaBatch`               | PagamentiTab                                  | in store (batch/CSV, UI-coupled)                 |
-| Aggiorna lista batch      | `_aggiornaListaBatch`     | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store (CSV)                                   |
-| Elimina lista             | `eliminaLista`            | PagamentiTab                                  | in store                                         |
+| Azione                    | Use case                      | Entry point                                   | Stato                                            |
+| ------------------------- | ----------------------------- | --------------------------------------------- | ------------------------------------------------ |
+| Ricalcola proposta        | `ricalcolaProposta`           | Verifica / PagamentiTab                       | estratto                                         |
+| Ricalcola proposte (bulk) | `ricalcolaPropostiDaProgetti` | PagamentiTab                                  | estratto                                         |
+| Ricalcola totali progetto | `ricalcolaTotaliProgetto`     | `segnaPagato`/`segnaFallito`/`segnaAnnullato` | estratto                                         |
+| Ripristina proposto       | `ripristinaProposto`          | PagamentiTab                                  | estratto                                         |
+| Segna pagato              | `segnaPagato`                 | PagamentiTab                                  | estratto (side-effect: `inviaNotificaPagamento`) |
+| Segna fallito             | `segnaFallito`                | PagamentiTab                                  | estratto                                         |
+| Segna annullato           | `segnaAnnullato`              | PagamentiTab                                  | estratto                                         |
+| Ripristina in pagamento   | `ripristinaInPagamento`       | PagamentiTab                                  | estratto                                         |
+| Correggi dati pagamento   | `correggiDati`                | PagamentiTab                                  | estratto                                         |
+| Invia notifica pagamento  | `inviaNotificaPagamento`      | side-effect di `segnaPagato`                  | estratto                                         |
+| Crea batch                | `creaBatch`                   | PagamentiTab                                  | in store (batch/CSV, UI-coupled)                 |
+| Aggiorna lista batch      | `_aggiornaListaBatch`         | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store (CSV)                                   |
+| Elimina lista             | `eliminaLista`                | PagamentiTab                                  | in store                                         |
 
 ---
 
