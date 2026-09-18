@@ -23,7 +23,7 @@ async function createGiustificativoViaVerificatore(page) {
   const vp = new VerificaPage(page)
   await vp.goto()
   await vp.waitForTable()
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
 
   const addBtn = page.locator('[data-testid="btn-add-giust"], button[aria-label="Aggiungi giustificativo"]').first()
   if ((await addBtn.count()) === 0) return null
@@ -32,7 +32,7 @@ async function createGiustificativoViaVerificatore(page) {
   if (isMobile) {
     const expItem = page.locator('.q-expansion-item').first()
     await expItem.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
   }
   await addBtn.click()
   await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
@@ -80,21 +80,21 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (result1?.id) ids.giustificativi.push(result1.id)
 
     // Invia il giustificativo esplicitamente
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const inviaBtn = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
     await inviaBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     if ((await inviaBtn.count()) > 0) {
       await inviaBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
     }
 
     const vp = new VerificaPage(page)
     await loginAs(page, 'manager', auth)
     await vp.goto()
     await vp.waitForTable()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await vp.searchFamiglia(nomeFam)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const rowCount = await vp.getRowCount()
     if (rowCount === 0) {
     }
@@ -109,7 +109,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (foundRow === -1) {
     }
     await vp.expandRow(foundRow)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const patches = await waitForPatchStato(page, 'verificato', async () => {
       const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
@@ -117,7 +117,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
         console.log('[VF-01] btn-verify not visible after expand')
       }
       await verifyBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
     })
 
     logApiCalls(apiCalls)
@@ -127,7 +127,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-02: Rifiuta giustificativo — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90_000)
-    page.expectApiError('/items/Progetti/')
+    page.expectApiError('/items/Progetti')
     const testDesc = `TEST_VF_02_reject_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -142,12 +142,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     if (result2?.id) ids.giustificativi.push(result2.id)
 
     // Invia il giustificativo
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const inviaBtn2 = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
     await inviaBtn2.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
     if ((await inviaBtn2.count()) > 0) {
       await inviaBtn2.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
     }
 
     const vp = new VerificaPage(page)
@@ -155,35 +155,45 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(nomeFam)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     if ((await vp.getRowCount()) === 0) {
     }
     await vp.expandRow(0)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
-    const patches = await waitForPatchStato(page, 'rifiutato', async () => {
-      const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
-      if (!(await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      }
+    const rejectRespPromise = page
+      .waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH', {
+        timeout: 15_000
+      })
+      .catch(() => null)
+
+    const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
+    if (await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await rejectBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
 
       const rejectDialog = page.locator('.q-dialog:visible').last()
-      if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if (await rejectDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
         const textarea = rejectDialog.locator('textarea').first()
         await textarea.fill('Test rifiuto E2E', { force: true })
-        await rejectDialog
+        const rifiutaBtn = rejectDialog
           .locator('button')
           .filter({ hasText: /rifiut|conferma/i })
           .last()
-          .click()
-        await page.waitForLoadState("networkidle").catch(() => {})
+        await expect(rifiutaBtn).toBeEnabled({ timeout: 5000 })
+        await rifiutaBtn.click()
+        await page.waitForLoadState('networkidle').catch(() => {})
       }
-    })
+    }
 
+    const rejectResp = await rejectRespPromise
     logApiCalls(apiCalls)
-    expect(patches.length).toBeGreaterThan(0)
-    expect(patches.at(-1).Stato).toBe('rifiutato')
+    expect(rejectResp, 'PATCH di rifiuto non inviato').toBeTruthy()
+    if (rejectResp) {
+      expect(rejectResp.status()).toBe(200)
+      const body = rejectResp.request().postData() ? JSON.parse(rejectResp.request().postData()) : null
+      expect(body?.Stato).toBe('rifiutato')
+    }
   })
 
   test('VF-03: Draft→Inviato — intercetta PATCH @crud', async ({ page }) => {
@@ -208,18 +218,18 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.goto()
     await vp.waitForTable()
     await vp.searchFamiglia(nomeFam)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     if ((await vp.getRowCount()) === 0) {
     }
     await vp.expandRow(0)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const patches = await waitForPatchStato(page, 'inviato', async () => {
       const sendBtn = page.locator('[data-testid="btn-send"]').first()
       if (!(await sendBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
       }
       await sendBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
     })
 
     logApiCalls(apiCalls)
@@ -240,7 +250,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-05: Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e', async ({ page }) => {
     test.setTimeout(120_000)
-    page.expectApiError('/items/Progetti/')
+    page.expectApiError('/items/Progetti')
     const apiCalls = monitorApi(page)
 
     // 1. Atomic setup — crea famiglia + progetto
@@ -268,29 +278,37 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await vp.searchFamiglia(nomeFam)
     await vp.expandRow(0)
 
-    const rejectPatches = await waitForPatchStato(page, 'rifiutato', async () => {
-      const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
-      if (await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await rejectBtn.click()
-        await page.waitForLoadState("networkidle").catch(() => {})
-        const rejectDialog = page.locator('.q-dialog:visible').last()
-        if (await rejectDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-          const textarea = rejectDialog.locator('textarea').first()
-          await textarea.fill('Rifiuto test VF-05', { force: true })
-          await rejectDialog
-            .locator('button')
-            .filter({ hasText: /rifiut|conferma/i })
-            .last()
-            .click()
-          await page.waitForLoadState("networkidle").catch(() => {})
-        }
-      }
-    })
+    const rejectRespPromise = page
+      .waitForResponse(resp => resp.url().includes('/items/Giustificativi') && resp.request().method() === 'PATCH', {
+        timeout: 15_000
+      })
+      .catch(() => null)
 
-    if (rejectPatches.length > 0) {
-      expect(rejectPatches.at(-1).Stato).toBe('rifiutato')
+    const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
+    if (await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await rejectBtn.click()
+      await page.waitForLoadState('networkidle').catch(() => {})
+      const rejectDialog = page.locator('.q-dialog:visible').last()
+      if (await rejectDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const textarea = rejectDialog.locator('textarea').first()
+        await textarea.fill('Rifiuto test VF-05', { force: true })
+        const rifiutaBtn = rejectDialog
+          .locator('button')
+          .filter({ hasText: /rifiut|conferma/i })
+          .last()
+        await expect(rifiutaBtn).toBeEnabled({ timeout: 5000 })
+        await rifiutaBtn.click()
+        await page.waitForLoadState('networkidle').catch(() => {})
+      }
     }
 
+    const rejectResp = await rejectRespPromise
     logApiCalls(apiCalls)
+    expect(rejectResp, 'PATCH di rifiuto non inviato').toBeTruthy()
+    if (rejectResp) {
+      expect(rejectResp.status()).toBe(200)
+      const body = rejectResp.request().postData() ? JSON.parse(rejectResp.request().postData()) : null
+      expect(body?.Stato).toBe('rifiutato')
+    }
   })
 })
