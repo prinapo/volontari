@@ -37,14 +37,18 @@
     </template>
     Alcuni progetti hanno uno stato non allineato ai dati. Segnalali all'amministratore
     (Admin → Consistenza → Trasformazioni) per verificarli.
-    <ul class="q-mt-sm q-mb-none q-pl-md">
-      <li v-for="d in store.statoDisallineati" :key="d.idProgetto">
-        <span class="text-weight-medium">{{ d.beneficiario || d.idProgetto }}</span>
-        <q-badge :color="statoProgettoColor(d.statoDB)" :label="statoProgettoLabel(d.statoDB)" outline class="q-mx-xs" />
-        →
-        <q-badge :color="statoProgettoColor(d.statoCalcolato)" :label="statoProgettoLabel(d.statoCalcolato)" outline class="q-ml-xs" />
-      </li>
-    </ul>
+    <q-list dense class="q-mt-sm">
+      <q-item v-for="d in store.statoDisallineati" :key="d.idProgetto" dense class="q-px-none q-py-none">
+        <q-item-section>
+          <div>
+            <span class="text-weight-medium">{{ d.beneficiario || d.idProgetto }}</span>
+            <q-badge :color="statoProgettoColor(d.statoDB)" :label="statoProgettoLabel(d.statoDB)" outline class="q-mx-xs" />
+            →
+            <q-badge :color="statoProgettoColor(d.statoCalcolato)" :label="statoProgettoLabel(d.statoCalcolato)" outline class="q-ml-xs" />
+          </div>
+        </q-item-section>
+      </q-item>
+    </q-list>
   </q-banner>
 
   <q-table
@@ -82,7 +86,7 @@
               dense
               clearable
               label="Anno bando"
-              style="min-width: 140px"
+              class="col-12 col-sm-6 col-md-4"
             />
             <q-select
               v-model="selectedStatoProgetto"
@@ -93,7 +97,7 @@
               dense
               clearable
               label="Stato progetto"
-              style="min-width: 160px"
+              class="col-12 col-sm-6 col-md-4"
             />
             <q-btn
               icon="download"

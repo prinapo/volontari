@@ -408,16 +408,31 @@ type="tel"
               <q-separator v-if="submission?.allegato" class="q-my-sm" />
               <div v-if="submission?.allegato" class="row items-center q-gutter-sm q-pt-xs">
                 <span class="text-caption text-grey-7 q-mr-xs">Allegato:</span>
-                <a :href="assetUrl(submission.allegato)" target="_blank" class="text-primary">
-                  <q-btn flat round dense icon="open_in_new" size="sm">
-                    <q-tooltip>Apri allegato</q-tooltip>
-                  </q-btn>
-                </a>
-                <a :href="assetUrl(submission.allegato, true)" class="text-primary">
-                  <q-btn flat round dense icon="file_download" size="sm">
-                    <q-tooltip>Scarica allegato</q-tooltip>
-                  </q-btn>
-                </a>
+                <q-btn
+                  type="a"
+                  :href="assetUrl(submission.allegato)"
+                  target="_blank"
+                  flat
+                  round
+                  dense
+                  icon="open_in_new"
+                  size="sm"
+                  color="primary"
+                >
+                  <q-tooltip>Apri allegato</q-tooltip>
+                </q-btn>
+                <q-btn
+                  type="a"
+                  :href="assetUrl(submission.allegato, true)"
+                  flat
+                  round
+                  dense
+                  icon="file_download"
+                  size="sm"
+                  color="primary"
+                >
+                  <q-tooltip>Scarica allegato</q-tooltip>
+                </q-btn>
               </div>
             </q-card-section>
           </q-card>

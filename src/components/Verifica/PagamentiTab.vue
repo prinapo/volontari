@@ -12,7 +12,6 @@
         active-color="primary"
         indicator-color="primary"
         narrow-indicator
-        style="overflow-x: auto; white-space: nowrap;"
       >
         <q-tab name="proposti" label="Bonifici da fare" />
         <q-tab name="incorso" label="Da riscontrare" />
@@ -32,8 +31,7 @@
           label="Associazione"
           dense
           outlined
-          class="col-12 col-sm-auto"
-          style="min-width: 160px"
+          class="col-12 col-sm-4 col-md-3"
           emit-value
           map-options
         />
@@ -180,8 +178,7 @@
                   dense
                   outlined
                   clearable
-                  class="col-auto"
-                  style="min-width: 220px"
+                  class="col-12 col-sm-6 col-md-4"
                   emit-value
                   map-options
                 />
@@ -443,8 +440,7 @@ aria-label="Ripristina"
                   dense
                   outlined
                   clearable
-                  class="col-auto"
-                  style="min-width: 220px"
+                  class="col-12 col-sm-6 col-md-4"
                   emit-value
                   map-options
                 />

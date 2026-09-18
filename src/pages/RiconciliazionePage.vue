@@ -326,7 +326,7 @@
 
       <template #body-cell-descrizione="props">
         <q-td :props="props">
-          <div class="row items-center no-wrap" style="max-width: 220px">
+          <div class="row items-center no-wrap">
             <span class="text-caption ellipsis">{{ props.value || '—' }}</span>
             <q-btn
               v-if="props.value?.length > 40"
@@ -553,7 +553,7 @@ const submissionColumns = [
     align: 'left'
   },
   { name: 'email', label: 'Email', field: 'email', align: 'left' },
-  { name: 'descrizione', label: 'Descrizione', field: 'descrizione', align: 'left' },
+  { name: 'descrizione', label: 'Descrizione', field: 'descrizione', align: 'left', style: 'max-width: 220px' },
   { name: 'telefono', label: 'Telefono', field: 'telefono', align: 'left' },
   { name: 'stato', label: 'Stato email', field: '_detectState', align: 'left' },
   {

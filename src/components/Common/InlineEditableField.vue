@@ -9,7 +9,7 @@
     borderless
   >
     <template #control>
-      <div class="self-center no-outline text-body1" style="overflow-wrap: break-word; word-break: break-word; white-space: pre-wrap;">
+      <div class="self-center no-outline text-body1 text-pre-wrap">
         {{ displayValue }}
       </div>
     </template>

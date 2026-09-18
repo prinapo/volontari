@@ -1,0 +1,10 @@
+// Variabili Sass native di Quasar (https://quasar.dev/style/sass-scss-variables)
+// Quasar CLI le applica automaticamente alla compilazione dei suoi CSS.
+// Qui si centralizzano i valori di design che prima erano override in app.scss.
+
+$body-font-size: 14px;
+$generic-border-radius: 8px; // controlli, field, tooltip, tabelle
+$button-border-radius: 8px;
+$input-font-size: 14px;
+$badge-font-size: 11px;
+$table-tbody-td-font-size: 13px;

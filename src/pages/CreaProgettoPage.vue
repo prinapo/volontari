@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md crea-progetto-page">
-    <div class="page-inner" style="max-width: 960px">
+    <div class="page-inner">
       <div class="text-h5 text-weight-medium q-mb-md">Crea progetto di test</div>
 
       <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded>

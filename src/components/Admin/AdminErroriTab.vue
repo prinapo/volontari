@@ -13,6 +13,7 @@
       bordered
       :loading="loading"
       selection="multiple"
+      wrap-cells
       :grid="$q.screen.lt.sm"
       @request="onRequest"
     >
@@ -66,8 +67,7 @@
     <template #body-cell-message="props">
       <q-td :props="props">
         <div
-          class="ellipsis cursor-pointer text-primary"
-          style="max-width: 300px"
+          class="cursor-pointer text-primary"
           role="button"
           tabindex="0"
           @click="showErrorDetail(props.value)"
@@ -148,8 +148,8 @@
             <div class="text-body2 q-mt-xs">{{ props.row.message }}</div>
             <div
               v-if="props.row.responseBody"
-              class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders"
-              style="max-height: 100px; overflow: auto; white-space: pre-wrap"
+              class="text-caption bg-grey-1 q-pa-xs q-mt-xs rounded-borders scroll text-pre-wrap"
+              style="max-height: 100px"
             >
               {{ props.row.responseBody }}
             </div>
