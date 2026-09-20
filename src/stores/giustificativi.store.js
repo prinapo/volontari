@@ -83,7 +83,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.error = null
       try {
         const item = this.data.find(i => i.id === id)
-        const updated = await inviaGiustificativo({ id, progettoId: item?.Progetto })
+        const updated = await inviaGiustificativo({ id, progettoId: item?.Progetto, statoCorrente: item?.Stato })
         if (updated) {
           const copy = [...this.data]
           const idx = copy.findIndex(i => i.id === id)

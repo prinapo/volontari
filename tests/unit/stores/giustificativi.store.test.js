@@ -87,7 +87,7 @@ describe('giustificativi store', () => {
     const store = useGiustificativiStore()
     store.data = [{ id: 1, Stato: 'draft', Progetto: 5 }]
     await store.submitGiustificativo(1)
-    expect(mockInviaGiustificativo).toHaveBeenCalledWith({ id: 1, progettoId: 5 })
+    expect(mockInviaGiustificativo).toHaveBeenCalledWith({ id: 1, progettoId: 5, statoCorrente: 'draft' })
     expect(store.data[0].Stato).toBe('inviato')
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()

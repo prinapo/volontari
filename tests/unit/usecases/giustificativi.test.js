@@ -16,11 +16,9 @@ const mockGetGiustificativiByProgetto = vi.fn()
 const mockUpdateProgetto = vi.fn()
 const mockFindProgettoByFamiglia = vi.fn()
 const mockUpdateSubmission = vi.fn()
-const mockGetSubmissionById = vi.fn()
 const mockCreate = vi.fn()
 const mockFindByProject = vi.fn()
 const mockCreateRendicontazione = vi.fn()
-const mockGetById = vi.fn()
 const mockUpdateGiustificativo = vi.fn()
 const mockUpload = vi.fn()
 const mockSubmitService = vi.fn()
@@ -31,8 +29,7 @@ vi.mock('src/services/verifica.service', () => ({
     getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
     updateProgetto: (...a) => mockUpdateProgetto(...a),
     findProgettoByFamiglia: (...a) => mockFindProgettoByFamiglia(...a),
-    updateSubmission: (...a) => mockUpdateSubmission(...a),
-    getSubmissionById: (...a) => mockGetSubmissionById(...a)
+    updateSubmission: (...a) => mockUpdateSubmission(...a)
   }
 }))
 
@@ -47,7 +44,6 @@ vi.mock('src/services/giustificativi.service', () => ({
     create: (...a) => mockCreate(...a),
     findByProject: (...a) => mockFindByProject(...a),
     createRendicontazione: (...a) => mockCreateRendicontazione(...a),
-    getById: (...a) => mockGetById(...a),
     update: (...a) => mockUpdateGiustificativo(...a)
   }
 }))
@@ -136,12 +132,11 @@ describe('verificaGiustificativo / inviaGiustificativo', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('verifica e sincronizza', async () => {
-    mockGetById.mockResolvedValue({ data: { data: { Stato: 'inviato' } } })
     mockUpdateGiustificativo.mockResolvedValue({})
     mockGetProgettoById.mockResolvedValue(operativo)
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgetto.mockResolvedValue({})
-    await verificaGiustificativo({ id: 'g-1', progettoId: 1 })
+    await verificaGiustificativo({ id: 'g-1', progettoId: 1, statoCorrente: 'inviato' })
     expect(mockUpdateGiustificativo).toHaveBeenCalledWith(
       'g-1',
       expect.objectContaining({ Stato: 'verificato', Pagamento: null })
@@ -150,12 +145,11 @@ describe('verificaGiustificativo / inviaGiustificativo', () => {
   })
 
   it('invia e sincronizza', async () => {
-    mockGetById.mockResolvedValue({ data: { data: { Stato: 'draft' } } })
     mockUpdateGiustificativo.mockResolvedValue({ data: { data: { id: 'g-1', Stato: 'inviato' } } })
     mockGetProgettoById.mockResolvedValue(operativo)
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgetto.mockResolvedValue({})
-    const res = await inviaGiustificativo({ id: 'g-1', progettoId: 1 })
+    const res = await inviaGiustificativo({ id: 'g-1', progettoId: 1, statoCorrente: 'draft' })
     expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-1', { Stato: 'inviato' })
     expect(res.Stato).toBe('inviato')
     expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
@@ -170,7 +164,6 @@ describe('riconciliaSubmission', () => {
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockFindProgettoByFamiglia.mockResolvedValue({ data: { data: [{ id_progetto: 9, AnnoBando: 2026 }] } })
     mockCreate.mockResolvedValue({ data: { data: { id: 'g-9' } } })
-    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-1', stato: 'inserito' } } })
     mockUpdateSubmission.mockResolvedValue({})
     mockUpdateProgetto.mockResolvedValue({})
 
@@ -180,7 +173,8 @@ describe('riconciliaSubmission', () => {
       progettoId: 9,
       descrizione: 'invio',
       importo: 100,
-      copiedFields: []
+      copiedFields: [],
+      statoCorrente: 'inserito'
     })
 
     expect(mockCreate).toHaveBeenCalledWith(
@@ -229,13 +223,12 @@ describe('rifiutaGiustificativo', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('rifiuta un giustificativo inviato e sincronizza', async () => {
-    mockGetById.mockResolvedValue({ data: { data: { Stato: 'inviato' } } })
     mockUpdateGiustificativo.mockResolvedValue({})
     mockGetProgettoById.mockResolvedValue(operativo)
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgetto.mockResolvedValue({})
 
-    await rifiutaGiustificativo({ id: 'g-1', nota: 'Non valido', progettoId: 1 })
+    await rifiutaGiustificativo({ id: 'g-1', nota: 'Non valido', progettoId: 1, statoCorrente: 'inviato' })
     expect(mockUpdateGiustificativo).toHaveBeenCalledWith(
       'g-1',
       expect.objectContaining({ Stato: 'rifiutato', NotaRifiuto: 'Non valido', Pagamento: null })
@@ -244,11 +237,10 @@ describe('rifiutaGiustificativo', () => {
   })
 
   it('rifiuta: transizione non valida da draft', async () => {
-    mockGetById.mockResolvedValue({ data: { data: { Stato: 'draft' } } })
     mockUpdateGiustificativo.mockResolvedValue({})
-    await expect(rifiutaGiustificativo({ id: 'g-2', nota: 'x', progettoId: 1 })).rejects.toBeInstanceOf(
-      TransizioneNonValidaError
-    )
+    await expect(
+      rifiutaGiustificativo({ id: 'g-2', nota: 'x', progettoId: 1, statoCorrente: 'draft' })
+    ).rejects.toBeInstanceOf(TransizioneNonValidaError)
     expect(mockUpdateGiustificativo).not.toHaveBeenCalled()
   })
 })
@@ -257,9 +249,8 @@ describe('scartaSubmission / ripristinaSubmission', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('scarta una submission inserita e salva la nota', async () => {
-    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-1', stato: 'inserito' } } })
     mockUpdateSubmission.mockResolvedValue({})
-    await scartaSubmission({ id: 's-1', nota: 'Non valida' })
+    await scartaSubmission({ id: 's-1', nota: 'Non valida', statoCorrente: 'inserito' })
     expect(mockUpdateSubmission).toHaveBeenCalledWith('s-1', {
       note_riconciliazione: 'Non valida',
       stato: 'scartato'
@@ -267,16 +258,16 @@ describe('scartaSubmission / ripristinaSubmission', () => {
   })
 
   it('scarta: transizione non valida da inviato', async () => {
-    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-2', stato: 'inviato' } } })
     mockUpdateSubmission.mockResolvedValue({})
-    await expect(scartaSubmission({ id: 's-2', nota: 'x' })).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    await expect(scartaSubmission({ id: 's-2', nota: 'x', statoCorrente: 'inviato' })).rejects.toBeInstanceOf(
+      TransizioneNonValidaError
+    )
     expect(mockUpdateSubmission).not.toHaveBeenCalled()
   })
 
   it('ripristina una submission scartata azzerando la nota', async () => {
-    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-3', stato: 'scartato' } } })
     mockUpdateSubmission.mockResolvedValue({})
-    await ripristinaSubmission({ id: 's-3' })
+    await ripristinaSubmission({ id: 's-3', statoCorrente: 'scartato' })
     expect(mockUpdateSubmission).toHaveBeenCalledWith('s-3', {
       note_riconciliazione: null,
       stato: 'inserito'
@@ -284,9 +275,10 @@ describe('scartaSubmission / ripristinaSubmission', () => {
   })
 
   it('ripristina: transizione non valida da inserito', async () => {
-    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-4', stato: 'inserito' } } })
     mockUpdateSubmission.mockResolvedValue({})
-    await expect(ripristinaSubmission({ id: 's-4' })).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    await expect(ripristinaSubmission({ id: 's-4', statoCorrente: 'inserito' })).rejects.toBeInstanceOf(
+      TransizioneNonValidaError
+    )
     expect(mockUpdateSubmission).not.toHaveBeenCalled()
   })
 })

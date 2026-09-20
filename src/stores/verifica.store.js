@@ -423,11 +423,10 @@ export const useVerificaStore = defineStore('verifica', {
 
     async verifyGiustificativo(progettoId, giustId) {
       try {
-        await verificaGiustificativo({ id: giustId, progettoId })
         const row = this.rows.find(r => r.idProgetto === progettoId)
-        if (!row) return
-        const item = row.giustificativi.find(g => g.id === giustId)
-        if (!item) return
+        const item = row?.giustificativi.find(g => g.id === giustId)
+        await verificaGiustificativo({ id: giustId, progettoId, statoCorrente: item?.Stato })
+        if (!row || !item) return
         item.Stato = STATO_GIUSTIFICATIVO.VERIFICATO
         recalculateRowTotals(row)
         const pagStore = usePagamentiStore()
@@ -442,11 +441,10 @@ export const useVerificaStore = defineStore('verifica', {
 
     async updateGiustificativoField(progettoId, giustId, field, value) {
       try {
-        await aggiornaCampoGiustificativo({ id: giustId, field, value, progettoId })
         const row = this.rows.find(r => r.idProgetto === progettoId)
-        if (!row) return
-        const item = row.giustificativi.find(g => g.id === giustId)
-        if (!item) return
+        const item = row?.giustificativi.find(g => g.id === giustId)
+        await aggiornaCampoGiustificativo({ id: giustId, field, value, progettoId, statoCorrente: item?.Stato })
+        if (!row || !item) return
         item[field] = value
         recalculateRowTotals(row)
         const pagStore = usePagamentiStore()
@@ -604,7 +602,8 @@ export const useVerificaStore = defineStore('verifica', {
           data: data ?? submission.data,
           allegato,
           rightValues,
-          copiedFields
+          copiedFields,
+          statoCorrente: submission.stato
         })
 
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
@@ -618,7 +617,8 @@ export const useVerificaStore = defineStore('verifica', {
     async scartaSubmission(id, note) {
       this.error = null
       try {
-        await scartaSubmission({ id, nota: note })
+        const submission = this.submissions.find(s => s.id === id)
+        await scartaSubmission({ id, nota: note, statoCorrente: submission?.stato })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nello scarto'
@@ -629,7 +629,8 @@ export const useVerificaStore = defineStore('verifica', {
     async ripristinaSubmission(id) {
       this.error = null
       try {
-        await ripristinaSubmission({ id })
+        const submission = this.submissions.find(s => s.id === id)
+        await ripristinaSubmission({ id, statoCorrente: submission?.stato })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel ripristino'
@@ -641,7 +642,13 @@ export const useVerificaStore = defineStore('verifica', {
       try {
         const row = this.rows.find(r => r.idProgetto === progettoId)
         const item = row?.giustificativi.find(g => g.id === giustId)
-        await rifiutaGiustificativo({ id: giustId, nota, allegato: item?.Allegato, progettoId })
+        await rifiutaGiustificativo({
+          id: giustId,
+          nota,
+          allegato: item?.Allegato,
+          progettoId,
+          statoCorrente: item?.Stato
+        })
         if (!row || !item) return
         item.Stato = 'rifiutato'
         item.NotaRifiuto = nota

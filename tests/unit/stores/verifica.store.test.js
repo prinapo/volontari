@@ -220,7 +220,7 @@ describe('verifica store', () => {
     const store = useVerificaStore()
     store.rows = [{ idProgetto: 1, giustificativi: [{ id: 'g-1', Stato: 'inviato', Importo: '100' }] }]
     await store.verifyGiustificativo(1, 'g-1')
-    expect(mockVerificaGiustificativo).toHaveBeenCalledWith({ id: 'g-1', progettoId: 1 })
+    expect(mockVerificaGiustificativo).toHaveBeenCalledWith({ id: 'g-1', progettoId: 1, statoCorrente: 'inviato' })
     expect(store.rows[0].giustificativi[0].Stato).toBe('verificato')
     expect(store.rows[0].totaleVerificato).toBe(100)
     expect(mockRicalcolaProposta).toHaveBeenCalled()
@@ -245,7 +245,8 @@ describe('verifica store', () => {
       id: 'g-1',
       field: 'Importo',
       value: '200',
-      progettoId: 1
+      progettoId: 1,
+      statoCorrente: 'draft'
     })
     expect(store.rows[0].giustificativi[0].Importo).toBe('200')
   })
@@ -275,7 +276,8 @@ describe('verifica store', () => {
       id: 'g-1',
       nota: 'Nota errata',
       allegato: 'file-1',
-      progettoId: 1
+      progettoId: 1,
+      statoCorrente: 'draft'
     })
     expect(store.rows[0].giustificativi[0].Stato).toBe('rifiutato')
     expect(store.rows[0].giustificativi[0].NotaRifiuto).toBe('Nota errata')
@@ -445,8 +447,9 @@ describe('verifica store', () => {
     mockGetSubmissions.mockResolvedValueOnce({ data: { data: [], meta: {} } })
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [] } })
     const store = useVerificaStore()
+    store.submissions = [{ id: 's-1', stato: 'inserito' }]
     await store.scartaSubmission('s-1', 'Non valido')
-    expect(mockScartaSubmission).toHaveBeenCalledWith({ id: 's-1', nota: 'Non valido' })
+    expect(mockScartaSubmission).toHaveBeenCalledWith({ id: 's-1', nota: 'Non valido', statoCorrente: 'inserito' })
 
     mockScartaSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'scarto fail' }] } } })
     await expect(store.scartaSubmission('s-2', 'x')).rejects.toBeTruthy()
@@ -458,8 +461,9 @@ describe('verifica store', () => {
     mockGetSubmissions.mockResolvedValueOnce({ data: { data: [], meta: {} } })
     mockGetContattoByEmails.mockResolvedValueOnce({ data: { data: [] } })
     const store = useVerificaStore()
+    store.submissions = [{ id: 's-1', stato: 'scartato' }]
     await store.ripristinaSubmission('s-1')
-    expect(mockRipristinaSubmission).toHaveBeenCalledWith({ id: 's-1' })
+    expect(mockRipristinaSubmission).toHaveBeenCalledWith({ id: 's-1', statoCorrente: 'scartato' })
 
     mockRipristinaSubmission.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'ripristino fail' }] } } })
     await expect(store.ripristinaSubmission('s-2')).rejects.toBeTruthy()

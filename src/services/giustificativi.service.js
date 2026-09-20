@@ -12,10 +12,6 @@ export const giustificativiService = {
     })
   },
 
-  getById(id) {
-    return api.get(`/items/Giustificativi/${id}`)
-  },
-
   create(data) {
     return api.post('/items/Giustificativi', data)
   },

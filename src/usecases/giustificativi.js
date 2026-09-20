@@ -118,13 +118,7 @@ export async function creaSubmission(payload, _ctx = {}) {
   return res.data.data
 }
 
-async function _statoCorrente(id) {
-  const res = await giustificativiService.getById(id)
-  return res.data.data?.Stato
-}
-
-export async function inviaGiustificativo({ id, progettoId }) {
-  const statoCorrente = await _statoCorrente(id)
+export async function inviaGiustificativo({ id, progettoId, statoCorrente }) {
   let updateRes
   await transita({
     machine: giustificativoMachine,
@@ -163,13 +157,12 @@ function _eventoPerStato(statoCorrente, target) {
     : EVENTI_GIUSTIFICATIVO.RIPRISTINA_INVIATO
 }
 
-export async function aggiornaCampoGiustificativo({ id, field, value, progettoId }) {
+export async function aggiornaCampoGiustificativo({ id, field, value, progettoId, statoCorrente }) {
   if (field !== 'Stato') {
     const res = await giustificativiService.update(id, { [field]: value })
     await syncProgettoAggregati(progettoId)
     return res.data.data
   }
-  const statoCorrente = await _statoCorrente(id)
   let updateRes
   // Un cambio di stato scollega il giustificativo da un eventuale pagamento;
   // ricalcolaProposta lo ricollegherà se torna `verificato`.
@@ -194,8 +187,7 @@ export async function invalidaGiustificativo({ id, allegato, progettoId }) {
   await syncProgettoAggregati(progettoId)
 }
 
-export async function verificaGiustificativo({ id, progettoId }) {
-  const statoCorrente = await _statoCorrente(id)
+export async function verificaGiustificativo({ id, progettoId, statoCorrente }) {
   await transita({
     machine: giustificativoMachine,
     statoCorrente,
@@ -206,11 +198,10 @@ export async function verificaGiustificativo({ id, progettoId }) {
   await syncProgettoAggregati(progettoId)
 }
 
-export async function rifiutaGiustificativo({ id, nota, allegato, progettoId }) {
+export async function rifiutaGiustificativo({ id, nota, allegato, progettoId, statoCorrente }) {
   if (allegato) {
     await markFileRejected(allegato).catch(() => {})
   }
-  const statoCorrente = await _statoCorrente(id)
   await transita({
     machine: giustificativoMachine,
     statoCorrente,
@@ -221,13 +212,7 @@ export async function rifiutaGiustificativo({ id, nota, allegato, progettoId }) 
   await syncProgettoAggregati(progettoId)
 }
 
-async function _statoSubmission(id) {
-  const res = await verificaService.getSubmissionById(id)
-  return res.data.data?.stato
-}
-
-export async function scartaSubmission({ id, nota }) {
-  const statoCorrente = await _statoSubmission(id)
+export async function scartaSubmission({ id, nota, statoCorrente }) {
   await transita({
     machine: submissionMachine,
     campo: 'stato',
@@ -238,8 +223,7 @@ export async function scartaSubmission({ id, nota }) {
   })
 }
 
-export async function ripristinaSubmission({ id }) {
-  const statoCorrente = await _statoSubmission(id)
+export async function ripristinaSubmission({ id, statoCorrente }) {
   await transita({
     machine: submissionMachine,
     campo: 'stato',
@@ -297,7 +281,8 @@ export async function riconciliaSubmission({
   data,
   allegato,
   rightValues,
-  copiedFields
+  copiedFields,
+  statoCorrente
 }) {
   if (contattoId && copiedFields?.length > 0) {
     await _patchContattoFromCopied(contattoId, copiedFields, rightValues)
@@ -329,7 +314,6 @@ export async function riconciliaSubmission({
   )
   const giustificativoId = created.id
 
-  const statoCorrente = await _statoSubmission(submissionId)
   await transita({
     machine: submissionMachine,
     campo: 'stato',
