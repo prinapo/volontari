@@ -81,6 +81,7 @@ vi.mock('src/services/liste-pagamenti.service', () => ({
 const mockSegnaPagato = vi.fn()
 const mockSegnaFallito = vi.fn()
 const mockSegnaAnnullato = vi.fn()
+const mockSegnaInPagamento = vi.fn()
 const mockRicalcolaProposta = vi.fn()
 const mockRicalcolaTotaliProgetto = vi.fn()
 const mockRipristinaProposto = vi.fn()
@@ -93,6 +94,7 @@ vi.mock('src/usecases/pagamenti', () => ({
   segnaPagato: (...a) => mockSegnaPagato(...a),
   segnaFallito: (...a) => mockSegnaFallito(...a),
   segnaAnnullato: (...a) => mockSegnaAnnullato(...a),
+  segnaInPagamento: (...a) => mockSegnaInPagamento(...a),
   ricalcolaProposta: (...a) => mockRicalcolaProposta(...a),
   ricalcolaTotaliProgetto: (...a) => mockRicalcolaTotaliProgetto(...a),
   ripristinaProposto: (...a) => mockRipristinaProposto(...a),
@@ -223,11 +225,12 @@ describe('pagamenti store', () => {
   })
 
   it('creaBatch creates batch for proposals', async () => {
-    mockGetPagamenti.mockResolvedValue({
+    mockGetPagamenti.mockResolvedValueOnce({
       data: { data: [{ id: 'p-1', Stato: 'proposto', Progetto: 1, Importo: '100' }] }
     })
     mockCreateBatch.mockResolvedValue({ data: { data: { id: 'b-1' } } })
     mockUpdatePagamento.mockResolvedValue({})
+    mockSegnaInPagamento.mockResolvedValue([])
     mockGetAssociazioni.mockResolvedValue({ data: { data: [{ Nome: 'A', Budget: '1000' }] } })
     mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockGetBatches.mockResolvedValue({ data: { data: [] } })
@@ -239,9 +242,10 @@ describe('pagamenti store', () => {
     store.proposti = []
     await store.creaBatch({ nome: 'B1', associazione: 'A', pagamentoIds: ['p-1'] })
     expect(mockCreateBatch).toHaveBeenCalled()
+    expect(mockSegnaInPagamento).toHaveBeenCalledWith({ pagamentoIds: ['p-1'], batchId: 'b-1' })
   })
 
-  it('creaBatch uses user_id and recalculates each selected payment', async () => {
+  it('creaBatch uses user_id and passa i pagamenti a segnaInPagamento', async () => {
     localStorage.setItem('user_id', 'user-42')
     mockGetPagamenti.mockResolvedValueOnce({
       data: {
@@ -253,20 +257,17 @@ describe('pagamenti store', () => {
     })
     mockCreateBatch.mockResolvedValueOnce({ data: { data: { id: 'batch-2' } } })
     mockUpdatePagamento.mockResolvedValue({})
+    mockSegnaInPagamento.mockResolvedValue([])
     mockGetListe.mockResolvedValue([])
     const store = usePagamentiStore()
     store.budgetMap = { A: 1000 }
-    const totalsSpy = vi.spyOn(store, 'ricalcolaTotaliProgetto').mockResolvedValue()
     const initSpy = vi.spyOn(store, 'init').mockResolvedValue()
 
     const batchId = await store.creaBatch({ nome: 'Batch 2', associazione: 'A', pagamentoIds: ['p-1', 'p-2'] })
 
     expect(batchId).toBe('batch-2')
     expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ CreatoDA: 'user-42' }))
-    expect(mockUpdatePagamento).toHaveBeenNthCalledWith(1, 'p-1', { Stato: 'in_pagamento', Batch: 'batch-2' })
-    expect(mockUpdatePagamento).toHaveBeenNthCalledWith(2, 'p-2', { Stato: 'in_pagamento', Batch: 'batch-2' })
-    expect(totalsSpy).toHaveBeenCalledWith(10)
-    expect(totalsSpy).toHaveBeenCalledWith(11)
+    expect(mockSegnaInPagamento).toHaveBeenCalledWith({ pagamentoIds: ['p-1', 'p-2'], batchId: 'batch-2' })
     expect(initSpy).toHaveBeenCalled()
   })
 

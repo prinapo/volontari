@@ -222,6 +222,7 @@ describe('verifica store', () => {
     await store.verifyGiustificativo(1, 'g-1')
     expect(mockVerificaGiustificativo).toHaveBeenCalledWith({ id: 'g-1', progettoId: 1 })
     expect(store.rows[0].giustificativi[0].Stato).toBe('verificato')
+    expect(store.rows[0].totaleVerificato).toBe(100)
     expect(mockRicalcolaProposta).toHaveBeenCalled()
   })
 

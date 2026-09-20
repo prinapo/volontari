@@ -8,6 +8,7 @@ const mockGetVolontariByFamiglia = vi.fn()
 const mockUpdate = vi.fn()
 const mockGetByContatto = vi.fn()
 const mockGetByVolontari = vi.fn()
+const mockGetByProgetto = vi.fn()
 
 vi.mock('src/services/famiglie.service', () => ({
   famiglieService: {
@@ -16,6 +17,12 @@ vi.mock('src/services/famiglie.service', () => ({
     getGenitoriByFamiglia: (...args) => mockGetGenitoriByFamiglia(...args),
     getVolontariByFamiglia: (...args) => mockGetVolontariByFamiglia(...args),
     update: (...args) => mockUpdate(...args)
+  }
+}))
+
+vi.mock('src/services/pagamenti.service', () => ({
+  pagamentiService: {
+    getByProgetto: (...args) => mockGetByProgetto(...args)
   }
 }))
 
@@ -49,6 +56,9 @@ describe('famiglie store', () => {
       expect(store.famiglia).toBeNull()
       expect(store.loading).toBe(false)
       expect(store.saving).toBe(false)
+      expect(store.erogazioni).toEqual([])
+      expect(store.erogazioniLoading).toBe(false)
+      expect(store.totaleErogato).toBe(0)
       expect(store.error).toBeNull()
     })
   })
@@ -182,73 +192,117 @@ describe('famiglie store', () => {
   })
 
   it('fetchGenitori enriches emails and handles enrichment/service failure', async () => {
-      mockGetGenitoriByFamiglia.mockResolvedValue({
-        data: {
-          data: [{ Contatto: { id_contatto: 'g1', Nome: 'Anna', Cognome: 'Verdi' } }]
-        }
-      })
-      mockGetByContatto.mockResolvedValueOnce({
-        data: { data: [{ Contatto_Relation: 'g1', email_address: 'anna@test.it', Primary: true }] }
-      })
-
-      const store = useFamiglieStore()
-      await store.fetchGenitori('fam-1')
-      expect(store.genitori[0]._emails[0].email_address).toBe('anna@test.it')
-
-      mockGetByContatto.mockRejectedValueOnce(new Error('boom'))
-      await store.fetchGenitori('fam-1')
-      expect(store.genitori[0]._emails).toEqual([])
-
-      mockGetGenitoriByFamiglia.mockRejectedValueOnce(new Error('service down'))
-      await store.fetchGenitori('fam-1')
-      expect(store.genitori).toEqual([])
+    mockGetGenitoriByFamiglia.mockResolvedValue({
+      data: {
+        data: [{ Contatto: { id_contatto: 'g1', Nome: 'Anna', Cognome: 'Verdi' } }]
+      }
+    })
+    mockGetByContatto.mockResolvedValueOnce({
+      data: { data: [{ Contatto_Relation: 'g1', email_address: 'anna@test.it', Primary: true }] }
     })
 
-    it('fetchVolontari filters current user, enriches emails/referenti, and handles failures', async () => {
-      mockGetVolontariByFamiglia.mockResolvedValue({
+    const store = useFamiglieStore()
+    await store.fetchGenitori('fam-1')
+    expect(store.genitori[0]._emails[0].email_address).toBe('anna@test.it')
+
+    mockGetByContatto.mockRejectedValueOnce(new Error('boom'))
+    await store.fetchGenitori('fam-1')
+    expect(store.genitori[0]._emails).toEqual([])
+
+    mockGetGenitoriByFamiglia.mockRejectedValueOnce(new Error('service down'))
+    await store.fetchGenitori('fam-1')
+    expect(store.genitori).toEqual([])
+  })
+
+  it('fetchVolontari filters current user, enriches emails/referenti, and handles failures', async () => {
+    mockGetVolontariByFamiglia.mockResolvedValue({
+      data: {
+        data: [
+          { Contatto: { id_contatto: 'current-contatto', Nome: 'Io', Cognome: 'Corrente' } },
+          { Contatto: { id_contatto: 'v2', Nome: 'Luca', Cognome: 'Bianchi' } }
+        ]
+      }
+    })
+    mockGetByContatto.mockResolvedValueOnce({
+      data: { data: [{ Contatto_Relation: 'v2', email_address: 'luca@test.it', Primary: true }] }
+    })
+    mockGetByVolontari.mockResolvedValueOnce({
+      data: {
+        data: [{ id: 'rel-1', Volontario: 'v2', Referente: { id_contatto: 'r1', Nome: 'Ref', Cognome: 'Uno' } }]
+      }
+    })
+
+    const store = useFamiglieStore()
+    await store.fetchVolontari('fam-1')
+    expect(store.altriVolontari).toHaveLength(1)
+    expect(store.altriVolontari[0]._emails[0].email_address).toBe('luca@test.it')
+    expect(store.altriVolontari[0]._referenti[0].id_contatto).toBe('r1')
+
+    mockGetVolontariByFamiglia.mockResolvedValueOnce({
+      data: { data: [{ Contatto: { id_contatto: 'v3', Nome: 'Sara', Cognome: 'Blu' } }] }
+    })
+    mockGetByContatto.mockRejectedValueOnce(new Error('no emails'))
+    mockGetByVolontari.mockRejectedValueOnce(new Error('no referenti'))
+    await store.fetchVolontari('fam-1')
+    expect(store.altriVolontari).toEqual([expect.objectContaining({ id_contatto: 'v3', _emails: [], _referenti: [] })])
+
+    mockGetVolontariByFamiglia.mockRejectedValueOnce(new Error('boom'))
+    await store.fetchVolontari('fam-2')
+    expect(store.altriVolontari).toEqual([])
+  })
+
+  it('fetchFamiglia stores service error when family load fails', async () => {
+    mockGetById.mockRejectedValue({ response: { data: { errors: [{ message: 'No famiglia' }] } } })
+    const store = useFamiglieStore()
+    await store.fetchFamiglia('fam-x')
+    expect(store.error).toBe('No famiglia')
+  })
+  describe('fetchErogazioni and totaleErogato', () => {
+    it('loads erogazioni for a progetto and computes totaleErogato from pagato only', async () => {
+      mockGetByProgetto.mockResolvedValue({
         data: {
           data: [
-            { Contatto: { id_contatto: 'current-contatto', Nome: 'Io', Cognome: 'Corrente' } },
-            { Contatto: { id_contatto: 'v2', Nome: 'Luca', Cognome: 'Bianchi' } }
+            { id: 1, Stato: 'pagato', Importo: '120.50' },
+            { id: 2, Stato: 'in_pagamento', Importo: '30' },
+            { id: 3, Stato: 'proposto', Importo: '10' }
           ]
         }
       })
-      mockGetByContatto.mockResolvedValueOnce({
-        data: { data: [{ Contatto_Relation: 'v2', email_address: 'luca@test.it', Primary: true }] }
-      })
-      mockGetByVolontari.mockResolvedValueOnce({
-        data: {
-          data: [{ id: 'rel-1', Volontario: 'v2', Referente: { id_contatto: 'r1', Nome: 'Ref', Cognome: 'Uno' } }]
-        }
+
+      const store = useFamiglieStore()
+      await store.fetchErogazioni('p-1')
+
+      expect(mockGetByProgetto).toHaveBeenCalledWith('p-1')
+      expect(store.erogazioni).toHaveLength(3)
+      expect(store.erogazioniLoading).toBe(false)
+      expect(store.totaleErogato).toBe(120.5)
+    })
+
+    it('clears erogazioni when no progettoId is provided', async () => {
+      const store = useFamiglieStore()
+      store.erogazioni = [{ id: 1, Stato: 'pagato', Importo: '10' }]
+
+      await store.fetchErogazioni(null)
+
+      expect(store.erogazioni).toEqual([])
+      expect(mockGetByProgetto).not.toHaveBeenCalled()
+    })
+
+    it('sets error and clears erogazioni on failure', async () => {
+      mockGetByProgetto.mockRejectedValue({
+        response: { data: { errors: [{ message: 'Forbidden' }] } }
       })
 
       const store = useFamiglieStore()
-      await store.fetchVolontari('fam-1')
-      expect(store.altriVolontari).toHaveLength(1)
-      expect(store.altriVolontari[0]._emails[0].email_address).toBe('luca@test.it')
-      expect(store.altriVolontari[0]._referenti[0].id_contatto).toBe('r1')
+      store.erogazioni = [{ id: 1, Stato: 'pagato', Importo: '10' }]
+      await store.fetchErogazioni('p-1')
 
-      mockGetVolontariByFamiglia.mockResolvedValueOnce({
-        data: { data: [{ Contatto: { id_contatto: 'v3', Nome: 'Sara', Cognome: 'Blu' } }] }
-      })
-      mockGetByContatto.mockRejectedValueOnce(new Error('no emails'))
-      mockGetByVolontari.mockRejectedValueOnce(new Error('no referenti'))
-      await store.fetchVolontari('fam-1')
-      expect(store.altriVolontari).toEqual([
-        expect.objectContaining({ id_contatto: 'v3', _emails: [], _referenti: [] })
-      ])
-
-      mockGetVolontariByFamiglia.mockRejectedValueOnce(new Error('boom'))
-      await store.fetchVolontari('fam-2')
-      expect(store.altriVolontari).toEqual([])
+      expect(store.erogazioni).toEqual([])
+      expect(store.error).toBe('Forbidden')
+      expect(store.erogazioniLoading).toBe(false)
     })
+  })
 
-    it('fetchFamiglia stores service error when family load fails', async () => {
-      mockGetById.mockRejectedValue({ response: { data: { errors: [{ message: 'No famiglia' }] } } })
-      const store = useFamiglieStore()
-      await store.fetchFamiglia('fam-x')
-      expect(store.error).toBe('No famiglia')
-    })
   describe('updateIBAN', () => {
     it('updates IBAN and intestatario', async () => {
       mockUpdate.mockResolvedValue({

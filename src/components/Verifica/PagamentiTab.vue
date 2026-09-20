@@ -8,7 +8,7 @@
       <q-tabs
         v-model="subTab"
         dense
-        class="text-grey"
+        class="text-grey scroll"
         active-color="primary"
         indicator-color="primary"
         narrow-indicator

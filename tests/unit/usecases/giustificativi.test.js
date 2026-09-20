@@ -97,6 +97,25 @@ describe('creaGiustificativo', () => {
     expect(mockUpdateProgetto).not.toHaveBeenCalled()
   })
 
+  it('consente la creazione su progetto in rimborso_parziale (operativo)', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'rimborso_parziale', Allocato: '1000', TotalePagato: '200' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockFindByProject.mockResolvedValue({ data: { data: [] } })
+    mockCreateRendicontazione.mockResolvedValue({ data: { data: { id: 'rend-1' } } })
+    mockCreate.mockResolvedValue({ data: { data: { Descrizione: 'x', id: 'g-1' } } })
+    mockUpdateProgetto.mockResolvedValue({})
+
+    await creaGiustificativo(
+      { Progetto: 1, Famiglia: 'fam-1', Descrizione: 'x', Importo: 10 },
+      { origine: 'volontario' }
+    )
+
+    expect(mockCreate).toHaveBeenCalled()
+    expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
+  })
+
   it('mappa errori di creazione come "Creazione giustificativo fallita"', async () => {
     mockGetProgettoById.mockResolvedValue(operativo)
     mockFindByProject.mockResolvedValue({ data: { data: [] } })
@@ -153,7 +172,7 @@ describe('riconciliaSubmission', () => {
     )
     expect(mockUpdateSubmission).toHaveBeenCalledWith(
       's-1',
-      expect.objectContaining({ stato: 'riconciliato', giustificativo_creato: 'g-9' })
+      expect.objectContaining({ stato: 'inviato', giustificativo_creato: 'g-9' })
     )
     expect(mockUpdateProgetto).toHaveBeenCalledWith(9, expect.anything())
     expect(id).toBe('g-9')
@@ -179,13 +198,13 @@ describe('riconciliaSubmission', () => {
 describe('creaSubmission (pubblico non loggato)', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('accoda la submission con stato in_attesa e email lowercase', async () => {
+  it('accoda la submission con stato inserito e email lowercase', async () => {
     mockSubmitService.mockResolvedValue({ data: { data: { id: 's-1' } } })
     const res = await creaSubmission({ email: 'Mario@Example.IT', descrizione: 'x', importo: 10 })
     expect(res).toEqual({ id: 's-1' })
     const payload = mockSubmitService.mock.calls[0][0]
     expect(payload.email).toBe('mario@example.it')
-    expect(payload.stato).toBe('in_attesa')
+    expect(payload.stato).toBe('inserito')
     expect(payload.data_invio).toBeTruthy()
   })
 })

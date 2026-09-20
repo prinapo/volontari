@@ -12,15 +12,15 @@
  * Il rimborso_parziale è automatico: se pagato>0 ma < allocato, il progetto
  * assume questo stato indipendentemente dallo stato precedente.
  */
-import { STATO_PROGETTO } from './constants'
+import { STATI_GIUSTIFICATIVO_VALIDI, STATO_PROGETTO } from './constants'
 import { calcolaStatoRendicontazione } from './rendicontazione'
 
-// Un giustificativo conta per lo stato progetto solo se è stato inviato o
-// verificato: i draft (o stati vuoti) non sono ancora rendicontazione.
-const STATI_GIUSTIFICATIVO_VALIDI = new Set(['inviato', 'verificato'])
+// Un giustificativo conta per lo stato progetto solo se ha avviato la
+// rendicontazione (inviato/verificato/in_pagamento/pagato): i draft non contano.
+const STATI_VALIDI = new Set(STATI_GIUSTIFICATIVO_VALIDI)
 
 function hasValidGiustificativi(giustificativi = []) {
-  return giustificativi.some(g => !g.Invalidato && STATI_GIUSTIFICATIVO_VALIDI.has(String(g.Stato || '').toLowerCase()))
+  return giustificativi.some(g => !g.Invalidato && STATI_VALIDI.has(String(g.Stato || '').toLowerCase()))
 }
 
 /**
@@ -38,8 +38,9 @@ export function statoProgettoEffettivo(statoProgetto) {
  * 1. NULL/aperto → accettato (base)
  * 2. Manuale (proposto/validato/approvato) → resta invariata
  * 3. Pagamento completo (pagato>=allocato>0) → chiuso
- * 4. Pagamento parziale (0 < pagato < allocato) → rimborso_parziale
- * 5. Già chiuso → resta chiuso (no retrocesso)
+ * 4. Già chiuso → resta chiuso (sticky: una chiusura manuale parziale non
+ *    retrocede a rimborso_parziale)
+ * 5. Pagamento parziale (0 < pagato < allocato) → rimborso_parziale (operativo)
  * 6. Ha giustificativi validi → in_rendicontazione
  * 7. Altrimenti → accettato
  *
@@ -67,14 +68,15 @@ export function calcolaStatoProgetto({ statoProgetto, allocato = 0, rimborsato =
     return STATO_PROGETTO.CHIUSO
   }
 
-  // 4. Pagamento parziale: rimborso_parziale (automatico)
-  if (rimborsatoNum > 0 && rimborsatoNum < allocatoNum) {
-    return STATO_PROGETTO.RIMBORSO_PARZIALE
-  }
-
-  // 5. Già chiuso (con pagato=0 o allocato=0): resta chiuso
+  // 4. Già chiuso: resta chiuso (sticky). Una chiusura manuale con
+  //    pagato < allocato non deve retrocedere a rimborso_parziale.
   if (stato === STATO_PROGETTO.CHIUSO) {
     return STATO_PROGETTO.CHIUSO
+  }
+
+  // 5. Pagamento parziale: rimborso_parziale (automatico, progetto ancora operativo)
+  if (rimborsatoNum > 0 && rimborsatoNum < allocatoNum) {
+    return STATO_PROGETTO.RIMBORSO_PARZIALE
   }
 
   // 6. Ha giustificativi validi → in_rendicontazione

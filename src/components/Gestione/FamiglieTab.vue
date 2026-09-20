@@ -462,8 +462,8 @@
             </template>
           </q-td>
         </q-tr>
-        <q-tr v-show="props.expand" :props="props" style="max-width: 100%;">
-          <q-td colspan="100%" class="text-break" style="max-width: 100%;">
+        <q-tr v-show="props.expand" :props="props">
+          <q-td colspan="100%" class="text-break">
             <q-card flat bordered class="q-ma-sm">
               <q-card-section>
                 <div class="text-caption text-grey-7 q-mb-sm">Contatti</div>

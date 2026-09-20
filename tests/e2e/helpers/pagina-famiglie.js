@@ -14,7 +14,7 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
     await page
       .locator('.text-h6')
       .first()
-      .waitFor({ state: 'visible', timeout: 15000 })
+      .waitFor({ state: 'visible', timeout: 15_000 })
       .catch(() => {})
     return false
   }
@@ -22,11 +22,14 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
   // Click selettore per aprire menu/dialog
   await famSelector.scrollIntoViewIfNeeded()
   await famSelector.click({ force: true })
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
 
   // Cerca le opzioni nel menu (desktop) o nel dialog (mobile)
   const options = page.locator('[role="option"]')
-  await options.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
+  await options
+    .first()
+    .waitFor({ state: 'visible', timeout: 10_000 })
+    .catch(() => {})
   const count = await options.count()
   let found = false
   for (let i = 0; i < count; i++) {
@@ -46,7 +49,7 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
   await page
     .locator('.text-h6')
     .first()
-    .waitFor({ state: 'visible', timeout: 15000 })
+    .waitFor({ state: 'visible', timeout: 15_000 })
     .catch(() => {
       console.log(`[selezionaFamiglia] famiglia "${nomeFamiglia}" non caricata`)
     })
@@ -54,27 +57,60 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
   return true
 }
 
-export async function apriFamiglieESelezionaFamiglia(page, nomeFamiglia) {
-  await page.goto('/famiglie', { timeout: 15000 }).catch(() => {})
-  await page.waitForLoadState("networkidle").catch(() => {})
+export async function apriFamiglieESelezionaFamiglia(page, nomeFamiglia, { expandGiustificativi = true } = {}) {
+  await page.goto('/famiglie', { timeout: 15_000 }).catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
 
   if (nomeFamiglia) {
     await selezionaFamiglia(page, nomeFamiglia)
     await page.keyboard.press('Escape').catch(() => {})
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
   }
 
   await page
     .locator('.text-h6')
     .first()
-    .waitFor({ state: 'visible', timeout: 15000 })
+    .waitFor({ state: 'visible', timeout: 15_000 })
     .catch(() => {})
 
   await page
     .locator('.bg-green-1')
     .first()
-    .waitFor({ state: 'visible', timeout: 10000 })
+    .waitFor({ state: 'visible', timeout: 10_000 })
     .catch(() => {})
+
+  if (expandGiustificativi) {
+    await espandiGiustificativi(page)
+  }
+}
+
+/**
+ * Espande la sezione "Giustificativi" della scheda famiglia (collassata di default).
+ * Best-effort: no-op se la sezione non è presente (es. area verifica manager).
+ */
+export async function espandiGiustificativi(page) {
+  await espandiSezione(page, 'Giustificativi')
+}
+
+/**
+ * Espande la sezione "Erogazioni" della scheda famiglia (collassata di default).
+ * Best-effort: no-op se la sezione non è presente.
+ */
+export async function espandiErogazioni(page) {
+  await espandiSezione(page, 'Erogazioni')
+}
+
+async function espandiSezione(page, titolo) {
+  const header = page.locator(`.q-expansion-item:has-text("${titolo}")`).first()
+  if ((await header.count()) === 0) return
+
+  const content = header.locator('.q-expansion-item__content').first()
+  if (await content.isVisible().catch(() => false)) return
+
+  // L'header cliccabile è il QItem interno all'expansion item.
+  await header.locator('.q-item').first().click({ timeout: 8000 })
+  await content.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
 }
 
 export async function loginConFamigliaViaUI(page, { role = 'volontario', auth, nomeFamiglia } = {}) {
@@ -94,7 +130,7 @@ export async function selezionaProgetto(page, index = 0) {
 
   await progettoSelect.scrollIntoViewIfNeeded()
   await progettoSelect.click({ force: true })
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
 
   const items = page.locator('[role="option"]')
   if ((await items.count()) <= index) {
@@ -103,5 +139,5 @@ export async function selezionaProgetto(page, index = 0) {
   }
 
   await items.nth(index).click({ force: true })
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
 }

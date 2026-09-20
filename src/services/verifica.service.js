@@ -1,3 +1,4 @@
+import { STATO_SUBMISSION } from 'src/utils/constants'
 import api from './api'
 
 export const verificaService = {
@@ -55,7 +56,19 @@ export const verificaService = {
         'filter[Progetto][_in]': progettoIds.join(','),
         sort: 'Data',
         limit: -1,
-        fields: ['id', 'Descrizione', 'Importo', 'Data', 'Stato', 'Allegato', 'Progetto', 'Invalidato'].join(',')
+        fields: [
+          'id',
+          'Descrizione',
+          'Importo',
+          'Data',
+          'Stato',
+          'Allegato',
+          'Progetto',
+          'Invalidato',
+          'Pagamento',
+          'DataVerifica',
+          'DataPagamento'
+        ].join(',')
       }
     })
   },
@@ -70,7 +83,7 @@ export const verificaService = {
         'filter[Progetto][_in]': progettoIds.join(','),
         sort: 'Data',
         limit: -1,
-        fields: 'id,Descrizione,Importo,Data,Stato,Allegato,Progetto,Invalidato,Rendicontazione'
+        fields: 'id,Descrizione,Importo,Data,Stato,Allegato,Progetto,Invalidato,Rendicontazione,Pagamento'
       }
     })
   },
@@ -109,8 +122,10 @@ export const verificaService = {
     const conditions = []
 
     const statoFilter = includeScartati
-      ? { _or: [{ stato: { _eq: 'in_attesa' } }, { stato: { _eq: 'scartato' } }] }
-      : { stato: { _eq: 'in_attesa' } }
+      ? {
+          _or: [{ stato: { _eq: STATO_SUBMISSION.INSERITO } }, { stato: { _eq: STATO_SUBMISSION.SCARTATO } }]
+        }
+      : { stato: { _eq: STATO_SUBMISSION.INSERITO } }
     conditions.push(statoFilter)
 
     if (search) {

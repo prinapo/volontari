@@ -206,7 +206,7 @@ describe('RendicontazioneTab', () => {
         intestatario: 'Mario',
         totaleVerificato: 100,
         totalePagato: 100,
-        giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+        giustificativi: [{ Stato: 'pagato', Invalidato: false }]
       })
     ).toMatchObject({ label: 'Pagato', color: 'grey' })
     expect(
@@ -217,7 +217,7 @@ describe('RendicontazioneTab', () => {
         totaleInPagamento: 80,
         iban: 'IT',
         intestatario: 'Mario',
-        giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+        giustificativi: [{ Stato: 'in_pagamento', Invalidato: false }]
       })
     ).toMatchObject({ label: 'In pagamento', color: 'secondary' })
     expect(
@@ -243,9 +243,9 @@ describe('RendicontazioneTab', () => {
           totaleRendicontato: 100,
           iban: 'IT',
           intestatario: 'Mario',
-          giustificativi: [{ Stato: 'verificato', Invalidato: false }]
+          giustificativi: [{ Stato: 'pagato', Invalidato: false }]
         },
-        { Stato: 'verificato' }
+        { Stato: 'pagato' }
       ).Stato
     ).toBe('pagato')
     expect(
@@ -263,21 +263,6 @@ describe('RendicontazioneTab', () => {
         { Stato: 'verificato' }
       ).Stato
     ).toBe('verificato')
-    expect(
-      wrapper.vm.getGiustStato(
-        {
-          allocato: 5000,
-          totaleVerificato: 100,
-          totalePagato: 0,
-          totaleInPagamento: 80,
-          totaleRendicontato: 100,
-          iban: 'IT',
-          intestatario: 'Mario',
-          giustificativi: [{ Stato: 'verificato', Invalidato: false }]
-        },
-        { Stato: 'verificato' }
-      ).Stato
-    ).toBe('in_pagamento')
   })
 
   it('loads family contacts, caches them and handles failures', async () => {

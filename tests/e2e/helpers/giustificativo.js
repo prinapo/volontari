@@ -1,6 +1,7 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect } from '@playwright/test'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import { espandiGiustificativi } from './pagina-famiglie.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -23,15 +24,17 @@ const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf
 export async function createGiustificativoViaDialog(page, data = {}) {
   const testDesc = data.descrizione || `TEST_Giust_${Date.now()}`
 
+  await espandiGiustificativi(page)
+
   const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
-  await expect(aggiungiBtn).toBeEnabled({ timeout: 15000 })
+  await expect(aggiungiBtn).toBeEnabled({ timeout: 15_000 })
 
   await aggiungiBtn.scrollIntoViewIfNeeded()
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
   await aggiungiBtn.dispatchEvent('click')
-  await page.waitForLoadState("networkidle").catch(() => {})
+  await page.waitForLoadState('networkidle').catch(() => {})
   const dialog = page.locator('.q-dialog:visible')
-  await dialog.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
+  await dialog.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {})
 
   await dialog.locator('[data-testid="giustform-descrizione"]').fill(testDesc)
   await dialog.locator('[data-testid="giustform-importo"]').fill(String(data.importo || '50.00'))
@@ -59,21 +62,25 @@ export async function createGiustificativoViaDialog(page, data = {}) {
   ])
 
   expect(postResp.status()).toBe(200)
-  await dialog.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {})
+  await dialog.waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => {})
 
   const created = await postResp.json()
   const giustId = created?.data?.id
 
   if (data.submitAfter && giustId) {
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const sendBtn = page.locator('[data-testid="giustificativo-card-' + giustId + '"] button:has-text("Invia")')
     if (await sendBtn.count().then(c => c > 0)) {
       const [patchResp] = await Promise.all([
-        page.waitForResponse(resp => resp.url().includes('/items/Giustificativi/' + giustId) && resp.request().method() === 'PATCH').catch(() => null),
+        page
+          .waitForResponse(
+            resp => resp.url().includes('/items/Giustificativi/' + giustId) && resp.request().method() === 'PATCH'
+          )
+          .catch(() => null),
         sendBtn.evaluate(el => el.click())
       ])
     }
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
   }
 
   return { id: giustId, desc: testDesc }

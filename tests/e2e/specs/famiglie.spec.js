@@ -1,12 +1,13 @@
-import { test, expect } from '../helpers/console.js'
-import { loginAs } from '../helpers/login.js'
-import { GestionePage } from '../pages/GestionePage.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiGet, apiPatch } from '../helpers/api.js'
 import { deleteFamiglie, deleteProgetti } from '../helpers/cleanup.js'
+import { test, expect } from '../helpers/console.js'
+import { loginAs } from '../helpers/login.js'
+import { apriFamiglieESelezionaFamiglia, espandiErogazioni } from '../helpers/pagina-famiglie.js'
 import { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from '../helpers/pagina-gestione.js'
 import { loginVolontarioConFamiglia } from '../helpers/setup-atomico.js'
 import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
+import { GestionePage } from '../pages/GestionePage.js'
 
 function uid(label) {
   return `TEST_FP_${label}_${Date.now()}`
@@ -55,7 +56,7 @@ test.describe('Famiglie Page — Gruppo 1', () => {
   })
 
   test('F-GR-01: Verifica pagina famiglia — dati, sezioni, espansione @smoke', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR1', ids)
     await loginVolontarioConFamiglia(page, d.nome)
@@ -64,7 +65,8 @@ test.describe('Famiglie Page — Gruppo 1', () => {
     expect(famigliaName.trim()).toBeTruthy()
     await expect(page.locator('.q-select').first()).toBeVisible()
     await expect(page.locator('text=Dati bancari')).toBeVisible()
-    await expect(page.getByText('Giustificativi', { exact: true })).toBeVisible()
+    await expect(page.getByText(/^Giustificativi \(\d+\)$/)).toBeVisible()
+    await expect(page.getByText(/^Erogazioni \(\d+\)$/)).toBeVisible()
 
     const genitoriSection = page.locator('text=Genitori').locator('..')
     if ((await genitoriSection.count()) > 0) {
@@ -79,13 +81,13 @@ test.describe('Famiglie Page — Gruppo 1', () => {
     await expect(ibanDisplay).not.toBeVisible()
 
     await expansion.locator('text=Dati bancari').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const fields = page.locator('.inline-editable-field')
     await expect(fields.first().locator('.text-body1')).toBeVisible({ timeout: 5000 })
     expect(await fields.count()).toBeGreaterThanOrEqual(2)
 
     await expansion.locator('text=Dati bancari').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(fields.first().locator('.text-body1')).not.toBeVisible()
   })
 })
@@ -111,7 +113,7 @@ test.describe('Famiglie Page — Gruppo 2', () => {
   })
 
   test('F-GR-02: Modifica IBAN e Intestatario — salva, annulla, reload @crud', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR2', ids)
     saved.id = ids.famiglia
@@ -124,7 +126,7 @@ test.describe('Famiglie Page — Gruppo 2', () => {
     }
     await loginVolontarioConFamiglia(page, d.nome)
     await page.locator('.q-expansion-item:has-text("Dati bancari")').locator('text=Dati bancari').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const ibanField = page.locator('.inline-editable-field').nth(0)
     await expect(ibanField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
 
@@ -160,7 +162,7 @@ test.describe('Famiglie Page — Gruppo 2', () => {
     await page.reload()
     await loginVolontarioConFamiglia(page, d.nome)
     await page.locator('.q-expansion-item:has-text("Dati bancari")').locator('text=Dati bancari').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(ibanField.locator('.text-body1')).toContainText(testIBAN, { timeout: 5000 })
 
     // IN-01
@@ -178,7 +180,7 @@ test.describe('Famiglie Page — Gruppo 2', () => {
     await page.reload()
     await loginVolontarioConFamiglia(page, d.nome)
     await page.locator('.q-expansion-item:has-text("Dati bancari")').locator('text=Dati bancari').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(intestatarioField.locator('.text-body1')).toContainText(testName, { timeout: 5000 })
   })
 })
@@ -203,7 +205,7 @@ test.describe('Famiglie Page — Gruppo 3', () => {
   })
 
   test('F-GR-03: Notifiche salvataggio IBAN — compare e scompare @smoke', async ({ page }) => {
-    test.setTimeout(120000)
+    test.setTimeout(120_000)
     await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR3', ids)
     saved.id = ids.famiglia
@@ -216,7 +218,7 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     }
     await loginVolontarioConFamiglia(page, d.nome)
     await page.locator('.q-expansion-item:has-text("Dati bancari")').locator('text=Dati bancari').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const ibanField = page.locator('.inline-editable-field').nth(0)
     await expect(ibanField.locator('.text-body1')).toBeVisible({ timeout: 3000 })
     const originalValue = (await ibanField.locator('.text-body1').innerText()).trim()
@@ -234,8 +236,8 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     expect(r.status()).toBe(200)
     await expect(notif).toBeVisible({ timeout: 5000 })
     await expect(notif).toContainText('IBAN aggiornato')
-    await page.waitForLoadState("networkidle").catch(() => {})
-    await expect(notif).not.toBeVisible({ timeout: 10000 })
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await expect(notif).not.toBeVisible({ timeout: 10_000 })
 
     // NT-02: modifica con un secondo IBAN e verifica notifica
     const testIBAN2 = `IT60X${String(Date.now()).slice(-10).padStart(22, '0')}`
@@ -250,12 +252,12 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     expect(r2.status()).toBe(200)
     await expect(notif).toBeVisible({ timeout: 5000 })
     await expect(notif).toContainText('IBAN aggiornato')
-    await page.waitForLoadState("networkidle").catch(() => {})
-    await expect(notif).not.toBeVisible({ timeout: 10000 })
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await expect(notif).not.toBeVisible({ timeout: 10_000 })
   })
 
   test('F-GR-05: IBAN non valido inline — errore validazione @regression', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR5', ids)
     await loginVolontarioConFamiglia(page, d.nome)
@@ -263,18 +265,18 @@ test.describe('Famiglie Page — Gruppo 3', () => {
     // Espandi Dati bancari
     const datiBancari = page.locator('.q-expansion-item').filter({ hasText: 'Dati bancari' })
     if ((await datiBancari.count()) > 0) await datiBancari.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     // Clicca campo IBAN per editarlo
     const ibanField = page.locator('.inline-editable-field').first()
     await ibanField.locator('[aria-label="Modifica"]').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const ibanInput = page.locator('.inline-editable-field').first().locator('input')
     if ((await ibanInput.count()) > 0) {
       await ibanInput.fill('abc')
       const saveBtn = ibanField.locator('[data-testid="inline-save"]')
       await expect(saveBtn).toBeVisible()
       await saveBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       // La validazione deve mostrare errore sul campo
       await expect(page.locator('.q-field--error').first())
         .toBeVisible({ timeout: 3000 })
@@ -296,7 +298,7 @@ test.describe('Famiglie Page — Gruppo 4', () => {
   })
 
   test('F-GR-04: Selettore progetti, totali e badge @smoke', async ({ page }) => {
-    test.setTimeout(90000)
+    test.setTimeout(90_000)
     await loginAs(page, 'manager', auth)
     const d = await famigliaSetup(page, 'GR4', ids)
     await loginVolontarioConFamiglia(page, d.nome)
@@ -311,20 +313,46 @@ test.describe('Famiglie Page — Gruppo 4', () => {
     // PS-02/03: totali
     await expect(page.locator('text=Totale Giustificativi')).toBeVisible({ timeout: 8000 })
     await expect(page.getByText('Totale Rimborsabile', { exact: true })).toBeVisible()
+    await expect(page.getByText('Totale Erogato', { exact: true })).toBeVisible()
     const t1 = await page.locator('text=Totale Giustificativi').locator('..').locator('.text-h6').innerText()
     const t2 = await page
       .getByText('Totale Rimborsabile', { exact: true })
       .locator('..')
       .locator('.text-h6')
       .innerText()
-    expect(parseFloat(t1.replace(/[€\s.]/g, '').replace(',', '.'))).toBeGreaterThanOrEqual(0)
-    expect(parseFloat(t2.replace(/[€\s.]/g, '').replace(',', '.'))).toBeGreaterThanOrEqual(0)
+    expect(Number.parseFloat(t1.replaceAll(/[€\s.]/g, '').replace(',', '.'))).toBeGreaterThanOrEqual(0)
+    expect(Number.parseFloat(t2.replaceAll(/[€\s.]/g, '').replace(',', '.'))).toBeGreaterThanOrEqual(0)
 
     const genitoriHeader = page.locator('.text-caption.text-grey.text-uppercase:has-text("Genitori")')
     if ((await genitoriHeader.count()) > 0) {
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       const badgeCount = await page.locator('.q-badge:has-text("Primaria")').count()
       if (badgeCount > 0) expect(badgeCount).toBeGreaterThanOrEqual(1)
     }
+  })
+
+  test('F-GR-06: Sezioni collassate di default + Erogazioni @smoke', async ({ page }) => {
+    test.setTimeout(120_000)
+    await loginAs(page, 'manager', auth)
+    const d = await famigliaSetup(page, 'GR6', ids)
+    await loginAs(page, 'volontario', auth)
+    await apriFamiglieESelezionaFamiglia(page, d.nome, { expandGiustificativi: false })
+
+    const giustHeader = page.locator('.q-expansion-item:has-text("Giustificativi")').first()
+    const erogHeader = page.locator('.q-expansion-item:has-text("Erogazioni")').first()
+    await expect(giustHeader).toBeVisible({ timeout: 10_000 })
+    await expect(erogHeader).toBeVisible()
+
+    // Entrambe le sezioni sono chiuse di default
+    await expect(giustHeader.locator('.q-expansion-item__content')).not.toBeVisible()
+    await expect(erogHeader.locator('.q-expansion-item__content')).not.toBeVisible()
+
+    // Totale Erogato presente nel blocco totali
+    await expect(page.getByText('Totale Erogato', { exact: true })).toBeVisible()
+
+    // Espandi Erogazioni: nessun pagamento → stato vuoto
+    await espandiErogazioni(page)
+    await expect(erogHeader.locator('.q-expansion-item__content')).toBeVisible()
+    await expect(erogHeader.getByText('Nessuna erogazione presente')).toBeVisible()
   })
 })

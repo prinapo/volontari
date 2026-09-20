@@ -316,7 +316,6 @@ data-testid="detail-chiudi" />
 import { computed } from 'vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, statoLabel, statoColor } from 'src/utils/formatters'
-import { calcolaStatoRiga, statoGiustificativoEff } from 'src/utils/statoRiga'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -330,15 +329,7 @@ const visible = computed({
   set: val => emit('update:modelValue', val)
 })
 
-function giustStatoEff(g) {
-  const eff = statoGiustificativoEff(g, statoProgettoKey.value)
-  return eff === null ? g : { Stato: eff }
-}
-
-// Stato di riga derivato una sola volta per apertura del dialogo.
-const statoProgettoKey = computed(() => calcolaStatoRiga(props.progetto).key)
-
-const giustificativi = computed(() => (props.progetto.giustificativi || []).map(giustStatoEff))
+const giustificativi = computed(() => props.progetto.giustificativi || [])
 
 const giustColumns = [
   { name: 'Descrizione', label: 'Descrizione', field: 'Descrizione', align: 'left' },

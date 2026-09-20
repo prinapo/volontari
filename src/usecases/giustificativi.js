@@ -5,7 +5,7 @@ import { filesService } from 'src/services/files.service'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { submitService } from 'src/services/submit.service'
 import { verificaService } from 'src/services/verifica.service'
-import { FOLDERS, STATI_PROGETTO_OPERATIVI } from 'src/utils/constants'
+import { FOLDERS, STATI_PROGETTO_OPERATIVI, STATO_SUBMISSION } from 'src/utils/constants'
 import { markFileObsolete, markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
 import { syncProgettoAggregati } from './progetti'
 
@@ -102,7 +102,7 @@ export async function creaSubmission(payload, _ctx = {}) {
   const res = await submitService.createSubmission({
     ...payload,
     email: payload.email ? payload.email.toLowerCase() : payload.email,
-    stato: 'in_attesa',
+    stato: STATO_SUBMISSION.INSERITO,
     data_invio: new Date().toISOString()
   })
   return res.data.data
@@ -127,7 +127,11 @@ export async function aggiornaGiustificativo({ id, data, file, allegatoAttuale, 
 }
 
 export async function aggiornaCampoGiustificativo({ id, field, value, progettoId }) {
-  const res = await giustificativiService.update(id, { [field]: value })
+  const patch = { [field]: value }
+  // Un cambio di stato scollega il giustificativo da un eventuale pagamento;
+  // ricalcolaProposta lo ricollegherà se torna `verificato`.
+  if (field === 'Stato') patch.Pagamento = null
+  const res = await giustificativiService.update(id, patch)
   await syncProgettoAggregati(progettoId)
   return res.data.data
 }
@@ -155,14 +159,14 @@ export async function rifiutaGiustificativo({ id, nota, allegato, progettoId }) 
 
 export async function scartaSubmission({ id, nota }) {
   await verificaService.updateSubmission(id, {
-    stato: 'scartato',
+    stato: STATO_SUBMISSION.SCARTATO,
     note_riconciliazione: nota
   })
 }
 
 export async function ripristinaSubmission({ id }) {
   await verificaService.updateSubmission(id, {
-    stato: 'in_attesa',
+    stato: STATO_SUBMISSION.INSERITO,
     note_riconciliazione: null
   })
 }
@@ -247,7 +251,7 @@ export async function riconciliaSubmission({
   const giustificativoId = created.id
 
   await verificaService.updateSubmission(submissionId, {
-    stato: 'riconciliato',
+    stato: STATO_SUBMISSION.INVIATO,
     famiglia_riconciliata: famigliaId,
     progetto_riconciliato: progettoId,
     giustificativo_creato: giustificativoId,

@@ -5,7 +5,9 @@ import {
   ricalcolaPropostiDaProgetti,
   ricalcolaTotaliProgetto,
   segnaAnnullato,
-  segnaPagato
+  segnaInPagamento,
+  segnaPagato,
+  sincronizzaStatiPagamentoProgetto
 } from 'src/usecases/pagamenti'
 
 const mockGetPagamenti = vi.fn()
@@ -16,6 +18,7 @@ const mockGetProgettoById = vi.fn()
 const mockUpdateProgettoStats = vi.fn()
 const mockGetGiustificativiByProgetto = vi.fn()
 const mockGetGiustificativiByProgetti = vi.fn()
+const mockUpdateGiustificativo = vi.fn()
 const mockGetFamigliaVolontari = vi.fn()
 const mockGetFamigliaGenitori = vi.fn()
 const mockGetFamigliaById = vi.fn()
@@ -42,6 +45,12 @@ vi.mock('src/services/verifica.service', () => ({
   verificaService: {
     getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
     getGiustificativiByProgetti: (...a) => mockGetGiustificativiByProgetti(...a)
+  }
+}))
+
+vi.mock('src/services/giustificativi.service', () => ({
+  giustificativiService: {
+    update: (...a) => mockUpdateGiustificativo(...a)
   }
 }))
 
@@ -176,6 +185,39 @@ describe('ricalcolaProposta', () => {
     expect(mockCreatePagamento).toHaveBeenCalledTimes(1)
     expect(mockCreatePagamento.mock.calls[0][0].Importo).toBe(100)
   })
+
+  it('crea la proposta anche per rimborso_parziale (progetto ancora operativo)', async () => {
+    const progettoParziale = progettoBase({ id_progetto: 30, Allocato: '1000', StatoProgetto: 'rimborso_parziale' })
+    mockGetProgettoById
+      .mockResolvedValueOnce({ data: { data: progettoParziale } })
+      .mockResolvedValueOnce({ data: { data: progettoParziale } })
+    const giust = [{ id: 'g-1', Stato: 'verificato', Importo: '800', Invalidato: false }]
+    mockGetGiustificativiByProgetto
+      .mockResolvedValueOnce({ data: { data: giust } })
+      .mockResolvedValueOnce({ data: { data: giust } })
+    mockGetPagamenti
+      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '400' }] } })
+      .mockResolvedValueOnce({ data: { data: [] } })
+      .mockResolvedValueOnce({ data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '400' }] } })
+    mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaProposta(30)
+
+    expect(mockCreatePagamento).toHaveBeenCalledTimes(1)
+    expect(mockCreatePagamento.mock.calls[0][0].Importo).toBe(240)
+  })
+
+  it('non crea proposta per progetto chiuso', async () => {
+    mockGetProgettoById.mockResolvedValueOnce({
+      data: { data: progettoBase({ StatoProgetto: 'chiuso' }) }
+    })
+
+    await ricalcolaProposta(1)
+
+    expect(mockGetGiustificativiByProgetto).not.toHaveBeenCalled()
+    expect(mockCreatePagamento).not.toHaveBeenCalled()
+  })
 })
 
 describe('ricalcolaTotaliProgetto', () => {
@@ -218,6 +260,46 @@ describe('ricalcolaTotaliProgetto', () => {
 
     mockGetProgettoById.mockRejectedValueOnce(new Error('totali fail'))
     await expect(ricalcolaTotaliProgetto(100)).rejects.toThrow('totali fail')
+  })
+
+  it('esclude gli invalidati dal TotaleVerificato', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 22, Allocato: '1000', StatoProgetto: 'accettato' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [
+          { Stato: 'verificato', Importo: '500', Invalidato: false },
+          { Stato: 'verificato', Importo: '300', Invalidato: true }
+        ]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaTotaliProgetto(22)
+
+    expect(mockUpdateProgettoStats.mock.calls[0][1]).toEqual(expect.objectContaining({ TotaleVerificato: 500 }))
+  })
+
+  it('transizione a rimborso_parziale senza DataChiusura', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 40, Allocato: '1000', StatoProgetto: 'accettato' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ Stato: 'verificato', Importo: '500' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '400' }] }
+    })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaTotaliProgetto(40)
+
+    const statoCall = mockUpdateProgettoStats.mock.calls.find(c => c[1]?.StatoProgetto)
+    expect(statoCall[1]).toEqual({ StatoProgetto: 'rimborso_parziale' })
+    expect(statoCall[1].DataChiusura).toBeUndefined()
+    expect(statoCall[1].MotivoChiusura).toBeUndefined()
   })
 })
 
@@ -386,5 +468,174 @@ describe('ricalcolaPropostiDaProgetti', () => {
       NoteEsito: 'Proposta annullata: importo non più dovuto',
       Batch: null
     })
+  })
+
+  it('include le righe in rimborso_parziale', async () => {
+    mockGetGiustificativiByProgetti.mockResolvedValue({
+      data: { data: [{ Progetto: 'X', Stato: 'verificato', Importo: '800', Invalidato: false }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'paid-1', Progetto: 'X', Stato: 'pagato', Importo: '400' }] }
+    })
+    mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
+
+    await ricalcolaPropostiDaProgetti([row({ statoProgetto: 'rimborso_parziale' })])
+
+    expect(mockCreatePagamento).toHaveBeenCalledTimes(1)
+    expect(mockCreatePagamento.mock.calls[0][0].Importo).toBe(240)
+  })
+})
+
+describe('link giustificativi alla proposta', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('collega i giustificativi verificati alla proposta creata', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: progettoBase({ id_progetto: 1, Allocato: '1000' }) }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [{ id: 'g-1', Stato: 'verificato', Importo: '800', Invalidato: false, Pagamento: null }]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockCreatePagamento.mockResolvedValue({ data: { data: { id: 99 } } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaProposta(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-1', { Pagamento: 99 })
+  })
+
+  it('non ricollega i giustificativi già pagato/in_pagamento', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: progettoBase({ id_progetto: 1, Allocato: '1000' }) }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [
+          { id: 'g-old', Stato: 'pagato', Importo: '400', Invalidato: false, Pagamento: 5 },
+          { id: 'g-new', Stato: 'verificato', Importo: '500', Invalidato: false, Pagamento: null }
+        ]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockCreatePagamento.mockResolvedValue({ data: { data: { id: 100 } } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaProposta(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-new', { Pagamento: 100 })
+    expect(mockUpdateGiustificativo).not.toHaveBeenCalledWith('g-old', expect.anything())
+  })
+})
+
+describe('sincronizzaStatiPagamentoProgetto', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('pagamento pagato → giustificativo pagato + DataPagamento', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', TotalePagato: '100' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [
+          { id: 'g-1', Stato: 'in_pagamento', Importo: '100', Invalidato: false, Pagamento: 5, DataPagamento: null }
+        ]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 5, Stato: 'pagato', Importo: '100' }] } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+
+    await sincronizzaStatiPagamentoProgetto(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith(
+      'g-1',
+      expect.objectContaining({ Stato: 'pagato', DataPagamento: expect.any(String) })
+    )
+  })
+
+  it('pagamento in_pagamento → giustificativo in_pagamento', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', TotalePagato: '0' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [{ id: 'g-1', Stato: 'verificato', Importo: '100', Invalidato: false, Pagamento: 5 }]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 5, Stato: 'in_pagamento', Importo: '100' }] } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+
+    await sincronizzaStatiPagamentoProgetto(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-1', expect.objectContaining({ Stato: 'in_pagamento' }))
+  })
+
+  it('allocato raggiunto → tutti i contabili pagato (anche non collegati)', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', TotalePagato: '1000' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [{ id: 'g-extra', Stato: 'verificato', Importo: '300', Invalidato: false, Pagamento: null }]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+
+    await sincronizzaStatiPagamentoProgetto(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-extra', expect.objectContaining({ Stato: 'pagato' }))
+  })
+
+  it('senza pagamento collegato → torna verificato', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', TotalePagato: '0' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [
+          { id: 'g-1', Stato: 'pagato', Importo: '100', Invalidato: false, Pagamento: null, DataPagamento: '2026' }
+        ]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+
+    await sincronizzaStatiPagamentoProgetto(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith(
+      'g-1',
+      expect.objectContaining({ Stato: 'verificato', DataPagamento: null })
+    )
+  })
+})
+
+describe('segnaInPagamento', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('passa i pagamenti a in_pagamento e riallinea i giustificativi', async () => {
+    mockGetPagamenti
+      .mockResolvedValueOnce({ data: { data: [{ id: 5, Progetto: 1 }] } })
+      .mockResolvedValue({ data: { data: [{ id: 5, Stato: 'in_pagamento', Importo: '100' }] } })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', TotalePagato: '0' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [{ id: 'g-1', Stato: 'verificato', Importo: '100', Invalidato: false, Pagamento: 5 }]
+      }
+    })
+    mockUpdateGiustificativo.mockResolvedValue({})
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await segnaInPagamento({ pagamentoIds: [5], batchId: 'b-1' })
+
+    expect(mockUpdatePagamento).toHaveBeenCalledWith(5, { Stato: 'in_pagamento', Batch: 'b-1' })
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-1', expect.objectContaining({ Stato: 'in_pagamento' }))
   })
 })

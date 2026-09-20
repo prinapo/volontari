@@ -264,7 +264,8 @@
       <template #body-cell-stato_submission="props">
         <q-td :props="props">
           <q-badge v-if="props.value === 'scartato'" color="grey-6" class="q-px-sm q-py-xs"> Scartato </q-badge>
-          <q-badge v-else color="positive" class="q-px-sm q-py-xs"> In attesa </q-badge>
+          <q-badge v-else-if="props.value === 'inviato'" color="primary" class="q-px-sm q-py-xs"> Inviato </q-badge>
+          <q-badge v-else color="positive" class="q-px-sm q-py-xs"> Inserito </q-badge>
         </q-td>
       </template>
 

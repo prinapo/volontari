@@ -87,7 +87,11 @@ const QUASAR_STUBS = {
   'q-item-label': { name: 'QItemLabel', template: '<div><slot /></div>' },
   'q-list': { name: 'QList', template: '<div><slot /></div>' },
   'q-btn-dropdown': { name: 'QBtnDropdown', template: '<div><slot />{{ label }}</div>', props: ['label'] },
-  'q-expansion-item': { name: 'QExpansionItem', template: '<div><slot /></div>' },
+  'q-expansion-item': {
+    name: 'QExpansionItem',
+    template: '<div>{{ label }}<slot /></div>',
+    props: ['label', 'icon']
+  },
   'q-scroll-area': { name: 'QScrollArea', template: '<div><slot /></div>' },
   'q-inner-loading': { name: 'QInnerLoading', template: '<div v-if="showing"><slot /></div>', props: ['showing'] },
   'router-link': { template: '<a><slot /></a>' },

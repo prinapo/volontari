@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import GiustificativoList from 'src/components/Giustificativi/GiustificativoList.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockFetchByProgetto = vi.fn()
 const mockCreateGiustificativo = vi.fn()
@@ -56,7 +56,6 @@ describe('GiustificativoList', () => {
         }
       }
     })
-    expect(wrapper.text()).toContain('Giustificativi')
     expect(wrapper.text()).toContain('Nessun giustificativo presente')
   })
 

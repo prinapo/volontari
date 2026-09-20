@@ -1,5 +1,5 @@
 <template>
-  <v-chart class="full-width" :style="{ height: `${height}px` }" :option="option" autoresize />
+  <v-chart class="dashboard-chart full-width" :style="{ height: `${height}px` }" :option="option" autoresize />
 </template>
 
 <script setup>
@@ -33,3 +33,9 @@ use([
   TooltipComponent
 ])
 </script>
+
+<style scoped>
+.dashboard-chart {
+  min-height: 300px;
+}
+</style>

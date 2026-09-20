@@ -55,6 +55,12 @@
                     {{ formatCurrency(totaleRimborsabile) }}
                   </div>
                 </div>
+                <div>
+                  <div class="text-caption text-grey">Totale Erogato</div>
+                  <div class="text-h6 text-positive">
+                    {{ formatCurrency(famiglieStore.totaleErogato) }}
+                  </div>
+                </div>
                 <q-space />
                 <div class="text-caption text-grey">
                   Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{
@@ -63,13 +69,33 @@
                 </div>
               </q-card-section>
             </q-card>
-          </template>
 
-          <GiustificativoList
-            :progetto-id="famiglieStore.selectedProgettoId"
-            :famiglia-id="famiglieStore.famiglia?.id_famiglia"
-            :anno-bando="famiglieStore.selectedProgetto?.AnnoBando"
-          />
+            <q-expansion-item
+              class="bg-white q-mb-md"
+              icon="receipt_long"
+              :label="`Giustificativi (${giustificativiCount})`"
+              header-class="text-subtitle1 text-weight-medium"
+            >
+              <div class="q-pa-md">
+                <GiustificativoList
+                  :progetto-id="famiglieStore.selectedProgettoId"
+                  :famiglia-id="famiglieStore.famiglia?.id_famiglia"
+                  :anno-bando="famiglieStore.selectedProgetto?.AnnoBando"
+                />
+              </div>
+            </q-expansion-item>
+
+            <q-expansion-item
+              class="bg-white"
+              icon="payments"
+              :label="`Erogazioni (${erogazioniCount})`"
+              header-class="text-subtitle1 text-weight-medium"
+            >
+              <div class="q-pa-md">
+                <ErogazioneList />
+              </div>
+            </q-expansion-item>
+          </template>
         </template>
 
         <!-- Multi-famiglia ma nessuna selezionata: invito a scegliere -->
@@ -98,6 +124,7 @@
 
 <script setup>
 import { computed, watch } from 'vue'
+import ErogazioneList from 'components/Erogazioni/ErogazioneList.vue'
 import FamigliaInfoCard from 'components/Famiglia/FamigliaInfoCard.vue'
 import ProgettoSelector from 'components/Famiglia/ProgettoSelector.vue'
 import GiustificativoList from 'components/Giustificativi/GiustificativoList.vue'
@@ -126,6 +153,9 @@ const totaleRimborsabile = computed(() => {
   const ottantaPct = totaleGiustificativi.value * 0.8
   return Math.min(ottantaPct, allocato.value)
 })
+
+const giustificativiCount = computed(() => giustificativiStore.data.filter(i => !i.Invalidato).length)
+const erogazioniCount = computed(() => famiglieStore.erogazioni.length)
 
 watch(
   () => authStore.contattoId,

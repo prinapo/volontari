@@ -1,9 +1,16 @@
 import { adminService } from 'src/services/admin.service'
 import { famiglieService } from 'src/services/famiglie.service'
+import { giustificativiService } from 'src/services/giustificativi.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { STATI_PROGETTO_FINALI, STATI_PROGETTO_OPERATIVI, STATO_PAGAMENTO, STATO_PROGETTO } from 'src/utils/constants'
+import {
+  STATI_GIUSTIFICATIVO_CONTABILI,
+  STATI_PROGETTO_OPERATIVI,
+  STATO_GIUSTIFICATIVO,
+  STATO_PAGAMENTO,
+  STATO_PROGETTO
+} from 'src/utils/constants'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
 import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
 
@@ -11,9 +18,82 @@ function parseNum(v) {
   return Number.parseFloat(v) || 0
 }
 
+function isContabile(stato) {
+  return STATI_GIUSTIFICATIVO_CONTABILI.includes(stato)
+}
+
+function pagamentoIdDi(giustificativo) {
+  const p = giustificativo?.Pagamento
+  if (p == null) return null
+  return typeof p === 'object' ? p.id : p
+}
+
 async function getPagamentoById(pagamentoId) {
   const res = await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })
   return res.data.data?.[0]
+}
+
+/**
+ * Collega alla proposta i giustificativi verificati non ancora coperti da un
+ * altro pagamento (o già collegati alla proposta stessa).
+ */
+async function _collegaGiustificativi(giustificativi, pagamentoId) {
+  const daCollegare = giustificativi.filter(
+    g =>
+      !g.Invalidato &&
+      g.Stato === STATO_GIUSTIFICATIVO.VERIFICATO &&
+      (pagamentoIdDi(g) == null || pagamentoIdDi(g) === pagamentoId)
+  )
+  await Promise.all(daCollegare.map(g => giustificativiService.update(g.id, { Pagamento: pagamentoId })))
+}
+
+/** Scollega i giustificativi legati a un pagamento (es. proposta annullata). */
+async function _scollegaGiustificativi(giustificativi, pagamentoId) {
+  const daScollegare = giustificativi.filter(g => pagamentoIdDi(g) === pagamentoId)
+  await Promise.all(daScollegare.map(g => giustificativiService.update(g.id, { Pagamento: null })))
+}
+
+/**
+ * Riallinea (idempotente) gli stati dei giustificativi di un progetto in base ai
+ * pagamenti collegati e alla regola del cap:
+ * - pagamento `pagato` (o allocato raggiunto) → `pagato`
+ * - pagamento `in_pagamento` → `in_pagamento`
+ * - altrimenti → `verificato`
+ * Nessun effetto sugli stati non contabili (draft/inviato/rifiutato).
+ */
+export async function sincronizzaStatiPagamentoProgetto(progettoId) {
+  const progRes = await progettiService.getById(progettoId)
+  const progetto = progRes.data.data
+  if (!progetto) return
+  const [giustRes, pagRes] = await Promise.all([
+    verificaService.getGiustificativiByProgetto(progettoId),
+    pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': progettoId, limit: -1 })
+  ])
+  const giustificativi = giustRes.data.data || []
+  const pagMap = new Map((pagRes.data.data || []).map(p => [p.id, p]))
+  const allocato = parseNum(progetto.Allocato)
+  const capRaggiunto = allocato > 0 && parseNum(progetto.TotalePagato) >= allocato
+
+  const ops = []
+  for (const g of giustificativi) {
+    if (g.Invalidato || !isContabile(g.Stato)) continue
+    const pag = pagMap.get(pagamentoIdDi(g))
+    let nuovo
+    if (capRaggiunto || pag?.Stato === STATO_PAGAMENTO.PAGATO) nuovo = STATO_GIUSTIFICATIVO.PAGATO
+    else if (pag?.Stato === STATO_PAGAMENTO.IN_PAGAMENTO) nuovo = STATO_GIUSTIFICATIVO.IN_PAGAMENTO
+    else nuovo = STATO_GIUSTIFICATIVO.VERIFICATO
+
+    if (nuovo !== g.Stato) {
+      const data = { Stato: nuovo }
+      if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) {
+        if (!g.DataPagamento) data.DataPagamento = new Date().toISOString()
+      } else {
+        data.DataPagamento = null
+      }
+      ops.push(giustificativiService.update(g.id, data))
+    }
+  }
+  if (ops.length) await Promise.all(ops)
 }
 
 /**
@@ -31,7 +111,7 @@ export async function ricalcolaTotaliProgetto(progettoId) {
   const giustRes = await verificaService.getGiustificativiByProgetto(id)
   const giustificativi = giustRes.data.data || []
   const totaleVerificato = giustificativi
-    .filter(g => g.Stato === 'verificato')
+    .filter(g => isContabile(g.Stato) && !g.Invalidato)
     .reduce((s, g) => s + parseNum(g.Importo), 0)
 
   const pagamentiRes = await pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': id, limit: -1 })
@@ -64,7 +144,13 @@ export async function ricalcolaTotaliProgetto(progettoId) {
   })
 
   if (statoProgettoCalcolato !== statoProgettoAttuale) {
-    await chiudiProgetto(id, { automatica: true, stato: statoProgettoCalcolato })
+    if (statoProgettoCalcolato === STATO_PROGETTO.CHIUSO) {
+      await chiudiProgetto(id, { automatica: true, stato: STATO_PROGETTO.CHIUSO })
+    } else {
+      // Transizione a uno stato operativo (es. rimborso_parziale): nessuna data
+      // di chiusura, il progetto resta operativo.
+      await progettiService.updateStats(id, { StatoProgetto: statoProgettoCalcolato })
+    }
   }
 }
 
@@ -78,12 +164,12 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
   if (!progetto) return
   const statEffettivo =
     progetto.StatoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : progetto.StatoProgetto
-  if (STATI_PROGETTO_FINALI.includes(statEffettivo)) return
+  if (statEffettivo === STATO_PROGETTO.CHIUSO) return
 
   const giustRes = await verificaService.getGiustificativiByProgetto(progettoId)
   const giustificativi = giustRes.data.data || []
   const totaleVerificato = giustificativi
-    .filter(g => g.Stato === 'verificato')
+    .filter(g => isContabile(g.Stato) && !g.Invalidato)
     .reduce((s, g) => s + parseNum(g.Importo), 0)
 
   const pagamentiRes = await pagamentiService.getPagamenti({
@@ -110,40 +196,41 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
   const esistente = (esistenteRes.data.data || [])[0]
 
   if (nuovoProposto > 0) {
-    await (esistente
-      ? pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
-      : pagamentiService.createPagamento({
-          Progetto: progettoId,
-          Famiglia: progetto.Famiglia,
-          Importo: nuovoProposto,
-          Stato: STATO_PAGAMENTO.PROPOSTO,
-          IBAN: iban || progetto.IBAN || '',
-          Intestatario: intestatario || progetto.Intestatario_CC || '',
-          DataProposta: new Date().toISOString()
-        }))
+    let pagamentoId = esistente?.id
+    if (esistente) {
+      await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
+    } else {
+      const created = await pagamentiService.createPagamento({
+        Progetto: progettoId,
+        Famiglia: progetto.Famiglia,
+        Importo: nuovoProposto,
+        Stato: STATO_PAGAMENTO.PROPOSTO,
+        IBAN: iban || progetto.IBAN || '',
+        Intestatario: intestatario || progetto.Intestatario_CC || '',
+        DataProposta: new Date().toISOString()
+      })
+      pagamentoId = created.data.data?.id
+    }
+    if (pagamentoId) await _collegaGiustificativi(giustificativi, pagamentoId)
   } else if (esistente) {
     await pagamentiService.updatePagamento(esistente.id, {
       Stato: STATO_PAGAMENTO.ANNULLATO,
       NoteEsito: 'Proposta annullata: importo non più dovuto',
       Batch: null
     })
+    await _scollegaGiustificativi(giustificativi, esistente.id)
   }
 
   await ricalcolaTotaliProgetto(progettoId)
 }
 
 /**
- * Calcola le scritture necessarie per la proposta di UN progetto (senza
- * eseguirle): ritorna l'elenco di promise da awaitare. Fonte unica della
- * formula erogabile (util `calcolaErogabile`).
+ * Ricalcola la proposta di UN progetto (crea/aggiorna/annulla il `proposto`) e
+ * collega/scollega i giustificativi coperti. Esegue le scritture direttamente.
  */
-function _ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto) {
-  const pid = row.idProgetto
-  const giustificativi = giustByProgetto[pid] || []
-  const pagamenti = pagByProgetto[pid] || []
-
+async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
   const totaleVerificato = giustificativi
-    .filter(g => g.Stato === 'verificato')
+    .filter(g => isContabile(g.Stato) && !g.Invalidato)
     .reduce((s, g) => s + parseNum(g.Importo), 0)
   const totaleStorico = pagamenti
     .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
@@ -157,35 +244,33 @@ function _ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto) {
   const nuovoProposto = residuoDaCoprire(erogabile, totaleStorico)
   const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
 
-  const writeOps = []
   if (nuovoProposto > 0) {
+    let pagamentoId = esistente?.id
     if (esistente) {
       if (parseNum(esistente.Importo) !== nuovoProposto) {
-        writeOps.push(pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto }))
+        await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
       }
     } else {
-      writeOps.push(
-        pagamentiService.createPagamento({
-          Progetto: pid,
-          Famiglia: row.idFamiglia,
-          Importo: nuovoProposto,
-          Stato: STATO_PAGAMENTO.PROPOSTO,
-          IBAN: row.iban || '',
-          Intestatario: row.intestatario || '',
-          DataProposta: new Date().toISOString()
-        })
-      )
-    }
-  } else if (esistente) {
-    writeOps.push(
-      pagamentiService.updatePagamento(esistente.id, {
-        Stato: STATO_PAGAMENTO.ANNULLATO,
-        NoteEsito: 'Proposta annullata: importo non più dovuto',
-        Batch: null
+      const created = await pagamentiService.createPagamento({
+        Progetto: row.idProgetto,
+        Famiglia: row.idFamiglia,
+        Importo: nuovoProposto,
+        Stato: STATO_PAGAMENTO.PROPOSTO,
+        IBAN: row.iban || '',
+        Intestatario: row.intestatario || '',
+        DataProposta: new Date().toISOString()
       })
-    )
+      pagamentoId = created.data.data?.id
+    }
+    if (pagamentoId) await _collegaGiustificativi(giustificativi, pagamentoId)
+  } else if (esistente) {
+    await pagamentiService.updatePagamento(esistente.id, {
+      Stato: STATO_PAGAMENTO.ANNULLATO,
+      NoteEsito: 'Proposta annullata: importo non più dovuto',
+      Batch: null
+    })
+    await _scollegaGiustificativi(giustificativi, esistente.id)
   }
-  return writeOps
 }
 
 /**
@@ -220,11 +305,14 @@ export async function ricalcolaPropostiDaProgetti(progetti) {
     ;(pagByProgetto[pid] ||= []).push(p)
   }
 
-  const writeOps = []
-  for (const row of aperti) {
-    writeOps.push(..._ricalcolaPropostaSingola(row, giustByProgetto, pagByProgetto))
-  }
-  if (writeOps.length > 0) await Promise.all(writeOps)
+  // Le scritture per progetto sono best-effort: un progetto in errore non deve
+  // invalidare le altre. Poi si aggiornano i derivati (totali + stato).
+  await Promise.allSettled(
+    aperti.map(row =>
+      _ricalcolaPropostaProgetto(row, giustByProgetto[row.idProgetto] || [], pagByProgetto[row.idProgetto] || [])
+    )
+  )
+  await Promise.allSettled(aperti.map(r => ricalcolaTotaliProgetto(r.idProgetto)))
 }
 
 /**
@@ -268,6 +356,38 @@ export async function inviaNotificaPagamento(pagamento) {
   await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
 }
 
+/**
+ * Passa i pagamenti selezionati a `in_pagamento` dentro un batch e riallinea gli
+ * stati dei giustificativi collegati (→ `in_pagamento`).
+ */
+export async function segnaInPagamento({ pagamentoIds, batchId }) {
+  if (!pagamentoIds?.length) return []
+  const res = await pagamentiService.getPagamenti({
+    'filter[id][_in]': pagamentoIds.join(','),
+    fields: 'id,Progetto',
+    limit: -1
+  })
+  const pagamenti = res.data.data || []
+  await Promise.all(
+    pagamenti.map(p =>
+      pagamentiService.updatePagamento(p.id, {
+        Stato: STATO_PAGAMENTO.IN_PAGAMENTO,
+        Batch: batchId
+      })
+    )
+  )
+  const progetti = [
+    ...new Set(
+      pagamenti.map(p => (typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto)).filter(Boolean)
+    )
+  ]
+  for (const pid of progetti) {
+    await ricalcolaTotaliProgetto(pid)
+    await sincronizzaStatiPagamentoProgetto(pid)
+  }
+  return pagamenti
+}
+
 export async function segnaPagato(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
   if (!pagamento || pagamento.Stato !== STATO_PAGAMENTO.IN_PAGAMENTO) {
@@ -278,6 +398,7 @@ export async function segnaPagato(pagamentoId) {
     DataPagamento: new Date().toISOString()
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
+  await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   await inviaNotificaPagamento(pagamento)
   return pagamento
 }
@@ -292,6 +413,7 @@ export async function segnaFallito(pagamentoId, note) {
     NoteEsito: note
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
+  await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   return pagamento
 }
 
@@ -301,12 +423,15 @@ export async function segnaAnnullato(pagamentoId) {
     throw new Error('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
   }
   const batchId = pagamento.Batch
+  const giustRes = await verificaService.getGiustificativiByProgetto(pagamento.Progetto)
+  await _scollegaGiustificativi(giustRes.data.data || [], pagamentoId)
   await pagamentiService.updatePagamento(pagamentoId, {
     Stato: STATO_PAGAMENTO.ANNULLATO,
     Batch: null,
     NoteEsito: 'Rimosso dal gruppo'
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
+  await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   await ricalcolaProposta(pagamento.Progetto, {
     iban: pagamento.IBAN,
     intestatario: pagamento.Intestatario
@@ -322,11 +447,14 @@ export async function ripristinaProposto(pagamentoId) {
     Batch: null
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
+  await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   return pagamento
 }
 
 export async function ripristinaInPagamento(pagamentoId) {
+  const pagamento = await getPagamentoById(pagamentoId)
   await pagamentiService.updatePagamento(pagamentoId, { Stato: STATO_PAGAMENTO.IN_PAGAMENTO, NoteEsito: null })
+  if (pagamento?.Progetto) await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
 }
 
 export async function correggiDati(pagamentoId, { iban, intestatario }) {
@@ -345,11 +473,7 @@ export async function chiudiProgetto(
   await progettiService.updateStats(progettoId, {
     StatoProgetto: stato,
     DataChiusura: new Date().toISOString(),
-    MotivoChiusura: automatica
-      ? stato === STATO_PROGETTO.RIMBORSO_PARZIALE
-        ? motivo || 'Chiusura parziale'
-        : 'Importo allocato interamente pagato'
-      : motivo
+    MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
   })
 }
 

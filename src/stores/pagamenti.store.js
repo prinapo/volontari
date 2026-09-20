@@ -13,6 +13,7 @@ import {
   ripristinaProposto as ripristinaPropostoUseCase,
   segnaAnnullato as segnaAnnullatoUseCase,
   segnaFallito as segnaFallitoUseCase,
+  segnaInPagamento as segnaInPagamentoUseCase,
   segnaPagato as segnaPagatoUseCase
 } from 'src/usecases/pagamenti'
 import { STATO_PAGAMENTO, STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
@@ -377,15 +378,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         const batchId = batchRes.data.data?.id
 
-        await Promise.all(
-          pagamenti.map(p =>
-            pagamentiService.updatePagamento(p.id, {
-              Stato: STATO_PAGAMENTO.IN_PAGAMENTO,
-              Batch: batchId
-            })
-          )
-        )
-        await Promise.all(pagamenti.map(p => this.ricalcolaTotaliProgetto(p.Progetto)))
+        await segnaInPagamentoUseCase({ pagamentoIds: pagamenti.map(p => p.id), batchId })
 
         await this._aggiornaListaBatch(batchId, nome)
 

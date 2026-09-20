@@ -1,8 +1,23 @@
+import { STATO_PAGAMENTO } from 'src/utils/constants'
 import api from './api'
 
 export const pagamentiService = {
   getPagamenti(params = {}) {
     return api.get('/items/Pagamenti', { params })
+  },
+
+  getByProgetto(progettoId) {
+    return api.get('/items/Pagamenti', {
+      params: {
+        'filter[Progetto][_eq]': progettoId,
+        'filter[Stato][_in]': [STATO_PAGAMENTO.PROPOSTO, STATO_PAGAMENTO.IN_PAGAMENTO, STATO_PAGAMENTO.PAGATO].join(
+          ','
+        ),
+        fields: 'id,Stato,Importo,DataProposta,DataPagamento',
+        sort: '-DataProposta',
+        limit: -1
+      }
+    })
   },
 
   createPagamento(data) {

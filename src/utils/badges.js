@@ -51,6 +51,40 @@ export function statoLabel(stato) {
 }
 
 /**
+ * Colore Quasar per lo stato di un Pagamento (erogazione).
+ *
+ * Standard:
+ * - proposto     -> grey       (in attesa di valutazione)
+ * - in_pagamento -> secondary  (bonifico in corso; coerente con lo stato derivato
+ *                              dei giustificativi ed evita la collisione primary/info)
+ * - pagato       -> positive   (erogazione effettuata)
+ * - fallito      -> negative
+ * - annullato    -> grey-6     (rimosso dal gruppo)
+ */
+export function statoPagamentoColor(stato) {
+  if (stato === 'proposto') return 'grey'
+  if (stato === 'in_pagamento') return 'secondary'
+  if (stato === 'pagato') return 'positive'
+  if (stato === 'fallito') return 'negative'
+  if (stato === 'annullato') return 'grey-6'
+  return 'grey'
+}
+
+/**
+ * Etichetta testuale per lo stato di un Pagamento (erogazione).
+ */
+export function statoPagamentoLabel(stato) {
+  const labels = {
+    proposto: 'Proposto',
+    in_pagamento: 'In pagamento',
+    pagato: 'Pagato',
+    fallito: 'Fallito',
+    annullato: 'Annullato'
+  }
+  return labels[stato] || stato || '—'
+}
+
+/**
  * Colore Quasar per il tipo di contatto (ruolo nella famiglia).
  *
  * Standard a 4 colori (stile solid):

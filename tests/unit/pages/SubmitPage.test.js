@@ -99,7 +99,7 @@ describe('SubmitPage', () => {
         descrizione: 'Spesa medica',
         importo: 50,
         allegato: 'file-1',
-        stato: 'in_attesa'
+        stato: 'inserito'
       })
     )
     expect(mockNotifySuccess).toHaveBeenCalled()

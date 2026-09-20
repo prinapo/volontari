@@ -62,42 +62,47 @@ La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped.
 
 ### Guardia comune
 
-La guardia **progetto non operativo** (stato in `STATI_PROGETTO_OPERATIVI`) è nel
+La guardia **progetto non operativo** (stato in `STATI_PROGETTO_OPERATIVI` =
+`accettato`, `in_rendicontazione`, `rimborso_parziale`) è nel
 primitivo `_creaGiustificativoRecord`: vale per **tutti** gli ingressi, inclusa la
 riconciliazione. I **draft** non contano come giustificativi validi per lo stato
-(`hasValidGiustificativi`).
+(`hasValidGiustificativi`). `rimborso_parziale` è operativo (la famiglia può
+completare la rendicontazione); `chiuso` è l'unico stato finale.
 
 ---
 
 ## Area Progetti — `src/usecases/progetti.js` (sync) + `src/usecases/pagamenti.js` (chiudi/riapri)
 
-| Azione                     | Use case                | Entry point                                                                | Stato    |
-| -------------------------- | ----------------------- | -------------------------------------------------------------------------- | -------- |
-| Sincronizza aggregati      | `syncProgettoAggregati` | ogni mutazione giustificativo                                              | estratto |
-| Chiudi progetto            | `chiudiProgetto`        | RendicontazioneTab / PagamentiTab                                          | estratto |
-| Riapri progetto            | `riapriProgetto`        | PagamentiTab                                                               | estratto |
-| Applica stato (tool Admin) | `applicaStatoProgetto`  | Admin → Consistenza → Trasformazioni (`auth.store.applyStatoProgettoById`) | in store |
-| Aggiorna beneficiario      | `aggiornaBeneficiario`  | Admin Utenti (`admin.store.updateProgettoBeneficiario`)                    | in store |
+| Azione                            | Use case                    | Entry point                                                                        | Stato    |
+| --------------------------------- | --------------------------- | ---------------------------------------------------------------------------------- | -------- |
+| Sincronizza aggregati             | `syncProgettoAggregati`     | ogni mutazione giustificativo                                                      | estratto |
+| Chiudi progetto                   | `chiudiProgetto`            | RendicontazioneTab / PagamentiTab                                                  | estratto |
+| Riapri progetto                   | `riapriProgetto`            | PagamentiTab                                                                       | estratto |
+| Applica stato (tool Admin)        | `applicaStatoProgetto`      | Admin → Consistenza → Trasformazioni (`auth.store.applyStatoProgettoById`)         | in store |
+| Sync stati pagamento (tool Admin) | `sincronizzaStatiPagamento` | Admin → Consistenza → Sincronizza stati pagamento (`usecases/sincronizzazione.js`) | estratto |
+| Aggiorna beneficiario             | `aggiornaBeneficiario`      | Admin Utenti (`admin.store.updateProgettoBeneficiario`)                            | in store |
 
 ---
 
 ## Area Pagamenti — `src/usecases/pagamenti.js` ✅ estratto (core)
 
-| Azione                    | Use case                      | Entry point                                   | Stato                                            |
-| ------------------------- | ----------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| Ricalcola proposta        | `ricalcolaProposta`           | Verifica / PagamentiTab                       | estratto                                         |
-| Ricalcola proposte (bulk) | `ricalcolaPropostiDaProgetti` | PagamentiTab                                  | estratto                                         |
-| Ricalcola totali progetto | `ricalcolaTotaliProgetto`     | `segnaPagato`/`segnaFallito`/`segnaAnnullato` | estratto                                         |
-| Ripristina proposto       | `ripristinaProposto`          | PagamentiTab                                  | estratto                                         |
-| Segna pagato              | `segnaPagato`                 | PagamentiTab                                  | estratto (side-effect: `inviaNotificaPagamento`) |
-| Segna fallito             | `segnaFallito`                | PagamentiTab                                  | estratto                                         |
-| Segna annullato           | `segnaAnnullato`              | PagamentiTab                                  | estratto                                         |
-| Ripristina in pagamento   | `ripristinaInPagamento`       | PagamentiTab                                  | estratto                                         |
-| Correggi dati pagamento   | `correggiDati`                | PagamentiTab                                  | estratto                                         |
-| Invia notifica pagamento  | `inviaNotificaPagamento`      | side-effect di `segnaPagato`                  | estratto                                         |
-| Crea batch                | `creaBatch`                   | PagamentiTab                                  | in store (batch/CSV, UI-coupled)                 |
-| Aggiorna lista batch      | `_aggiornaListaBatch`         | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store (CSV)                                   |
-| Elimina lista             | `eliminaLista`                | PagamentiTab                                  | in store                                         |
+| Azione                    | Use case                            | Entry point                                   | Stato                                            |
+| ------------------------- | ----------------------------------- | --------------------------------------------- | ------------------------------------------------ |
+| Ricalcola proposta        | `ricalcolaProposta`                 | Verifica / PagamentiTab                       | estratto                                         |
+| Ricalcola proposte (bulk) | `ricalcolaPropostiDaProgetti`       | PagamentiTab                                  | estratto                                         |
+| Ricalcola totali progetto | `ricalcolaTotaliProgetto`           | `segnaPagato`/`segnaFallito`/`segnaAnnullato` | estratto                                         |
+| Riallinea stati pagamento | `sincronizzaStatiPagamentoProgetto` | transizioni pagamento                         | estratto (idempotente)                           |
+| Segna in pagamento        | `segnaInPagamento`                  | `creaBatch` (store)                           | estratto                                         |
+| Ripristina proposto       | `ripristinaProposto`                | PagamentiTab                                  | estratto                                         |
+| Segna pagato              | `segnaPagato`                       | PagamentiTab                                  | estratto (side-effect: `inviaNotificaPagamento`) |
+| Segna fallito             | `segnaFallito`                      | PagamentiTab                                  | estratto                                         |
+| Segna annullato           | `segnaAnnullato`                    | PagamentiTab                                  | estratto                                         |
+| Ripristina in pagamento   | `ripristinaInPagamento`             | PagamentiTab                                  | estratto                                         |
+| Correggi dati pagamento   | `correggiDati`                      | PagamentiTab                                  | estratto                                         |
+| Invia notifica pagamento  | `inviaNotificaPagamento`            | side-effect di `segnaPagato`                  | estratto                                         |
+| Crea batch                | `creaBatch`                         | PagamentiTab                                  | in store (batch/CSV, UI-coupled)                 |
+| Aggiorna lista batch      | `_aggiornaListaBatch`               | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store (CSV)                                   |
+| Elimina lista             | `eliminaLista`                      | PagamentiTab                                  | in store                                         |
 
 ---
 

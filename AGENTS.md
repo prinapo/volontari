@@ -98,6 +98,60 @@ li PATCHa su `Progetti`. È idempotente: può girare più volte senza effetti.
 La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped
 (solo i 4 campi derivati — vedi "Permesso Volontario su Progetti").
 
+`TotaleVerificato` **non** fa parte di questo payload (per non estendere il
+permesso field-scoped del Volontario). Lo aggiorna `ricalcolaTotaliProgetto`
+(`src/usecases/pagamenti.js`), che gira a ogni verifica/rifiuto manager
+(`ricalcolaProposta`) e nel RICALCOLA bulk; il valore di riga in memoria è
+allineato da `recalculateRowTotals` (`verifica.store.js`).
+
+### Stati progetto — operatività e finalità
+
+- `rimborso_parziale` è **operativo**: la famiglia può ancora inserire
+  giustificativi fino al rimborso totale e i nuovi verificati generano nuove
+  proposte. È incluso in `STATI_PROGETTO_OPERATIVI`.
+- `chiuso` è l'**unico stato finale** (`STATI_PROGETTO_FINALI`): sia pagato ≥
+  allocato (auto) sia chiusura manuale ("Chiudi progetto", anche con
+  pagato < allocato). È **sticky**: `calcolaStatoProgetto` non lo retrocede a
+  `rimborso_parziale`.
+- `ricalcolaProposta` salta solo i progetti `chiuso`; `ricalcolaPropostiDaProgetti`
+  elabora le righe in `STATI_PROGETTO_OPERATIVI` (quindi anche il parziale).
+
+### Stati giustificativo (persistiti, opzione C)
+
+Lo stato è **scritto nel DB** su `Giustificativi.Stato` (non più derivato):
+
+- **Volontario**: `draft` → `inviato` → `verificato` / `rifiutato`
+- **Modulo libero** (submission `InviiGiustificativiNoLogin`): `inserito` → al
+  riscontro nasce il giustificativo `inviato` (la submission passa a `inviato`);
+  `scartato` resta solo sulla submission (nessun giustificativo)
+- **Pagamento**: `verificato` → `in_pagamento` (progetto nel batch) → `pagato`
+
+`STATI_GIUSTIFICATIVO_CONTABILI` = `{verificato, in_pagamento, pagato}` è la
+costante unica usata da tutti gli aggregati (erogabile, `TotaleVerificato`,
+`calcolaStatoRendicontazione`, stato riga, `verifica.store`). Ogni `Stato ===
+'verificato'` nei calcoli va sostituito con questa costante.
+
+Collegamento pagamento↔giustificativi: FK `Giustificativi.Pagamento`. Alla
+creazione/aggiornamento della proposta `ricalcolaProposta` collega i verificati
+non ancora coperti; `segnaInPagamento` li porta a `in_pagamento`; `segnaPagato`
+li porta a `pagato` (o tutti, se l'allocato è raggiunto). `segnaFallito`/
+`segnaAnnullato` riallineano (annullo → scollega). L'invariante è
+`sincronizzaStatiPagamentoProgetto` (`usecases/pagamenti.js`), idempotente.
+
+### Tool backfill stati pagamento (Admin)
+
+`sincronizzaStatiPagamento` (`usecases/sincronizzazione.js`), esposto in
+Admin → Consistenza ("Sincronizza stati pagamento giustificativi", Anteprima +
+Applica). Rilegge progetti/giustificativi/pagamenti e riallinea gli stati:
+cap allocato → tutti `pagato`; altrimenti allocazione per id crescente fino a
+esaurire il coperto. Serve a backfillare i dati storici (es. dopo un sync
+prod→dev). Idempotente.
+
+Nota permessi (dev+prod, DB non git): le policy su `Giustificativi` sono
+`fields: ['*']` per Manager e Volontario; il volontario **potrebbe** quindi
+scrivere `pagato` via API (non esposto in UI). Hardening field-scoped da
+valutare separatamente.
+
 ### Creazione giustificativo (primitivo unico)
 
 La scrittura di un giustificativo passa da UN solo primitivo interno,

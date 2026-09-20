@@ -16,6 +16,7 @@ import {
   verificaGiustificativo
 } from 'src/usecases/giustificativi'
 import { statoProgettoLabel } from 'src/utils/badges'
+import { STATI_GIUSTIFICATIVO_CONTABILI, STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 import { calcolaDisallineati } from 'src/utils/statoProgetto'
@@ -31,7 +32,7 @@ function toNumber(value) {
 function isCountedInTotals(item) {
   if (item.Invalidato) return false
   const stato = String(item.Stato || '').toLowerCase()
-  return stato === 'inviato' || stato === 'verificato'
+  return STATI_GIUSTIFICATIVO_VALIDI.includes(stato)
 }
 
 function normalizeProject(project, famiglia = {}) {
@@ -93,15 +94,20 @@ async function fetchReferentiByFamiglia(famigliaId) {
 
 function recalculateRowTotals(row) {
   let totaleRendicontato = 0
+  let totaleVerificato = 0
 
   row.giustificativi.forEach(item => {
     if (!isCountedInTotals(item)) return
     totaleRendicontato += toNumber(item.Importo)
+    if (STATI_GIUSTIFICATIVO_CONTABILI.includes(String(item.Stato || '').toLowerCase())) {
+      totaleVerificato += toNumber(item.Importo)
+    }
   })
 
   const fattore = (row.percentualeRimborso ?? 80) / 100
   const totaleRimborsabileLordo = totaleRendicontato * fattore
   row.totaleRendicontato = totaleRendicontato
+  row.totaleVerificato = totaleVerificato
   row.totaleRimborsabile = Math.min(totaleRimborsabileLordo, row.allocato || totaleRimborsabileLordo)
   row.residuoAllocato = Math.max((row.allocato || 0) - totaleRimborsabileLordo, 0)
 }
@@ -421,7 +427,7 @@ export const useVerificaStore = defineStore('verifica', {
         if (!row) return
         const item = row.giustificativi.find(g => g.id === giustId)
         if (!item) return
-        item.Stato = 'verificato'
+        item.Stato = STATO_GIUSTIFICATIVO.VERIFICATO
         recalculateRowTotals(row)
         const pagStore = usePagamentiStore()
         if (useAuthStore().canManager) {

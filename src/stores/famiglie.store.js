@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
+import { pagamentiService } from 'src/services/pagamenti.service'
 import { referentiService } from 'src/services/referenti.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { useAuthStore } from 'stores/auth.store'
@@ -16,6 +17,8 @@ export const useFamiglieStore = defineStore('famiglie', {
     contattiLoading: false,
     genitori: [],
     altriVolontari: [],
+    erogazioni: [],
+    erogazioniLoading: false,
     error: null
   }),
 
@@ -35,7 +38,11 @@ export const useFamiglieStore = defineStore('famiglie', {
     },
     famigliaName: state => state.famiglia?.Nome_Famiglia || '',
     iban: state => state.famiglia?.IBAN || '',
-    intestatarioCC: state => state.famiglia?.Intestatario_CC || ''
+    intestatarioCC: state => state.famiglia?.Intestatario_CC || '',
+    totaleErogato: state =>
+      state.erogazioni
+        .filter(p => p.Stato === 'pagato')
+        .reduce((sum, p) => sum + (Number.parseFloat(p.Importo) || 0), 0)
   },
 
   actions: {
@@ -74,9 +81,30 @@ export const useFamiglieStore = defineStore('famiglie', {
         if (this.progetti.length > 0) {
           this.selectedProgettoId = this.progetti[0].id_progetto
         }
-        await Promise.all([this.fetchGenitori(famigliaId), this.fetchVolontari(famigliaId)])
+        await Promise.all([
+          this.fetchGenitori(famigliaId),
+          this.fetchVolontari(famigliaId),
+          this.selectedProgettoId ? this.fetchErogazioni(this.selectedProgettoId) : Promise.resolve()
+        ])
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
+      }
+    },
+
+    async fetchErogazioni(progettoId) {
+      if (!progettoId) {
+        this.erogazioni = []
+        return
+      }
+      this.erogazioniLoading = true
+      try {
+        const res = await pagamentiService.getByProgetto(progettoId)
+        this.erogazioni = res.data.data || []
+      } catch (error) {
+        this.erogazioni = []
+        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento delle erogazioni'
+      } finally {
+        this.erogazioniLoading = false
       }
     },
 
@@ -178,6 +206,7 @@ export const useFamiglieStore = defineStore('famiglie', {
 
     selectProgetto(progettoId) {
       this.selectedProgettoId = progettoId
+      this.fetchErogazioni(progettoId)
     },
 
     async updateIBAN(iban, intestatario) {

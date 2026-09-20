@@ -260,6 +260,21 @@ icon="refresh"
       </template>
       <div class="text-body2">Errore nel calcolo delle trasformazioni.</div>
     </q-banner>
+
+    <q-card flat bordered class="q-mt-md">
+      <q-card-section>
+        <div class="text-subtitle1 q-mb-xs">Sincronizza stati pagamento giustificativi</div>
+        <div class="text-body2 text-grey-7 q-mb-sm">
+          Rilegge pagamenti e giustificativi e riallinea gli stati (verificato → in_pagamento → pagato).
+          Idempotente: riusabile dopo un sync da produzione.
+        </div>
+        <div class="row q-gutter-sm items-center">
+          <q-btn outline color="primary" label="Anteprima" :loading="syncingPagamenti" @click="anteprimaSyncPagamenti" />
+          <q-btn color="primary" label="Applica" :loading="syncingPagamenti" @click="applicaSyncPagamenti" />
+          <div v-if="syncPagamentiReport" class="text-caption text-grey-7">{{ syncPagamentiReport }}</div>
+        </div>
+      </q-card-section>
+    </q-card>
   </div>
 </template>
 
@@ -268,6 +283,7 @@ import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
+import { sincronizzaStatiPagamento } from 'src/usecases/sincronizzazione'
 import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
 import { STATO_PROGETTO } from 'src/utils/constants'
 import { notifyError, notifySuccess } from 'src/utils/notify'
@@ -281,6 +297,35 @@ const authStore = useAuthStore()
 const savingVolontario = ref(false)
 const checkingCheck = ref(false)
 const applyingId = ref(null)
+const syncingPagamenti = ref(false)
+const syncPagamentiReport = ref('')
+
+async function anteprimaSyncPagamenti() {
+  syncingPagamenti.value = true
+  syncPagamentiReport.value = ''
+  try {
+    const res = await sincronizzaStatiPagamento({ dryRun: true })
+    syncPagamentiReport.value = `${res.totale} giustificativi da aggiornare`
+  } catch (error) {
+    notifyError($q, error, 'Errore anteprima sincronizzazione')
+  } finally {
+    syncingPagamenti.value = false
+  }
+}
+
+async function applicaSyncPagamenti() {
+  syncingPagamenti.value = true
+  syncPagamentiReport.value = ''
+  try {
+    const res = await sincronizzaStatiPagamento()
+    notifySuccess($q, `${res.aggiornati} giustificativi aggiornati`)
+    syncPagamentiReport.value = `${res.aggiornati} aggiornati`
+  } catch (error) {
+    notifyError($q, error, 'Errore sincronizzazione')
+  } finally {
+    syncingPagamenti.value = false
+  }
+}
 
 const statiTarget = ['accettato', 'in_rendicontazione', 'rimborso_parziale', 'chiuso']
 

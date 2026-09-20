@@ -362,17 +362,35 @@ describe('services', () => {
     await giustificativiService.submit(1)
     expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Stato: 'inviato' })
     await giustificativiService.invalidate(1)
-    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Invalidato: true })
+    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Invalidato: true, Pagamento: null })
     await giustificativiService.verify(1)
-    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Stato: 'verificato' })
+    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', {
+      Stato: 'verificato',
+      DataVerifica: expect.any(String),
+      Pagamento: null
+    })
     await giustificativiService.reject(1, 'nota')
-    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Stato: 'rifiutato', NotaRifiuto: 'nota' })
+    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', {
+      Stato: 'rifiutato',
+      NotaRifiuto: 'nota',
+      Pagamento: null
+    })
   })
 
   it('pagamenti.service', async () => {
     const { pagamentiService } = await import('src/services/pagamenti.service')
     await pagamentiService.getPagamenti({ stato: 'proposto' })
     expect(mockGet).toHaveBeenCalledWith('/items/Pagamenti', { params: { stato: 'proposto' } })
+    await pagamentiService.getByProgetto('p-1')
+    expect(mockGet).toHaveBeenCalledWith('/items/Pagamenti', {
+      params: {
+        'filter[Progetto][_eq]': 'p-1',
+        'filter[Stato][_in]': 'proposto,in_pagamento,pagato',
+        fields: 'id,Stato,Importo,DataProposta,DataPagamento',
+        sort: '-DataProposta',
+        limit: -1
+      }
+    })
     await pagamentiService.createPagamento({ Importo: 100 })
     expect(mockPost).toHaveBeenCalledWith('/items/Pagamenti', { Importo: 100 })
     await pagamentiService.updatePagamento(1, { Importo: 200 })
@@ -517,7 +535,7 @@ describe('services', () => {
       '/items/Giustificativi',
       expect.objectContaining({
         params: expect.objectContaining({
-          fields: 'id,Descrizione,Importo,Data,Stato,Allegato,Progetto,Invalidato,Rendicontazione'
+          fields: 'id,Descrizione,Importo,Data,Stato,Allegato,Progetto,Invalidato,Rendicontazione,Pagamento'
         })
       })
     )
@@ -544,10 +562,10 @@ describe('services', () => {
       expect.objectContaining({ params: expect.objectContaining(paramsScartato) })
     )
     await verificaService.getSubmissions({ includeScartati: false, meta: 'filter_count' })
-    const paramsInAttesa = { meta: 'filter_count', filter: expect.stringContaining('in_attesa') }
+    const paramsInserito = { meta: 'filter_count', filter: expect.stringContaining('inserito') }
     expect(mockGet).toHaveBeenCalledWith(
       '/items/InviiGiustificativiNoLogin',
-      expect.objectContaining({ params: expect.objectContaining(paramsInAttesa) })
+      expect.objectContaining({ params: expect.objectContaining(paramsInserito) })
     )
     await verificaService.getSubmissionsInAttesa()
     expect(mockGet).toHaveBeenCalledWith(

@@ -868,7 +868,7 @@ import {
 import { STATO_PROGETTO } from 'src/utils/constants'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
-import { calcolaStatoRiga, statoGiustificativoEff } from 'src/utils/statoRiga'
+import { calcolaStatoRiga } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
 import ProgettoDetailDialog from './ProgettoDetailDialog.vue'
@@ -962,10 +962,10 @@ const canVerifica = computed(() => authStore.canManager)
 
 const isStatoOperativo = stato => {
   const s = stato === 'aperto' ? 'accettato' : stato
-  return s === 'accettato' || s === 'in_rendicontazione'
+  return s === 'accettato' || s === 'in_rendicontazione' || s === 'rimborso_parziale'
 }
 
-const isStatoFinale = stato => stato === 'chiuso' || stato === 'rimborso_parziale'
+const isStatoFinale = stato => stato === 'chiuso'
 
 const columns = [
   { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },
@@ -1029,9 +1029,7 @@ function statoRiga(row) {
 }
 
 function getGiustStato(row, g) {
-  const key = rowStati.value.get(row.idProgetto)?.key ?? calcolaStatoRiga(row).key
-  const eff = statoGiustificativoEff(g, key)
-  return eff === null ? g : { Stato: eff }
+  return g
 }
 
 async function loadFamigliaContatti(famigliaId) {
@@ -1091,15 +1089,11 @@ function openChiudiProgetto(row) {
 async function handleChiudiProgetto() {
   savingChiudiProgetto.value = true
   try {
-    const row = chiudiProgettoRow.value
-    const pagato = Number(row?.totalePagato) || 0
-    const allocato = Number(row?.allocato) || 0
-    const stato = pagato < allocato ? STATO_PROGETTO.RIMBORSO_PARZIALE : STATO_PROGETTO.CHIUSO
     const { usePagamentiStore } = await import('stores/pagamenti.store')
     const pagStore = usePagamentiStore()
     await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
       automatica: false,
-      stato,
+      stato: STATO_PROGETTO.CHIUSO,
       motivo: chiudiProgettoNota.value || null
     })
     notifySuccess($q, 'Progetto chiuso')

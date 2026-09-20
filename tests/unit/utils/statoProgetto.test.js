@@ -116,10 +116,8 @@ describe('calcolaStatoProgetto', () => {
       ).toBe('rimborso_parziale')
     })
 
-    it('chiuso con pagato < allocato retrocede a rimborso_parziale', () => {
-      expect(calcolaStatoProgetto({ statoProgetto: 'chiuso', allocato: 875, rimborsato: 176 })).toBe(
-        'rimborso_parziale'
-      )
+    it('chiuso con pagato < allocato resta chiuso (sticky)', () => {
+      expect(calcolaStatoProgetto({ statoProgetto: 'chiuso', allocato: 875, rimborsato: 176 })).toBe('chiuso')
     })
 
     it('rimborso_parziale che completa il pagamento avanza a chiuso', () => {

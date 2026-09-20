@@ -1,3 +1,4 @@
+import { STATO_GIUSTIFICATIVO } from 'src/utils/constants'
 import api from './api'
 
 export const giustificativiService = {
@@ -22,26 +23,30 @@ export const giustificativiService = {
 
   submit(id) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Stato: 'inviato'
+      Stato: STATO_GIUSTIFICATIVO.INVIATO
     })
   },
 
   invalidate(id) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Invalidato: true
+      Invalidato: true,
+      Pagamento: null
     })
   },
 
   verify(id) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Stato: 'verificato'
+      Stato: STATO_GIUSTIFICATIVO.VERIFICATO,
+      DataVerifica: new Date().toISOString(),
+      Pagamento: null
     })
   },
 
   reject(id, nota) {
     return api.patch(`/items/Giustificativi/${id}`, {
-      Stato: 'rifiutato',
-      NotaRifiuto: nota
+      Stato: STATO_GIUSTIFICATIVO.RIFIUTATO,
+      NotaRifiuto: nota,
+      Pagamento: null
     })
   },
 

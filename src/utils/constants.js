@@ -21,6 +21,35 @@ export const STATO_PAGAMENTO = {
   ANNULLATO: 'annullato'
 }
 
+export const STATO_GIUSTIFICATIVO = {
+  DRAFT: 'draft',
+  INVIATO: 'inviato',
+  VERIFICATO: 'verificato',
+  RIFIUTATO: 'rifiutato',
+  IN_PAGAMENTO: 'in_pagamento',
+  PAGATO: 'pagato'
+}
+
+// Stati "verificato-equivalenti": contano per erogabile e TotaleVerificato.
+// `pagato`/`in_pagamento` non concorrono più a nuove proposte ma restano
+// contabilmente verificati.
+export const STATI_GIUSTIFICATIVO_CONTABILI = [
+  STATO_GIUSTIFICATIVO.VERIFICATO,
+  STATO_GIUSTIFICATIVO.IN_PAGAMENTO,
+  STATO_GIUSTIFICATIVO.PAGATO
+]
+
+// Stati che avviano la rendicontazione (per lo stato progetto).
+export const STATI_GIUSTIFICATIVO_VALIDI = [STATO_GIUSTIFICATIVO.INVIATO, ...STATI_GIUSTIFICATIVO_CONTABILI]
+
+// Stati della submission del modulo libero (InviiGiustificativiNoLogin).
+// Il giustificativo nasce solo al riscontro, con Stato `inviato`.
+export const STATO_SUBMISSION = {
+  INSERITO: 'inserito',
+  INVIATO: 'inviato',
+  SCARTATO: 'scartato'
+}
+
 export const STATO_PROGETTO = {
   PROPOSTO: 'proposto',
   VALIDATO: 'validato',
@@ -34,10 +63,15 @@ export const STATO_PROGETTO = {
 }
 
 // Stati operativi (per i quali è possibile caricare giustificativi)
-export const STATI_PROGETTO_OPERATIVI = [STATO_PROGETTO.ACCETTATO, STATO_PROGETTO.IN_RENDICONTAZIONE]
+export const STATI_PROGETTO_OPERATIVI = [
+  STATO_PROGETTO.ACCETTATO,
+  STATO_PROGETTO.IN_RENDICONTAZIONE,
+  STATO_PROGETTO.RIMBORSO_PARZIALE
+]
 
-// Stati finali (chiusi, non più in rendicontazione)
-export const STATI_PROGETTO_FINALI = [STATO_PROGETTO.CHIUSO, STATO_PROGETTO.RIMBORSO_PARZIALE]
+// Stati finali (progetto chiuso, non più operativo). Il rimborso parziale NON è
+// finale: la famiglia può ancora inserire giustificativi fino al rimborso totale.
+export const STATI_PROGETTO_FINALI = [STATO_PROGETTO.CHIUSO]
 
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.gif,.heic,.pdf'
 export const FILE_MAX_SIZE = 5 * 1024 * 1024

@@ -92,7 +92,7 @@ test.describe('Riconciliazione', () => {
       email: testEmail,
       descrizione: `TEST_NF_${Date.now()}`,
       importo: '100.00',
-      stato: 'in_attesa',
+      stato: 'inserito',
       data_invio: new Date().toISOString()
     })
     const newSubId = newSub?.data?.id || newSub?.data?.[0]?.id
@@ -243,7 +243,7 @@ test.describe('Riconciliazione', () => {
       email: testEmail,
       descrizione: `TEST_NP_${Date.now()}`,
       importo: '100.00',
-      stato: 'in_attesa',
+      stato: 'inserito',
       data_invio: new Date().toISOString()
     })
     const subNPId = subNP?.data?.id || subNP?.data?.[0]?.id

@@ -9,13 +9,21 @@ const TS = Date.now()
 const NOME_FAM = `TEST_PAG_${TS}`
 
 test.describe('Pagamenti CRUD', () => {
-  let ids = { famiglia: null, progetto: null, giustificativi: [], associazione: null }
+  let ids = { famiglia: null, progetto: null, giustificativi: [], pagamenti: [], associazione: null }
 
   test.beforeAll(async () => {
     await apiLogin(auth.admin.email, auth.admin.password)
   })
 
   test.afterEach(async () => {
+    for (const pid of ids.pagamenti) {
+      try {
+        await apiDelete('Pagamenti', pid)
+      } catch {
+        /* */
+      }
+    }
+    ids.pagamenti = []
     if (ids.associazione) {
       try {
         await apiDelete('Associazioni', ids.associazione)
@@ -26,20 +34,20 @@ test.describe('Pagamenti CRUD', () => {
     }
   })
 
-  async function setupData(page) {
+  async function setupData(page, nomeFam = NOME_FAM) {
     await loginAs(page, 'admin', auth)
     await page.goto('/gestione')
     await page.waitForLoadState('networkidle')
     await page.locator('.q-tab:has-text("Famiglie")').click()
     await page.waitForLoadState('networkidle')
 
-    await createFamigliaViaUI(page, { nomeFamiglia: NOME_FAM })
+    await createFamigliaViaUI(page, { nomeFamiglia: nomeFam })
     await page.waitForLoadState('networkidle')
 
     ids.progetto = await createProgettoViaUI(
       page,
       {
-        famigliaNome: NOME_FAM,
+        famigliaNome: nomeFam,
         Cognome_Beneficiario: 'TEST_PAG',
         Nome_Beneficiario: 'Test',
         AnnoBando: new Date().getFullYear(),
@@ -215,5 +223,157 @@ test.describe('Pagamenti CRUD', () => {
       paid = res.data?.[0] || null
     }
     expect(paid).toBeTruthy()
+  })
+
+  test('PAG-51: giustificativo verificato dopo tranche parziale genera nuova proposta @crud', async ({ page }) => {
+    test.setTimeout(180_000)
+    const nomeFam = `TEST_PAG51_${Date.now()}`
+    await setupData(page, nomeFam)
+
+    const famRes = await apiGet('Famiglie', {
+      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+      fields: 'id_famiglia',
+      limit: 1
+    })
+    const famId = famRes.data?.[0]?.id_famiglia
+    expect(famId).toBeTruthy()
+
+    // Giustificativo #1 verificato
+    const g1 = await apiPost('Giustificativi', {
+      Progetto: ids.progetto,
+      Famiglia: famId,
+      Importo: 1000,
+      Stato: 'verificato',
+      Data: '2026-01-01',
+      Descrizione: 'TEST_PAG51_t1_' + Date.now(),
+      AnnoBando: new Date().getFullYear()
+    })
+    ids.giustificativi.push(g1.data.id)
+
+    // Associazione con budget (in dev le Associazioni sono vuote)
+    const assocName = `TEST_ASSOC51_${Date.now()}`
+    const assoc = await apiPost('Associazioni', { Nome: assocName, Budget: 100_000 })
+    ids.associazione = assoc.data.id
+
+    // Prima tranche via UI: RICALCOLA -> proposto 800 -> batch -> segna pagato
+    await loginAs(page, 'manager', auth)
+    await page.goto('/pagamenti')
+    await page.waitForLoadState('networkidle')
+    await page.locator('button:has-text("RICALCOLA")').click()
+    await page.waitForLoadState('networkidle')
+
+    const propostiSearch = page.locator('input[placeholder="Cerca famiglia, IBAN..."]')
+    if (await propostiSearch.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await propostiSearch.fill(nomeFam)
+      await page.waitForLoadState('networkidle').catch(() => {})
+    }
+    const propostaRow = page
+      .locator('.q-table tbody tr, .q-table__grid-content .q-card')
+      .filter({ hasText: nomeFam })
+      .first()
+    await expect(propostaRow).toBeVisible({ timeout: 15_000 })
+
+    const assocSelect = page.locator('.q-select:has(.q-field__label:has-text("Associazione"))').first()
+    await assocSelect.click()
+    await page.getByRole('option', { name: assocName }).first().click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    await propostaRow.locator('.q-checkbox').first().click()
+    await page.locator('button:has-text("Crea gruppo di pagamento")').first().click()
+    await expect(page.locator('.q-dialog:has-text("Crea gruppo di pagamento")')).toBeVisible({ timeout: 5000 })
+    const batchName = 'GRUPPO51_' + Date.now()
+    await page.locator('.q-dialog input').first().fill(batchName)
+    await page.locator('.q-dialog button:has-text("Conferma")').click()
+    await expect(page.locator('.q-notification:has-text("Gruppo creato")').first())
+      .toBeVisible({ timeout: 8000 })
+      .catch(() => {})
+
+    await page.locator('.q-tab:has-text("Da riscontrare")').click()
+    await page.waitForLoadState('networkidle')
+    const incorsoSearch = page.locator('input[placeholder*="Cerca famiglia"]')
+    if (await incorsoSearch.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await incorsoSearch.fill(nomeFam)
+      await page.waitForLoadState('networkidle').catch(() => {})
+    }
+    const incorsoRow = page
+      .locator('.q-table tbody tr, .q-table__grid-content .q-card')
+      .filter({ hasText: nomeFam })
+      .first()
+    await expect(incorsoRow).toBeVisible({ timeout: 15_000 })
+    await incorsoRow.locator('button[aria-label="Segna pagato"], button:has-text("Segna pagato")').first().click()
+    await page.waitForLoadState('networkidle')
+
+    // Il giustificativo #1 (coperto dalla prima tranche) diventa `pagato`
+    let g1Stato = null
+    for (let i = 0; i < 20 && g1Stato !== 'pagato'; i++) {
+      await page.waitForTimeout(1000)
+      const r = await apiGet('Giustificativi/' + g1.data.id, { fields: 'Stato,Pagamento' })
+      g1Stato = r.data?.Stato
+    }
+    expect(g1Stato).toBe('pagato')
+
+    // Giustificativo #2 inviato DOPO la tranche (da verificare in UI)
+    const g2 = await apiPost('Giustificativi', {
+      Progetto: ids.progetto,
+      Famiglia: famId,
+      Importo: 500,
+      Stato: 'inviato',
+      Data: '2026-02-01',
+      Descrizione: 'TEST_PAG51_t2_' + Date.now(),
+      AnnoBando: new Date().getFullYear()
+    })
+    ids.giustificativi.push(g2.data.id)
+
+    await page.goto('/verifica')
+    await page.waitForLoadState('networkidle')
+    const search = page.locator('input[aria-label="Cerca famiglia"]')
+    if (await search.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await search.fill(nomeFam)
+      await page.waitForLoadState('networkidle')
+    }
+    const row = page.locator('.verifica-table tbody tr, .q-expansion-item').filter({ hasText: nomeFam }).first()
+    await expect(row).toBeVisible({ timeout: 15_000 })
+    const expandBtn = row.locator('[data-testid="expand-row"]').first()
+    if ((await expandBtn.count()) > 0) {
+      await expandBtn.click()
+    } else {
+      await row.locator('.q-item').first().click()
+    }
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    await page
+      .locator('.expandable-content')
+      .first()
+      .waitFor({ state: 'visible', timeout: 8000 })
+      .catch(() => {})
+    let verifyBtn = page.locator('.expandable-content [data-testid="btn-verify"]').first()
+    if ((await verifyBtn.count()) === 0) {
+      verifyBtn = page.locator('[data-testid="btn-verify"]:visible').first()
+    }
+    await expect(verifyBtn).toBeVisible({ timeout: 10_000 })
+    await verifyBtn.click()
+
+    // Nuova proposta attesa: 1500*0.8 - 800 = 400 (poll: la scrittura è async)
+    let proposta = null
+    for (let i = 0; i < 15 && !proposta; i++) {
+      await page.waitForTimeout(1000)
+      const propRes = await apiGet('Pagamenti', {
+        filter: JSON.stringify({ Progetto: { _eq: ids.progetto }, Stato: { _eq: 'proposto' } }),
+        fields: 'id,Importo,Stato',
+        limit: 5
+      })
+      proposta = (propRes.data || [])[0] || null
+    }
+    expect(proposta).toBeTruthy()
+    expect(Number.parseFloat(proposta.Importo)).toBeCloseTo(400, 2)
+
+    // Il nuovo giustificativo resta `verificato` e collegato alla nuova proposta
+    const g2Res = await apiGet('Giustificativi/' + g2.data.id, { fields: 'Stato,Pagamento' })
+    expect(g2Res.data?.Stato).toBe('verificato')
+    expect(g2Res.data?.Pagamento).toBeTruthy()
+
+    // TotaleVerificato allineato ai giustificativi verificati reali
+    const prog = await apiGet('Progetti/' + ids.progetto, { fields: 'TotaleVerificato' })
+    expect(Number.parseFloat(prog.data?.TotaleVerificato)).toBeCloseTo(1500, 2)
   })
 })

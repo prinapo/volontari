@@ -1,8 +1,6 @@
 <template>
   <div>
-    <div class="row items-center q-mb-md">
-      <div class="text-h6">Giustificativi</div>
-      <q-space />
+    <div class="row justify-end q-mb-md">
       <q-btn color="primary" icon="add" label="Aggiungi" :disable="!progettoId" @click="showForm = true" />
     </div>
 

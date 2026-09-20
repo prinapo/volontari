@@ -528,7 +528,7 @@ describe('auth store', () => {
       expect(store.statoProjettoTool.count).toBe(2)
     })
 
-    it('computeStatoProgettoCandidates groups legacy chiuso parziale into rimborso_parziale', async () => {
+    it('computeStatoProgettoCandidates: chiuso con pagato parziale resta chiuso (sticky)', async () => {
       const store = useAuthStore()
       store.user = { role: { name: 'admin' } }
       mockGetProgetti.mockResolvedValue({
@@ -548,10 +548,8 @@ describe('auth store', () => {
       mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
 
       await store.computeStatoProgettoCandidates()
-      expect(store.statoProjettoTool.groups['rimborso_parziale']).toHaveLength(1)
-      expect(store.statoProjettoTool.groups['rimborso_parziale'][0]).toEqual(
-        expect.objectContaining({ progettoId: 'p13', statoDB: 'chiuso', statoCalcolato: 'rimborso_parziale' })
-      )
+      expect(store.statoProjettoTool.groups['rimborso_parziale']).toBeUndefined()
+      expect(store.statoProjettoTool.count).toBe(0)
     })
 
     it('computeStatoProgettoCandidates stores error group on failure', async () => {

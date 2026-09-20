@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import FamigliePage from 'src/pages/FamigliePage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockInit = vi.fn()
 const mockSelectFamiglia = vi.fn()
@@ -24,6 +24,9 @@ const famiglieState = {
   famigliaName: 'Famiglia Test',
   iban: 'IT60X0542811101000000123456',
   intestatarioCC: 'Mario Rossi',
+  erogazioni: [],
+  erogazioniLoading: false,
+  totaleErogato: 0,
   saving: false,
   init: (...args) => mockInit(...args),
   selectFamiglia: (...args) => mockSelectFamiglia(...args),
@@ -62,6 +65,10 @@ vi.mock('components/Giustificativi/GiustificativoList.vue', () => ({
   default: { name: 'GiustificativoList', template: '<div>GiustificativoList Stub</div>' }
 }))
 
+vi.mock('components/Erogazioni/ErogazioneList.vue', () => ({
+  default: { name: 'ErogazioneList', template: '<div>ErogazioneList Stub</div>' }
+}))
+
 describe('FamigliePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -76,6 +83,8 @@ describe('FamigliePage', () => {
     famiglieState.selectedProgettoId = null
     famiglieState.selectedProgetto = null
     famiglieState.progetti = []
+    famiglieState.erogazioni = []
+    famiglieState.totaleErogato = 0
     giustificativiState.data = []
   })
 
@@ -94,14 +103,39 @@ describe('FamigliePage', () => {
     famiglieState.famiglia = { id_famiglia: 'fam-1' }
     famiglieState.selectedProgettoId = 'p-1'
     famiglieState.selectedProgetto = { Allocato: '100', AnnoBando: 2026 }
+    famiglieState.erogazioni = [{ id: 1, Stato: 'pagato', Importo: '40' }]
+    famiglieState.totaleErogato = 40
     giustificativiState.data = [{ Importo: '50' }, { Importo: '25' }]
 
     const wrapper = quasarMount(FamigliePage)
 
     expect(wrapper.text()).toContain('FamigliaInfoCard Stub')
     expect(wrapper.text()).toContain('GiustificativoList Stub')
+    expect(wrapper.text()).toContain('ErogazioneList Stub')
+    expect(wrapper.text()).toContain('Totale Erogato')
     expect(wrapper.vm.totaleGiustificativi).toBe(75)
     expect(wrapper.vm.totaleRimborsabile).toBe(60)
+    expect(wrapper.vm.erogazioniCount).toBe(1)
+    expect(wrapper.vm.giustificativiCount).toBe(2)
+  })
+
+  it('renders section headers with the item counts', () => {
+    famiglieState.famiglia = { id_famiglia: 'fam-1' }
+    famiglieState.selectedProgettoId = 'p-1'
+    famiglieState.selectedProgetto = { Allocato: '100', AnnoBando: 2026 }
+    famiglieState.erogazioni = [
+      { id: 1, Stato: 'pagato', Importo: '40' },
+      { id: 2, Stato: 'proposto', Importo: '10' }
+    ]
+    giustificativiState.data = [
+      { Importo: '50', Invalidato: false },
+      { Importo: '25', Invalidato: true }
+    ]
+
+    const wrapper = quasarMount(FamigliePage)
+
+    expect(wrapper.text()).toContain('Giustificativi (1)')
+    expect(wrapper.text()).toContain('Erogazioni (2)')
   })
 
   it('shows verifica area when no family is linked but user can verify', () => {
