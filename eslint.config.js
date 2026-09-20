@@ -150,6 +150,30 @@ export default [
     }
   },
   {
+    files: ['src/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Property[key.name='Stato']",
+          message:
+            'Campo di stato scritto fuori dal layer macchina: usa transita()/creaConStato()/ripara() in src/usecases/stato.'
+        },
+        {
+          selector: "Property[key.name='StatoProgetto']",
+          message:
+            'StatoProgetto scritto fuori dal layer macchina: usa transita()/creaConStato()/ripara() in src/usecases/stato.'
+        }
+      ]
+    }
+  },
+  {
+    files: ['src/state-machines/**', 'src/usecases/stato/**'],
+    rules: {
+      'no-restricted-syntax': 'off'
+    }
+  },
+  {
     ignores: ['dist/**', 'node_modules/**', '.quasar/**', 'src-pwa/**', 'tests/e2e/obsolete/**']
   }
 ]

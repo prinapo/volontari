@@ -157,6 +157,10 @@ export const verificaService = {
     return this.getSubmissions({ limit: -1 })
   },
 
+  getSubmissionById(id) {
+    return api.get(`/items/InviiGiustificativiNoLogin/${id}`, { params: { fields: 'id,stato' } })
+  },
+
   updateSubmission(id, data) {
     return api.patch(`/items/InviiGiustificativiNoLogin/${id}`, data)
   },

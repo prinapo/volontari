@@ -355,26 +355,14 @@ describe('services', () => {
     const { giustificativiService } = await import('src/services/giustificativi.service')
     await giustificativiService.getByProgetto(1)
     expect(mockGet).toHaveBeenCalledWith('/items/Giustificativi', expect.any(Object))
+    await giustificativiService.getById(1)
+    expect(mockGet).toHaveBeenCalledWith('/items/Giustificativi/1')
     await giustificativiService.create({ Descrizione: 'test' })
     expect(mockPost).toHaveBeenCalledWith('/items/Giustificativi', { Descrizione: 'test' })
     await giustificativiService.update(1, { Descrizione: 'upd' })
     expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Descrizione: 'upd' })
-    await giustificativiService.submit(1)
-    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Stato: 'inviato' })
     await giustificativiService.invalidate(1)
     expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', { Invalidato: true, Pagamento: null })
-    await giustificativiService.verify(1)
-    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', {
-      Stato: 'verificato',
-      DataVerifica: expect.any(String),
-      Pagamento: null
-    })
-    await giustificativiService.reject(1, 'nota')
-    expect(mockPatch).toHaveBeenCalledWith('/items/Giustificativi/1', {
-      Stato: 'rifiutato',
-      NotaRifiuto: 'nota',
-      Pagamento: null
-    })
   })
 
   it('pagamenti.service', async () => {

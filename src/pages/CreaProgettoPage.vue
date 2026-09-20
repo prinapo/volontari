@@ -190,6 +190,7 @@ import { useRouter } from 'vue-router'
 import { filesService } from 'src/services/files.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { progettiService } from 'src/services/progetti.service'
+import { creaProgetto } from 'src/usecases/progetti'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
@@ -303,11 +304,10 @@ async function handleSubmit() {
       Descrizione_Condizione: form.Descrizione_Condizione || null,
       Dettaglio_Costi: form.Dettaglio_Costi || null,
       Eta: form.Eta || null,
-      Relazione_con_il_soggetto_richiedente: form.Relazione_con_il_soggetto_richiedente || null,
-      StatoProgetto: 'aperto'
+      Relazione_con_il_soggetto_richiedente: form.Relazione_con_il_soggetto_richiedente || null
     }
 
-    const progettoRes = await progettiService.createProgetto(payload)
+    const progettoRes = await creaProgetto(payload)
     const progettoId = progettoRes.data.data?.id_progetto || payload.id_progetto
 
     await uploadAndLinkAllegato(allegati.Progetto, progettoId, 'Progetti_files')

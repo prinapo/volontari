@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import CreaProgettoPage from 'src/pages/CreaProgettoPage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockPush = vi.fn()
 const mockSearchFamiglie = vi.fn()
@@ -111,7 +111,7 @@ describe('CreaProgettoPage', () => {
         Nome_Beneficiario: 'Mario',
         AnnoBando: 2026,
         Allocato: 5000,
-        StatoProgetto: 'aperto'
+        StatoProgetto: 'accettato'
       })
     )
     expect(mockUploadFile).toHaveBeenCalledTimes(3)

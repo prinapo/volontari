@@ -152,6 +152,41 @@ Nota permessi (dev+prod, DB non git): le policy su `Giustificativi` sono
 scrivere `pagato` via API (non esposto in UI). Hardening field-scoped da
 valutare separatamente.
 
+### Stati — unico scrittore (macchine a stati)
+
+Ogni cambio di stato (`Giustificativi.Stato`, `Pagamenti.Stato`,
+`Progetti.StatoProgetto`, `InviiGiustificativiNoLogin.stato`) passa
+**esclusivamente** dalla primitiva `src/usecases/stato/transita.js`:
+
+- `transita({ machine, statoCorrente, evento, extra, scrivi })` — transizione
+  dichiarata; valida con la macchina e scrive la patch.
+- `creaConStato` / `creaConStatoIniziale` — creazione con stato dichiarato.
+- `ripara` — **solo** per backfill/riparazione (stato dichiarato non
+  necessariamente raggiungibile), es. il tool Admin.
+
+Le macchine vivono in `src/state-machines/` (`giustificativo`, `pagamento`,
+`progetto`, `submission`): solo `states`/`on`/`cond`, nessun I/O. Sono la fonte
+di verità su **quali** transizioni sono legali; gli stati iniziali e i path di
+riparazione sono dichiarati. `@xstate/fsm` è la sola dipendenza di stato.
+
+Regole:
+
+1. I service non scrivono stato: sono invocati solo dal callback `scrivi` dentro
+   `transita`/`creaConStato`/`ripara`. Niente `{ Stato: ... }` o
+   `{ StatoProgetto: ... }` altrove — **bloccato da ESLint**
+   (`no-restricted-syntax`, eccezioni `state-machines/` e `usecases/stato/`).
+   Eventuali `eslint-disable` ammessi solo con motivazione (es. export Excel,
+   `Rendicontazioni.Stato` che non è entità a macchina).
+2. I valori **derivati** restano selettori puri (`statoRiga.js`,
+   `rendicontazione.js`, totali): non sono stati macchina e non si editano a
+   mano. `StatoRendicontazione` è persistito ma **non editabile** in UI.
+3. Gli stati non si scrivono mai direttamente da store/componenti: gli use case
+   orchestrano (`transita` → side-effect → invarianti).
+4. `origine` non cambia la logica: la stessa azione produce lo stesso esito da
+   ogni entry point.
+5. Unit test: `tests/unit/state-machines/` enumera transizioni valide e invalide
+   (queste ultime → `TransizioneNonValidaError`).
+
 ### Creazione giustificativo (primitivo unico)
 
 La scrittura di un giustificativo passa da UN solo primitivo interno,

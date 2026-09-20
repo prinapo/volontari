@@ -865,7 +865,6 @@ import {
   statoProgettoColor,
   statoProgettoLabel
 } from 'src/utils/badges'
-import { STATO_PROGETTO } from 'src/utils/constants'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { calcolaStatoRiga } from 'src/utils/statoRiga'
@@ -1093,7 +1092,6 @@ async function handleChiudiProgetto() {
     const pagStore = usePagamentiStore()
     await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
       automatica: false,
-      stato: STATO_PROGETTO.CHIUSO,
       motivo: chiudiProgettoNota.value || null
     })
     notifySuccess($q, 'Progetto chiuso')

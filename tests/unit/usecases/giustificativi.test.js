@@ -12,11 +12,12 @@ const mockGetGiustificativiByProgetto = vi.fn()
 const mockUpdateProgetto = vi.fn()
 const mockFindProgettoByFamiglia = vi.fn()
 const mockUpdateSubmission = vi.fn()
+const mockGetSubmissionById = vi.fn()
 const mockCreate = vi.fn()
 const mockFindByProject = vi.fn()
 const mockCreateRendicontazione = vi.fn()
-const mockVerify = vi.fn()
-const mockSubmit = vi.fn()
+const mockGetById = vi.fn()
+const mockUpdateGiustificativo = vi.fn()
 const mockUpload = vi.fn()
 const mockSubmitService = vi.fn()
 
@@ -26,7 +27,8 @@ vi.mock('src/services/verifica.service', () => ({
     getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
     updateProgetto: (...a) => mockUpdateProgetto(...a),
     findProgettoByFamiglia: (...a) => mockFindProgettoByFamiglia(...a),
-    updateSubmission: (...a) => mockUpdateSubmission(...a)
+    updateSubmission: (...a) => mockUpdateSubmission(...a),
+    getSubmissionById: (...a) => mockGetSubmissionById(...a)
   }
 }))
 
@@ -41,8 +43,8 @@ vi.mock('src/services/giustificativi.service', () => ({
     create: (...a) => mockCreate(...a),
     findByProject: (...a) => mockFindByProject(...a),
     createRendicontazione: (...a) => mockCreateRendicontazione(...a),
-    verify: (...a) => mockVerify(...a),
-    submit: (...a) => mockSubmit(...a)
+    getById: (...a) => mockGetById(...a),
+    update: (...a) => mockUpdateGiustificativo(...a)
   }
 }))
 
@@ -130,18 +132,27 @@ describe('verificaGiustificativo / inviaGiustificativo', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('verifica e sincronizza', async () => {
-    mockVerify.mockResolvedValue({})
+    mockGetById.mockResolvedValue({ data: { data: { Stato: 'inviato' } } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue(operativo)
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgetto.mockResolvedValue({})
     await verificaGiustificativo({ id: 'g-1', progettoId: 1 })
-    expect(mockVerify).toHaveBeenCalledWith('g-1')
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith(
+      'g-1',
+      expect.objectContaining({ Stato: 'verificato', Pagamento: null })
+    )
     expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
   })
 
   it('invia e sincronizza', async () => {
-    mockSubmit.mockResolvedValue({ data: { data: { id: 'g-1', Stato: 'inviato' } } })
+    mockGetById.mockResolvedValue({ data: { data: { Stato: 'draft' } } })
+    mockUpdateGiustificativo.mockResolvedValue({ data: { data: { id: 'g-1', Stato: 'inviato' } } })
+    mockGetProgettoById.mockResolvedValue(operativo)
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgetto.mockResolvedValue({})
     const res = await inviaGiustificativo({ id: 'g-1', progettoId: 1 })
-    expect(mockSubmit).toHaveBeenCalledWith('g-1')
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-1', { Stato: 'inviato' })
     expect(res.Stato).toBe('inviato')
     expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
   })
@@ -155,6 +166,7 @@ describe('riconciliaSubmission', () => {
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
     mockFindProgettoByFamiglia.mockResolvedValue({ data: { data: [{ id_progetto: 9, AnnoBando: 2026 }] } })
     mockCreate.mockResolvedValue({ data: { data: { id: 'g-9' } } })
+    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-1', stato: 'inserito' } } })
     mockUpdateSubmission.mockResolvedValue({})
     mockUpdateProgetto.mockResolvedValue({})
 

@@ -6,11 +6,11 @@
 
 ## Change Log
 
-| Date | Version | Author | Change |
-|---|---|---|---|
-| 2026-05-25 | 1.0.0 | System | Initial draft |
-| 2026-05-25 | 1.1.0 | System | Final — added email query in famiglie.store, genitori mapping |
-| 2026-05-25 | 2.0.0 | System | Final — added verifica.store, updated auth.store with initFromStorage/canVerifica, giustificativi.store with invalidate/ensureRendicontazione |
+| Date       | Version | Author | Change                                                                                                                                        |
+| ---------- | ------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-25 | 1.0.0   | System | Initial draft                                                                                                                                 |
+| 2026-05-25 | 1.1.0   | System | Final — added email query in famiglie.store, genitori mapping                                                                                 |
+| 2026-05-25 | 2.0.0   | System | Final — added verifica.store, updated auth.store with initFromStorage/canVerifica, giustificativi.store with invalidate/ensureRendicontazione |
 
 ---
 
@@ -28,12 +28,12 @@ State management uses Pinia (official Vue 3 store). Four stores manage the appli
 state: () => ({
   token: localStorage.getItem('access_token') || null,
   refreshToken: localStorage.getItem('refresh_token') || null,
-  user: null,                 // Directus user object
-  contatto: null,             // Contatto record linked to user
-  hasFamiglieAccess: false,   // Whether user is linked to a family as Volontario
+  user: null, // Directus user object
+  contatto: null, // Contatto record linked to user
+  hasFamiglieAccess: false, // Whether user is linked to a family as Volontario
   loading: false,
   error: null,
-  initialized: false          // Set to true after boot-time initFromStorage()
+  initialized: false // Set to true after boot-time initFromStorage()
 })
 ```
 
@@ -90,13 +90,13 @@ actions: {
 
 ```js
 state: () => ({
-  famiglieContatti: [],         // Array from Famiglie_Contatti
-  famiglia: null,               // Current family detail
-  selectedProgettoId: null,     // Currently selected project ID
+  famiglieContatti: [], // Array from Famiglie_Contatti
+  famiglia: null, // Current family detail
+  selectedProgettoId: null, // Currently selected project ID
   loading: false,
   saving: false,
-  contattiLoading: false,       // Loading state for genitori/email
-  genitoriList: [],             // Array of { id_contatto, Nome, Cognome, Numero_di_cellulare, Numero_di_telefono, Email }
+  contattiLoading: false, // Loading state for genitori/email
+  genitoriList: [], // Array of { id_contatto, Nome, Cognome, Numero_di_cellulare, Numero_di_telefono, Email }
   error: null
 })
 ```
@@ -149,10 +149,10 @@ actions: {
 
 ```js
 state: () => ({
-  items: [],                    // Giustificativi for selected project
+  items: [], // Giustificativi for selected project
   loading: false,
   saving: false,
-  editingItem: null,            // Item currently being edited inline
+  editingItem: null, // Item currently being edited inline
   error: null
 })
 ```
@@ -215,7 +215,7 @@ actions: {
 
 ```js
 state: () => ({
-  rows: [],        // Normalized projects with totals
+  rows: [], // Normalized projects with totals
   loading: false,
   error: null
 })
@@ -314,3 +314,36 @@ LoginPage.vue                    FamigliePage.vue                     VerificaPa
 - **verifica.store.fetchAll()** is called in VerificaPage.vue on mount
 - All stores are independent (no cross-store imports) — auth info is passed to service functions as needed
 - On logout: stores are reset individually (auth.store handles its own reset)
+
+---
+
+## 8. Macchine a stati (unico scrittore di stato)
+
+Lo stato persistito delle entità di dominio non viene più scritto direttamente
+da store/componenti/service. Tutto passa dalla primitiva
+`src/usecases/stato/transita.js`:
+
+| Stato persistito                   | Macchina                        | Eventi (esempi)                                    |
+| ---------------------------------- | ------------------------------- | -------------------------------------------------- |
+| `Giustificativi.Stato`             | `state-machines/giustificativo` | `INVIA`, `VERIFICA`, `RIFIUTA`, `RICALCOLA_PAGATO` |
+| `Pagamenti.Stato`                  | `state-machines/pagamento`      | `IN_PAGAMENTO`, `PAGA`, `FALLISCI`, `ANNULLA`      |
+| `Progetti.StatoProgetto`           | `state-machines/progetto`       | `CHIUDI`, `RIAPRI`, `RICALCOLA_*`                  |
+| `InviiGiustificativiNoLogin.stato` | `state-machines/submission`     | `SCARTA`, `RIPRISTINA`, `RICONCILIA`               |
+
+API della primitiva:
+
+- `transita({ machine, campo, statoCorrente, evento, extra, scrivi })` — valida
+  la transizione (evento dichiarato per lo stato corrente) e scrive la patch.
+  Evento non valido → `TransizioneNonValidaError`.
+- `creaConStato` / `creaConStatoIniziale` — creazione con stato dichiarato.
+- `ripara` — backfill/riparazione: stato dichiarato non necessariamente
+  raggiungibile (es. tool Admin).
+
+Le macchine (`@xstate/fsm`) non fanno I/O e non persistono: la fonte di verità
+resta Directus. I fetch/read e i **valori derivati** (`statoRiga`,
+`calcolaStatoRendicontazione`, totali/erogabile) restano funzioni pure di
+lettura. `StatoRendicontazione` è persistito ma non editabile in UI.
+
+**Enforcement**: ESLint `no-restricted-syntax` vieta i literal `Stato` /
+`StatoProgetto` in oggetti fuori da `src/state-machines/` e
+`src/usecases/stato/`. Test: `tests/unit/state-machines/`.

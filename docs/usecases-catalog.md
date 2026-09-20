@@ -57,8 +57,19 @@ con `creaSubmission` e la materializzazione avviene alla riconciliazione (manage
 
 Ogni mutazione di giustificativo termina con `syncProgettoAggregati(progettoId)`
 (vedi Area Progetti): ricalcola `TotaleGiustificativi`, `TotaleImporto`,
-`StatoRendicontazione`, `StatoProgetto` da dati freschi e li PATCHa su `Progetti`.
-La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped.
+`StatoRendicontazione`, `StatoProgetto` da dati freschi e li persiste su
+`Progetti`. `StatoProgetto` è scritto tramite la macchina (`transita`/`ripara`);
+gli altri derivati nella stessa patch. La PATCH dal flusso volontario è abilitata
+dal permesso Directus field-scoped.
+
+### Unico scrittore di stato (macchine a stati)
+
+Ogni cambio di `Stato`/`StatoProgetto` passa da `src/usecases/stato/transita.js`
+(`transita`/`creaConStato`/`creaConStatoIniziale`/`ripara`), che valida l'evento
+con la macchina in `src/state-machines/` e poi scrive via service. I service non
+scrivono stato; i derivati restano selettori puri. Enforcement: ESLint
+`no-restricted-syntax` vieta i literal `Stato`/`StatoProgetto` fuori da
+`state-machines/` e `usecases/stato/`.
 
 ### Guardia comune
 
@@ -76,9 +87,10 @@ completare la rendicontazione); `chiuso` è l'unico stato finale.
 | Azione                            | Use case                    | Entry point                                                                        | Stato    |
 | --------------------------------- | --------------------------- | ---------------------------------------------------------------------------------- | -------- |
 | Sincronizza aggregati             | `syncProgettoAggregati`     | ogni mutazione giustificativo                                                      | estratto |
+| Crea progetto                     | `creaProgetto`              | Admin CreaProgettoPage                                                             | estratto |
 | Chiudi progetto                   | `chiudiProgetto`            | RendicontazioneTab / PagamentiTab                                                  | estratto |
 | Riapri progetto                   | `riapriProgetto`            | PagamentiTab                                                                       | estratto |
-| Applica stato (tool Admin)        | `applicaStatoProgetto`      | Admin → Consistenza → Trasformazioni (`auth.store.applyStatoProgettoById`)         | in store |
+| Applica stato (tool Admin)        | `applicaStatoProgetto`      | Admin → Consistenza → Trasformazioni (`auth.store.applyStatoProgettoById`)         | estratto |
 | Sync stati pagamento (tool Admin) | `sincronizzaStatiPagamento` | Admin → Consistenza → Sincronizza stati pagamento (`usecases/sincronizzazione.js`) | estratto |
 | Aggiorna beneficiario             | `aggiornaBeneficiario`      | Admin Utenti (`admin.store.updateProgettoBeneficiario`)                            | in store |
 

@@ -3,6 +3,7 @@ import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { verificaService } from 'src/services/verifica.service'
+import { applicaStatoProgetto } from 'src/usecases/progetti'
 import { STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
@@ -385,7 +386,7 @@ export const useAuthStore = defineStore('auth', {
      */
     async applyStatoProgettoById(progettoId, nuovoStato) {
       if (!this.canAdmin) return
-      await verificaService.updateProgetto(progettoId, { StatoProgetto: nuovoStato })
+      await applicaStatoProgetto(progettoId, nuovoStato)
       if (this.statoProjettoTool?.groups) {
         const groups = {}
         for (const [key, list] of Object.entries(this.statoProjettoTool.groups)) {

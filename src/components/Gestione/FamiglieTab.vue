@@ -315,7 +315,7 @@
                           <InlineEditableField :model-value="prog.MotivoChiusura || ''" label="Motivo chiusura" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'MotivoChiusura', v)" />
                         </div>
                         <div class="col-6 col-sm-3">
-                          <InlineEditableField :model-value="prog.StatoRendicontazione || ''" label="Stato rendicontazione" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'StatoRendicontazione', v)" />
+                          <InlineEditableField :model-value="prog.StatoRendicontazione || ''" label="Stato rendicontazione" readonly />
                         </div>
                         <div class="col-6 col-sm-3">
                           <InlineEditableField :model-value="prog.Relazione_con_il_soggetto_richiedente || ''" label="Relazione con richiedente" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Relazione_con_il_soggetto_richiedente', v)" />
@@ -700,7 +700,7 @@
                           <InlineEditableField :model-value="prog.MotivoChiusura || ''" label="Motivo chiusura" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'MotivoChiusura', v)" />
                         </div>
                         <div class="col-6 col-sm-3">
-                          <InlineEditableField :model-value="prog.StatoRendicontazione || ''" label="Stato rendicontazione" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'StatoRendicontazione', v)" />
+                          <InlineEditableField :model-value="prog.StatoRendicontazione || ''" label="Stato rendicontazione" readonly />
                         </div>
                         <div class="col-6 col-sm-3">
                           <InlineEditableField :model-value="prog.Relazione_con_il_soggetto_richiedente || ''" label="Relazione con richiedente" :readonly="!authStore.canAdmin" @save="v => saveProgettoField(prog, 'Relazione_con_il_soggetto_richiedente', v)" />

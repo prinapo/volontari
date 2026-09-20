@@ -35,7 +35,7 @@ describe('syncProgettoAggregati', () => {
       TotaleGiustificativi: 1,
       TotaleImporto: 200,
       StatoRendicontazione: 'in_attesa',
-      StatoProgetto: 'in_rendicontazione'
+      statoProgetto: 'in_rendicontazione'
     })
   })
 

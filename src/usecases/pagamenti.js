@@ -4,6 +4,10 @@ import { giustificativiService } from 'src/services/giustificativi.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
+import { EVENTI_GIUSTIFICATIVO, giustificativoMachine } from 'src/state-machines/giustificativo'
+import { EVENTI_PAGAMENTO, pagamentoMachine } from 'src/state-machines/pagamento'
+import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
+import { creaConStatoIniziale, transita } from 'src/usecases/stato/transita'
 import {
   STATI_GIUSTIFICATIVO_CONTABILI,
   STATI_PROGETTO_OPERATIVI,
@@ -12,7 +16,7 @@ import {
   STATO_PROGETTO
 } from 'src/utils/constants'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
-import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
+import { calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
 function parseNum(v) {
   return Number.parseFloat(v) || 0
@@ -53,6 +57,13 @@ async function _scollegaGiustificativi(giustificativi, pagamentoId) {
   await Promise.all(daScollegare.map(g => giustificativiService.update(g.id, { Pagamento: null })))
 }
 
+/** Evento di ricalcolo della macchina Giustificativo per il target contabile. */
+function _eventoRicalcolo(nuovo) {
+  if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) return EVENTI_GIUSTIFICATIVO.RICALCOLA_PAGATO
+  if (nuovo === STATO_GIUSTIFICATIVO.IN_PAGAMENTO) return EVENTI_GIUSTIFICATIVO.RICALCOLA_IN_PAGAMENTO
+  return EVENTI_GIUSTIFICATIVO.RICALCOLA_VERIFICATO
+}
+
 /**
  * Riallinea (idempotente) gli stati dei giustificativi di un progetto in base ai
  * pagamenti collegati e alla regola del cap:
@@ -83,15 +94,22 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
     else if (pag?.Stato === STATO_PAGAMENTO.IN_PAGAMENTO) nuovo = STATO_GIUSTIFICATIVO.IN_PAGAMENTO
     else nuovo = STATO_GIUSTIFICATIVO.VERIFICATO
 
-    if (nuovo !== g.Stato) {
-      const data = { Stato: nuovo }
-      if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) {
-        if (!g.DataPagamento) data.DataPagamento = new Date().toISOString()
-      } else {
-        data.DataPagamento = null
-      }
-      ops.push(giustificativiService.update(g.id, data))
-    }
+    if (nuovo === g.Stato) continue
+    const extra =
+      nuovo === STATO_GIUSTIFICATIVO.PAGATO
+        ? g.DataPagamento
+          ? {}
+          : { DataPagamento: new Date().toISOString() }
+        : { DataPagamento: null }
+    ops.push(
+      transita({
+        machine: giustificativoMachine,
+        statoCorrente: g.Stato,
+        evento: _eventoRicalcolo(nuovo),
+        extra,
+        scrivi: patch => giustificativiService.update(g.id, patch)
+      })
+    )
   }
   if (ops.length) await Promise.all(ops)
 }
@@ -134,8 +152,7 @@ export async function ricalcolaTotaliProgetto(progettoId) {
     ResiduoAllocato: Math.max(0, residuo)
   })
 
-  const statoProgettoAttuale =
-    progetto.StatoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : progetto.StatoProgetto
+  const statoProgettoAttuale = statoProgettoEffettivo(progetto.StatoProgetto)
   const statoProgettoCalcolato = calcolaStatoProgetto({
     statoProgetto: statoProgettoAttuale,
     allocato,
@@ -145,11 +162,17 @@ export async function ricalcolaTotaliProgetto(progettoId) {
 
   if (statoProgettoCalcolato !== statoProgettoAttuale) {
     if (statoProgettoCalcolato === STATO_PROGETTO.CHIUSO) {
-      await chiudiProgetto(id, { automatica: true, stato: STATO_PROGETTO.CHIUSO })
+      await chiudiProgetto(id, { automatica: true })
     } else {
       // Transizione a uno stato operativo (es. rimborso_parziale): nessuna data
       // di chiusura, il progetto resta operativo.
-      await progettiService.updateStats(id, { StatoProgetto: statoProgettoCalcolato })
+      await transita({
+        machine: progettoMachine,
+        campo: 'StatoProgetto',
+        statoCorrente: statoProgettoAttuale,
+        evento: eventoRicalcoloProgetto(statoProgettoCalcolato),
+        scrivi: patch => progettiService.updateStats(id, patch)
+      })
     }
   }
 }
@@ -200,23 +223,28 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
     if (esistente) {
       await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
     } else {
-      const created = await pagamentiService.createPagamento({
-        Progetto: progettoId,
-        Famiglia: progetto.Famiglia,
-        Importo: nuovoProposto,
-        Stato: STATO_PAGAMENTO.PROPOSTO,
-        IBAN: iban || progetto.IBAN || '',
-        Intestatario: intestatario || progetto.Intestatario_CC || '',
-        DataProposta: new Date().toISOString()
+      const created = await creaConStatoIniziale({
+        machine: pagamentoMachine,
+        extra: {
+          Progetto: progettoId,
+          Famiglia: progetto.Famiglia,
+          Importo: nuovoProposto,
+          IBAN: iban || progetto.IBAN || '',
+          Intestatario: intestatario || progetto.Intestatario_CC || '',
+          DataProposta: new Date().toISOString()
+        },
+        scrivi: patch => pagamentiService.createPagamento(patch)
       })
       pagamentoId = created.data.data?.id
     }
     if (pagamentoId) await _collegaGiustificativi(giustificativi, pagamentoId)
   } else if (esistente) {
-    await pagamentiService.updatePagamento(esistente.id, {
-      Stato: STATO_PAGAMENTO.ANNULLATO,
-      NoteEsito: 'Proposta annullata: importo non più dovuto',
-      Batch: null
+    await transita({
+      machine: pagamentoMachine,
+      statoCorrente: esistente.Stato,
+      evento: EVENTI_PAGAMENTO.ANNULLA_PROPOSTA,
+      extra: { NoteEsito: 'Proposta annullata: importo non più dovuto', Batch: null },
+      scrivi: patch => pagamentiService.updatePagamento(esistente.id, patch)
     })
     await _scollegaGiustificativi(giustificativi, esistente.id)
   }
@@ -251,23 +279,28 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
         await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
       }
     } else {
-      const created = await pagamentiService.createPagamento({
-        Progetto: row.idProgetto,
-        Famiglia: row.idFamiglia,
-        Importo: nuovoProposto,
-        Stato: STATO_PAGAMENTO.PROPOSTO,
-        IBAN: row.iban || '',
-        Intestatario: row.intestatario || '',
-        DataProposta: new Date().toISOString()
+      const created = await creaConStatoIniziale({
+        machine: pagamentoMachine,
+        extra: {
+          Progetto: row.idProgetto,
+          Famiglia: row.idFamiglia,
+          Importo: nuovoProposto,
+          IBAN: row.iban || '',
+          Intestatario: row.intestatario || '',
+          DataProposta: new Date().toISOString()
+        },
+        scrivi: patch => pagamentiService.createPagamento(patch)
       })
       pagamentoId = created.data.data?.id
     }
     if (pagamentoId) await _collegaGiustificativi(giustificativi, pagamentoId)
   } else if (esistente) {
-    await pagamentiService.updatePagamento(esistente.id, {
-      Stato: STATO_PAGAMENTO.ANNULLATO,
-      NoteEsito: 'Proposta annullata: importo non più dovuto',
-      Batch: null
+    await transita({
+      machine: pagamentoMachine,
+      statoCorrente: esistente.Stato,
+      evento: EVENTI_PAGAMENTO.ANNULLA_PROPOSTA,
+      extra: { NoteEsito: 'Proposta annullata: importo non più dovuto', Batch: null },
+      scrivi: patch => pagamentiService.updatePagamento(esistente.id, patch)
     })
     await _scollegaGiustificativi(giustificativi, esistente.id)
   }
@@ -364,15 +397,18 @@ export async function segnaInPagamento({ pagamentoIds, batchId }) {
   if (!pagamentoIds?.length) return []
   const res = await pagamentiService.getPagamenti({
     'filter[id][_in]': pagamentoIds.join(','),
-    fields: 'id,Progetto',
+    fields: 'id,Progetto,Stato',
     limit: -1
   })
   const pagamenti = res.data.data || []
   await Promise.all(
     pagamenti.map(p =>
-      pagamentiService.updatePagamento(p.id, {
-        Stato: STATO_PAGAMENTO.IN_PAGAMENTO,
-        Batch: batchId
+      transita({
+        machine: pagamentoMachine,
+        statoCorrente: p.Stato,
+        evento: EVENTI_PAGAMENTO.IN_PAGAMENTO,
+        extra: { Batch: batchId },
+        scrivi: patch => pagamentiService.updatePagamento(p.id, patch)
       })
     )
   )
@@ -390,12 +426,13 @@ export async function segnaInPagamento({ pagamentoIds, batchId }) {
 
 export async function segnaPagato(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
-  if (!pagamento || pagamento.Stato !== STATO_PAGAMENTO.IN_PAGAMENTO) {
-    throw new Error('Solo pagamenti in_pagamento possono essere segnati come pagati')
-  }
-  await pagamentiService.updatePagamento(pagamentoId, {
-    Stato: STATO_PAGAMENTO.PAGATO,
-    DataPagamento: new Date().toISOString()
+  if (!pagamento) throw new Error('Pagamento non trovato')
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: pagamento.Stato,
+    evento: EVENTI_PAGAMENTO.PAGA,
+    extra: { DataPagamento: new Date().toISOString() },
+    scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
@@ -405,12 +442,13 @@ export async function segnaPagato(pagamentoId) {
 
 export async function segnaFallito(pagamentoId, note) {
   const pagamento = await getPagamentoById(pagamentoId)
-  if (!pagamento || pagamento.Stato !== STATO_PAGAMENTO.IN_PAGAMENTO) {
-    throw new Error('Solo pagamenti in_pagamento possono essere segnati come falliti')
-  }
-  await pagamentiService.updatePagamento(pagamentoId, {
-    Stato: STATO_PAGAMENTO.FALLITO,
-    NoteEsito: note
+  if (!pagamento) throw new Error('Pagamento non trovato')
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: pagamento.Stato,
+    evento: EVENTI_PAGAMENTO.FALLISCI,
+    extra: { NoteEsito: note },
+    scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
@@ -419,16 +457,16 @@ export async function segnaFallito(pagamentoId, note) {
 
 export async function segnaAnnullato(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
-  if (!pagamento || !['in_pagamento', 'fallito'].includes(pagamento.Stato)) {
-    throw new Error('Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo')
-  }
+  if (!pagamento) throw new Error('Pagamento non trovato')
   const batchId = pagamento.Batch
   const giustRes = await verificaService.getGiustificativiByProgetto(pagamento.Progetto)
   await _scollegaGiustificativi(giustRes.data.data || [], pagamentoId)
-  await pagamentiService.updatePagamento(pagamentoId, {
-    Stato: STATO_PAGAMENTO.ANNULLATO,
-    Batch: null,
-    NoteEsito: 'Rimosso dal gruppo'
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: pagamento.Stato,
+    evento: EVENTI_PAGAMENTO.ANNULLA,
+    extra: { Batch: null, NoteEsito: 'Rimosso dal gruppo' },
+    scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
@@ -442,9 +480,12 @@ export async function segnaAnnullato(pagamentoId) {
 export async function ripristinaProposto(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
   if (!pagamento) throw new Error('Pagamento non trovato')
-  await pagamentiService.updatePagamento(pagamentoId, {
-    Stato: STATO_PAGAMENTO.PROPOSTO,
-    Batch: null
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: pagamento.Stato,
+    evento: EVENTI_PAGAMENTO.RIPRISTINA_PROPOSTO,
+    extra: { Batch: null },
+    scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
   })
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
@@ -453,8 +494,15 @@ export async function ripristinaProposto(pagamentoId) {
 
 export async function ripristinaInPagamento(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
-  await pagamentiService.updatePagamento(pagamentoId, { Stato: STATO_PAGAMENTO.IN_PAGAMENTO, NoteEsito: null })
-  if (pagamento?.Progetto) await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
+  if (!pagamento) throw new Error('Pagamento non trovato')
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: pagamento.Stato,
+    evento: EVENTI_PAGAMENTO.RIPRISTINA_IN_PAGAMENTO,
+    extra: { NoteEsito: null },
+    scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
+  })
+  if (pagamento.Progetto) await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
 }
 
 export async function correggiDati(pagamentoId, { iban, intestatario }) {
@@ -466,21 +514,31 @@ export async function correggiDati(pagamentoId, { iban, intestatario }) {
   await famiglieService.update(pagamento.Famiglia, { IBAN: iban, Intestatario_CC: intestatario })
 }
 
-export async function chiudiProgetto(
-  progettoId,
-  { automatica = false, motivo = null, stato = STATO_PROGETTO.CHIUSO } = {}
-) {
-  await progettiService.updateStats(progettoId, {
-    StatoProgetto: stato,
-    DataChiusura: new Date().toISOString(),
-    MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
+export async function chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {
+  const progRes = await progettiService.getById(progettoId)
+  const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
+  await transita({
+    machine: progettoMachine,
+    campo: 'StatoProgetto',
+    statoCorrente,
+    evento: automatica ? EVENTI_PROGETTO.RICALCOLA_CHIUSO : EVENTI_PROGETTO.CHIUDI,
+    extra: {
+      DataChiusura: new Date().toISOString(),
+      MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
+    },
+    scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
 }
 
 export async function riapriProgetto(progettoId) {
-  await progettiService.updateStats(progettoId, {
-    StatoProgetto: STATO_PROGETTO.ACCETTATO,
-    DataChiusura: null,
-    MotivoChiusura: null
+  const progRes = await progettiService.getById(progettoId)
+  const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
+  await transita({
+    machine: progettoMachine,
+    campo: 'StatoProgetto',
+    statoCorrente,
+    evento: EVENTI_PROGETTO.RIAPRI,
+    extra: { DataChiusura: null, MotivoChiusura: null },
+    scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
 }

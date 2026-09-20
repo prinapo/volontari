@@ -1,15 +1,22 @@
+import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { calcolaAggregatiProgetto } from 'src/utils/statoProgetto'
+import { eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
+import { creaConStato, ripara, transita } from 'src/usecases/stato/transita'
+import { STATO_PROGETTO } from 'src/utils/constants'
+import { calcolaAggregatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
 /**
  * Ricalcola e persiste gli aggregati derivati di un progetto a partire da dati
  * FRESCHI (mai da stato UI). È l'invariante condiviso: ogni mutazione di
  * giustificativo termina qui. Idempotente (ricalcolo puro).
  *
+ * Lo stato progetto passa dalla macchina (`transita`); gli altri derivati sono
+ * scritti nella stessa patch. Il legacy `aperto`/NULL viene normalizzato ad
+ * `accettato` (via `ripara`, resta un path dichiarato della macchina).
+ *
  * @param {string|number} progettoId
- * @returns {Promise<{TotaleGiustificativi:number, TotaleImporto:number, StatoRendicontazione:string, StatoProgetto:string}|null>}
- *          Il payload scritto, oppure null se il progetto non esiste o in errore
- *          (best-effort: non deve mai rompere l'azione principale che lo ha innescato).
+ * @returns {Promise<Object|null>} gli aggregati calcolati, o null se il progetto
+ *          non esiste / in errore (best-effort: non rompe l'azione principale).
  */
 export async function syncProgettoAggregati(progettoId) {
   if (!progettoId) return null
@@ -21,11 +28,69 @@ export async function syncProgettoAggregati(progettoId) {
     const progetto = progRes.data.data
     if (!progetto) return null
     const giustificativi = giustRes.data.data || []
-    const payload = calcolaAggregatiProgetto(progetto, giustificativi)
-    await verificaService.updateProgetto(progettoId, payload)
-    return payload
+    const aggregati = calcolaAggregatiProgetto(progetto, giustificativi)
+    const { statoProgetto, ...derivati } = aggregati
+    const statoRaw = progetto.StatoProgetto
+    const statoCorrente = statoProgettoEffettivo(statoRaw)
+    const scrivi = patch => verificaService.updateProgetto(progettoId, patch)
+
+    if (statoRaw === statoProgetto) {
+      await verificaService.updateProgetto(progettoId, derivati)
+    } else if (statoProgetto === statoCorrente) {
+      await ripara({
+        machine: progettoMachine,
+        campo: 'StatoProgetto',
+        statoCorrente,
+        target: statoProgetto,
+        extra: derivati,
+        scrivi
+      })
+    } else {
+      const evento = eventoRicalcoloProgetto(statoProgetto)
+      if (evento) {
+        await transita({
+          machine: progettoMachine,
+          campo: 'StatoProgetto',
+          statoCorrente,
+          evento,
+          extra: derivati,
+          scrivi
+        })
+      } else {
+        await verificaService.updateProgetto(progettoId, derivati)
+      }
+    }
+    return aggregati
   } catch (error) {
     console.warn(`[usecases] syncProgettoAggregati fallito per progetto ${progettoId}`, error)
     return null
   }
+}
+
+/**
+ * Crea un progetto nuovo. Lo stato iniziale è dichiarato dalla macchina
+ * (`accettato`, equivalente operativo del legacy `aperto`).
+ */
+export async function creaProgetto(payload) {
+  return creaConStato({
+    machine: progettoMachine,
+    campo: 'StatoProgetto',
+    stato: STATO_PROGETTO.ACCETTATO,
+    extra: payload,
+    scrivi: patch => progettiService.createProgetto(patch)
+  })
+}
+
+/**
+ * Tool Admin → Consistenza: applica lo stato calcolato a un progetto senza
+ * richiedere che la transizione sia raggiungibile (riparazione esplicita).
+ */
+export async function applicaStatoProgetto(progettoId, nuovoStato) {
+  return ripara({
+    machine: progettoMachine,
+    campo: 'StatoProgetto',
+    statoCorrente: null,
+    target: nuovoStato,
+    scrivi: patch => verificaService.updateProgetto(progettoId, patch)
+  })
 }

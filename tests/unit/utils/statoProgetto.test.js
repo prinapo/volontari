@@ -266,7 +266,7 @@ describe('calcolaAggregatiProgetto', () => {
     expect(res.TotaleGiustificativi).toBe(3)
     expect(res.TotaleImporto).toBe(1149)
     expect(res.StatoRendicontazione).toBe('in_attesa')
-    expect(res.StatoProgetto).toBe('in_rendicontazione')
+    expect(res.statoProgetto).toBe('in_rendicontazione')
   })
 
   it('esclude gli invalidati da conteggio e importo', () => {
@@ -284,13 +284,13 @@ describe('calcolaAggregatiProgetto', () => {
     expect(res.TotaleGiustificativi).toBe(0)
     expect(res.TotaleImporto).toBe(0)
     expect(res.StatoRendicontazione).toBe('nessuno')
-    expect(res.StatoProgetto).toBe('accettato')
+    expect(res.statoProgetto).toBe('accettato')
   })
 
   it('rispetta le fasi manuali', () => {
     const res = calcolaAggregatiProgetto({ StatoProgetto: 'proposto', Allocato: 500, TotalePagato: 0 }, [
       { Stato: 'verificato', Importo: '100' }
     ])
-    expect(res.StatoProgetto).toBe('proposto')
+    expect(res.statoProgetto).toBe('proposto')
   })
 })

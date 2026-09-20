@@ -5,7 +5,10 @@ import { filesService } from 'src/services/files.service'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { submitService } from 'src/services/submit.service'
 import { verificaService } from 'src/services/verifica.service'
-import { FOLDERS, STATI_PROGETTO_OPERATIVI, STATO_SUBMISSION } from 'src/utils/constants'
+import { EVENTI_GIUSTIFICATIVO, giustificativoMachine } from 'src/state-machines/giustificativo'
+import { EVENTI_SUBMISSION, submissionMachine } from 'src/state-machines/submission'
+import { creaConStato, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
+import { FOLDERS, STATI_PROGETTO_OPERATIVI, STATO_GIUSTIFICATIVO, STATO_SUBMISSION } from 'src/utils/constants'
 import { markFileObsolete, markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
 import { syncProgettoAggregati } from './progetti'
 
@@ -34,6 +37,7 @@ async function _ensureRendicontazione({ Famiglia, Progetto, AnnoBando }) {
     Famiglia,
     Progetto,
     AnnoBando: AnnoBando || null,
+    // eslint-disable-next-line no-restricted-syntax -- `Rendicontazioni.Stato` non è un'entità a macchina
     Stato: 'ricevuta',
     Data_Ricezione: new Date().toISOString()
   })
@@ -56,17 +60,21 @@ async function _creaGiustificativoRecord(payload, _ctx = {}) {
   if (payload.file) {
     allegatoId = await uploadAndPrefixFile(payload.file, payload.Famiglia, FOLDERS.GIUSTIFICATIVI)
   }
-  const createRes = await giustificativiService.create({
-    Descrizione: payload.Descrizione,
-    Importo: payload.Importo,
-    Data: payload.Data,
-    Stato: payload.Stato || 'draft',
-    NotaVolontario: payload.NotaVolontario || '',
-    Progetto: payload.Progetto,
-    Famiglia: payload.Famiglia,
-    AnnoBando: payload.AnnoBando,
-    Allegato: allegatoId,
-    Rendicontazione: payload.Rendicontazione ?? null
+  const createRes = await creaConStato({
+    machine: giustificativoMachine,
+    stato: payload.stato || payload.Stato || STATO_GIUSTIFICATIVO.DRAFT,
+    extra: {
+      Descrizione: payload.Descrizione,
+      Importo: payload.Importo,
+      Data: payload.Data,
+      NotaVolontario: payload.NotaVolontario || '',
+      Progetto: payload.Progetto,
+      Famiglia: payload.Famiglia,
+      AnnoBando: payload.AnnoBando,
+      Allegato: allegatoId,
+      Rendicontazione: payload.Rendicontazione ?? null
+    },
+    scrivi: patch => giustificativiService.create(patch)
   })
   const created = createRes.data.data
   if (!created?.id) {
@@ -86,32 +94,48 @@ async function _creaGiustificativoRecord(payload, _ctx = {}) {
  */
 export async function creaGiustificativo(payload, _ctx = {}) {
   const rendicontazioneId = await _ensureRendicontazione(payload)
-  return _creaGiustificativoRecord(
-    { ...payload, Stato: payload.Stato || 'draft', Rendicontazione: rendicontazioneId },
-    _ctx
-  )
+  return _creaGiustificativoRecord({ ...payload, Rendicontazione: rendicontazioneId }, _ctx)
 }
 
 /**
  * Submission pubblica (modulo libero, utente non loggato). NON crea un
  * giustificativo: accoda la richiesta in `InviiGiustificativiNoLogin` con stato
- * `in_attesa`. La materializzazione in giustificativo avviene alla
+ * `inserito`. La materializzazione in giustificativo avviene alla
  * riconciliazione (manager). Nessuna guardia: la submission non ha un progetto.
  */
 export async function creaSubmission(payload, _ctx = {}) {
-  const res = await submitService.createSubmission({
-    ...payload,
-    email: payload.email ? payload.email.toLowerCase() : payload.email,
+  const res = await creaConStato({
+    machine: submissionMachine,
+    campo: 'stato',
     stato: STATO_SUBMISSION.INSERITO,
-    data_invio: new Date().toISOString()
+    extra: {
+      ...payload,
+      email: payload.email ? payload.email.toLowerCase() : payload.email,
+      data_invio: new Date().toISOString()
+    },
+    scrivi: patch => submitService.createSubmission(patch)
   })
   return res.data.data
 }
 
+async function _statoCorrente(id) {
+  const res = await giustificativiService.getById(id)
+  return res.data.data?.Stato
+}
+
 export async function inviaGiustificativo({ id, progettoId }) {
-  const res = await giustificativiService.submit(id)
+  const statoCorrente = await _statoCorrente(id)
+  let updateRes
+  await transita({
+    machine: giustificativoMachine,
+    statoCorrente,
+    evento: EVENTI_GIUSTIFICATIVO.INVIA,
+    scrivi: async patch => {
+      updateRes = await giustificativiService.update(id, patch)
+    }
+  })
   await syncProgettoAggregati(progettoId)
-  return res.data.data
+  return updateRes?.data?.data
 }
 
 export async function aggiornaGiustificativo({ id, data, file, allegatoAttuale, famigliaId, progettoId }) {
@@ -126,14 +150,40 @@ export async function aggiornaGiustificativo({ id, data, file, allegatoAttuale, 
   return res.data.data
 }
 
+/**
+ * Evento di transizione per un cambio di `Stato` richiesto dall'UI. Oggi l'unico
+ * target ammesso è `inviato` (send draft / ripristino da verificato|rifiutato).
+ */
+function _eventoPerStato(statoCorrente, target) {
+  if (target !== STATO_GIUSTIFICATIVO.INVIATO) {
+    throw new TransizioneNonValidaError(statoCorrente, `CAMBIO_STATO->${target}`, 'destinazione non gestita')
+  }
+  return statoCorrente === STATO_GIUSTIFICATIVO.DRAFT
+    ? EVENTI_GIUSTIFICATIVO.INVIA
+    : EVENTI_GIUSTIFICATIVO.RIPRISTINA_INVIATO
+}
+
 export async function aggiornaCampoGiustificativo({ id, field, value, progettoId }) {
-  const patch = { [field]: value }
+  if (field !== 'Stato') {
+    const res = await giustificativiService.update(id, { [field]: value })
+    await syncProgettoAggregati(progettoId)
+    return res.data.data
+  }
+  const statoCorrente = await _statoCorrente(id)
+  let updateRes
   // Un cambio di stato scollega il giustificativo da un eventuale pagamento;
   // ricalcolaProposta lo ricollegherà se torna `verificato`.
-  if (field === 'Stato') patch.Pagamento = null
-  const res = await giustificativiService.update(id, patch)
+  await transita({
+    machine: giustificativoMachine,
+    statoCorrente,
+    evento: _eventoPerStato(statoCorrente, value),
+    extra: { Pagamento: null },
+    scrivi: async patch => {
+      updateRes = await giustificativiService.update(id, patch)
+    }
+  })
   await syncProgettoAggregati(progettoId)
-  return res.data.data
+  return updateRes?.data?.data
 }
 
 export async function invalidaGiustificativo({ id, allegato, progettoId }) {
@@ -145,7 +195,14 @@ export async function invalidaGiustificativo({ id, allegato, progettoId }) {
 }
 
 export async function verificaGiustificativo({ id, progettoId }) {
-  await giustificativiService.verify(id)
+  const statoCorrente = await _statoCorrente(id)
+  await transita({
+    machine: giustificativoMachine,
+    statoCorrente,
+    evento: EVENTI_GIUSTIFICATIVO.VERIFICA,
+    extra: { DataVerifica: new Date().toISOString(), Pagamento: null },
+    scrivi: patch => giustificativiService.update(id, patch)
+  })
   await syncProgettoAggregati(progettoId)
 }
 
@@ -153,21 +210,43 @@ export async function rifiutaGiustificativo({ id, nota, allegato, progettoId }) 
   if (allegato) {
     await markFileRejected(allegato).catch(() => {})
   }
-  await giustificativiService.reject(id, nota)
+  const statoCorrente = await _statoCorrente(id)
+  await transita({
+    machine: giustificativoMachine,
+    statoCorrente,
+    evento: EVENTI_GIUSTIFICATIVO.RIFIUTA,
+    extra: { NotaRifiuto: nota, Pagamento: null },
+    scrivi: patch => giustificativiService.update(id, patch)
+  })
   await syncProgettoAggregati(progettoId)
 }
 
+async function _statoSubmission(id) {
+  const res = await verificaService.getSubmissionById(id)
+  return res.data.data?.stato
+}
+
 export async function scartaSubmission({ id, nota }) {
-  await verificaService.updateSubmission(id, {
-    stato: STATO_SUBMISSION.SCARTATO,
-    note_riconciliazione: nota
+  const statoCorrente = await _statoSubmission(id)
+  await transita({
+    machine: submissionMachine,
+    campo: 'stato',
+    statoCorrente,
+    evento: EVENTI_SUBMISSION.SCARTA,
+    extra: { note_riconciliazione: nota },
+    scrivi: patch => verificaService.updateSubmission(id, patch)
   })
 }
 
 export async function ripristinaSubmission({ id }) {
-  await verificaService.updateSubmission(id, {
-    stato: STATO_SUBMISSION.INSERITO,
-    note_riconciliazione: null
+  const statoCorrente = await _statoSubmission(id)
+  await transita({
+    machine: submissionMachine,
+    campo: 'stato',
+    statoCorrente,
+    evento: EVENTI_SUBMISSION.RIPRISTINA,
+    extra: { note_riconciliazione: null },
+    scrivi: patch => verificaService.updateSubmission(id, patch)
   })
 }
 
@@ -244,18 +323,25 @@ export async function riconciliaSubmission({
       Progetto: progettoId,
       Famiglia: famigliaId,
       AnnoBando: progetto?.AnnoBando,
-      Stato: 'inviato'
+      stato: STATO_GIUSTIFICATIVO.INVIATO
     },
     { origine: 'modulo_libero' }
   )
   const giustificativoId = created.id
 
-  await verificaService.updateSubmission(submissionId, {
-    stato: STATO_SUBMISSION.INVIATO,
-    famiglia_riconciliata: famigliaId,
-    progetto_riconciliato: progettoId,
-    giustificativo_creato: giustificativoId,
-    note_riconciliazione: note || null
+  const statoCorrente = await _statoSubmission(submissionId)
+  await transita({
+    machine: submissionMachine,
+    campo: 'stato',
+    statoCorrente,
+    evento: EVENTI_SUBMISSION.RICONCILIA,
+    extra: {
+      famiglia_riconciliata: famigliaId,
+      progetto_riconciliato: progettoId,
+      giustificativo_creato: giustificativoId,
+      note_riconciliazione: note || null
+    },
+    scrivi: patch => verificaService.updateSubmission(submissionId, patch)
   })
 
   return giustificativoId

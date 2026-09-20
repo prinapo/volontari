@@ -50,11 +50,11 @@ describe('sincronizzaStatiPagamento', () => {
 
     const res = await sincronizzaStatiPagamento()
 
-    const perId = Object.fromEntries(res.voci.map(v => [v.id, v.data]))
-    expect(perId[1].Stato).toBe('pagato')
-    expect(perId[2].Stato).toBe('pagato')
-    expect(perId[3].Stato).toBe('pagato')
-    expect(perId[1].Pagamento).toBe(5)
+    const perId = Object.fromEntries(res.voci.map(v => [v.id, v]))
+    expect(perId[1].target).toBe('pagato')
+    expect(perId[2].target).toBe('pagato')
+    expect(perId[3].target).toBe('pagato')
+    expect(perId[1].extra.Pagamento).toBe(5)
     // il quarto è già verificato e non collegato: nessuna scrittura
     expect(perId[4]).toBeUndefined()
     expect(mockUpdateGiustificativo).not.toHaveBeenCalledWith(4, expect.anything())
@@ -74,7 +74,7 @@ describe('sincronizzaStatiPagamento', () => {
     const res = await sincronizzaStatiPagamento()
 
     expect(res.voci).toHaveLength(2)
-    expect(res.voci.every(v => v.data.Stato === 'pagato')).toBe(true)
+    expect(res.voci.every(v => v.target === 'pagato')).toBe(true)
   })
 
   it('in_pagamento marca i coperti come in_pagamento', async () => {
@@ -90,8 +90,8 @@ describe('sincronizzaStatiPagamento', () => {
 
     const res = await sincronizzaStatiPagamento()
 
-    const perId = Object.fromEntries(res.voci.map(v => [v.id, v.data]))
-    expect(perId[20].Stato).toBe('in_pagamento')
+    const perId = Object.fromEntries(res.voci.map(v => [v.id, v]))
+    expect(perId[20].target).toBe('in_pagamento')
     expect(perId[21]).toBeUndefined()
   })
 

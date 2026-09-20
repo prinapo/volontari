@@ -9,6 +9,7 @@ import {
   segnaPagato,
   sincronizzaStatiPagamentoProgetto
 } from 'src/usecases/pagamenti'
+import { TransizioneNonValidaError } from 'src/usecases/stato/transita'
 
 const mockGetPagamenti = vi.fn()
 const mockCreatePagamento = vi.fn()
@@ -340,9 +341,7 @@ describe('segnaAnnullato', () => {
     mockGetPagamenti.mockResolvedValueOnce({
       data: { data: [{ id: 'p-3', Stato: 'pagato', Progetto: 9 }] }
     })
-    await expect(segnaAnnullato('p-3')).rejects.toThrow(
-      'Solo pagamenti in_pagamento o falliti possono essere rimossi dal gruppo'
-    )
+    await expect(segnaAnnullato('p-3')).rejects.toThrow(TransizioneNonValidaError)
   })
 })
 
@@ -415,7 +414,7 @@ describe('segnaPagato', () => {
 
   it('rifiuta pagamenti non in_pagamento', async () => {
     mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-2', Stato: 'proposto' }] } })
-    await expect(segnaPagato('p-2')).rejects.toThrow('Solo pagamenti in_pagamento possono essere segnati come pagati')
+    await expect(segnaPagato('p-2')).rejects.toThrow(TransizioneNonValidaError)
   })
 })
 
@@ -619,7 +618,7 @@ describe('segnaInPagamento', () => {
 
   it('passa i pagamenti a in_pagamento e riallinea i giustificativi', async () => {
     mockGetPagamenti
-      .mockResolvedValueOnce({ data: { data: [{ id: 5, Progetto: 1 }] } })
+      .mockResolvedValueOnce({ data: { data: [{ id: 5, Progetto: 1, Stato: 'proposto' }] } })
       .mockResolvedValue({ data: { data: [{ id: 5, Stato: 'in_pagamento', Importo: '100' }] } })
     mockUpdatePagamento.mockResolvedValue({})
     mockGetProgettoById.mockResolvedValue({

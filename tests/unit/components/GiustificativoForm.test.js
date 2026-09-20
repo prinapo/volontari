@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
+import { quasarMount } from '../quasar-mount'
 
 describe('GiustificativoForm', () => {
   it('renders title in dialog', () => {
@@ -27,7 +27,6 @@ describe('GiustificativoForm', () => {
     expect(payload.Importo).toBe(50)
     expect(payload.Progetto).toBe('p-1')
     expect(payload.Famiglia).toBe('fam-1')
-    expect(payload.Stato).toBe('draft')
   })
 
   it('resets form after save', async () => {

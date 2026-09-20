@@ -318,8 +318,7 @@ describe('RendicontazioneTab', () => {
     await wrapper.vm.handleChiudiProgetto()
     expect(mockChiudiProgetto).toHaveBeenCalledWith('p1', {
       automatica: false,
-      motivo: 'completato',
-      stato: 'chiuso'
+      motivo: 'completato'
     })
     expect(mockFetchPage).toHaveBeenCalled()
 

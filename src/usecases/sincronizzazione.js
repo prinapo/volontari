@@ -14,6 +14,8 @@ import { giustificativiService } from 'src/services/giustificativi.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
+import { giustificativoMachine } from 'src/state-machines/giustificativo'
+import { ripara } from 'src/usecases/stato/transita'
 import { STATI_GIUSTIFICATIVO_CONTABILI, STATO_GIUSTIFICATIVO, STATO_PAGAMENTO } from 'src/utils/constants'
 import { ricalcolaTotaliProgetto } from './pagamenti'
 
@@ -68,14 +70,14 @@ function voceGiustificativo(g, accErog, ctx) {
   const cambiaLink = pagamentoIdDi(g) !== pagId
   if (!cambiaStato && !cambiaLink) return null
 
-  const data = { Stato: nuovo }
+  const extra = {}
   if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) {
-    if (!g.DataPagamento) data.DataPagamento = new Date().toISOString()
+    if (!g.DataPagamento) extra.DataPagamento = new Date().toISOString()
   } else {
-    data.DataPagamento = null
+    extra.DataPagamento = null
   }
-  if (cambiaLink) data.Pagamento = pagId
-  return { id: g.id, data }
+  if (cambiaLink) extra.Pagamento = pagId
+  return { id: g.id, statoCorrente: g.Stato, target: nuovo, extra }
 }
 
 function pianoProgetto(progetto, giustificativi, pagamenti) {
@@ -138,7 +140,17 @@ export async function sincronizzaStatiPagamento({ dryRun = false } = {}) {
 
   if (!dryRun) {
     if (piano.length) {
-      await Promise.all(piano.map(v => giustificativiService.update(v.id, v.data)))
+      await Promise.all(
+        piano.map(v =>
+          ripara({
+            machine: giustificativoMachine,
+            statoCorrente: v.statoCorrente,
+            target: v.target,
+            extra: v.extra,
+            scrivi: patch => giustificativiService.update(v.id, patch)
+          })
+        )
+      )
     }
     // Riallinea i totali progetto (TotaleVerificato/Proposto/InPagamento/Pagato)
     // per tutti i progetti con pagamenti, anche se gli stati erano già corretti.

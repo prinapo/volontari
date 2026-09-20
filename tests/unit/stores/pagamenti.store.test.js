@@ -340,7 +340,7 @@ describe('pagamenti store', () => {
     mockChiudiProgetto.mockResolvedValue()
     const store = usePagamentiStore()
     await store.chiudiProgetto(1, { automatica: true })
-    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null, stato: 'chiuso' })
+    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null })
   })
 
   it('fetchAssociazioni handles error silently', async () => {

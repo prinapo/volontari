@@ -135,7 +135,6 @@ async function handleSave() {
   filePickerRef.value?.touch()
   emit('save', {
     ...form,
-    Stato: 'draft',
     Progetto: props.progettoId,
     Famiglia: props.famigliaId,
     AnnoBando: props.annoBando,

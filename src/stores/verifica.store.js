@@ -354,6 +354,7 @@ export const useVerificaStore = defineStore('verifica', {
             Ambito: row.ambito,
             IBAN: row.iban,
             Intestatario: row.intestatario,
+            // eslint-disable-next-line no-restricted-syntax -- export Excel: non è uno stato persistito
             Stato: calcolaStatoRiga(row).label,
             'Totale Rendicontato': row.totaleRendicontato,
             'Totale Pagato': row.totalePagato,

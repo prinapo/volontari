@@ -128,7 +128,7 @@ export function calcolaDisallineati(rows = []) {
  *
  * @param {Object} progetto - Progetto con StatoProgetto, Allocato, TotalePagato
  * @param {Array}  giustificativi - Giustificativi del progetto
- * @returns {{TotaleGiustificativi: number, TotaleImporto: number, StatoRendicontazione: string, StatoProgetto: string}}
+ * @returns {{TotaleGiustificativi: number, TotaleImporto: number, StatoRendicontazione: string, statoProgetto: string}}
  */
 export function calcolaAggregatiProgetto(progetto = {}, giustificativi = []) {
   const validi = giustificativi.filter(g => !g.Invalidato)
@@ -137,7 +137,7 @@ export function calcolaAggregatiProgetto(progetto = {}, giustificativi = []) {
     TotaleGiustificativi: validi.length,
     TotaleImporto: totaleImporto,
     StatoRendicontazione: calcolaStatoRendicontazione(giustificativi),
-    StatoProgetto: calcolaStatoProgetto({
+    statoProgetto: calcolaStatoProgetto({
       statoProgetto: progetto.StatoProgetto,
       allocato: progetto.Allocato,
       rimborsato: progetto.TotalePagato,
