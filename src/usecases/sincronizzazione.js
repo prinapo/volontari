@@ -15,6 +15,7 @@ import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
 import { STATI_GIUSTIFICATIVO_CONTABILI, STATO_GIUSTIFICATIVO, STATO_PAGAMENTO } from 'src/utils/constants'
+import { ricalcolaTotaliProgetto } from './pagamenti'
 
 function parseNum(v) {
   return Number.parseFloat(v) || 0
@@ -101,7 +102,7 @@ function pianoProgetto(progetto, giustificativi, pagamenti) {
   for (const g of gs) {
     accErog += (parseNum(g.Importo) * ctx.pct) / 100
     const voce = voceGiustificativo(g, accErog, ctx)
-    if (voce) voci.push(voce)
+    if (voce) voci.push({ ...voce, progetto: progetto.id_progetto })
   }
   return voci
 }
@@ -135,8 +136,14 @@ export async function sincronizzaStatiPagamento({ dryRun = false } = {}) {
     pianoProgetto(progetto, giustByProgetto[progetto.id_progetto] || [], pagByProgetto[progetto.id_progetto] || [])
   )
 
-  if (!dryRun && piano.length) {
-    await Promise.all(piano.map(v => giustificativiService.update(v.id, v.data)))
+  if (!dryRun) {
+    if (piano.length) {
+      await Promise.all(piano.map(v => giustificativiService.update(v.id, v.data)))
+    }
+    // Riallinea i totali progetto (TotaleVerificato/Proposto/InPagamento/Pagato)
+    // per tutti i progetti con pagamenti, anche se gli stati erano già corretti.
+    const progettiCoinvolti = [...new Set([...piano.map(v => v.progetto), ...Object.keys(pagByProgetto)])]
+    await Promise.allSettled(progettiCoinvolti.map(pid => ricalcolaTotaliProgetto(pid)))
   }
 
   return { totale: piano.length, aggiornati: dryRun ? 0 : piano.length, voci: piano }
