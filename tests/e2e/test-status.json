@@ -1,6 +1,6 @@
 {
   "version": "4.0.8",
-  "updated": "2026-09-20T12:42:36.184Z",
+  "updated": "2026-09-20T13:45:14.772Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -925,7 +925,7 @@
     "RP-10": {
       "name": "Reset password reale via email e ripristino @e2e",
       "file": "reset-password.spec.js",
-      "chromium": "pass",
+      "chromium": "skip",
       "mobile": "pass",
       "lastRun": "4.0.8",
       "lastPassed": "4.0.8"
@@ -1869,6 +1869,14 @@
     "PAG-51": {
       "name": "giustificativo verificato dopo tranche parziale genera nuova proposta @crud",
       "file": "pagamenti-crud.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.8",
+      "lastPassed": "4.0.8"
+    },
+    "F-GR-06": {
+      "name": "Sezioni collassate di default + Erogazioni @smoke",
+      "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
       "lastRun": "4.0.8",
