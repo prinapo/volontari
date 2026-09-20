@@ -89,6 +89,7 @@ const mockRipristinaInPagamento = vi.fn()
 const mockCorreggiDati = vi.fn()
 const mockChiudiProgetto = vi.fn()
 const mockRiapriProgetto = vi.fn()
+const mockAvanzaStatoProgetto = vi.fn()
 
 vi.mock('src/usecases/pagamenti', () => ({
   segnaPagato: (...a) => mockSegnaPagato(...a),
@@ -102,6 +103,10 @@ vi.mock('src/usecases/pagamenti', () => ({
   correggiDati: (...a) => mockCorreggiDati(...a),
   chiudiProgetto: (...a) => mockChiudiProgetto(...a),
   riapriProgetto: (...a) => mockRiapriProgetto(...a)
+}))
+
+vi.mock('src/usecases/progetti', () => ({
+  avanzaStatoProgetto: (...a) => mockAvanzaStatoProgetto(...a)
 }))
 
 vi.mock('stores/verifica.store', () => ({
@@ -341,6 +346,21 @@ describe('pagamenti store', () => {
     const store = usePagamentiStore()
     await store.chiudiProgetto(1, { automatica: true })
     expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null })
+  })
+
+  it('avanzaStatoProgetto delega allo use case', async () => {
+    mockAvanzaStatoProgetto.mockResolvedValue('validato')
+    const store = usePagamentiStore()
+    const res = await store.avanzaStatoProgetto(1)
+    expect(mockAvanzaStatoProgetto).toHaveBeenCalledWith(1)
+    expect(res).toBe('validato')
+  })
+
+  it('avanzaStatoProgetto propaga gli errori', async () => {
+    mockAvanzaStatoProgetto.mockRejectedValueOnce(new Error('fail'))
+    const store = usePagamentiStore()
+    await expect(store.avanzaStatoProgetto(1)).rejects.toThrow('fail')
+    expect(store.error).toBe('fail')
   })
 
   it('fetchAssociazioni handles error silently', async () => {

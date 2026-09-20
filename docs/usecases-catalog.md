@@ -88,6 +88,7 @@ completare la rendicontazione); `chiuso` è l'unico stato finale.
 | --------------------------------- | --------------------------- | ---------------------------------------------------------------------------------- | -------- |
 | Sincronizza aggregati             | `syncProgettoAggregati`     | ogni mutazione giustificativo                                                      | estratto |
 | Crea progetto                     | `creaProgetto`              | Admin CreaProgettoPage                                                             | estratto |
+| Avanza stato manuale              | `avanzaStatoProgetto`       | RendicontazioneTab (manager)                                                       | estratto |
 | Chiudi progetto                   | `chiudiProgetto`            | RendicontazioneTab / PagamentiTab                                                  | estratto |
 | Riapri progetto                   | `riapriProgetto`            | PagamentiTab                                                                       | estratto |
 | Applica stato (tool Admin)        | `applicaStatoProgetto`      | Admin → Consistenza → Trasformazioni (`auth.store.applyStatoProgettoById`)         | estratto |

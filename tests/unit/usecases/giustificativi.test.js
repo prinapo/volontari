@@ -3,9 +3,13 @@ import {
   creaGiustificativo,
   creaSubmission,
   riconciliaSubmission,
+  rifiutaGiustificativo,
+  ripristinaSubmission,
+  scartaSubmission,
   verificaGiustificativo,
   inviaGiustificativo
 } from 'src/usecases/giustificativi'
+import { TransizioneNonValidaError } from 'src/usecases/stato/transita'
 
 const mockGetProgettoById = vi.fn()
 const mockGetGiustificativiByProgetto = vi.fn()
@@ -218,5 +222,71 @@ describe('creaSubmission (pubblico non loggato)', () => {
     expect(payload.email).toBe('mario@example.it')
     expect(payload.stato).toBe('inserito')
     expect(payload.data_invio).toBeTruthy()
+  })
+})
+
+describe('rifiutaGiustificativo', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('rifiuta un giustificativo inviato e sincronizza', async () => {
+    mockGetById.mockResolvedValue({ data: { data: { Stato: 'inviato' } } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue(operativo)
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgetto.mockResolvedValue({})
+
+    await rifiutaGiustificativo({ id: 'g-1', nota: 'Non valido', progettoId: 1 })
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith(
+      'g-1',
+      expect.objectContaining({ Stato: 'rifiutato', NotaRifiuto: 'Non valido', Pagamento: null })
+    )
+    expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
+  })
+
+  it('rifiuta: transizione non valida da draft', async () => {
+    mockGetById.mockResolvedValue({ data: { data: { Stato: 'draft' } } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+    await expect(rifiutaGiustificativo({ id: 'g-2', nota: 'x', progettoId: 1 })).rejects.toBeInstanceOf(
+      TransizioneNonValidaError
+    )
+    expect(mockUpdateGiustificativo).not.toHaveBeenCalled()
+  })
+})
+
+describe('scartaSubmission / ripristinaSubmission', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('scarta una submission inserita e salva la nota', async () => {
+    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-1', stato: 'inserito' } } })
+    mockUpdateSubmission.mockResolvedValue({})
+    await scartaSubmission({ id: 's-1', nota: 'Non valida' })
+    expect(mockUpdateSubmission).toHaveBeenCalledWith('s-1', {
+      note_riconciliazione: 'Non valida',
+      stato: 'scartato'
+    })
+  })
+
+  it('scarta: transizione non valida da inviato', async () => {
+    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-2', stato: 'inviato' } } })
+    mockUpdateSubmission.mockResolvedValue({})
+    await expect(scartaSubmission({ id: 's-2', nota: 'x' })).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdateSubmission).not.toHaveBeenCalled()
+  })
+
+  it('ripristina una submission scartata azzerando la nota', async () => {
+    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-3', stato: 'scartato' } } })
+    mockUpdateSubmission.mockResolvedValue({})
+    await ripristinaSubmission({ id: 's-3' })
+    expect(mockUpdateSubmission).toHaveBeenCalledWith('s-3', {
+      note_riconciliazione: null,
+      stato: 'inserito'
+    })
+  })
+
+  it('ripristina: transizione non valida da inserito', async () => {
+    mockGetSubmissionById.mockResolvedValue({ data: { data: { id: 's-4', stato: 'inserito' } } })
+    mockUpdateSubmission.mockResolvedValue({})
+    await expect(ripristinaSubmission({ id: 's-4' })).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdateSubmission).not.toHaveBeenCalled()
   })
 })

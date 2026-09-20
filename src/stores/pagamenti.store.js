@@ -16,6 +16,7 @@ import {
   segnaInPagamento as segnaInPagamentoUseCase,
   segnaPagato as segnaPagatoUseCase
 } from 'src/usecases/pagamenti'
+import { avanzaStatoProgetto as avanzaStatoProgettoUseCase } from 'src/usecases/progetti'
 import { STATO_PAGAMENTO, STORAGE_KEYS } from 'src/utils/constants'
 
 export const usePagamentiStore = defineStore('pagamenti', {
@@ -475,6 +476,15 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async riapriProgetto(progettoId) {
       try {
         await riapriProgettoUseCase(progettoId)
+      } catch (error) {
+        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        throw error
+      }
+    },
+
+    async avanzaStatoProgetto(progettoId) {
+      try {
+        return await avanzaStatoProgettoUseCase(progettoId)
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message
         throw error

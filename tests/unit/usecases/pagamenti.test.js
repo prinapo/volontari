@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
+  chiudiProgetto,
+  correggiDati,
   inviaNotificaPagamento,
   ricalcolaProposta,
   ricalcolaPropostiDaProgetti,
   ricalcolaTotaliProgetto,
+  riapriProgetto,
+  ripristinaInPagamento,
+  ripristinaProposto,
   segnaAnnullato,
+  segnaFallito,
   segnaInPagamento,
   segnaPagato,
   sincronizzaStatiPagamentoProgetto
@@ -301,6 +307,163 @@ describe('ricalcolaTotaliProgetto', () => {
     expect(statoCall[1]).toEqual({ StatoProgetto: 'rimborso_parziale' })
     expect(statoCall[1].DataChiusura).toBeUndefined()
     expect(statoCall[1].MotivoChiusura).toBeUndefined()
+  })
+})
+
+describe('ripristinaProposto', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('riporta una proposta annullata a proposto', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-1', Stato: 'annullato', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase({ id_progetto: 7 }) } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    const res = await ripristinaProposto('p-1')
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', { Batch: null, Stato: 'proposto' })
+    expect(res.Stato).toBe('annullato')
+  })
+
+  it('rifiuta uno stato non valido senza scrivere', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-2', Stato: 'pagato', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    await expect(ripristinaProposto('p-2')).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdatePagamento).not.toHaveBeenCalled()
+  })
+})
+
+describe('segnaFallito / ripristinaInPagamento', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('segna fallito un pagamento in_pagamento', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-1', Stato: 'in_pagamento', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase({ id_progetto: 7 }) } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    const res = await segnaFallito('p-1', 'IBAN errato')
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', { NoteEsito: 'IBAN errato', Stato: 'fallito' })
+    expect(res.Stato).toBe('in_pagamento')
+  })
+
+  it('segnaFallito rifiuta stati non validi senza scrivere', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-2', Stato: 'proposto', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    await expect(segnaFallito('p-2', 'x')).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdatePagamento).not.toHaveBeenCalled()
+  })
+
+  it('ripristina in pagamento un fallito', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-3', Stato: 'fallito', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase({ id_progetto: 7 }) } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+
+    await ripristinaInPagamento('p-3')
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-3', { NoteEsito: null, Stato: 'in_pagamento' })
+  })
+
+  it('ripristinaInPagamento rifiuta stati non validi senza scrivere', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-4', Stato: 'pagato', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    await expect(ripristinaInPagamento('p-4')).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdatePagamento).not.toHaveBeenCalled()
+  })
+})
+
+describe('chiudiProgetto / riapriProgetto', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('chiude manualmente un progetto operativo con il motivo', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'accettato' } } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await chiudiProgetto(1, { motivo: 'Chiuso dal manager' })
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        StatoProgetto: 'chiuso',
+        MotivoChiusura: 'Chiuso dal manager',
+        DataChiusura: expect.any(String)
+      })
+    )
+  })
+
+  it('la chiusura automatica usa il motivo standard', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'rimborso_parziale' } } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await chiudiProgetto(1, { automatica: true })
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        StatoProgetto: 'chiuso',
+        MotivoChiusura: 'Importo allocato interamente pagato'
+      })
+    )
+  })
+
+  it('riapre un progetto chiuso', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'chiuso' } } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await riapriProgetto(1)
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(1, {
+      DataChiusura: null,
+      MotivoChiusura: null,
+      StatoProgetto: 'accettato'
+    })
+  })
+
+  it('riapriProgetto rifiuta uno stato non chiuso senza scrivere', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'accettato' } } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await expect(riapriProgetto(1)).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
+  })
+})
+
+describe('correggiDati', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('aggiorna IBAN e intestatario su pagamento e famiglia (solo da fallito)', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-1', Stato: 'fallito', Famiglia: 'fam-1' }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockUpdateFamiglia.mockResolvedValue({})
+
+    await correggiDati('p-1', { iban: 'IT00', intestatario: 'Mario' })
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', { IBAN: 'IT00', Intestatario: 'Mario' })
+    expect(mockUpdateFamiglia).toHaveBeenCalledWith('fam-1', { IBAN: 'IT00', Intestatario_CC: 'Mario' })
+  })
+
+  it('rifiuta un pagamento non fallito senza scrivere', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-2', Stato: 'in_pagamento', Famiglia: 'fam-1' }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockUpdateFamiglia.mockResolvedValue({})
+
+    await expect(correggiDati('p-2', { iban: 'x', intestatario: 'y' })).rejects.toThrow(
+      'Solo pagamenti falliti sono modificabili'
+    )
+    expect(mockUpdatePagamento).not.toHaveBeenCalled()
+    expect(mockUpdateFamiglia).not.toHaveBeenCalled()
   })
 })
 

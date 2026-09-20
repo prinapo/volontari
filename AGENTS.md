@@ -115,6 +115,11 @@ allineato da `recalculateRowTotals` (`verifica.store.js`).
   `rimborso_parziale`.
 - `ricalcolaProposta` salta solo i progetti `chiuso`; `ricalcolaPropostiDaProgetti`
   elabora le righe in `STATI_PROGETTO_OPERATIVI` (quindi anche il parziale).
+- **Fase manuale** (`proposto → validato → approvato → accettato`): avanzata di uno
+  step dal manager via `avanzaStatoProgetto` (`usecases/progetti.js`, evento
+  `VALIDA`/`APPROVA`/`ACCETTA`). La creazione (`creaProgetto`) nasce `accettato`;
+  la fase manuale serve per i progetti che arrivano in quegli stati (import).
+  Solo in avanti; le correzioni passano dal tool Admin (`ripara`).
 
 ### Stati giustificativo (persistiti, opzione C)
 

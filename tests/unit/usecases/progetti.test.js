@@ -1,15 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { syncProgettoAggregati } from 'src/usecases/progetti'
+import { avanzaStatoProgetto, syncProgettoAggregati } from 'src/usecases/progetti'
+import { TransizioneNonValidaError } from 'src/usecases/stato/transita'
 
 const mockGetProgettoById = vi.fn()
 const mockGetGiustificativiByProgetto = vi.fn()
 const mockUpdateProgetto = vi.fn()
+const mockUpdateStats = vi.fn()
 
 vi.mock('src/services/verifica.service', () => ({
   verificaService: {
     getProgettoById: (...a) => mockGetProgettoById(...a),
     getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
     updateProgetto: (...a) => mockUpdateProgetto(...a)
+  }
+}))
+
+vi.mock('src/services/progetti.service', () => ({
+  progettiService: {
+    updateStats: (...a) => mockUpdateStats(...a)
   }
 }))
 
@@ -49,5 +57,39 @@ describe('syncProgettoAggregati', () => {
     expect(await syncProgettoAggregati(1)).toBeNull()
     expect(await syncProgettoAggregati(null)).toBeNull()
     expect(mockUpdateProgetto).not.toHaveBeenCalled()
+  })
+})
+
+describe('avanzaStatoProgetto', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it.each([
+    ['proposto', 'validato'],
+    ['validato', 'approvato'],
+    ['approvato', 'accettato']
+  ])('avanza %s → %s', async (da, atteso) => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: da } } })
+    mockUpdateStats.mockResolvedValue({})
+    const res = await avanzaStatoProgetto(1)
+    expect(res).toBe(atteso)
+    expect(mockUpdateStats).toHaveBeenCalledWith(1, { StatoProgetto: atteso })
+  })
+
+  it('rifiuta uno stato non in fase manuale', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'in_rendicontazione' } }
+    })
+    await expect(avanzaStatoProgetto(1)).rejects.toBeInstanceOf(TransizioneNonValidaError)
+    expect(mockUpdateStats).not.toHaveBeenCalled()
+  })
+
+  it('normalizza il legacy aperto (accettato) e rifiuta', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'aperto' } } })
+    await expect(avanzaStatoProgetto(1)).rejects.toBeInstanceOf(TransizioneNonValidaError)
+  })
+
+  it('progetto non trovato', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: null } })
+    await expect(avanzaStatoProgetto(1)).rejects.toThrow('Progetto non trovato')
   })
 })

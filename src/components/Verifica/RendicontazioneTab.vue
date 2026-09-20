@@ -407,6 +407,20 @@ aria-label="Ripristina"
                 <q-tooltip>Dettaglio progetto</q-tooltip>
               </q-btn>
               <q-btn
+                v-if="canVerifica && isStatoManuale(props.row.statoProgetto)"
+                flat
+                round
+                dense
+                icon="play_arrow"
+                color="primary"
+                size="sm"
+                aria-label="Avanza stato progetto"
+                :loading="savingAvanzaStato"
+                @click="handleAvanzaStato(props.row)"
+              >
+                <q-tooltip>{{ labelAvanzaStato(props.row.statoProgetto) }}</q-tooltip>
+              </q-btn>
+              <q-btn
                 v-if="canVerifica && isStatoOperativo(props.row.statoProgetto)"
                 flat
                 round
@@ -522,6 +536,20 @@ aria-label="Ripristina"
               @click="openRowDetail(props.row)"
             >
               <q-tooltip>Dettaglio progetto</q-tooltip>
+            </q-btn>
+            <q-btn
+              v-if="canVerifica && isStatoManuale(props.row.statoProgetto)"
+              flat
+              round
+              dense
+              icon="play_arrow"
+              color="primary"
+              size="sm"
+              aria-label="Avanza stato progetto"
+              :loading="savingAvanzaStato"
+              @click="handleAvanzaStato(props.row)"
+            >
+              <q-tooltip>{{ labelAvanzaStato(props.row.statoProgetto) }}</q-tooltip>
             </q-btn>
             <q-btn
               v-if="canVerifica && isStatoOperativo(props.row.statoProgetto)"
@@ -865,8 +893,10 @@ import {
   statoProgettoColor,
   statoProgettoLabel
 } from 'src/utils/badges'
+import { STATO_PROGETTO } from 'src/utils/constants'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { statoProgettoEffettivo } from 'src/utils/statoProgetto'
 import { calcolaStatoRiga } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
@@ -965,6 +995,18 @@ const isStatoOperativo = stato => {
 }
 
 const isStatoFinale = stato => stato === 'chiuso'
+
+const isStatoManuale = stato => {
+  const s = statoProgettoEffettivo(stato)
+  return s === STATO_PROGETTO.PROPOSTO || s === STATO_PROGETTO.VALIDATO || s === STATO_PROGETTO.APPROVATO
+}
+
+const labelAvanzaStato = stato => {
+  const s = statoProgettoEffettivo(stato)
+  if (s === STATO_PROGETTO.PROPOSTO) return 'Valida progetto'
+  if (s === STATO_PROGETTO.VALIDATO) return 'Approva progetto'
+  return 'Accetta progetto'
+}
 
 const columns = [
   { name: 'annoBando', label: 'Bando', field: 'annoBando', align: 'left', sortable: true },
@@ -1119,6 +1161,23 @@ async function handleRiapriProgetto(row) {
     notifyError($q, error, 'Errore riapertura progetto')
   } finally {
     savingRiapriProgetto.value = false
+  }
+}
+
+const savingAvanzaStato = ref(false)
+
+async function handleAvanzaStato(row) {
+  savingAvanzaStato.value = true
+  try {
+    const { usePagamentiStore } = await import('stores/pagamenti.store')
+    const pagStore = usePagamentiStore()
+    await pagStore.avanzaStatoProgetto(row.idProgetto)
+    notifySuccess($q, 'Stato progetto avanzato')
+    await loadData()
+  } catch (error) {
+    notifyError($q, error, 'Errore avanzamento stato progetto')
+  } finally {
+    savingAvanzaStato.value = false
   }
 }
 

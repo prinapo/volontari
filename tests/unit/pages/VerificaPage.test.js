@@ -13,6 +13,7 @@ const mockUpdateGiustificativoField = vi.fn()
 const mockAddGiustificativo = vi.fn()
 const mockRejectGiustificativo = vi.fn()
 const mockChiudiProgetto = vi.fn()
+const mockAvanzaStatoProgetto = vi.fn()
 const mockNotifySuccess = vi.fn()
 const mockNotifyError = vi.fn()
 const mockQNotify = vi.fn()
@@ -46,7 +47,10 @@ vi.mock('stores/auth.store', () => ({
 }))
 
 vi.mock('stores/pagamenti.store', () => ({
-  usePagamentiStore: () => ({ chiudiProgetto: (...a) => mockChiudiProgetto(...a) })
+  usePagamentiStore: () => ({
+    chiudiProgetto: (...a) => mockChiudiProgetto(...a),
+    avanzaStatoProgetto: (...a) => mockAvanzaStatoProgetto(...a)
+  })
 }))
 
 vi.mock('src/utils/notify', () => ({
@@ -327,6 +331,10 @@ describe('RendicontazioneTab', () => {
 
     await wrapper.vm.handleSendDraft('p1', { id: 'g2' })
     expect(mockUpdateGiustificativoField).toHaveBeenCalledWith('p1', 'g2', 'Stato', 'inviato')
+
+    mockAvanzaStatoProgetto.mockResolvedValue('validato')
+    await wrapper.vm.handleAvanzaStato({ idProgetto: 'p1' })
+    expect(mockAvanzaStatoProgetto).toHaveBeenCalledWith('p1')
   })
 
   it('handles reject, field save, add save and row detail', async () => {

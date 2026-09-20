@@ -1,7 +1,7 @@
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
-import { eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
-import { creaConStato, ripara, transita } from 'src/usecases/stato/transita'
+import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
+import { creaConStato, ripara, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
 import { STATO_PROGETTO } from 'src/utils/constants'
 import { calcolaAggregatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
@@ -92,5 +92,35 @@ export async function applicaStatoProgetto(progettoId, nuovoStato) {
     statoCorrente: null,
     target: nuovoStato,
     scrivi: patch => verificaService.updateProgetto(progettoId, patch)
+  })
+}
+
+/** Evento della macchina per l'avanzamento di uno step nella fase manuale. */
+const EVENTO_AVANZAMENTO = {
+  [STATO_PROGETTO.PROPOSTO]: EVENTI_PROGETTO.VALIDA,
+  [STATO_PROGETTO.VALIDATO]: EVENTI_PROGETTO.APPROVA,
+  [STATO_PROGETTO.APPROVATO]: EVENTI_PROGETTO.ACCETTA
+}
+
+/**
+ * Avanza di uno stato la fase manuale del progetto:
+ * `proposto → validato → approvato → accettato`. Solo in avanti e sequenziale;
+ * fuori dalla fase manuale lancia `TransizioneNonValidaError`.
+ */
+export async function avanzaStatoProgetto(progettoId) {
+  const progRes = await verificaService.getProgettoById(progettoId)
+  const progetto = progRes.data.data
+  if (!progetto) throw new Error('Progetto non trovato')
+  const statoCorrente = statoProgettoEffettivo(progetto.StatoProgetto)
+  const evento = EVENTO_AVANZAMENTO[statoCorrente]
+  if (!evento) {
+    throw new TransizioneNonValidaError(statoCorrente, 'AVANZA', 'progetto non in fase manuale')
+  }
+  return transita({
+    machine: progettoMachine,
+    campo: 'StatoProgetto',
+    statoCorrente,
+    evento,
+    scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
 }
