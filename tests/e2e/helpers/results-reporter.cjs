@@ -2,6 +2,7 @@ const { writeFileSync, existsSync, readFileSync, mkdirSync } = require('fs')
 const { resolve, dirname } = require('path')
 
 const RESULTS_FILE = resolve(__dirname, '..', '..', '..', 'test-results', 'test-results.json')
+const API_ERRORS_FILE = resolve(__dirname, '..', '..', '..', 'test-results', 'api-errors.json')
 
 class ResultsReporter {
   constructor(options) {
@@ -12,6 +13,12 @@ class ResultsReporter {
     const existing = existsSync(RESULTS_FILE)
       ? JSON.parse(readFileSync(RESULTS_FILE, 'utf-8'))
       : { runs: [] }
+
+    // Reset del report 4xx per-test (popolato da helpers/console.js)
+    try {
+      mkdirSync(dirname(API_ERRORS_FILE), { recursive: true })
+      writeFileSync(API_ERRORS_FILE, '[]', 'utf-8')
+    } catch {}
 
     this.run = {
       startedAt: new Date().toISOString(),

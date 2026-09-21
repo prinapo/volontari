@@ -976,10 +976,24 @@ test.describe('GiustificativoForm — Screenshot', () => {
     await expect(aggiungiBtn).toBeVisible({ timeout: 10_000 })
     await aggiungiBtn.click()
     await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
-    const sshotDialog = page.locator('.q-dialog')
+    // `.q-dialog` è il contenitore full-screen (overlay): puntiamo alla card del
+    // form per uno screenshot deterministico che esclude header/sfondo.
+    const sshotDialog = page.locator('.q-dialog .q-card').first()
+    await expect(sshotDialog).toBeVisible({ timeout: 5000 })
     await sshotDialog.locator('[data-testid="giustform-descrizione"]').fill('Spesa test screenshot')
     await sshotDialog.locator('[data-testid="giustform-importo"]').fill('50.00')
+    // Il campo Data è readonly (q-date): lo fissiamo via input event per rendere
+    // lo screenshot deterministico (altrimenti mostra sempre la data odierna).
+    await sshotDialog.locator('[data-testid="giustform-data"]').evaluate(el => {
+      el.value = '2026-01-15'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+      el.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await expect(sshotDialog.locator('[data-testid="giustform-data"]')).toHaveValue('2026-01-15')
     await page.waitForLoadState('networkidle').catch(() => {})
-    await expect(page).toHaveScreenshot('giustificativo-form.png', { maxDiffPixels: 1500, animations: 'disabled' })
+    await expect(sshotDialog).toHaveScreenshot('giustificativo-form.png', {
+      maxDiffPixels: 1500,
+      animations: 'disabled'
+    })
   })
 })

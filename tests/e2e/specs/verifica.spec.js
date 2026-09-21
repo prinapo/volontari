@@ -336,38 +336,38 @@ test.describe('VerificaPage', () => {
     })
 
     test('DB-V4: Dialog IBAN salva invia PATCH @crud', async ({ page }) => {
-      test.setTimeout(90_000)
-      page.expectApiError('/items/Famiglie/')
+      test.setTimeout(150_000)
+      // Dati propri e deterministici: non dipendere da righe esistenti
+      await loginGestore(page)
+      const { nomeFam } = await creaFamigliaVolontarioProgetto(page, ids)
+      await loginAs(page, 'manager', auth)
+      const vp = new VerificaPage(page)
+      await vp.goto()
+      await vp.waitForTable()
+      await vp.searchFamiglia(nomeFam)
+      await page.waitForLoadState('networkidle').catch(() => {})
+      expect(await vp.getRowCount()).toBeGreaterThanOrEqual(1)
+
       const viewport = await page.viewportSize()
       const isMobile = viewport && viewport.width < 600
       if (isMobile) {
         const expItem = page.locator('.q-expansion-item').first()
-        if ((await expItem.count()) === 0) return
         await expItem.waitFor({ state: 'attached', timeout: 15_000 })
         await expItem.click()
       } else {
         const expandBtn = page.locator('.verifica-table [data-testid="expand-row"]').first()
-        if ((await expandBtn.count()) === 0) return
         await expandBtn.click()
       }
       await page.waitForLoadState('networkidle').catch(() => {})
-      const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
-      if ((await editBtn.count()) === 0) return
 
+      const editBtn = page.locator('[data-testid="btn-edit-bancari"]').first()
+      await expect(editBtn).toBeVisible({ timeout: 5000 })
       await editBtn.click()
-      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 3000 })
+      await expect(page.locator('.q-dialog')).toBeVisible({ timeout: 5000 })
 
       const ibanInput = page.locator('.q-dialog [data-testid="bancari-iban"]')
-      if ((await ibanInput.count()) === 0) {
-        await page.locator('.q-dialog button:has-text("Annulla")').click()
-
-        return
-      }
-
-      const originalIban = await ibanInput.inputValue()
-      const testIban =
-        originalIban === 'IT60XTEST00000000000000' ? 'IT60XREAL00000000000000' : 'IT60XTEST00000000000000'
-      await ibanInput.fill(testIban)
+      await expect(ibanInput).toBeVisible({ timeout: 5000 })
+      await ibanInput.fill('IT60XTEST00000000000000')
 
       const intestatarioInput = page.locator('.q-dialog [data-testid="bancari-intestatario"]')
       if ((await intestatarioInput.count()) > 0) {
@@ -375,20 +375,14 @@ test.describe('VerificaPage', () => {
       }
 
       const saveBtn = page.locator('.q-dialog button:has-text("Salva")')
-      if (await saveBtn.isEnabled()) {
-        const [patchResp] = await Promise.all([
-          page.waitForResponse(resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'PATCH'),
-          saveBtn.click()
-        ])
-        expect(patchResp.status()).toBeGreaterThanOrEqual(200)
-        expect(patchResp.status()).toBeLessThan(500)
-      }
+      await expect(saveBtn).toBeEnabled({ timeout: 5000 })
+      const [patchResp] = await Promise.all([
+        page.waitForResponse(resp => resp.url().includes('/items/Famiglie') && resp.request().method() === 'PATCH'),
+        saveBtn.click()
+      ])
+      expect(patchResp.status()).toBe(200)
 
-      await expect(page.locator('.q-dialog'))
-        .not.toBeVisible({ timeout: 10_000 })
-        .catch(async () => {
-          await page.locator('.q-dialog button:has-text("Annulla")').click()
-        })
+      await expect(page.locator('.q-dialog')).not.toBeVisible({ timeout: 10_000 })
     })
 
     test('DB-V5: IBAN non valido → Salva disabilitato @regression', async ({ page }) => {

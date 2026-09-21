@@ -5,13 +5,33 @@
  *
  * TUTTI i campi testuali (Nome, Cognome, Descrizione, email, ecc.) iniziano con "TEST_".
  */
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
 import { apiGet, apiPost, apiPatch, apiDelete } from './api.js'
 import { deleteFamiglie, deleteProgetti, deleteContatti, deleteEmailByContatto, deleteDirectusUser } from './cleanup.js'
-import { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from './pagina-gestione.js'
-import { loginConFamigliaViaUI } from './pagina-famiglie.js'
-import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
 import { loginAs } from './login.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { loginConFamigliaViaUI } from './pagina-famiglie.js'
+import { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from './pagina-gestione.js'
+
+/**
+ * Attende che la famiglia creata via UI sia leggibile via API (evita race:
+ * la UI risponde 200 ma la GET per nome può non trovarla ancora, causando
+ * "Famiglia non trovata" o FK invalide sul link contatto↔famiglia).
+ */
+async function waitForFamigliaId(nomeFam, expectedId, timeoutMs = 10_000) {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    const res = await apiGet('Famiglie', {
+      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+      fields: 'id_famiglia',
+      limit: 1
+    })
+    const id = res.data?.[0]?.id_famiglia || null
+    if (id && (!expectedId || id === expectedId)) return id
+    await new Promise(resolve => setTimeout(resolve, 250))
+  }
+  throw new Error(`Famiglia "${nomeFam}" non disponibile via API dopo la creazione`)
+}
 
 /**
  * Crea famiglia + assegna volontario di test + progetto.
@@ -29,6 +49,9 @@ export async function creaFamigliaVolontarioProgetto(page, ids) {
 
   const nomeFam = `${prefix}Fam`
   const fam = await createFamigliaViaUI(page, { nomeFamiglia: nomeFam })
+  // Attende che la famiglia sia effettivamente leggibile via API prima di
+  // assegnare contatti o creare il progetto (evita race/FK invalide).
+  await waitForFamigliaId(nomeFam, fam.id_famiglia)
   ids.famiglia = fam.id_famiglia
 
   const emailRes = await apiGet('email', {
@@ -219,10 +242,7 @@ export async function pulisciIds(ids) {
   try {
     const orphanFC = await apiGet('Famiglie_Contatti', {
       filter: JSON.stringify({
-        _or: [
-          { Famiglia: { _null: true } },
-          { Contatto: { _null: true } }
-        ]
+        _or: [{ Famiglia: { _null: true } }, { Contatto: { _null: true } }]
       }),
       fields: 'id',
       limit: -1

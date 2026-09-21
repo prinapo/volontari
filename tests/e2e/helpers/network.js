@@ -36,17 +36,41 @@ export async function waitForPatchStato(page, expectedStato, actionFn) {
   const patchRequests = []
   const handler = req => {
     if (req.url().includes('/items/Giustificativi') && req.method() === 'PATCH') {
-      try { patchRequests.push(JSON.parse(req.postData())) } catch {}
+      try {
+        patchRequests.push(JSON.parse(req.postData()))
+      } catch {}
     }
   }
   page.on('request', handler)
   try {
     if (actionFn) await actionFn()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
   } finally {
     page.off('request', handler)
   }
   return patchRequests
+}
+
+/**
+ * Attende che la rete sia "quiete" (nessuna richiesta per `quietMs`), con un
+ * tetto massimo. Robusto per catene di richieste multiple (ricalcoli) che
+ * partono in ritardo: evita che il cleanup cancelli record ancora in uso.
+ */
+export async function waitForNetworkQuiet(page, { quietMs = 1500, maxMs = 25_000 } = {}) {
+  const start = Date.now()
+  let lastActivity = Date.now()
+  const onRequest = () => {
+    lastActivity = Date.now()
+  }
+  page.on('request', onRequest)
+  try {
+    while (Date.now() - start < maxMs) {
+      if (Date.now() - lastActivity >= quietMs) return
+      await page.waitForTimeout(200)
+    }
+  } finally {
+    page.off('request', onRequest)
+  }
 }
 
 /**

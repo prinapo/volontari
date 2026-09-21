@@ -156,6 +156,10 @@ export const useAuthStore = defineStore('auth', {
       }
 
       try {
+        // Se la sessione è stata invalidata durante gli await precedenti (es. token
+        // rimosso da clearSessionAndRedirectToLogin), non chiamare contatti: la
+        // richiesta partirebbe senza autenticazione → 403.
+        if (!this.user?.id || !localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) return
         const contattoRes = await contattiService.getByUserId(this.user.id)
         if (contattoRes.data.data?.length > 0) {
           this.contatto = contattoRes.data.data[0]

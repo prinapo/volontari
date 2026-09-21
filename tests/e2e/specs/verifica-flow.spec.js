@@ -5,7 +5,7 @@ import { apiLogin, apiGet, apiPatch } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
 import { loginAs } from '../helpers/login.js'
-import { monitorApi, waitForPatchStato, logApiCalls } from '../helpers/network.js'
+import { monitorApi, waitForPatchStato, logApiCalls, waitForNetworkQuiet } from '../helpers/network.js'
 import {
   creaFamigliaVolontarioProgetto,
   loginVolontarioConFamiglia,
@@ -58,14 +58,16 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
     await apiLogin(auth.admin.email, auth.admin.password)
   })
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ page }) => {
+    // Attende che l'app abbia finito i ricalcoli in volo prima di cancellare i
+    // dati: evita richieste tardive su record già cancellati (403).
+    await page.waitForLoadState('networkidle').catch(() => {})
     await pulisciIds(ids)
     ids = { famiglia: null, progetto: null, giustificativi: [] }
   })
 
   test('VF-01: Verifica giustificativo — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90_000)
-    page.expectApiError('/items/Progetti/')
     const testDesc = `TEST_VF_01_verify_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -119,6 +121,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       await verifyBtn.click()
       await page.waitForLoadState('networkidle').catch(() => {})
     })
+    await waitForNetworkQuiet(page)
 
     logApiCalls(apiCalls)
     expect(patches.length).toBeGreaterThan(0)
@@ -127,7 +130,6 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-02: Rifiuta giustificativo — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90_000)
-    page.expectApiError('/items/Progetti')
     const testDesc = `TEST_VF_02_reject_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -166,7 +168,6 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
         timeout: 15_000
       })
       .catch(() => null)
-
     const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
     if (await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await rejectBtn.click()
@@ -186,6 +187,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       }
     }
 
+    await waitForNetworkQuiet(page)
     const rejectResp = await rejectRespPromise
     logApiCalls(apiCalls)
     expect(rejectResp, 'PATCH di rifiuto non inviato').toBeTruthy()
@@ -198,7 +200,6 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-03: Draft→Inviato — intercetta PATCH @crud', async ({ page }) => {
     test.setTimeout(90_000)
-    page.expectApiError('/items/Progetti/')
     const testDesc = `TEST_VF_03_send_${Date.now()}`
     const apiCalls = monitorApi(page)
 
@@ -231,6 +232,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       await sendBtn.click()
       await page.waitForLoadState('networkidle').catch(() => {})
     })
+    await waitForNetworkQuiet(page)
 
     logApiCalls(apiCalls)
     expect(patches.length).toBeGreaterThan(0)
@@ -250,7 +252,6 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
 
   test('VF-05: Flusso completo Volontario→Invia→Verifica→Rifiuta @e2e', async ({ page }) => {
     test.setTimeout(120_000)
-    page.expectApiError('/items/Progetti')
     const apiCalls = monitorApi(page)
 
     // 1. Atomic setup — crea famiglia + progetto
@@ -283,7 +284,6 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
         timeout: 15_000
       })
       .catch(() => null)
-
     const rejectBtn = page.locator('[data-testid="btn-reject"]').first()
     if (await rejectBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await rejectBtn.click()
@@ -302,6 +302,7 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       }
     }
 
+    await waitForNetworkQuiet(page)
     const rejectResp = await rejectRespPromise
     logApiCalls(apiCalls)
     expect(rejectResp, 'PATCH di rifiuto non inviato').toBeTruthy()
