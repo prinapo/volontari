@@ -3,7 +3,6 @@ import { EVENTI_PAGAMENTO, pagamentoMachine } from 'src/state-machines/pagamento
 import {
   calcolaStatoSuccessivo,
   eventoDichiarato,
-  ripara,
   transita,
   TransizioneNonValidaError
 } from 'src/usecases/stato/transita'
@@ -72,28 +71,5 @@ describe('transita', () => {
 
   it('propaga il ctx all evento (guardie)', () => {
     expect(calcolaStatoSuccessivo(pagamentoMachine, 'proposto', E.IN_PAGAMENTO, { qualcosa: 1 })).toBe('in_pagamento')
-  })
-})
-
-describe('ripara', () => {
-  it('scrive uno stato dichiarato anche se non raggiungibile', async () => {
-    const scrivi = vi.fn()
-    const target = await ripara({
-      machine: pagamentoMachine,
-      statoCorrente: 'proposto',
-      target: 'pagato',
-      extra: { NoteEsito: 'backfill' },
-      scrivi
-    })
-    expect(target).toBe('pagato')
-    expect(scrivi).toHaveBeenCalledWith({ NoteEsito: 'backfill', Stato: 'pagato' })
-  })
-
-  it('rifiuta uno stato non dichiarato', async () => {
-    const scrivi = vi.fn()
-    await expect(
-      ripara({ machine: pagamentoMachine, statoCorrente: 'proposto', target: 'boh', scrivi })
-    ).rejects.toBeInstanceOf(TransizioneNonValidaError)
-    expect(scrivi).not.toHaveBeenCalled()
   })
 })

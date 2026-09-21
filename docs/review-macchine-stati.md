@@ -9,6 +9,12 @@ capire chi le emette, chi le innesca e con quali side-effect.
 - **Ordine**: Submission → Pagamento → Giustificativo → Progetto
 - **Esiti**: `confermato` | `da correggere` | `dubbio` | `da rivedere`
 
+> **Nota post-deploy (v4.0.9)**: il primitivo `ripara` e i tool Admin one-shot
+> ("Trasformazioni Stato Progetto" e "Sincronizza stati pagamento
+> giustificativi") sono stati **rimossi** dopo l'allineamento dei dati. Le
+> sezioni che li citano (es. #C6) restano come documentazione storica della
+> revisione.
+
 ## Avanzamento
 
 | #   | Entità         | Stato                | Esito      |

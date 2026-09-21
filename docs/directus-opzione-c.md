@@ -113,10 +113,8 @@ field-scoped (es. consentire solo `Descrizione,Importo,Data,NotaVolontario,Stato
    `in_attesa` o `riconciliato`.
 3. Il frontend 4.0.8 può essere deployato.
 
-## 5. Backfill stati pagamento (opzionale, da app)
+## 5. Backfill stati pagamento (one-shot, eseguito)
 
-Dopo il deploy, per allineare i giustificativi storici agli stati `in_pagamento`/`pagato`:
-
-- Admin → **Consistenza** → sezione **"Sincronizza stati pagamento giustificativi"**:
-  1. **Anteprima** (dry-run): mostra quanti giustificativi verrebbero aggiornati.
-  2. **Applica**: esegue la sincronizzazione (idempotente, riusabile dopo un sync prod→dev).
+Il backfill storico degli stati `in_pagamento`/`pagato` è stato eseguito in
+produzione dopo il deploy. Il tool "Sincronizza stati pagamento giustificativi"
+(Admin → Consistenza) è stato **rimosso**: era un allineamento one-shot.

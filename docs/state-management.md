@@ -336,8 +336,6 @@ API della primitiva:
   la transizione (evento dichiarato per lo stato corrente) e scrive la patch.
   Evento non valido → `TransizioneNonValidaError`.
 - `creaConStato` / `creaConStatoIniziale` — creazione con stato dichiarato.
-- `ripara` — backfill/riparazione: stato dichiarato non necessariamente
-  raggiungibile (es. tool Admin).
 
 Le macchine (`@xstate/fsm`) non fanno I/O e non persistono: la fonte di verità
 resta Directus. I fetch/read e i **valori derivati** (`statoRiga`,

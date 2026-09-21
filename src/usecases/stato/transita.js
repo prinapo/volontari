@@ -94,21 +94,3 @@ export async function transita({ machine, campo = 'Stato', statoCorrente, evento
   }
   return target
 }
-
-/**
- * Percorso di riparazione/backfill: porta l'entità a uno stato DICHIARATO nella
- * macchina senza richiedere che sia raggiungibile dallo stato corrente. Resta
- * dentro l'unico scrittore, quindi esplicito e tracciabile.
- *
- * @throws {TransizioneNonValidaError} se `target` non è uno stato della macchina.
- * @returns {Promise<string>} lo stato target
- */
-export async function ripara({ machine, campo = 'Stato', statoCorrente, target, extra = {}, scrivi }) {
-  if (!machine?.config?.states?.[target]) {
-    throw new TransizioneNonValidaError(statoCorrente, `RIPARA->${target}`, 'stato target non dichiarato')
-  }
-  if (typeof scrivi === 'function') {
-    await scrivi({ ...extra, [campo]: target })
-  }
-  return target
-}

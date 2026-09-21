@@ -2,13 +2,9 @@ import { defineStore } from 'pinia'
 import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
-import { verificaService } from 'src/services/verifica.service'
-import { applicaStatoProgetto } from 'src/usecases/progetti'
-import { STATO_PROGETTO, STORAGE_KEYS } from 'src/utils/constants'
+import { STORAGE_KEYS } from 'src/utils/constants'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
-import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 import { logSessionEvent } from 'src/utils/session-log'
-import { calcolaStatoProgetto } from 'src/utils/statoProgetto'
 
 const AUTH_MODE = 'cookie'
 
@@ -49,18 +45,6 @@ export const useAuthStore = defineStore('auth', {
     loading: false,
     error: null,
     initialized: false,
-    rendicontazioneCheck: {
-      checked: false,
-      ok: true,
-      discrepancies: [],
-      lastChecked: null
-    },
-    statoProjettoTool: {
-      checked: false,
-      groups: {},
-      count: 0,
-      lastChecked: null
-    },
     isImpersonating: false,
     impersonatedUserId: null
   }),
@@ -174,10 +158,6 @@ export const useAuthStore = defineStore('auth', {
         this.contatto = null
         this.hasFamiglieAccess = false
       }
-
-      if (this.canAdmin) {
-        this.checkRendicontazioneConsistency()
-      }
     },
 
     async resolveFamiglieAccess() {
@@ -216,192 +196,6 @@ export const useAuthStore = defineStore('auth', {
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
         // If directus_roles is not readable, canAdmin can still match ADMIN_ROLE_NAMES.
-      }
-    },
-
-    _findDiscrepancies(projects, giustByProject) {
-      const result = []
-      for (const project of projects) {
-        const projId = project.id_progetto
-        const giustificativi = giustByProject[projId] || []
-        const discrepancy = this._compareProject(project, projId, giustificativi)
-        if (discrepancy) result.push(discrepancy)
-      }
-      return result
-    },
-
-    _compareProject(project, projId, giustificativi) {
-      const count = giustificativi.length
-      const totaleImporto = giustificativi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
-      const statoCalcolato = calcolaStatoRendicontazione(giustificativi)
-
-      const statoDB = project.StatoRendicontazione || 'nessuno'
-      const countDB = project.TotaleGiustificativi || 0
-      const importoDB = Number.parseFloat(project.TotaleImporto) || 0
-
-      if (statoDB !== statoCalcolato || countDB !== count || Math.abs(importoDB - totaleImporto) > 0.01) {
-        return {
-          progettoId: projId,
-          beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
-          annoBando: project.AnnoBando || '',
-          statoDB,
-          statoCalcolato,
-          countDB,
-          countCalcolato: count,
-          importoDB,
-          importoCalcolato: totaleImporto,
-          giustificativi: giustificativi.map(g => ({
-            id: g.id,
-            descrizione: g.Descrizione || '',
-            stato: g.Stato || '',
-            importo: Number.parseFloat(g.Importo) || 0
-          }))
-        }
-      }
-      return null
-    },
-
-    async checkRendicontazioneConsistency() {
-      if (!this.canAdmin) return
-
-      this.rendicontazioneCheck = { checked: false, ok: true, discrepancies: [], lastChecked: null }
-
-      try {
-        const projRes = await verificaService.getProgetti({ limit: -1 })
-        const projects = projRes.data.data || []
-
-        const progettoIds = projects.map(p => p.id_progetto).filter(Boolean)
-        if (progettoIds.length === 0) {
-          this.rendicontazioneCheck = {
-            checked: true,
-            ok: true,
-            discrepancies: [],
-            lastChecked: new Date().toISOString()
-          }
-          return
-        }
-
-        const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
-        const allGiust = giustRes.data.data || []
-
-        const giustByProject = {}
-        for (const g of allGiust) {
-          if (g.Invalidato) continue
-          const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
-          if (!pid) continue
-          if (!giustByProject[pid]) giustByProject[pid] = []
-          giustByProject[pid].push(g)
-        }
-
-        const discrepancies = this._findDiscrepancies(projects, giustByProject)
-
-        this.rendicontazioneCheck = {
-          checked: true,
-          ok: discrepancies.length === 0,
-          discrepancies,
-          lastChecked: new Date().toISOString()
-        }
-      } catch (error) {
-        this.rendicontazioneCheck = {
-          checked: true,
-          ok: false,
-          discrepancies: [{ errore: true, messaggio: error.message }],
-          lastChecked: new Date().toISOString()
-        }
-      }
-    },
-
-    async computeStatoProgettoCandidates() {
-      if (!this.canAdmin) return
-
-      this.statoProjettoTool = { checked: false, groups: {}, count: 0, lastChecked: null }
-
-      try {
-        const projRes = await verificaService.getProgetti({ limit: -1 })
-        const projects = projRes.data.data || []
-
-        const progettoIds = projects.map(p => p.id_progetto).filter(Boolean)
-        if (progettoIds.length === 0) {
-          this.statoProjettoTool = {
-            checked: true,
-            groups: {},
-            count: 0,
-            lastChecked: new Date().toISOString()
-          }
-          return
-        }
-
-        const giustRes = await verificaService.getGiustificativiByProgetti(progettoIds)
-        const allGiust = giustRes.data.data || []
-
-        const giustByProject = {}
-        for (const g of allGiust) {
-          if (g.Invalidato) continue
-          const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
-          if (!pid) continue
-          if (!giustByProject[pid]) giustByProject[pid] = []
-          giustByProject[pid].push(g)
-        }
-
-        const groups = {}
-        for (const project of projects) {
-          const projId = project.id_progetto
-          const statoDBraw = project.StatoProgetto || STATO_PROGETTO.APERTO
-          const calcolato = calcolaStatoProgetto({
-            statoProgetto: statoDBraw,
-            allocato: project.Allocato,
-            rimborsato: project.TotalePagato,
-            giustificativi: giustByProject[projId] || []
-          })
-          if (calcolato === statoDBraw) continue
-          const entry = {
-            progettoId: projId,
-            beneficiario: [project.Cognome_Beneficiario, project.Nome_Beneficiario].filter(Boolean).join(' ') || '',
-            annoBando: project.AnnoBando || '',
-            statoDB: statoDBraw,
-            statoCalcolato: calcolato
-          }
-          if (!groups[calcolato]) groups[calcolato] = []
-          groups[calcolato].push(entry)
-        }
-
-        const count = Object.values(groups).reduce((sum, list) => sum + list.length, 0)
-        this.statoProjettoTool = {
-          checked: true,
-          groups,
-          count,
-          lastChecked: new Date().toISOString()
-        }
-      } catch (error) {
-        this.statoProjettoTool = {
-          checked: true,
-          groups: { error: [{ errore: true, messaggio: error.message }] },
-          count: 1,
-          lastChecked: new Date().toISOString()
-        }
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore generico'
-      }
-    },
-
-    /**
-     * Tool admin: applica la trasformazione di stato proposta per un singolo
-     * progetto. Aggiorna il DB e rimuove il candidato localmente (nessun
-     * re-fetch: la riga sparisce subito senza ricaricare l'interfaccia).
-     */
-    async applyStatoProgettoById(progettoId, nuovoStato) {
-      if (!this.canAdmin) return
-      await applicaStatoProgetto(progettoId, nuovoStato)
-      if (this.statoProjettoTool?.groups) {
-        const groups = {}
-        for (const [key, list] of Object.entries(this.statoProjettoTool.groups)) {
-          const filtrati = (list || []).filter(c => c.progettoId !== progettoId)
-          if (filtrati.length > 0) groups[key] = filtrati
-        }
-        this.statoProjettoTool = {
-          ...this.statoProjettoTool,
-          groups,
-          count: Object.values(groups).reduce((sum, list) => sum + list.length, 0)
-        }
       }
     },
 

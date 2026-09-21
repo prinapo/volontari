@@ -2,14 +2,12 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import {
   apiLogin,
   apiGet,
-  apiPost,
   apiDelete,
   apiDeleteSystem,
   apiGetSystem,
   apiPatchSystem,
   apiPostSystem
 } from '../helpers/api.js'
-import { deleteFamiglie, deleteProgetti } from '../helpers/cleanup.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 
@@ -310,110 +308,6 @@ test.describe('Admin — Impersonazione', () => {
     await page.getByRole('button', { name: 'Scarica da produzione' }).click()
     await expect(page.getByText('Snapshot scaricato')).toBeVisible({ timeout: 60_000 })
     await expect(page.getByRole('button', { name: 'Carica in dev' })).toBeVisible({ timeout: 10_000 })
-  })
-})
-
-test.describe('Admin — Trasformazioni Stato Progetto', () => {
-  let seed = { famiglia: null, progetto: null, nome: '' }
-
-  // Il tool mostra il gruppo "→ Accettato" con badge "Aperto (legacy)" solo se
-  // in dev esiste almeno un progetto con stato DB raw 'aperto' (legacy).
-  // Appena le trasformazioni vengono applicate quei record spariscono, quindi il
-  // test crea ad-hoc una famiglia + progetto legacy e li ripulisce a fine test.
-  test.beforeAll(async () => {
-    await apiLogin(auth.admin.email, auth.admin.password)
-  })
-
-  test.beforeEach(async () => {
-    seed.nome = `TEST_ADCHECK_${Date.now()}`
-    const fam = await apiPost('Famiglie', {
-      id_famiglia: 'TEST_ADCHECK_FAM_' + Date.now(),
-      Nome_Famiglia: seed.nome,
-      IBAN: `IT60X${Date.now()}0000123456`,
-      Intestatario_CC: seed.nome
-    })
-    seed.famiglia = fam?.data?.id_famiglia
-    const proj = await apiPost('Progetti', {
-      id_progetto: 'TEST_ADCHECK_PROG_' + Date.now(),
-      Famiglia: seed.famiglia,
-      Cognome_Beneficiario: seed.nome,
-      Nome_Beneficiario: 'Benef',
-      AnnoBando: new Date().getFullYear(),
-      Allocato: 5000,
-      Data_Inizio_Progetto: '2026-01-01',
-      Data_Fine_Progetto: '2026-12-31',
-      StatoProgetto: 'aperto'
-    })
-    seed.progetto = proj?.data?.id_progetto
-    expect(seed.progetto).toBeTruthy()
-  })
-
-  test.afterEach(async () => {
-    if (seed.progetto) await deleteProgetti(seed.progetto).catch(() => {})
-    if (seed.famiglia) await deleteFamiglie(seed.famiglia).catch(() => {})
-    seed = { famiglia: null, progetto: null, nome: '' }
-  })
-
-  test('AD-CHECK-03: Tool trasformazioni mostra gruppi e badge legacy @smoke', async ({ page }) => {
-    test.setTimeout(60_000)
-
-    await loginAs(page, 'admin', auth)
-    await page.goto('/admin')
-    await page.waitForLoadState('networkidle').catch(() => {})
-    await page.locator('.q-tab:has-text("Check")').click()
-    await page.waitForLoadState('networkidle').catch(() => {})
-
-    const calcBtn = page
-      .getByRole('button', { description: 'Calcola trasformazioni stato progetto' })
-      .or(page.locator('button:has-text("swap_horiz")').first())
-    await calcBtn.click()
-
-    const badge = page.locator('.q-badge').filter({ hasText: 'da trasformare' })
-    await expect(badge).toBeVisible({ timeout: 20_000 })
-
-    const targetLabels = ['→ Accettato', '→ In rendicontazione', '→ Rimborso parziale', '→ Chiuso']
-    for (const label of targetLabels) {
-      await expect(page.locator('.q-expansion-item', { hasText: label }).first()).toBeVisible({ timeout: 10_000 })
-    }
-
-    await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
-    const primaRiga = page
-      .locator('.q-expansion-item', { hasText: '→ Accettato' })
-      .locator('.q-expansion-item__content .q-item', { hasText: seed.nome })
-      .first()
-    await expect(primaRiga.locator('.q-badge:has-text("Aperto (legacy)")')).toBeVisible({ timeout: 10_000 })
-    await expect(primaRiga.locator('.q-badge:has-text("Accettato")')).toBeVisible()
-  })
-
-  test('AD-CHECK-04: Applica trasformazione rimuove riga e decrementa conteggio @crud', async ({ page }) => {
-    test.setTimeout(60_000)
-
-    await loginAs(page, 'admin', auth)
-    await page.goto('/admin')
-    await page.waitForLoadState('networkidle').catch(() => {})
-    await page.locator('.q-tab:has-text("Check")').click()
-    await page.waitForLoadState('networkidle').catch(() => {})
-
-    const calcBtn = page
-      .getByRole('button', { description: 'Calcola trasformazioni stato progetto' })
-      .or(page.locator('button:has-text("swap_horiz")').first())
-    await calcBtn.click()
-
-    const badge = page.locator('.q-badge').filter({ hasText: 'da trasformare' })
-    await expect(badge).toBeVisible({ timeout: 20_000 })
-    const before = Number((await badge.innerText()).match(/(\d+) da trasformare/)?.[1])
-    expect(Number.isFinite(before)).toBe(true)
-
-    await page.getByRole('button', { name: /Espandi "→ Accettato"/ }).click()
-    const applyBtn = page.locator('.q-expansion-item__content .q-btn:has(i:has-text("check"))').first()
-    await expect(applyBtn).toBeVisible({ timeout: 10_000 })
-    await applyBtn.click()
-
-    await expect(page.locator('.q-notification').filter({ hasText: 'trasformato in' }).first()).toBeVisible({
-      timeout: 10_000
-    })
-    await expect(badge).toHaveText(`${before - 1} da trasformare`, { timeout: 10_000 })
-    expect(page.url()).toContain('/admin')
   })
 })
 

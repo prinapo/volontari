@@ -119,7 +119,7 @@ allineato da `recalculateRowTotals` (`verifica.store.js`).
   step dal manager via `avanzaStatoProgetto` (`usecases/progetti.js`, evento
   `VALIDA`/`APPROVA`/`ACCETTA`). La creazione (`creaProgetto`) nasce `accettato`;
   la fase manuale serve per i progetti che arrivano in quegli stati (import).
-  Solo in avanti; le correzioni passano dal tool Admin (`ripara`).
+  Solo in avanti; le correzioni manuali vanno fatte direttamente sul DB.
 
 ### Stati giustificativo (persistiti, opzione C)
 
@@ -143,15 +143,6 @@ li porta a `pagato` (o tutti, se l'allocato è raggiunto). `segnaFallito`/
 `segnaAnnullato` riallineano (annullo → scollega). L'invariante è
 `sincronizzaStatiPagamentoProgetto` (`usecases/pagamenti.js`), idempotente.
 
-### Tool backfill stati pagamento (Admin)
-
-`sincronizzaStatiPagamento` (`usecases/sincronizzazione.js`), esposto in
-Admin → Consistenza ("Sincronizza stati pagamento giustificativi", Anteprima +
-Applica). Rilegge progetti/giustificativi/pagamenti e riallinea gli stati:
-cap allocato → tutti `pagato`; altrimenti allocazione per id crescente fino a
-esaurire il coperto. Serve a backfillare i dati storici (es. dopo un sync
-prod→dev). Idempotente.
-
 Nota permessi (dev+prod, DB non git): le policy su `Giustificativi` sono
 `fields: ['*']` per Manager e Volontario; il volontario **potrebbe** quindi
 scrivere `pagato` via API (non esposto in UI). Hardening field-scoped da
@@ -166,18 +157,16 @@ Ogni cambio di stato (`Giustificativi.Stato`, `Pagamenti.Stato`,
 - `transita({ machine, statoCorrente, evento, extra, scrivi })` — transizione
   dichiarata; valida con la macchina e scrive la patch.
 - `creaConStato` / `creaConStatoIniziale` — creazione con stato dichiarato.
-- `ripara` — **solo** per backfill/riparazione (stato dichiarato non
-  necessariamente raggiungibile), es. il tool Admin.
 
 Le macchine vivono in `src/state-machines/` (`giustificativo`, `pagamento`,
 `progetto`, `submission`): solo `states`/`on`/`cond`, nessun I/O. Sono la fonte
-di verità su **quali** transizioni sono legali; gli stati iniziali e i path di
-riparazione sono dichiarati. `@xstate/fsm` è la sola dipendenza di stato.
+di verità su **quali** transizioni sono legali; gli stati iniziali sono
+dichiarati. `@xstate/fsm` è la sola dipendenza di stato.
 
 Regole:
 
 1. I service non scrivono stato: sono invocati solo dal callback `scrivi` dentro
-   `transita`/`creaConStato`/`ripara`. Niente `{ Stato: ... }` o
+   `transita`/`creaConStato`. Niente `{ Stato: ... }` o
    `{ StatoProgetto: ... }` altrove — **bloccato da ESLint**
    (`no-restricted-syntax`, eccezioni `state-machines/` e `usecases/stato/`).
    Eventuali `eslint-disable` ammessi solo con motivazione (es. export Excel,
