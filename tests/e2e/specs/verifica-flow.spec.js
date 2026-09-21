@@ -25,8 +25,6 @@ async function createGiustificativoViaVerificatore(page) {
   await vp.waitForTable()
   await page.waitForLoadState('networkidle').catch(() => {})
 
-  const addBtn = page.locator('[data-testid="btn-add-giust"], button[aria-label="Aggiungi giustificativo"]').first()
-  if ((await addBtn.count()) === 0) return null
   // Su mobile espandi la riga prima di cliccare
   const isMobile = (await page.locator('.q-expansion-item').count()) > 0
   if (isMobile) {
@@ -34,8 +32,23 @@ async function createGiustificativoViaVerificatore(page) {
     await expItem.click()
     await page.waitForLoadState('networkidle').catch(() => {})
   }
+
+  const addBtn = page.locator('[data-testid="btn-add-giust"], button[aria-label="Aggiungi giustificativo"]').first()
+  await addBtn.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {})
+  if ((await addBtn.count()) === 0) return null
+  await addBtn.scrollIntoViewIfNeeded().catch(() => {})
   await addBtn.click()
-  await page.locator('.q-dialog').waitFor({ state: 'visible', timeout: 5000 })
+
+  // Il dialog può aprirsi con un attimo di ritardo (mobile): attesa + un retry
+  const dialog = page.locator('.q-dialog')
+  const aperto = await dialog
+    .waitFor({ state: 'visible', timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!aperto) {
+    await addBtn.click().catch(() => {})
+    await dialog.waitFor({ state: 'visible', timeout: 10_000 })
+  }
 
   const testDesc = `TEST_VE_ADD_${Date.now()}`
   await page.locator('[data-testid="giustform-descrizione"]').fill(testDesc)

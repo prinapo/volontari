@@ -17,7 +17,7 @@ async function expandFirstCardIfMobile(page) {
   const exp = page.locator('.q-expansion-item')
   if ((await exp.count()) > 0 && (await page.locator('.q-expansion-item--expanded').count()) === 0) {
     await exp.first().click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
   }
 }
 
@@ -53,7 +53,7 @@ test.describe('Referente Role', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const rowCount = await gestionePage.getRowCount()
     expect(rowCount).toBeGreaterThanOrEqual(1)
@@ -120,7 +120,7 @@ test.describe('Referente Role', () => {
     const gestionePage = new GestionePage(page)
     await gestionePage.goto()
     await gestionePage.selectContattiTab()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Crea contatto via UI
     await page.locator('[data-testid="btn-aggiungi-contatto"]').waitFor({ state: 'visible', timeout: 10_000 })
@@ -138,20 +138,20 @@ test.describe('Referente Role', () => {
     const contattoId = (await postResp.json()).data?.id_contatto
     if (contattoId) createdContattoIds.push(contattoId)
     await expect(dialog).not.toBeVisible({ timeout: 10_000 })
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const rf02Email = `TEST_rf02_${timestamp}@test.com`
 
     // Aggiungi email al contatto (necessaria per poterlo associare come Volontario)
     await gestionePage.search(nome)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     // Trova e apri la card mobile corretta
     const expsMobile = page.locator('.q-expansion-item')
     const expCountMobile = await expsMobile.count()
     if (expCountMobile > 0 && (await gestionePage.tableRows.count()) === 0) {
       for (let k = 0; k < expCountMobile; k++) {
         await expsMobile.nth(k).click()
-        await page.waitForLoadState("networkidle").catch(() => {})
+        await page.waitForLoadState('networkidle').catch(() => {})
       }
     }
     const editBtn = page.locator('[data-testid="btn-edit-contatto"]').first()
@@ -160,7 +160,7 @@ test.describe('Referente Role', () => {
       await page.locator('.q-dialog:visible').waitFor({ state: 'visible', timeout: 5000 })
       dialog = page.locator('.q-dialog:visible')
       await dialog.locator('button:has-text("Aggiungi email")').click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       const emailInput = dialog.locator('input[type="email"]').last()
       await emailInput.fill(rf02Email)
       // Click elsewhere to trigger blur (onEmailBlur creates email via API)
@@ -170,7 +170,7 @@ test.describe('Referente Role', () => {
           timeout: 5000
         })
         .catch(() => {})
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       const [patchResp] = await Promise.all([
         page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
         dialog.locator('button:has-text("Salva")').click()
@@ -178,25 +178,25 @@ test.describe('Referente Role', () => {
       expect(patchResp.status()).toBe(200)
       await expect(dialog).not.toBeVisible({ timeout: 10_000 })
     }
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Assegna come Volontario nel ContattiDialog (famiglia appena creata)
     await gestionePage.famiglieTab.click()
     await gestionePage.waitForTable()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await gestionePage.searchFamiglie(nomeFam)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Apri ContattiDialog per la famiglia e assegna contatto come Volontario
     console.log(`[RF-02] searching famiglia: ${nomeFam}`)
     const clicked = await gestionePage.clickContactsOnFamiglia(nomeFam)
     console.log(`[RF-02] clicked contacts on famiglia: ${clicked}`)
     if (clicked) {
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       console.log('[RF-02] calling assignVolontario')
       await gestionePage.assignVolontario(rf02Email)
       console.log('[RF-02] assignVolontario done')
-      await page.waitForLoadState("networkidle").catch(() => {}) // attende che la notifica Quasar si chiuda
+      await page.waitForLoadState('networkidle').catch(() => {}) // attende che la notifica Quasar si chiuda
       // Chiudi dialog: prima prova click, poi force:click, poi evaluate
       const chiudi = gestionePage.contattiDialog.locator('button:has-text("Chiudi")')
       try {
@@ -204,7 +204,7 @@ test.describe('Referente Role', () => {
       } catch {
         await chiudi.click({ force: true })
       }
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       if (await gestionePage.contattiDialog.isVisible({ timeout: 1000 }).catch(() => false)) {
         await page
           .evaluate(() => {
@@ -218,15 +218,14 @@ test.describe('Referente Role', () => {
       console.log('[RF-02] contatti dialog closed')
     } else {
       throw new Error('Famiglia creata non trovata')
-      return
     }
 
     // Cerca il contatto, clicca bottone referente
     await gestionePage.contattiTab.click()
     await gestionePage.waitForTable()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await gestionePage.search(nome)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     console.log('[RF-02] search done, looking for referente button')
 
     let targetRow = null
@@ -237,7 +236,7 @@ test.describe('Referente Role', () => {
       const expCount = await exps.count()
       for (let i = 0; i < expCount; i++) {
         await exps.nth(i).click()
-        await page.waitForLoadState("networkidle").catch(() => {})
+        await page.waitForLoadState('networkidle').catch(() => {})
         const btn = exps.nth(i).locator('[data-testid="btn-assigna-referente"]')
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
           targetRow = exps.nth(i)
@@ -263,7 +262,6 @@ test.describe('Referente Role', () => {
     if (!targetRow) {
       console.log('[RF-02] no target row found')
       throw new Error('Bottone referente non visibile')
-      return
     }
     console.log('[RF-02] target row found, clicking referente button')
 
@@ -273,7 +271,7 @@ test.describe('Referente Role', () => {
       const actionCell = targetRow.locator('td').last()
       await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
     }
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     dialog = page.locator('.q-dialog:visible')
     await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -287,9 +285,9 @@ test.describe('Referente Role', () => {
     await gestionePage.selectContattiTab()
 
     await gestionePage.tipoFilter.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await page.locator('.q-item:has-text("Referente")').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const noData = page.locator('text=Nessun dato disponibile')
     const hasRows = (await gestionePage.getRowCount()) > 0
@@ -333,35 +331,41 @@ test.describe('Referente Role', () => {
     // Vai a Contatti, apri dialog referente
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Cerca il contatto volontario usando il nome esatto
     await gestionePage.searchInput.fill(vol.nome)
     await page.waitForTimeout(1000)
     // Aspetta che la tabella contenga il contatto cercato
-    await page.waitForFunction(nome => {
-      const panel = document.querySelector('.q-tab-panel:not([hidden])')
-      if (!panel) return false
-      const rows = panel.querySelectorAll('.q-table tbody tr, .q-expansion-item')
-      for (const row of rows) {
-        if (row.textContent.includes(nome)) return true
-      }
-      return false
-    }, vol.nome, { timeout: 15_000 }).catch(() => {})
+    await page
+      .waitForFunction(
+        nome => {
+          const panel = document.querySelector('.q-tab-panel:not([hidden])')
+          if (!panel) return false
+          const rows = panel.querySelectorAll(':scope .q-table tbody tr, :scope .q-expansion-item')
+          for (const row of rows) {
+            if (row.textContent.includes(nome)) return true
+          }
+          return false
+        },
+        vol.nome,
+        { timeout: 15_000 }
+      )
+      .catch(() => {})
 
     // Trova volontario e clicca btn-assigna-referente
     const viewport = await page.viewportSize()
     const isMobile = viewport && viewport.width < 600
-    let targetRow = null
     // Cerca la riga contenente il nome (table row su desktop, expansion item su mobile)
     const rowLocator = isMobile
       ? page.locator('.q-expansion-item').filter({ hasText: vol.nome }).first()
       : gestionePage.tableRows.filter({ hasText: vol.nome }).first()
     if ((await rowLocator.count()) === 0) throw new Error(`Riga contatto "${vol.nome}" non trovata dopo ricerca`)
-    targetRow = rowLocator
+    const targetRow = rowLocator
 
     const btn = targetRow.locator('[data-testid="btn-assigna-referente"]')
-    if ((await btn.count()) === 0) throw new Error(`btn-assigna-referente non presente sulla riga del contatto "${vol.nome}"`)
+    if ((await btn.count()) === 0)
+      throw new Error(`btn-assigna-referente non presente sulla riga del contatto "${vol.nome}"`)
 
     // Apri dialog Assegna Referente
     if (isMobile) {
@@ -369,12 +373,12 @@ test.describe('Referente Role', () => {
     } else {
       await targetRow.locator('td').last().locator('[data-testid="btn-assigna-referente"]').click()
     }
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const refDialog = page.locator('.q-dialog:visible')
     await expect(refDialog).toBeVisible({ timeout: 5000 })
     await refDialog.locator('button:has-text("Chiudi")').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     // Cleanup
     await pulisciIds(rf04Ids)
@@ -387,9 +391,9 @@ test.describe('Referente Role', () => {
     await gestionePage.selectContattiTab()
 
     await gestionePage.tipoFilter.click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await page.locator('.q-item:has-text("Genitore")').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const rowCount = await gestionePage.getRowCount()
     expect(rowCount).toBeGreaterThanOrEqual(1)
@@ -406,7 +410,7 @@ test.describe('Referente Role', () => {
 
     const gestionePage = new GestionePage(page)
     await gestionePage.selectContattiTab()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const viewport = await page.viewportSize()
     const isMobile = viewport && viewport.width < 600
@@ -417,7 +421,7 @@ test.describe('Referente Role', () => {
       const expCount = await exps.count()
       for (let i = 0; i < expCount; i++) {
         await exps.nth(i).click()
-        await page.waitForLoadState("networkidle").catch(() => {})
+        await page.waitForLoadState('networkidle').catch(() => {})
         const btn = exps.nth(i).locator('[data-testid="btn-assigna-referente"]')
         if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
           targetRow = exps.nth(i)
@@ -445,13 +449,33 @@ test.describe('Referente Role', () => {
       const actionCell = targetRow.locator('td').last()
       await actionCell.locator('[data-testid="btn-assigna-referente"]').click()
     }
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
 
     const dialog = page.locator('.q-dialog:visible')
-    await expect(dialog).toBeVisible({ timeout: 5000 })
+    // Il dialog può aprirsi con ritardo (mobile): attesa + un retry sul click
+    const aperto = await dialog
+      .waitFor({ state: 'visible', timeout: 10_000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!aperto) {
+      if (isMobile) {
+        await targetRow
+          .locator('[data-testid="btn-assigna-referente"]')
+          .click()
+          .catch(() => {})
+      } else {
+        await targetRow
+          .locator('td')
+          .last()
+          .locator('[data-testid="btn-assigna-referente"]')
+          .click()
+          .catch(() => {})
+      }
+      await dialog.waitFor({ state: 'visible', timeout: 10_000 })
+    }
 
     await dialog.locator('button:has-text("Chiudi")').click()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await expect(dialog).not.toBeVisible({ timeout: 3000 })
   })
 })

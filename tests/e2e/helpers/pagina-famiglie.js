@@ -19,30 +19,38 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
     return false
   }
 
-  // Click selettore per aprire menu/dialog
-  await famSelector.scrollIntoViewIfNeeded()
-  await famSelector.click({ force: true })
-  await page.waitForLoadState('networkidle').catch(() => {})
+  const target = page.locator('[role="option"]').filter({ hasText: nomeFamiglia }).first()
+  let selezionata = false
 
-  // Cerca le opzioni nel menu (desktop) o nel dialog (mobile)
-  const options = page.locator('[role="option"]')
-  await options
-    .first()
-    .waitFor({ state: 'visible', timeout: 10_000 })
-    .catch(() => {})
-  const count = await options.count()
-  let found = false
-  for (let i = 0; i < count; i++) {
-    const text = await options.nth(i).innerText()
-    if (text.includes(nomeFamiglia)) {
-      await options.nth(i).click({ force: true })
-      found = true
-      break
+  // Retry: su mobile le opzioni possono non essere ancora caricate; NON
+  // selezionare mai un'altra famiglia (fallback alla prima opzione rimosso).
+  for (let tentativo = 0; tentativo < 4 && !selezionata; tentativo++) {
+    await famSelector.scrollIntoViewIfNeeded()
+    await famSelector.click({ force: true })
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page
+      .locator('[role="option"]')
+      .first()
+      .waitFor({ state: 'visible', timeout: 8000 })
+      .catch(() => {})
+
+    // Scorre il menu (virtual scroll) per rendere l'opzione cercata
+    const menu = page.locator('.q-menu').first()
+    for (let i = 0; i < 20 && !selezionata; i++) {
+      if (await target.isVisible({ timeout: 400 }).catch(() => false)) {
+        await target.click({ force: true })
+        selezionata = true
+        break
+      }
+      await menu.hover().catch(() => {})
+      await page.mouse.wheel(0, 400).catch(() => {})
+      await page.waitForTimeout(120)
     }
-  }
 
-  if (!found && count > 0) {
-    await options.first().click({ force: true })
+    if (!selezionata) {
+      await page.keyboard.press('Escape').catch(() => {})
+      await page.waitForTimeout(400)
+    }
   }
 
   // Aspetta che la card famiglia sia caricata
@@ -54,7 +62,7 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
       console.log(`[selezionaFamiglia] famiglia "${nomeFamiglia}" non caricata`)
     })
 
-  return true
+  return selezionata
 }
 
 export async function apriFamiglieESelezionaFamiglia(page, nomeFamiglia, { expandGiustificativi = true } = {}) {
