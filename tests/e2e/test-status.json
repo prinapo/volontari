@@ -1826,22 +1826,6 @@
       "lastRun": "4.0.8",
       "lastPassed": "4.0.8"
     },
-    "AD-CHECK-03": {
-      "name": "AD-CHECK-03: Tool trasformazioni mostra gruppi e badge legacy @smoke",
-      "file": "admin.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "4.0.8",
-      "lastPassed": "4.0.8"
-    },
-    "AD-CHECK-04": {
-      "name": "AD-CHECK-04: Applica trasformazione rimuove riga e decrementa conteggio @crud",
-      "file": "admin.spec.js",
-      "chromium": "pass",
-      "mobile": "pass",
-      "lastRun": "4.0.8",
-      "lastPassed": "4.0.8"
-    },
     "DBD-03": {
       "name": "DBD-03: Grafico Progetti per stato e anno renderizzato @smoke",
       "file": "dashboard.spec.js",

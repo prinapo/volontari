@@ -125,7 +125,7 @@ export class CreaProgettoPage {
       Eta: data.Eta || null,
       Relazione_con_il_soggetto_richiedente: data.Relazione_con_il_soggetto_richiedente || null,
       MassimaPercentualeErogabile: data.MassimaPercentualeErogabile || null,
-      StatoProgetto: 'aperto'
+      StatoProgetto: 'accettato'
     }
 
     const resp = await apiPost('Progetti', payload)

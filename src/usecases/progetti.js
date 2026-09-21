@@ -1,7 +1,7 @@
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
 import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
-import { creaConStato, ripara, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
+import { creaConStato, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
 import { STATO_PROGETTO } from 'src/utils/constants'
 import { calcolaAggregatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
@@ -11,8 +11,7 @@ import { calcolaAggregatiProgetto, statoProgettoEffettivo } from 'src/utils/stat
  * giustificativo termina qui. Idempotente (ricalcolo puro).
  *
  * Lo stato progetto passa dalla macchina (`transita`); gli altri derivati sono
- * scritti nella stessa patch. Il legacy `aperto`/NULL viene normalizzato ad
- * `accettato` (via `ripara`, resta un path dichiarato della macchina).
+ * scritti nella stessa patch.
  *
  * @param {string|number} progettoId
  * @returns {Promise<Object|null>} gli aggregati calcolati, o null se il progetto
@@ -36,15 +35,6 @@ export async function syncProgettoAggregati(progettoId) {
 
     if (statoRaw === statoProgetto) {
       await verificaService.updateProgetto(progettoId, derivati)
-    } else if (statoProgetto === statoCorrente) {
-      await ripara({
-        machine: progettoMachine,
-        campo: 'StatoProgetto',
-        statoCorrente,
-        target: statoProgetto,
-        extra: derivati,
-        scrivi
-      })
     } else {
       const evento = eventoRicalcoloProgetto(statoProgetto)
       if (evento) {
@@ -78,20 +68,6 @@ export async function creaProgetto(payload) {
     stato: STATO_PROGETTO.ACCETTATO,
     extra: payload,
     scrivi: patch => progettiService.createProgetto(patch)
-  })
-}
-
-/**
- * Tool Admin → Consistenza: applica lo stato calcolato a un progetto senza
- * richiedere che la transizione sia raggiungibile (riparazione esplicita).
- */
-export async function applicaStatoProgetto(progettoId, nuovoStato) {
-  return ripara({
-    machine: progettoMachine,
-    campo: 'StatoProgetto',
-    statoCorrente: null,
-    target: nuovoStato,
-    scrivi: patch => verificaService.updateProgetto(progettoId, patch)
   })
 }
 

@@ -169,7 +169,7 @@ icon="refresh"
       </template>
     </q-banner>
 
-      <q-btn
+    <q-btn
       v-else
       flat
       round
@@ -183,98 +183,6 @@ icon="refresh"
     >
       Verifica consistenza Volontari
     </q-btn>
-
-    <div class="row items-center q-gutter-sm q-mb-sm">
-      <q-btn
-        flat
-        round
-        dense
-        size="sm"
-        icon="swap_horiz"
-        color="primary"
-        :loading="checkingCheck"
-        @click="runStatoProgettoTool"
-      >
-        <q-tooltip>Calcola trasformazioni stato progetto</q-tooltip>
-      </q-btn>
-      <span class="text-weight-medium">Trasformazioni Stato Progetto</span>
-      <q-badge
-        v-if="authStore.statoProjettoTool?.checked && !hasToolError"
-        :label="authStore.statoProjettoTool.count + ' da trasformare'"
-        :color="authStore.statoProjettoTool.count > 0 ? 'warning' : 'positive'"
-        outline
-      />
-    </div>
-
-    <q-list v-if="authStore.statoProjettoTool?.checked && !hasToolError" bordered separator class="q-mb-md">
-      <q-expansion-item
-        v-for="stato in statiTarget"
-        :key="stato"
-        :icon="'circle'"
-        :color="statoProgettoColor(stato)"
-        :label="'→ ' + statoProgettoLabel(stato)"
-        :caption="(groups[stato]?.length || 0) + ' progetti'"
-        :default-opened="false"
-      >
-        <template v-if="groups[stato]?.length > 0">
-          <q-item v-for="c in groups[stato]" :key="c.progettoId" dense class="q-pl-md">
-            <q-item-section>
-              <q-item-label class="text-body2">{{ c.beneficiario }}</q-item-label>
-              <q-item-label caption>{{ c.annoBando }}</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <div class="row items-center q-gutter-sm">
-                <q-badge :color="statoProgettoColor(c.statoDB)" :label="statoDBLabel(c.statoDB)" />
-                <q-icon name="arrow_forward" size="16px" />
-                <q-badge
-                  :color="statoProgettoColor(c.statoCalcolato)"
-                  :label="statoProgettoLabel(c.statoCalcolato)"
-                />
-                <q-btn
-                  flat
-                  round
-                  dense
-                  size="sm"
-                  icon="check"
-                  color="positive"
-                  :loading="applyingId === c.progettoId"
-                  @click="applicaTrasformazione(c)"
-                >
-                  <q-tooltip>Applica trasformazione</q-tooltip>
-                </q-btn>
-              </div>
-            </q-item-section>
-          </q-item>
-        </template>
-        <q-item v-else dense class="q-pl-md text-grey-7">
-          <q-item-section>
-            <q-item-label class="text-body2">Nessun progetto con questa trasformazione.</q-item-label>
-          </q-item-section>
-        </q-item>
-      </q-expansion-item>
-    </q-list>
-
-    <q-banner v-else-if="hasToolError" class="bg-negative text-white q-mb-md rounded-borders" rounded>
-      <template #avatar>
-        <q-icon name="error" />
-      </template>
-      <div class="text-body2">Errore nel calcolo delle trasformazioni.</div>
-    </q-banner>
-
-    <q-card flat bordered class="q-mt-md">
-      <q-card-section>
-        <div class="text-subtitle1 q-mb-xs">Sincronizza stati pagamento giustificativi</div>
-        <div class="text-body2 text-grey-7 q-mb-sm">
-          Rilegge pagamenti e giustificativi e riallinea gli stati (verificato → in_pagamento → pagato).
-          Idempotente: riusabile dopo un sync da produzione.
-        </div>
-        <div class="row q-gutter-sm items-center">
-          <q-btn outline color="primary" label="Anteprima" :loading="syncingPagamenti" @click="anteprimaSyncPagamenti" />
-          <q-btn color="primary" label="Applica" :loading="syncingPagamenti" @click="applicaSyncPagamenti" />
-          <div v-if="syncPagamentiReport" class="text-caption text-grey-7">{{ syncPagamentiReport }}</div>
-        </div>
-      </q-card-section>
-    </q-card>
   </div>
 </template>
 
@@ -283,61 +191,13 @@ import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
-import { sincronizzaStatiPagamento } from 'src/usecases/sincronizzazione'
-import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
-import { STATO_PROGETTO } from 'src/utils/constants'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
-import { useAuthStore } from 'stores/auth.store'
 
 const $q = useQuasar()
 const store = useAdminStore()
-const authStore = useAuthStore()
 
 const savingVolontario = ref(false)
-const checkingCheck = ref(false)
-const applyingId = ref(null)
-const syncingPagamenti = ref(false)
-const syncPagamentiReport = ref('')
-
-async function anteprimaSyncPagamenti() {
-  syncingPagamenti.value = true
-  syncPagamentiReport.value = ''
-  try {
-    const res = await sincronizzaStatiPagamento({ dryRun: true })
-    syncPagamentiReport.value = `${res.totale} giustificativi da aggiornare`
-  } catch (error) {
-    notifyError($q, error, 'Errore anteprima sincronizzazione')
-  } finally {
-    syncingPagamenti.value = false
-  }
-}
-
-async function applicaSyncPagamenti() {
-  syncingPagamenti.value = true
-  syncPagamentiReport.value = ''
-  try {
-    const res = await sincronizzaStatiPagamento()
-    notifySuccess($q, `${res.aggiornati} giustificativi aggiornati`)
-    syncPagamentiReport.value = `${res.aggiornati} aggiornati`
-  } catch (error) {
-    notifyError($q, error, 'Errore sincronizzazione')
-  } finally {
-    syncingPagamenti.value = false
-  }
-}
-
-const statiTarget = ['accettato', 'in_rendicontazione', 'rimborso_parziale', 'chiuso']
-
-const groups = computed(() => authStore.statoProjettoTool?.groups || {})
-
-const hasToolError = computed(() => !!groups.value.error)
-
-function statoDBLabel(stato) {
-  if (stato === STATO_PROGETTO.APERTO) return 'Aperto (legacy)'
-  if (stato == null) return 'Nessuno'
-  return statoProgettoLabel(stato)
-}
 
 const totalAnomalie = computed(() => {
   if (!store.volontariCheck) return -1
@@ -435,32 +295,6 @@ async function assignVolontarioRole(c) {
     await runConsistencyCheck()
   } catch {
     notifyError($q, store.error || 'Errore assegnazione ruolo')
-  }
-}
-
-async function runStatoProgettoTool() {
-  checkingCheck.value = true
-  try {
-    await authStore.computeStatoProgettoCandidates()
-    if (!hasToolError.value) {
-      notifySuccess($q, 'Calcolo trasformazioni completato')
-    }
-  } catch (error) {
-    notifyError($q, authStore.error || error.message || 'Errore calcolo trasformazioni')
-  } finally {
-    checkingCheck.value = false
-  }
-}
-
-async function applicaTrasformazione(c) {
-  applyingId.value = c.progettoId
-  try {
-    await authStore.applyStatoProgettoById(c.progettoId, c.statoCalcolato)
-    notifySuccess($q, `${c.beneficiario}: trasformato in ${statoProgettoLabel(c.statoCalcolato)}`)
-  } catch (error) {
-    notifyError($q, authStore.error || error.message || 'Errore applicazione trasformazione')
-  } finally {
-    applyingId.value = null
   }
 }
 
