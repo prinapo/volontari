@@ -13,17 +13,23 @@ import { makeItems } from './items.js'
  * contesto famiglia).
  */
 
-const EMAIL_FIELDS = ['email.email_address', 'email.Primary']
+const EMAIL_FIELDS = ['email.id', 'email.email_address', 'email.Primary']
 
 const CONTATTO_FIELDS = ['id_contatto', 'Nome', 'Cognome', ...EMAIL_FIELDS]
 
 const RUOLI_DEFAULT = ['Volontario', 'Genitore', 'Tutore', 'Referente']
 
+/**
+ * Sceglie l'email primaria di un contatto. L'invariante di dominio è "una sola
+ * Primary per contatto"; per robustezza, se i dati sono ambigui (più Primary),
+ * si usa quella con id minore (la più vecchia). Fallback: email con id minore.
+ */
 function primaryEmail(emails) {
   if (!Array.isArray(emails) || emails.length === 0) return null
-  const primary = emails.find(item => item?.Primary) || emails[0]
-  const address = primary?.email_address
-  return address ? String(address).toLowerCase() : null
+  const withAddress = emails.filter(item => item?.email_address).sort((a, b) => (a?.id ?? 0) - (b?.id ?? 0))
+  if (withAddress.length === 0) return null
+  const primary = withAddress.find(item => item.Primary === true) || withAddress[0]
+  return String(primary.email_address).toLowerCase()
 }
 
 function dedupByEmail(recipients) {
@@ -75,6 +81,7 @@ async function resolveFamiglie(ctx, filterFamiglia, ruoli) {
       'Contatto.id_contatto',
       'Contatto.Nome',
       'Contatto.Cognome',
+      'Contatto.email.id',
       'Contatto.email.email_address',
       'Contatto.email.Primary',
       'Famiglia.id_famiglia'

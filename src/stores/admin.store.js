@@ -2,14 +2,17 @@ import { defineStore } from 'pinia'
 import { Notify } from 'quasar'
 import { adminService } from 'src/services/admin.service'
 import { contattiService } from 'src/services/contatti.service'
+import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { usersService } from 'src/services/users.service'
+import { normalizzaEmailPrimarie as normalizzaEmailPrimarieUseCase } from 'src/usecases/email'
 import {
   aggiornaRuolo as aggiornaRuoloUseCase,
   creaUtente as creaUtenteUseCase,
   inviaEmailCustom as inviaEmailCustomUseCase,
   resetPasswordUtente as resetPasswordUtenteUseCase
 } from 'src/usecases/utenti'
+import { calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
 import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
 
 export const useAdminStore = defineStore('admin', {
@@ -26,7 +29,9 @@ export const useAdminStore = defineStore('admin', {
     progettiLoading: false,
     searchProgetti: '',
     volontariCheck: { senzaUtente: [], utenteCancellato: [], flagOrfano: [], linkSenzaFlag: [], senzaRuolo: [] },
-    volontariCheckLoading: false
+    volontariCheckLoading: false,
+    emailPrimarieCheck: null,
+    emailPrimarieCheckLoading: false
   }),
 
   actions: {
@@ -261,6 +266,54 @@ export const useAdminStore = defineStore('admin', {
           error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica consistenza volontari'
       } finally {
         this.volontariCheckLoading = false
+      }
+    },
+
+    async fetchEmailPrimarieConsistency() {
+      this.emailPrimarieCheckLoading = true
+      this.error = null
+      try {
+        const res = await emailService.getAll()
+        const rows = res.data.data || []
+        const emails = rows.map(email => ({
+          id: email.id,
+          Primary: email.Primary === true,
+          contattoId: email.Contatto_Relation?.id_contatto ?? email.Contatto_Relation ?? null,
+          nome: email.Contatto_Relation?.Nome || '',
+          cognome: email.Contatto_Relation?.Cognome || ''
+        }))
+        const { duplicati, senzaPrimaria } = calcolaViolazioniEmailPrimarie(emails)
+        const info = new Map(emails.map(email => [String(email.contattoId), email]))
+        const enrich = violazione => ({
+          ...violazione,
+          nome: info.get(String(violazione.contattoId))?.nome || '',
+          cognome: info.get(String(violazione.contattoId))?.cognome || ''
+        })
+        this.emailPrimarieCheck = {
+          duplicati: duplicati.map(enrich),
+          senzaPrimaria: senzaPrimaria.map(enrich)
+        }
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica email primarie'
+      } finally {
+        this.emailPrimarieCheckLoading = false
+      }
+    },
+
+    async correggiEmailPrimarie() {
+      this.emailPrimarieCheckLoading = true
+      this.error = null
+      try {
+        const result = await normalizzaEmailPrimarieUseCase()
+        await this.fetchEmailPrimarieConsistency()
+        return result
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella correzione email primarie'
+        throw error
+      } finally {
+        this.emailPrimarieCheckLoading = false
       }
     },
 

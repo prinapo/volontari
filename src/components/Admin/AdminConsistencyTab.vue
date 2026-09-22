@@ -183,6 +183,80 @@ icon="refresh"
     >
       Verifica consistenza Volontari
     </q-btn>
+
+    <q-separator class="q-my-md" />
+
+    <q-banner v-if="store.emailPrimarieCheck" class="bg-grey-2 text-dark rounded-borders" rounded>
+      <template #avatar>
+        <q-icon name="mark_email_read" color="primary" />
+      </template>
+      <div class="text-weight-medium q-mb-xs">Email primarie</div>
+      <div class="text-body2 q-mb-sm text-grey-7">
+        {{ store.emailPrimarieCheck.duplicati.length }} contatti con più primarie,
+        {{ store.emailPrimarieCheck.senzaPrimaria.length }} senza primaria.
+      </div>
+
+      <template v-if="emailPrimarieAnomalie > 0">
+        <q-list dense>
+          <q-item v-for="v in store.emailPrimarieCheck.duplicati" :key="v.contattoId" dense class="q-px-none">
+            <q-item-section>
+              <q-item-label>{{ v.nome }} {{ v.cognome }}</q-item-label>
+              <q-item-label caption>{{ v.extraIds.length + 1 }} email primarie</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-for="v in store.emailPrimarieCheck.senzaPrimaria" :key="'n-' + v.contattoId" dense class="q-px-none">
+            <q-item-section>
+              <q-item-label>{{ v.nome }} {{ v.cognome }}</q-item-label>
+              <q-item-label caption>Nessuna email primaria</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-btn
+          color="primary"
+          icon="auto_fix_high"
+          label="Correggi tutte"
+          class="q-mt-sm"
+          :loading="store.emailPrimarieCheckLoading"
+          @click="correggiEmailPrimarie"
+        />
+      </template>
+
+      <template v-else>
+        <div class="text-center q-py-md">
+          <q-icon name="check_circle" color="positive" size="48px" />
+          <div class="text-h6 text-positive q-mt-sm">Nessuna anomalia trovata</div>
+        </div>
+      </template>
+
+      <template #action>
+        <q-btn
+          flat
+          round
+          dense
+          size="sm"
+          icon="refresh"
+          :loading="store.emailPrimarieCheckLoading"
+          @click="runEmailPrimarieCheck"
+        >
+          <q-tooltip>Riesegui verifica</q-tooltip>
+        </q-btn>
+      </template>
+    </q-banner>
+
+    <q-btn
+      v-else
+      flat
+      round
+      dense
+      size="sm"
+      icon="mark_email_read"
+      color="primary"
+      class="q-mt-sm"
+      :loading="store.emailPrimarieCheckLoading"
+      @click="runEmailPrimarieCheck"
+    >
+      Verifica email primarie
+    </q-btn>
   </div>
 </template>
 
@@ -198,6 +272,11 @@ const $q = useQuasar()
 const store = useAdminStore()
 
 const savingVolontario = ref(false)
+
+const emailPrimarieAnomalie = computed(() => {
+  if (!store.emailPrimarieCheck) return -1
+  return store.emailPrimarieCheck.duplicati.length + store.emailPrimarieCheck.senzaPrimaria.length
+})
 
 const totalAnomalie = computed(() => {
   if (!store.volontariCheck) return -1
@@ -255,6 +334,24 @@ async function runConsistencyCheck() {
   await store.fetchVolontariConsistency()
   if (store.volontariCheck) {
     notifySuccess($q, 'Verifica completata')
+  }
+}
+
+async function runEmailPrimarieCheck() {
+  await store.fetchEmailPrimarieConsistency()
+  if (store.error) {
+    notifyError($q, store.error, 'Errore verifica email primarie')
+  } else {
+    notifySuccess($q, 'Verifica email primarie completata')
+  }
+}
+
+async function correggiEmailPrimarie() {
+  try {
+    const result = await store.correggiEmailPrimarie()
+    notifySuccess($q, `Contatti corretti: ${result.contattiCorretti}`)
+  } catch {
+    notifyError($q, store.error || 'Errore nella correzione email primarie')
   }
 }
 

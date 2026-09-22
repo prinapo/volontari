@@ -121,6 +121,7 @@ import { ref, onMounted } from 'vue'
 import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
+import { impostaEmailPrimaria } from 'src/usecases/email'
 import { notifySuccess, notifyError } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
 
@@ -230,10 +231,8 @@ async function setPrimary(idx) {
   em.Primary = true
 
   try {
-    for (const e of emails.value) {
-      if (e.id) {
-        await emailService.update(e.id, { Primary: e.Primary })
-      }
+    if (em.id && authStore.contatto?.id_contatto) {
+      await impostaEmailPrimaria({ contattoId: authStore.contatto.id_contatto, emailId: em.id })
     }
 
     if (emails.value.length === 1) {

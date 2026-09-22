@@ -157,6 +157,7 @@ import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
 import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import { emailService } from 'src/services/email.service'
+import { impostaEmailPrimaria } from 'src/usecases/email'
 import { notifyError } from 'src/utils/notify'
 import { useGestioneStore } from 'stores/gestione.store'
 
@@ -253,10 +254,18 @@ function removeEmail(idx) {
   }
 }
 
-function setPrimary(idx) {
-  emails.value.forEach((e, i) => {
-    e.Primary = i === idx
+async function setPrimary(idx) {
+  emails.value.forEach((email, i) => {
+    email.Primary = i === idx
   })
+  const chosen = emails.value[idx]
+  const contattoId = props.editItem?.id_contatto
+  if (!chosen?.id || !contattoId) return
+  try {
+    await impostaEmailPrimaria({ contattoId, emailId: chosen.id })
+  } catch (error) {
+    notifyError($q, error, 'Errore impostazione email primaria')
+  }
 }
 
 async function onEmailBlur(em, _idx) {

@@ -90,3 +90,26 @@ Costruiti nel frontend (`src/utils/filtriComunicazioni.js`) e passati
 all'endpoint: ruolo (volontario/genitore/referente), referente, stato progetto +
 anno bando, giustificativi (nessuno/solo draft/almeno uno inviato), pagamenti,
 famiglie senza volontario, territorio/associazione.
+
+## 6. Email primarie (invariante)
+
+Invariante: **esattamente una email `Primary` per contatto**. L'invio sceglie la
+primaria e, se i dati sono ambigui, quella con **id minore** (la più vecchia).
+
+**A1 — Default del campo (Directus Studio, replicabile in prod)**
+
+- Settings → Data Model → `email` → campo `Primary` → **Default Value = off**
+  (false). Così le nuove email non nascono più primarie.
+- Su dev è già applicato (`default_value = false`).
+
+**A2 — Migrazione dati via UI (Admin)**
+
+- Admin → tab **Check** → **"Verifica email primarie"** → **"Correggi tutte"**.
+- Mantiene la primaria con id minore, azzera le eccedenti; se un contatto non ha
+  primarie, promuove la più vecchia. **Idempotente** (rieseguito: 0 anomalie).
+- Usa lo use case `normalizzaEmailPrimarie` (`src/usecases/email.js`); la
+  rilevazione pura è in `src/utils/emailPrimarie.js`.
+
+**UI "cambia primaria"**: impostare una email come primaria (Gestione →
+ContattoDialog; Impostazioni) rende automaticamente non primarie le altre, via
+use case `impostaEmailPrimaria`.
