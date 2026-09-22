@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { quasarMount } from '../quasar-mount'
 import ContattoDialog from 'src/components/Gestione/ContattoDialog.vue'
+import { quasarMount } from '../quasar-mount'
 
 async function flushDialog() {
   await nextTick()
@@ -40,7 +40,18 @@ vi.mock('stores/gestione.store', () => ({
 }))
 
 vi.mock('src/utils/notify', () => ({
-  notifyError: (...args) => mockNotifyError(...args)
+  notifyError: (...args) => mockNotifyError(...args),
+  notifySuccess: vi.fn()
+}))
+
+vi.mock('src/usecases/email', () => ({
+  impostaEmailPrimaria: vi.fn().mockResolvedValue({}),
+  eliminaEmail: vi.fn().mockResolvedValue({}),
+  eliminaContatto: vi.fn().mockResolvedValue({})
+}))
+
+vi.mock('stores/auth.store', () => ({
+  useAuthStore: () => ({ canAdmin: false })
 }))
 
 vi.mock('quasar', () => ({
@@ -80,7 +91,7 @@ describe('ContattoDialog', () => {
     expect(wrapper.vm.emails).toHaveLength(1)
   })
 
-  it('manages email list helpers', () => {
+  it('manages email list helpers', async () => {
     const wrapper = quasarMount(ContattoDialog, { props: { modelValue: true } })
 
     wrapper.vm.addEmail()
@@ -88,10 +99,15 @@ describe('ContattoDialog', () => {
     expect(wrapper.vm.emails).toHaveLength(2)
     expect(wrapper.vm.emails[0].Primary).toBe(true)
 
-    wrapper.vm.setPrimary(1)
+    await wrapper.vm.setPrimary(1)
     expect(wrapper.vm.emails[1].Primary).toBe(true)
 
-    wrapper.vm.removeEmail(1)
+    // La primaria non è cancellabile
+    await wrapper.vm.removeEmail(1)
+    expect(wrapper.vm.emails).toHaveLength(2)
+
+    // La non primaria sì
+    await wrapper.vm.removeEmail(0)
     expect(wrapper.vm.emails).toHaveLength(1)
     expect(wrapper.vm.emails[0].Primary).toBe(true)
   })

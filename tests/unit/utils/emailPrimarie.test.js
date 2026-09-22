@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
+import { calcolaDisallineatiLoginPrimaria, calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
 
 describe('calcolaViolazioniEmailPrimarie', () => {
   it('senza email non segnala nulla', () => {
@@ -26,6 +26,18 @@ describe('calcolaViolazioniEmailPrimarie', () => {
     })
   })
 
+  it('preferisce la primaria che coincide con l email di login', () => {
+    const emails = [
+      { id: 10, email_address: 'vecchia@x.it', Primary: true, contattoId: 'A' },
+      { id: 20, email_address: 'login@x.it', Primary: true, contattoId: 'A' }
+    ]
+    const login = new Map([['A', 'login@x.it']])
+    expect(calcolaViolazioniEmailPrimarie(emails, login)).toEqual({
+      duplicati: [{ contattoId: 'A', keepId: 20, extraIds: [10] }],
+      senzaPrimaria: []
+    })
+  })
+
   it('zero primarie: promuove quella con id minore', () => {
     const emails = [
       { id: 5, Primary: false, contattoId: 'B' },
@@ -44,15 +56,21 @@ describe('calcolaViolazioniEmailPrimarie', () => {
     ]
     expect(calcolaViolazioniEmailPrimarie(emails)).toEqual({ duplicati: [], senzaPrimaria: [] })
   })
+})
 
-  it('gestisce più contatti insieme', () => {
-    const emails = [
-      { id: 1, Primary: true, contattoId: 'A' },
-      { id: 2, Primary: true, contattoId: 'A' },
-      { id: 3, Primary: false, contattoId: 'B' }
+describe('calcolaDisallineatiLoginPrimaria', () => {
+  it('segnala login diversa dalla primaria', () => {
+    const rows = [
+      { contattoId: 'A', loginEmail: 'a@x.it', primaryEmail: 'b@x.it' },
+      { contattoId: 'B', loginEmail: 'c@x.it', primaryEmail: 'c@x.it' }
     ]
-    const result = calcolaViolazioniEmailPrimarie(emails)
-    expect(result.duplicati).toEqual([{ contattoId: 'A', keepId: 1, extraIds: [2] }])
-    expect(result.senzaPrimaria).toEqual([{ contattoId: 'B', keepId: 3 }])
+    expect(calcolaDisallineatiLoginPrimaria(rows)).toEqual([
+      { contattoId: 'A', loginEmail: 'a@x.it', primaryEmail: 'b@x.it' }
+    ])
+  })
+
+  it('ignora righe senza login o senza primaria', () => {
+    expect(calcolaDisallineatiLoginPrimaria([{ contattoId: 'A', loginEmail: null, primaryEmail: 'x' }])).toEqual([])
+    expect(calcolaDisallineatiLoginPrimaria([{ contattoId: 'A', loginEmail: 'x', primaryEmail: null }])).toEqual([])
   })
 })

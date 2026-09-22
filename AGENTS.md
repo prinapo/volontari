@@ -385,6 +385,21 @@ la gestione le fa il manager.
   vivono SOLO nell'env del compose Directus, mai nel frontend.
 - Log in `Comunicazioni` + `Comunicazioni_Contatti` (DB non git).
 
+## Email contatti — invariante primaria
+
+- Per i contatti con account Directus, l'email **primaria** del contatto coincide
+  con `directus_users.email` (login).
+- La primaria **non è mai cancellabile** direttamente: per sostituirla si
+  promuove un'altra email (`impostaEmailPrimaria`, `src/usecases/email.js`), che
+  aggiorna anche lo user Directus.
+- Azioni in `src/usecases/email.js`: `impostaEmailPrimaria`, `eliminaEmail`
+  (solo non primarie), `eliminaContatto` (solo senza account, con cascata su
+  email/legami famiglia/referente), `applicaCorrezioniEmailPrimarie`,
+  `allineaPrimariaALogin`.
+- Strumenti Admin (tab Check): "Email primarie" e "login vs primaria";
+  rilevazione pura in `src/utils/emailPrimarie.js`. Idempotenti e replicabili in prod.
+- Campo `email.Primary`: default **false** (Directus Studio → Data Model).
+
 ## Deploy
 
 - FTP su app.sostienilsostegno.com

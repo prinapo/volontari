@@ -5,14 +5,14 @@ import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { usersService } from 'src/services/users.service'
-import { normalizzaEmailPrimarie as normalizzaEmailPrimarieUseCase } from 'src/usecases/email'
+import { allineaPrimariaALogin, applicaCorrezioniEmailPrimarie } from 'src/usecases/email'
 import {
   aggiornaRuolo as aggiornaRuoloUseCase,
   creaUtente as creaUtenteUseCase,
   inviaEmailCustom as inviaEmailCustomUseCase,
   resetPasswordUtente as resetPasswordUtenteUseCase
 } from 'src/usecases/utenti'
-import { calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
+import { calcolaDisallineatiLoginPrimaria, calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
 import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
 
 export const useAdminStore = defineStore('admin', {
@@ -31,7 +31,9 @@ export const useAdminStore = defineStore('admin', {
     volontariCheck: { senzaUtente: [], utenteCancellato: [], flagOrfano: [], linkSenzaFlag: [], senzaRuolo: [] },
     volontariCheckLoading: false,
     emailPrimarieCheck: null,
-    emailPrimarieCheckLoading: false
+    emailPrimarieCheckLoading: false,
+    emailLoginCheck: null,
+    emailLoginCheckLoading: false
   }),
 
   actions: {
@@ -273,16 +275,20 @@ export const useAdminStore = defineStore('admin', {
       this.emailPrimarieCheckLoading = true
       this.error = null
       try {
-        const res = await emailService.getAll()
-        const rows = res.data.data || []
+        const [emailRes, contattiRes] = await Promise.all([emailService.getAll(), contattiService.getAllConUtente()])
+        const rows = emailRes.data.data || []
         const emails = rows.map(email => ({
           id: email.id,
+          email_address: email.email_address,
           Primary: email.Primary === true,
           contattoId: email.Contatto_Relation?.id_contatto ?? email.Contatto_Relation ?? null,
           nome: email.Contatto_Relation?.Nome || '',
           cognome: email.Contatto_Relation?.Cognome || ''
         }))
-        const { duplicati, senzaPrimaria } = calcolaViolazioniEmailPrimarie(emails)
+        const loginByContatto = new Map(
+          (contattiRes.data.data || []).map(contatto => [String(contatto.id_contatto), contatto.user_id?.email || null])
+        )
+        const { duplicati, senzaPrimaria } = calcolaViolazioniEmailPrimarie(emails, loginByContatto)
         const info = new Map(emails.map(email => [String(email.contattoId), email]))
         const enrich = violazione => ({
           ...violazione,
@@ -305,7 +311,11 @@ export const useAdminStore = defineStore('admin', {
       this.emailPrimarieCheckLoading = true
       this.error = null
       try {
-        const result = await normalizzaEmailPrimarieUseCase()
+        const check = this.emailPrimarieCheck || { duplicati: [], senzaPrimaria: [] }
+        const result = await applicaCorrezioniEmailPrimarie({
+          duplicati: check.duplicati,
+          senzaPrimaria: check.senzaPrimaria
+        })
         await this.fetchEmailPrimarieConsistency()
         return result
       } catch (error) {
@@ -314,6 +324,62 @@ export const useAdminStore = defineStore('admin', {
         throw error
       } finally {
         this.emailPrimarieCheckLoading = false
+      }
+    },
+
+    async fetchEmailLoginConsistency() {
+      this.emailLoginCheckLoading = true
+      this.error = null
+      try {
+        const [emailRes, contattiRes] = await Promise.all([emailService.getAll(), contattiService.getAllConUtente()])
+        const byContatto = new Map()
+        const info = new Map()
+        for (const email of emailRes.data.data || []) {
+          const contattoId = email.Contatto_Relation?.id_contatto ?? email.Contatto_Relation ?? null
+          if (contattoId == null) continue
+          const key = String(contattoId)
+          info.set(key, {
+            nome: email.Contatto_Relation?.Nome || '',
+            cognome: email.Contatto_Relation?.Cognome || ''
+          })
+          if (!byContatto.has(key)) byContatto.set(key, [])
+          byContatto.get(key).push(email)
+        }
+
+        const candidate = []
+        for (const contatto of contattiRes.data.data || []) {
+          const key = String(contatto.id_contatto)
+          const loginEmail = contatto.user_id?.email || null
+          if (!loginEmail) continue
+          const primaryEmail = (byContatto.get(key) || []).find(email => email.Primary === true)?.email_address || null
+          candidate.push({ contattoId: contatto.id_contatto, loginEmail, primaryEmail, ...info.get(key) })
+        }
+
+        this.emailLoginCheck = { disallineati: calcolaDisallineatiLoginPrimaria(candidate) }
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica login vs primaria'
+      } finally {
+        this.emailLoginCheckLoading = false
+      }
+    },
+
+    async correggiEmailLogin() {
+      this.emailLoginCheckLoading = true
+      this.error = null
+      try {
+        const disallineati = this.emailLoginCheck?.disallineati || []
+        for (const row of disallineati) {
+          await allineaPrimariaALogin({ contattoId: row.contattoId, loginEmail: row.loginEmail })
+        }
+        await this.fetchEmailLoginConsistency()
+        return { contattiCorretti: disallineati.length }
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella correzione login vs primaria'
+        throw error
+      } finally {
+        this.emailLoginCheckLoading = false
       }
     },
 

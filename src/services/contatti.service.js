@@ -152,7 +152,21 @@ export const contattiService = {
   },
 
   update(id, data) {
-    return api.patch(`/items/contatti/${id}`, data)
+    return api.patch(`${ENDPOINT}/${id}`, data)
+  },
+
+  remove(id) {
+    return api.delete(`${ENDPOINT}/${id}`)
+  },
+
+  getAllConUtente() {
+    return api.get(ENDPOINT, {
+      params: {
+        'filter[user_id][_nnull]': true,
+        fields: 'id_contatto,user_id.email',
+        limit: -1
+      }
+    })
   },
 
   getVolontariSenzaUtente() {

@@ -132,6 +132,10 @@ export const gestioneService = {
     return api.patch(`/items/Famiglie_Contatti/${fcId}`, { Disattivo: true })
   },
 
+  deleteFamigliaContatto(fcId) {
+    return api.delete(`/items/Famiglie_Contatti/${fcId}`)
+  },
+
   checkFamiglieVolontari(famigliaIds) {
     if (!famigliaIds || famigliaIds.length === 0) return Promise.resolve({ data: { data: [] } })
     return api.get('/items/Famiglie_Contatti', {

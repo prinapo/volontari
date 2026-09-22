@@ -23,6 +23,16 @@ export const referentiService = {
     })
   },
 
+  getByReferente(referenteId) {
+    return api.get('/items/Volontari_Referenti', {
+      params: {
+        'filter[Referente][_eq]': referenteId,
+        fields: 'id,Volontario,Referente',
+        limit: -1
+      }
+    })
+  },
+
   create(volontarioId, referenteId) {
     return api.post('/items/Volontari_Referenti', {
       Volontario: volontarioId,

@@ -257,6 +257,73 @@ icon="refresh"
     >
       Verifica email primarie
     </q-btn>
+
+    <q-separator class="q-my-md" />
+
+    <q-banner v-if="store.emailLoginCheck" class="bg-grey-2 text-dark rounded-borders" rounded>
+      <template #avatar>
+        <q-icon name="link" color="primary" />
+      </template>
+      <div class="text-weight-medium q-mb-xs">Email login vs primaria</div>
+      <div class="text-body2 q-mb-sm text-grey-7">
+        {{ store.emailLoginCheck.disallineati.length }} contatti con email di login diversa dalla primaria.
+      </div>
+
+      <template v-if="store.emailLoginCheck.disallineati.length > 0">
+        <q-list dense>
+          <q-item v-for="v in store.emailLoginCheck.disallineati" :key="v.contattoId" dense class="q-px-none">
+            <q-item-section>
+              <q-item-label>{{ v.nome }} {{ v.cognome }}</q-item-label>
+              <q-item-label caption>login: {{ v.loginEmail }} · primaria: {{ v.primaryEmail }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-btn
+          color="primary"
+          icon="auto_fix_high"
+          label="Allinea alla login"
+          class="q-mt-sm"
+          :loading="store.emailLoginCheckLoading"
+          @click="correggiEmailLogin"
+        />
+      </template>
+
+      <template v-else>
+        <div class="text-center q-py-md">
+          <q-icon name="check_circle" color="positive" size="48px" />
+          <div class="text-h6 text-positive q-mt-sm">Nessuna anomalia trovata</div>
+        </div>
+      </template>
+
+      <template #action>
+        <q-btn
+          flat
+          round
+          dense
+          size="sm"
+          icon="refresh"
+          :loading="store.emailLoginCheckLoading"
+          @click="runEmailLoginCheck"
+        >
+          <q-tooltip>Riesegui verifica</q-tooltip>
+        </q-btn>
+      </template>
+    </q-banner>
+
+    <q-btn
+      v-else
+      flat
+      round
+      dense
+      size="sm"
+      icon="link"
+      color="primary"
+      class="q-mt-sm"
+      :loading="store.emailLoginCheckLoading"
+      @click="runEmailLoginCheck"
+    >
+      Verifica login vs primaria
+    </q-btn>
   </div>
 </template>
 
@@ -352,6 +419,24 @@ async function correggiEmailPrimarie() {
     notifySuccess($q, `Contatti corretti: ${result.contattiCorretti}`)
   } catch {
     notifyError($q, store.error || 'Errore nella correzione email primarie')
+  }
+}
+
+async function runEmailLoginCheck() {
+  await store.fetchEmailLoginConsistency()
+  if (store.error) {
+    notifyError($q, store.error, 'Errore verifica login vs primaria')
+  } else {
+    notifySuccess($q, 'Verifica login vs primaria completata')
+  }
+}
+
+async function correggiEmailLogin() {
+  try {
+    const result = await store.correggiEmailLogin()
+    notifySuccess($q, `Contatti allineati: ${result.contattiCorretti}`)
+  } catch {
+    notifyError($q, store.error || 'Errore nella correzione login vs primaria')
   }
 }
 
