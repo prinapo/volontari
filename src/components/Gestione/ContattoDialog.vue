@@ -131,6 +131,11 @@ aria-label="Chiudi">
         </q-form>
       </q-card-section>
 
+      <q-separator v-if="isEdit && props.editItem?.id_contatto" />
+      <q-card-section v-if="isEdit && props.editItem?.id_contatto">
+        <StoricoComunicazioni :contatto-id="props.editItem.id_contatto" />
+      </q-card-section>
+
       <q-card-actions align="right">
         <q-btn v-close-popup flat dense size="sm" label="Annulla" />
         <q-btn
@@ -150,6 +155,7 @@ aria-label="Chiudi">
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
+import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import { emailService } from 'src/services/email.service'
 import { notifyError } from 'src/utils/notify'
 import { useGestioneStore } from 'stores/gestione.store'

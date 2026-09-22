@@ -298,6 +298,11 @@ aria-label="Chiudi">
         <div v-else class="text-grey-5 text-caption">Nessun giustificativo</div>
       </q-card-section>
 
+      <q-separator v-if="progetto.idFamiglia" />
+      <q-card-section v-if="progetto.idFamiglia">
+        <StoricoComunicazioni :famiglia-id="progetto.idFamiglia" />
+      </q-card-section>
+
       <q-card-actions align="right">
         <q-btn
 v-close-popup
@@ -314,6 +319,7 @@ data-testid="detail-chiudi" />
 
 <script setup>
 import { computed } from 'vue'
+import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, statoLabel, statoColor } from 'src/utils/formatters'
 

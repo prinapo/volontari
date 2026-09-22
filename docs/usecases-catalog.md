@@ -149,6 +149,19 @@ completare la rendicontazione); `chiuso` è l'unico stato finale.
 
 ---
 
+## Area Comunicazioni — `src/usecases/comunicazioni.js` ✅
+
+Invio email 1-a-1 via Brevo (endpoint Directus `directus-extensions/communications/`,
+fuori dal frontend) con log CRM. Vedi `docs/comunicazioni.md`.
+
+| Azione              | Use case             | Entry point                           | Stato    |
+| ------------------- | -------------------- | ------------------------------------- | -------- |
+| Invia comunicazione | `inviaComunicazione` | ComunicazioniPage / InviaEmailDialog  | estratto |
+| Conta destinatari   | `contaDestinatari`   | ComunicazioniPage (anteprima)         | estratto |
+| Costruisci payload  | `buildPayload`       | inviaComunicazione / contaDestinatari | estratto |
+
+---
+
 ## Esclusi dal layer use case
 
 | Area                                                                     | Motivazione                                           |

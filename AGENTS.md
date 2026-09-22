@@ -371,6 +371,20 @@ la gestione le fa il manager.
 - Dopo un sync la sessione admin corrente è invalidata (truncate users): la UI
   chiede di accedere di nuovo.
 
+## Comunicazioni (email 1-a-1)
+
+- Modulo in `docs/comunicazioni.md`; UI `ComunicazioniPage` (wizard, admin+manager)
+  - `InviaEmailDialog`/`StoricoComunicazioni` nelle schede contatto/famiglia.
+- L'invio avviene in un'**estensione Directus endpoint** in
+  `directus-extensions/communications/` (fuori dal frontend, come `db-sync`):
+  `POST /communications/recipients` (anteprima) e `/send` (invio + log).
+- Il frontend non invia mai email direttamente: passa dal use case
+  `inviaComunicazione` (`src/usecases/comunicazioni.js`), che costruisce il
+  payload (filtri → id famiglia) via `src/utils/filtriComunicazioni.js`.
+- La API key Brevo (`BREVO_API_KEY`) e i ruoli abilitati (`COMMS_ALLOWED_ROLES`)
+  vivono SOLO nell'env del compose Directus, mai nel frontend.
+- Log in `Comunicazioni` + `Comunicazioni_Contatti` (DB non git).
+
 ## Deploy
 
 - FTP su app.sostienilsostegno.com
