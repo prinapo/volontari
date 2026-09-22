@@ -80,6 +80,10 @@ npm run build            # produce dist/index.js
 Copiare l'intera cartella in `<directus>/extensions/communications/` (incluso
 `dist/`) e riavviare il container Directus. Il `dist/` non è versionato.
 
+In dev l'app chiama l'API su `https://development.sostienilsostegno.com` e nginx
+proxy-a a Directus solo alcune route: serve aggiungere anche **`location /communications/`**
+(come per `/sync/`), altrimenti le chiamate cadono sulla SPA.
+
 ## 5. Filtri supportati
 
 Costruiti nel frontend (`src/utils/filtriComunicazioni.js`) e passati
