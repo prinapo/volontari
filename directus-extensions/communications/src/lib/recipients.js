@@ -115,7 +115,18 @@ async function resolveSingolo(ctx, contattoId) {
   ]
 }
 
-export async function resolveRecipients({ ctx, audience, filter, filterFamiglia, ruoli, contattoId }) {
+/**
+ * Post-filtro opzionale sul cognome del contatto (case-insensitive, sottostringa).
+ */
+function filterByCognome(recipients, cognome) {
+  const needle = String(cognome || '')
+    .trim()
+    .toLowerCase()
+  if (!needle) return recipients
+  return recipients.filter(recipient => (recipient.cognome || '').toLowerCase().includes(needle))
+}
+
+export async function resolveRecipients({ ctx, audience, filter, filterFamiglia, ruoli, contattoId, cognome }) {
   let recipients
   if (audience === 'contatto') {
     recipients = await resolveSingolo(ctx, contattoId)
@@ -124,5 +135,5 @@ export async function resolveRecipients({ ctx, audience, filter, filterFamiglia,
   } else {
     recipients = await resolveContatti(ctx, filter)
   }
-  return dedupByEmail(recipients)
+  return filterByCognome(dedupByEmail(recipients), cognome)
 }

@@ -89,7 +89,8 @@ proxy-a a Directus solo alcune route: serve aggiungere anche **`location /commun
 Costruiti nel frontend (`src/utils/filtriComunicazioni.js`) e passati
 all'endpoint: ruolo (volontario/genitore/referente), referente, stato progetto +
 anno bando, giustificativi (nessuno/solo draft/almeno uno inviato), pagamenti,
-famiglie senza volontario, territorio/associazione.
+famiglie senza volontario, territorio/associazione e **"cognome contiene"**
+(`cognome`, post-filtro case-insensitive lato endpoint).
 
 ## 6. Email primarie (invariante)
 

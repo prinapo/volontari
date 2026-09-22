@@ -4,6 +4,7 @@ import { contaDestinatari, inviaComunicazione } from 'src/usecases/comunicazioni
 
 const FILTERS_DEFAULT = () => ({
   ruoli: [],
+  cognome: '',
   statoProgetto: [],
   annoBando: null,
   giustificativi: null,

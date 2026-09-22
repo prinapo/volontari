@@ -17,6 +17,10 @@ bordered>
       </q-step>
 
       <q-step :name="2" title="Filtri" icon="filter_alt" :done="step > 2">
+        <div v-if="store.audience !== 'contatto'" class="q-mb-md" style="max-width: 320px">
+          <q-input v-model="store.filters.cognome" label="Cognome contiene" outlined dense clearable />
+        </div>
+
         <template v-if="store.audience === 'contatti'">
           <div class="text-subtitle2 q-mb-sm">Ruolo contatto</div>
           <q-option-group v-model="store.filters.ruoli" :options="ruoliContattiOptions" type="checkbox" color="primary" inline />

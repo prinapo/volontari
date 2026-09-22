@@ -133,10 +133,14 @@ async function buildFamigliePayload({
  * Le condizioni di dominio vengono risolte in insiemi di id famiglia.
  */
 export async function buildPayload(filters = {}) {
-  const { audience, ruoli = [], contattoId = null } = filters
+  const { audience, ruoli = [], contattoId = null, cognome = '' } = filters
   if (audience === 'contatto') return { audience, contattoId }
-  if (audience === 'famiglie') return buildFamigliePayload(filters)
-  return { audience: 'contatti', filter: buildContattiRoleFilter(ruoli) || undefined }
+  const cognomeFiltro = cognome.trim() || undefined
+  if (audience === 'famiglie') {
+    const payload = await buildFamigliePayload(filters)
+    return { ...payload, cognome: cognomeFiltro }
+  }
+  return { audience: 'contatti', filter: buildContattiRoleFilter(ruoli) || undefined, cognome: cognomeFiltro }
 }
 
 /** Conteggio + anteprima destinatari. */

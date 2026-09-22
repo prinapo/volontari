@@ -28,9 +28,13 @@ Anteprima/conteggio destinatari.
   "filter": { "IsVolontario": { "_eq": true } },
   "filterFamiglia": { "Progetti": { "_some": { "StatoProgetto": { "_eq": "accettato" } } } },
   "ruoli": ["Volontario", "Genitore"],
-  "contattoId": 123
+  "contattoId": 123,
+  "cognome": "prin"
 }
 ```
+
+`cognome` (opzionale) è un post-filtro case-insensitive sul cognome dei
+destinatari risolti (sottostringa).
 
 Risposta: `{ "count": 42, "sample": [ { "contattoId", "nome", "cognome", "email", "famigliaId", "famiglia" } ] }`.
 

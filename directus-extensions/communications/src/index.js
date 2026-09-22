@@ -55,8 +55,16 @@ export default {
           res.status(403).json({ error: 'Non autorizzato all invio di comunicazioni' })
           return
         }
-        const { audience, filter, filterFamiglia, ruoli, contattoId } = req.body || {}
-        const recipients = await resolveRecipients({ ctx, audience, filter, filterFamiglia, ruoli, contattoId })
+        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome } = req.body || {}
+        const recipients = await resolveRecipients({
+          ctx,
+          audience,
+          filter,
+          filterFamiglia,
+          ruoli,
+          contattoId,
+          cognome
+        })
         res.json({ count: recipients.length, sample: recipients.slice(0, SAMPLE_SIZE).map(publicRecipient) })
       } catch (error) {
         logger?.error?.(error, '[communications] resolve recipients')
@@ -76,13 +84,22 @@ export default {
           return
         }
 
-        const { audience, filter, filterFamiglia, ruoli, contattoId, subject, body, link, tipo } = req.body || {}
+        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, subject, body, link, tipo } =
+          req.body || {}
         if (!subject || !body) {
           res.status(400).json({ error: 'Oggetto e corpo sono obbligatori' })
           return
         }
 
-        const recipients = await resolveRecipients({ ctx, audience, filter, filterFamiglia, ruoli, contattoId })
+        const recipients = await resolveRecipients({
+          ctx,
+          audience,
+          filter,
+          filterFamiglia,
+          ruoli,
+          contattoId,
+          cognome
+        })
         const sender = brevoSender(env)
 
         comunicazioneId = await createComunicazione(ctx, {
@@ -91,7 +108,7 @@ export default {
           DataInvio: new Date().toISOString(),
           Mittente: req.accountability?.user || null,
           Tipo: tipo || audience || 'contatti',
-          Filtri: { audience, filter, filterFamiglia, ruoli, contattoId },
+          Filtri: { audience, filter, filterFamiglia, ruoli, contattoId, cognome },
           LinkAllegato: link || null,
           NInviati: 0,
           NFalliti: 0,

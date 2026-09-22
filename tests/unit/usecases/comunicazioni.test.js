@@ -42,6 +42,16 @@ describe('comunicazioni usecase', () => {
     expect(payload).toEqual({ audience: 'contatto', contattoId: 42 })
   })
 
+  it('include il filtro cognome quando valorizzato', async () => {
+    const payload = await buildPayload({ audience: 'contatti', ruoli: ['Volontario'], cognome: ' Prin ' })
+    expect(payload.cognome).toBe('Prin')
+  })
+
+  it('non include cognome se vuoto', async () => {
+    const payload = await buildPayload({ audience: 'contatti', ruoli: ['Volontario'], cognome: '  ' })
+    expect(payload.cognome).toBeUndefined()
+  })
+
   it('audience famiglie: interseca stato progetto ed esclude chi ha un volontario', async () => {
     mockGetProgetti.mockResolvedValue(response([{ Famiglia: 1 }, { Famiglia: 2 }]))
     mockGetFamiglieContatti.mockResolvedValue(response([{ Famiglia: 1 }]))

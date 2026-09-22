@@ -130,6 +130,11 @@ aria-label="Chiudi">
         </q-form>
       </q-card-section>
 
+      <q-separator v-if="isEdit && props.editItem?.id_contatto" />
+      <q-card-section v-if="isEdit && props.editItem?.id_contatto">
+        <StoricoComunicazioni :contatto-id="props.editItem.id_contatto" />
+      </q-card-section>
+
       <q-card-actions align="right">
         <q-btn
           v-if="canDeleteContatto"
@@ -161,6 +166,7 @@ aria-label="Chiudi">
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
+import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import { emailService } from 'src/services/email.service'
 import { eliminaContatto, eliminaEmail, impostaEmailPrimaria } from 'src/usecases/email'
 import { notifyError, notifySuccess } from 'src/utils/notify'
