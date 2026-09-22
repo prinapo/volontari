@@ -65,6 +65,12 @@ const routes = [
         meta: { requiredRole: ROUTE_ROLES.MANAGER }
       },
       {
+        path: 'comunicazioni',
+        name: 'Comunicazioni',
+        component: () => import('pages/ComunicazioniPage.vue'),
+        meta: { requiredRole: ROUTE_ROLES.MANAGER }
+      },
+      {
         path: 'gestione',
         name: 'Gestione',
         component: () => import('pages/GestionePage.vue'),

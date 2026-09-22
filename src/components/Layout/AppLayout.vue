@@ -124,6 +124,20 @@
           <q-item-section>Gestione</q-item-section>
         </q-item>
 
+        <q-item
+          v-if="authStore.canManager"
+          v-ripple
+          clickable
+          :active="$route.name === 'Comunicazioni'"
+          active-class="text-white"
+          to="/comunicazioni"
+        >
+          <q-item-section avatar>
+            <q-icon name="mail" />
+          </q-item-section>
+          <q-item-section>Comunicazioni</q-item-section>
+        </q-item>
+
         <q-item v-ripple clickable :active="$route.name === 'Impostazioni'" active-class="text-white" to="/impostazioni">
           <q-item-section avatar>
             <q-icon name="settings" />
