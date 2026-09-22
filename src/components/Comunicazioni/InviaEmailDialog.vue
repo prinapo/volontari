@@ -33,7 +33,8 @@ import { notifyError, notifySuccess } from 'src/utils/notify'
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   contattoId: { type: [Number, String], default: null },
-  famigliaId: { type: [Number, String], default: null }
+  famigliaId: { type: [Number, String], default: null },
+  email: { type: String, default: null }
 })
 
 const emit = defineEmits(['update:modelValue', 'sent'])
@@ -61,12 +62,13 @@ async function invia() {
   sending.value = true
   try {
     const esito = await inviaComunicazione({
-      audience: 'contatto',
+      audience: props.contattoId ? 'contatto' : 'email',
       contattoId: props.contattoId,
+      email: props.email,
       subject: oggetto.value,
       body: corpo.value,
       link: link.value || null,
-      tipo: 'contatto'
+      tipo: props.contattoId ? 'contatto' : 'email'
     })
     notifySuccess($q, `Email inviata (${esito.inviati} inviati, ${esito.falliti} falliti)`)
     emit('sent')

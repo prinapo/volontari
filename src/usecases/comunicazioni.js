@@ -133,8 +133,9 @@ async function buildFamigliePayload({
  * Le condizioni di dominio vengono risolte in insiemi di id famiglia.
  */
 export async function buildPayload(filters = {}) {
-  const { audience, ruoli = [], contattoId = null, cognome = '' } = filters
+  const { audience, ruoli = [], contattoId = null, email = null, cognome = '' } = filters
   if (audience === 'contatto') return { audience, contattoId }
+  if (audience === 'email') return { audience, email }
   const cognomeFiltro = cognome.trim() || undefined
   if (audience === 'famiglie') {
     const payload = await buildFamigliePayload(filters)

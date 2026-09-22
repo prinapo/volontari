@@ -42,6 +42,11 @@ describe('comunicazioni usecase', () => {
     expect(payload).toEqual({ audience: 'contatto', contattoId: 42 })
   })
 
+  it('audience email: passa l indirizzo', async () => {
+    const payload = await buildPayload({ audience: 'email', email: 'x@y.it' })
+    expect(payload).toEqual({ audience: 'email', email: 'x@y.it' })
+  })
+
   it('include il filtro cognome quando valorizzato', async () => {
     const payload = await buildPayload({ audience: 'contatti', ruoli: ['Volontario'], cognome: ' Prin ' })
     expect(payload.cognome).toBe('Prin')

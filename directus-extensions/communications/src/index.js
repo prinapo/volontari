@@ -55,7 +55,7 @@ export default {
           res.status(403).json({ error: 'Non autorizzato all invio di comunicazioni' })
           return
         }
-        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome } = req.body || {}
+        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, email } = req.body || {}
         const recipients = await resolveRecipients({
           ctx,
           audience,
@@ -63,7 +63,8 @@ export default {
           filterFamiglia,
           ruoli,
           contattoId,
-          cognome
+          cognome,
+          email
         })
         res.json({ count: recipients.length, sample: recipients.slice(0, SAMPLE_SIZE).map(publicRecipient) })
       } catch (error) {
@@ -84,7 +85,7 @@ export default {
           return
         }
 
-        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, subject, body, link, tipo } =
+        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, email, subject, body, link, tipo } =
           req.body || {}
         if (!subject || !body) {
           res.status(400).json({ error: 'Oggetto e corpo sono obbligatori' })
@@ -98,7 +99,8 @@ export default {
           filterFamiglia,
           ruoli,
           contattoId,
-          cognome
+          cognome,
+          email
         })
         const sender = brevoSender(env)
 
@@ -108,7 +110,7 @@ export default {
           DataInvio: new Date().toISOString(),
           Mittente: req.accountability?.user || null,
           Tipo: tipo || audience || 'contatti',
-          Filtri: { audience, filter, filterFamiglia, ruoli, contattoId, cognome },
+          Filtri: { audience, filter, filterFamiglia, ruoli, contattoId, cognome, email },
           LinkAllegato: link || null,
           NInviati: 0,
           NFalliti: 0,

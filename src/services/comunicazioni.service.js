@@ -6,7 +6,7 @@ const STORICO_FIELDS = [
   'Esito',
   'Errore',
   'BrevoMessageId',
-  'Comunicazione.Id',
+  'Comunicazione.id',
   'Comunicazione.Oggetto',
   'Comunicazione.DataInvio',
   'Comunicazione.Mittente.first_name',

@@ -190,6 +190,19 @@ color="grey-6"
                   <q-tooltip>Assegna Referente</q-tooltip>
                 </q-btn>
               </q-card-actions>
+
+              <q-expansion-item
+                icon="mail"
+                label="Comunicazioni inviate"
+                dense
+                group="comunicazioni-contatti"
+                @show="expandedComms.add(props.row.id_contatto)"
+                @hide="expandedComms.delete(props.row.id_contatto)"
+              >
+                <q-card-section v-if="expandedComms.has(props.row.id_contatto)">
+                  <StoricoComunicazioni :contatto-id="props.row.id_contatto" />
+                </q-card-section>
+              </q-expansion-item>
             </q-card>
           </q-expansion-item>
         </div>
@@ -332,6 +345,7 @@ import { ref, watch, onMounted } from 'vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import FieldHistoryButton from 'components/Common/FieldHistoryButton.vue'
 import TableToolbar from 'components/TableToolbar.vue'
+import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
@@ -364,6 +378,7 @@ const showReferente = ref(false)
 const referenteTarget = ref(null)
 
 const famiglieCount = ref({})
+const expandedComms = ref(new Set())
 
 const {
   rows,

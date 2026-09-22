@@ -114,3 +114,38 @@ primaria e, se i dati sono ambigui, quella con **id minore** (la più vecchia).
 **UI "cambia primaria"**: impostare una email come primaria (Gestione →
 ContattoDialog; Impostazioni) rende automaticamente non primarie le altre, via
 use case `impostaEmailPrimaria`.
+
+## 7. Relazioni M2O (dev + prod)
+
+Le collezioni log richiedono **4 relazioni M2O registrate** in
+`directus_relations`. Se mancano, i campi annidati (`Comunicazione.Oggetto`,
+`Comunicazione.Mittente.*`) non si risolvono e lo **storico in app resta vuoto**
+(è il bug riscontrato su dev e già corretto):
+
+- `Comunicazioni_Contatti.Comunicazione` → `Comunicazioni`
+- `Comunicazioni_Contatti.Contatto` → `contatti` (FK `id_contatto`)
+- `Comunicazioni_Contatti.Famiglia` → `Famiglie` (FK `id_famiglia`)
+- `Comunicazioni.Mittente` → `directus_users`
+
+**GUI (Directus Studio, da usare in prod)**
+
+1. Settings → Data Model → `Comunicazioni_Contatti`.
+2. Campo `Comunicazione` → crea/collega la relazione M2O verso `Comunicazioni`.
+3. Idem per `Contatto` → `contatti` e `Famiglia` → `Famiglie`.
+4. Su `Comunicazioni`, campo `Mittente` → M2O verso `directus_users`.
+
+**API (usata su dev)**: `POST /relations` con
+`{ "collection", "field", "related_collection", "schema": { "on_delete": "SET NULL" } }`.
+
+⚠️ Creare una M2O via `POST /fields` con `special: ['m2o']` **non** registra la
+relazione: va creata esplicitamente, altrimenti i campi annidati falliscono.
+
+## 8. Click sull'email
+
+- **Admin/manager**: cliccare un indirizzo apre il **mailer interno**
+  (`InviaEmailDialog`), che logga la comunicazione (audience `email`, il contatto
+  viene risolto dall'indirizzo).
+- **Volontario**: resta il link `mailto:` (scrive dalla propria casella).
+- Storia comunicazioni del **contatto**: accordion "Comunicazioni inviate" nella
+  scheda contatto (Gestione → Contatti). Storia della **famiglia**: sezione nel
+  Dettaglio progetto.

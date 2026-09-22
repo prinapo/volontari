@@ -115,6 +115,31 @@ async function resolveSingolo(ctx, contattoId) {
   ]
 }
 
+async function resolveEmail(ctx, email) {
+  const normalized = String(email || '')
+    .trim()
+    .toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return []
+
+  const items = await makeItems(ctx, 'contatti')
+  const rows = await items.readByQuery({
+    filter: { email: { _some: { email_address: { _eq: normalized } } } },
+    fields: CONTATTO_FIELDS,
+    limit: 1
+  })
+  const row = rows[0]
+  return [
+    {
+      contattoId: row?.id_contatto ?? null,
+      nome: row?.Nome ?? null,
+      cognome: row?.Cognome ?? null,
+      email: normalized,
+      famigliaId: null,
+      famiglia: null
+    }
+  ]
+}
+
 /**
  * Post-filtro opzionale sul cognome del contatto (case-insensitive, sottostringa).
  */
@@ -126,10 +151,12 @@ function filterByCognome(recipients, cognome) {
   return recipients.filter(recipient => (recipient.cognome || '').toLowerCase().includes(needle))
 }
 
-export async function resolveRecipients({ ctx, audience, filter, filterFamiglia, ruoli, contattoId, cognome }) {
+export async function resolveRecipients({ ctx, audience, filter, filterFamiglia, ruoli, contattoId, cognome, email }) {
   let recipients
   if (audience === 'contatto') {
     recipients = await resolveSingolo(ctx, contattoId)
+  } else if (audience === 'email') {
+    recipients = await resolveEmail(ctx, email)
   } else if (audience === 'famiglie') {
     recipients = await resolveFamiglie(ctx, filterFamiglia, ruoli)
   } else {
