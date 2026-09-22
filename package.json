@@ -81,7 +81,8 @@
     ],
     "ignore": [
       "tests/",
-      "docs/"
+      "docs/",
+      "directus-extensions/"
     ],
     "vue": true,
     "ignoreBinaries": [

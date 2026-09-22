@@ -174,6 +174,13 @@ export default [
     }
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '.quasar/**', 'src-pwa/**', 'tests/e2e/obsolete/**']
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '.quasar/**',
+      'src-pwa/**',
+      'tests/e2e/obsolete/**',
+      'directus-extensions/**'
+    ]
   }
 ]
