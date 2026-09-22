@@ -7,6 +7,16 @@ function isEmailUniqueError(error) {
 }
 
 export const emailService = {
+  getAll() {
+    return api.get('/items/email', {
+      params: {
+        fields:
+          'id,email_address,Primary,Contatto_Relation.id_contatto,Contatto_Relation.Nome,Contatto_Relation.Cognome',
+        limit: -1
+      }
+    })
+  },
+
   getByContatto(contattoIds) {
     const ids = Array.isArray(contattoIds) ? contattoIds.join(',') : contattoIds
     return api.get('/items/email', {

@@ -92,6 +92,7 @@ export const famiglieService = {
           'Contatto.user_id',
           'Contatto.Numero_di_cellulare',
           'Contatto.Numero_di_telefono',
+          'Contatto.email.id',
           'Contatto.email.email_address',
           'Contatto.email.Primary'
         ].join(',')
@@ -132,6 +133,7 @@ export const famiglieService = {
           'Contatto.user_id',
           'Contatto.Numero_di_cellulare',
           'Contatto.Numero_di_telefono',
+          'Contatto.email.id',
           'Contatto.email.email_address',
           'Contatto.email.Primary'
         ].join(',')
@@ -152,6 +154,7 @@ export const famiglieService = {
           'Contatto.user_id',
           'Contatto.Numero_di_cellulare',
           'Contatto.Numero_di_telefono',
+          'Contatto.email.id',
           'Contatto.email.email_address',
           'Contatto.email.Primary'
         ].join(',')

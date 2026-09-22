@@ -82,7 +82,7 @@ aria-label="Chiudi">
               outlined
               class="col"
               :data-testid="`contatto-email-${idx}`"
-              :disable="hasAccount"
+              :disable="hasAccount && em.Primary"
               :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Inserisci un indirizzo email valido']"
               lazy-rules
               @blur="onEmailBlur(em, idx)"
@@ -96,7 +96,6 @@ aria-label="Chiudi">
               color="grey"
               size="sm"
               aria-label="Imposta come primaria"
-              :disable="hasAccount"
               @click="setPrimary(idx)"
             >
               <q-tooltip>Imposta come primaria</q-tooltip>
@@ -111,7 +110,7 @@ aria-label="Chiudi">
               size="sm"
               data-testid="btn-delete-email"
               aria-label="Elimina email"
-              :disable="hasAccount || em.Primary"
+              :disable="em.Primary"
               @click="removeEmail(idx)"
             >
               <q-tooltip>{{ em.Primary ? 'Imposta un\'altra email come primaria prima di eliminare' : 'Elimina email' }}</q-tooltip>
@@ -132,6 +131,18 @@ aria-label="Chiudi">
       </q-card-section>
 
       <q-card-actions align="right">
+        <q-btn
+          v-if="canDeleteContatto"
+          flat
+          dense
+          size="sm"
+          color="negative"
+          icon="delete"
+          label="Elimina contatto"
+          :loading="deletingContatto"
+          @click="confirmEliminaContatto"
+        />
+        <q-space />
         <q-btn v-close-popup flat dense size="sm" label="Annulla" />
         <q-btn
           color="primary"
@@ -151,7 +162,9 @@ aria-label="Chiudi">
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
 import { emailService } from 'src/services/email.service'
-import { notifyError } from 'src/utils/notify'
+import { eliminaContatto, eliminaEmail, impostaEmailPrimaria } from 'src/usecases/email'
+import { notifyError, notifySuccess } from 'src/utils/notify'
+import { useAuthStore } from 'stores/auth.store'
 import { useGestioneStore } from 'stores/gestione.store'
 
 function generateContattoId() {
@@ -170,11 +183,13 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 
 const $q = useQuasar()
 const store = useGestioneStore()
+const authStore = useAuthStore()
 
 const formRef = ref(null)
 const visible = ref(false)
 const emails = ref([])
 const originalEmailIds = ref([])
+const deletingContatto = ref(false)
 
 const form = ref({
   Nome: '',
@@ -186,6 +201,7 @@ const form = ref({
 
 const isEdit = computed(() => !!props.editItem)
 const hasAccount = computed(() => !!props.editItem?.user_id)
+const canDeleteContatto = computed(() => isEdit.value && authStore.canAdmin && !hasAccount.value)
 
 watch(
   () => props.modelValue,
@@ -240,16 +256,61 @@ function addEmail() {
   emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0, _saving: false })
 }
 
-function removeEmail(idx) {
+async function removeEmail(idx) {
+  const email = emails.value[idx]
+  if (!email) return
+  if (email.Primary) {
+    notifyError($q, null, "Non puoi eliminare l'email primaria: promuovine un'altra e riprova")
+    return
+  }
+  if (email.id && props.editItem?.id_contatto) {
+    try {
+      await eliminaEmail({ contattoId: props.editItem.id_contatto, emailId: email.id })
+      originalEmailIds.value = originalEmailIds.value.filter(id => id !== email.id)
+    } catch (error) {
+      notifyError($q, error, "Errore nell'eliminazione dell'email")
+      return
+    }
+  }
   emails.value.splice(idx, 1)
   if (emails.value.length > 0 && !emails.value.some(e => e.Primary)) {
     emails.value[0].Primary = true
   }
 }
 
-function setPrimary(idx) {
-  emails.value.forEach((e, i) => {
-    e.Primary = i === idx
+async function setPrimary(idx) {
+  emails.value.forEach((email, i) => {
+    email.Primary = i === idx
+  })
+  const chosen = emails.value[idx]
+  const contattoId = props.editItem?.id_contatto
+  if (!chosen?.id || !contattoId) return
+  try {
+    await impostaEmailPrimaria({ contattoId, emailId: chosen.id })
+  } catch (error) {
+    notifyError($q, error, 'Errore impostazione email primaria')
+  }
+}
+
+function confirmEliminaContatto() {
+  $q.dialog({
+    title: 'Elimina contatto',
+    message: `Eliminare definitivamente ${form.value.Nome} ${form.value.Cognome}? Verranno rimosse anche email e collegamenti.`,
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Elimina', color: 'negative' },
+    persistent: true
+  }).onOk(async () => {
+    deletingContatto.value = true
+    try {
+      await eliminaContatto({ contattoId: props.editItem.id_contatto })
+      notifySuccess($q, 'Contatto eliminato')
+      emit('saved')
+      visible.value = false
+    } catch (error) {
+      notifyError($q, error, 'Errore nella cancellazione del contatto')
+    } finally {
+      deletingContatto.value = false
+    }
   })
 }
 

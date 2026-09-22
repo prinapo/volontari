@@ -22,6 +22,17 @@ function parseNum(v) {
   return Number.parseFloat(v) || 0
 }
 
+/**
+ * Email preferita di un contatto: la Primary (se i dati sono ambigui, quella
+ * con id minore); fallback all'email con id minore.
+ */
+function pickEmail(emails) {
+  if (!Array.isArray(emails) || emails.length === 0) return null
+  const withAddress = emails.filter(email => email?.email_address).sort((a, b) => (a?.id ?? 0) - (b?.id ?? 0))
+  if (withAddress.length === 0) return null
+  return (withAddress.find(email => email.Primary) || withAddress[0]).email_address
+}
+
 function isContabile(stato) {
   return STATI_GIUSTIFICATIVO_CONTABILI.includes(stato)
 }
@@ -361,15 +372,13 @@ export async function inviaNotificaPagamento(pagamento) {
   const volontariRes = await famiglieService.getVolontariByFamiglia(pagamento.Famiglia)
   const volontari = volontariRes.data.data || []
   const mainVolontario = volontari.find(v => v.Contatto?.user_id)
-  let destinatario = mainVolontario?.Contatto?.email?.[0]?.email_address
+  let destinatario = mainVolontario ? pickEmail(mainVolontario.Contatto?.email) : null
 
   if (!destinatario) {
     const genitoriRes = await famiglieService.getGenitoriByFamiglia(pagamento.Famiglia)
     const genitori = genitoriRes.data.data || []
     const mainGenitore = genitori.find(g => g.Contatto?.email?.length > 0)
-    destinatario =
-      mainGenitore?.Contatto?.email?.find(e => e.Primary)?.email_address ||
-      mainGenitore?.Contatto?.email?.[0]?.email_address
+    destinatario = mainGenitore ? pickEmail(mainGenitore.Contatto?.email) : null
   }
 
   if (!destinatario) {
