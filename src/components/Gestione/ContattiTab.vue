@@ -323,6 +323,18 @@ aria-label="Assegna famiglia"
           >
             <q-tooltip>Assegna Referente</q-tooltip>
           </q-btn>
+          <q-btn
+            flat
+            round
+            dense
+            icon="mail"
+            size="sm"
+            data-testid="btn-comunicazioni-contatto"
+            aria-label="Comunicazioni inviate"
+            @click="openComms(props.row)"
+          >
+            <q-tooltip>Comunicazioni inviate</q-tooltip>
+          </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -336,6 +348,16 @@ aria-label="Assegna famiglia"
     />
 
     <AssegnaReferenteDialog v-model="showReferente" :volontario="referenteTarget" />
+
+    <q-dialog v-model="showComms">
+      <q-card style="min-width: 420px; max-width: 640px">
+        <q-card-section class="text-h6">Comunicazioni inviate</q-card-section>
+        <q-separator />
+        <q-card-section>
+          <StoricoComunicazioni v-if="commsTarget" :contatto-id="commsTarget" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -379,6 +401,13 @@ const referenteTarget = ref(null)
 
 const famiglieCount = ref({})
 const expandedComms = ref(new Set())
+const showComms = ref(false)
+const commsTarget = ref(null)
+
+function openComms(row) {
+  commsTarget.value = row.id_contatto
+  showComms.value = true
+}
 
 const {
   rows,

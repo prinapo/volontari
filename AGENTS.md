@@ -349,6 +349,10 @@ la gestione le fa il manager.
   file serve ANCHE `location = /files` (esatta, senza slash) — altrimenti
   nginx 301 `/files` → `/files/` e il browser converte il POST in GET (lista
   file) → l'upload non crea nulla.
+  Stesso discorso per gli endpoint chiamati **senza slash** (`/users?…`,
+  `/roles?…`, `/revisions?…`, `/items?…`): servono le `location = /users`,
+  `= /roles`, `= /revisions`, `= /items`, altrimenti cadono sulla SPA (redirect
+  → CORS preflight fallito). Aggiunte su dev.
 - **Permessi dev (DB, non git)**: durante i fix E2E è stato aggiunto al ruolo
   Manager di dev il permesso `update` su `Progetti` (il flusso "Chiudi
   progetto" e il ricalcolo aggregati PATCHano `/items/Progetti/{id}` e senza
