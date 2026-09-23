@@ -359,7 +359,19 @@ la gestione le fa il manager.
   sync — se manca, le chiamate del sync cadono sulla SPA. NOTA: per l'upload
   file serve ANCHE `location = /files` (esatta, senza slash) — altrimenti
   nginx 301 `/files` → `/files/` e il browser converte il POST in GET (lista
-  file) → l'upload non crea nulla.
+  file) → l'upload non crea nulla. Stesso motivo per cui serve
+  `location = /mail` (esatta): il `POST /mail` di `admin.service.js` altrimenti
+  subisce il 301 e l'email non parte.
+- **Basic Auth dev (nginx, DB/config host non git)**: il vhost dev è protetto da
+  `auth_basic` (utente `dev`, hash in `/etc/nginx/.htpasswd-development`) ma
+  **solo dentro `location /`** (UI + sorgenti), con `satisfy any` +
+  `allow 127.0.0.1` / `allow 57.131.50.250` (bypass per i run E2E locali).
+  Le `location` API Directus restano **senza** Basic: l'app invia
+  `Authorization: Bearer <token>` (`src/services/api.js`), e un header Bearer
+  non soddisfa la Basic → nginx risponde 401 e il browser ripropone il popup
+  all'infinito. Regola: se si aggiunge una nuova `location` API, NON applicarvi
+  la Basic. `location ^~ /@fs/` → `return 403` per chiudere i bypass file-read
+  di Vite.
 - **Permessi dev (DB, non git)**: durante i fix E2E è stato aggiunto al ruolo
   Manager di dev il permesso `update` su `Progetti` (il flusso "Chiudi
   progetto" e il ricalcolo aggregati PATCHano `/items/Progetti/{id}` e senza
