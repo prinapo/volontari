@@ -57,8 +57,14 @@ export default function quasarConfig(ctx) {
     },
     devServer: {
       port: 9000,
+      host: 'localhost',
       open: false,
-      allowedHosts: ['development.sostienilsostegno.com', 'localhost']
+      allowedHosts: ['development.sostienilsostegno.com', 'localhost'],
+      fs: {
+        strict: true,
+        allow: [__dirname],
+        deny: ['.env', '.env.*', '*.{pem,crt,key}', '**/.git/**']
+      }
     },
     framework: {
       iconSet: 'material-icons',

@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { Notify } from 'quasar'
-import * as XLSX from 'xlsx'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
@@ -15,12 +14,23 @@ import {
   scartaSubmission,
   verificaGiustificativo
 } from 'src/usecases/giustificativi'
-import { statoProgettoLabel } from 'src/utils/badges'
 import { STATI_GIUSTIFICATIVO_CONTABILI, STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
-import { calcolaStatoRendicontazione } from 'src/utils/rendicontazione'
 import { calcolaDisallineati } from 'src/utils/statoProgetto'
-import { calcolaStatoRiga } from 'src/utils/statoRiga'
+import {
+  buildContattiRows,
+  buildFlatRows,
+  buildGiustificativiRows,
+  buildInfoRows,
+  buildProgettiRows,
+  CONTATTI_COLUMNS,
+  FLAT_COLUMNS,
+  GIUSTIFICATIVI_COLUMNS,
+  INFO_COLUMNS,
+  PROGETTI_COLUMNS
+} from 'src/utils/verificaExport'
+import { downloadWorkbookBuffer, exportFileName, writeSheet } from 'src/utils/xlsxExport'
+import packageJson from '../../package.json'
 import { useAuthStore } from './auth.store'
 import { usePagamentiStore } from './pagamenti.store'
 
@@ -64,6 +74,18 @@ function normalizeProject(project, famiglia = {}) {
     descrizioneCondizione: project.Descrizione_Condizione || '',
     dettaglioCosti: project.Dettaglio_Costi || '',
     relazioneRichiedente: project.Relazione_con_il_soggetto_richiedente || '',
+    isee: project.ISEE ?? '',
+    indiceIsee: project.Indice_ISEE ?? '',
+    indiceGravita: project.Indice_Gravita_Disabilita ?? '',
+    punteggio: project.Punteggio_Complessivo ?? '',
+    costoAnnuale: toNumber(project.Costo_Annuale),
+    costoCaricoFamiglia: toNumber(project.Costo_Carico_Famiglia),
+    altriFinanziamenti: toNumber(project.Altri_Fianziamenti),
+    erogazioneRichiesta: toNumber(project.Erogazione_Richiesta),
+    sostegnoScolastico: project.Progetto_Sostegno_Scolastico ?? '',
+    continuazione: project.Continuazione ?? '',
+    motivoChiusura: project.MotivoChiusura || '',
+    dataChiusura: project.DataChiusura || '',
     allegatiProgetto: project.Allegati_Progetto || [],
     allegatiISEE: project.Allegati_ISEE || [],
     allegatiGiustificativi: project.Allegati_Giustificativi || [],
@@ -125,7 +147,8 @@ export const useVerificaStore = defineStore('verifica', {
     submissionsTotalCount: 0,
     includeScartati: false,
     anniBandoList: [],
-    statoDisallineati: []
+    statoDisallineati: [],
+    exporting: false
   }),
 
   getters: {
@@ -326,6 +349,7 @@ export const useVerificaStore = defineStore('verifica', {
             contactsByFam[fid] = tagged.map(item => ({
               Nome: item.Contatto?.Nome || '',
               Cognome: item.Contatto?.Cognome || '',
+              Citta: item.Contatto?.Citta || '',
               email: item._emails || [],
               Ruolo: item._ruolo,
               DataCreazione: item.DataCreazione
@@ -336,73 +360,17 @@ export const useVerificaStore = defineStore('verifica', {
           row.contatti = contactsByFam[row.idFamiglia] || []
         })
 
-        const rows = this.rows.map(row => {
-          const base = {
-            'ID Progetto': row.idProgetto,
-            Anno: row.annoBando,
-            Titolo: row.titolo,
-            Famiglia: row.famiglia,
-            Allocato: row.allocato,
-            Rendicontato: row.totaleRendicontato,
-            Pagato: row.totalePagato,
-            'Stato Rendicontazione': calcolaStatoRendicontazione(row.giustificativi),
-            'Stato Progetto': statoProgettoLabel(row.statoProgetto),
-            'Data Inizio': row.dataInizio,
-            'Data Fine': row.dataFine,
-            Eta: row.eta,
-            Descrizione: row.descrizioneProgetto,
-            Ambito: row.ambito,
-            IBAN: row.iban,
-            Intestatario: row.intestatario,
-            // eslint-disable-next-line no-restricted-syntax -- export Excel: non è uno stato persistito
-            Stato: calcolaStatoRiga(row).label,
-            'Totale Rendicontato': row.totaleRendicontato,
-            'Totale Pagato': row.totalePagato,
-            'Residuo Allocato': row.residuoAllocato
-          }
+        const rows = buildFlatRows(this.rows)
 
-          const contatti = (row.contatti || [])
-            .sort((a, b) => new Date(b.DataCreazione) - new Date(a.DataCreazione))
-            .slice(0, 8)
-            .map(c => ({
-              Nome: c.Nome || '',
-              Cognome: c.Cognome || '',
-              Email: c.email?.find?.(e => e.Primary)?.email_address || c.email?.[0]?.email_address || '',
-              Ruolo: c.Ruolo || ''
-            }))
+        const { default: ExcelJS } = await import('exceljs')
+        const workbook = new ExcelJS.Workbook()
+        workbook.creator = 'Portale Volontario'
+        workbook.created = new Date()
+        writeSheet(workbook, 'Verifica', FLAT_COLUMNS, rows)
 
-          for (let i = 0; i < 8; i++) {
-            const c = contatti[i]
-            base[`C${i + 1}_Nome`] = c?.Nome || ''
-            base[`C${i + 1}_Cognome`] = c?.Cognome || ''
-            base[`C${i + 1}_Email`] = c?.Email || ''
-            base[`C${i + 1}_Ruolo`] = c?.Ruolo || ''
-          }
-
-          const giustificativi = (row.giustificativi || [])
-            .filter(g => !g.Invalidato)
-            .sort((a, b) => new Date(b.Data) - new Date(a.Data))
-            .slice(0, 12)
-
-          for (let i = 0; i < 12; i++) {
-            const g = giustificativi[i]
-            base[`G${i + 1}_Descrizione`] = g?.Descrizione || ''
-            base[`G${i + 1}_Importo`] = g?.Importo || ''
-            base[`G${i + 1}_Data`] = g?.Data || ''
-            base[`G${i + 1}_Stato`] = g?.Stato || ''
-            base[`G${i + 1}_Rendicontazione`] = g?.Rendicontazione || ''
-            base[`G${i + 1}_Allegato`] = g?.Allegato || ''
-          }
-
-          return base
-        })
-
-        const wb = XLSX.utils.book_new()
-        const ws = XLSX.utils.json_to_sheet(rows)
-        XLSX.utils.book_append_sheet(wb, ws, 'Verifica')
-
+        const buffer = await workbook.xlsx.writeBuffer()
         const fileName = `Verifica_Export_${new Date().toISOString().slice(0, 10)}.xlsx`
-        XLSX.writeFile(wb, fileName)
+        downloadWorkbookBuffer(buffer, fileName)
 
         Notify.create({
           type: 'positive',
@@ -418,6 +386,84 @@ export const useVerificaStore = defineStore('verifica', {
         })
       } finally {
         this.loading = false
+      }
+    },
+
+    async _fetchContattiByFamiglie(famigliaIds) {
+      if (famigliaIds.length === 0) return {}
+      const res = await famiglieService.getContattiByFamiglie(famigliaIds)
+      const links = res.data.data || []
+      const contattoIds = [...new Set(links.map(link => link.Contatto?.id_contatto).filter(Boolean))]
+      let emailMap = {}
+      if (contattoIds.length > 0) {
+        emailMap = await enrichWithEmails(contattoIds, emailService.getByContatto.bind(emailService))
+      }
+      const byFamiglia = {}
+      for (const link of links) {
+        const famigliaId = link.Famiglia?.id_famiglia ?? link.Famiglia
+        if (!famigliaId) continue
+        if (!byFamiglia[famigliaId]) byFamiglia[famigliaId] = []
+        byFamiglia[famigliaId].push({
+          ...link.Contatto,
+          Ruolo: link.Ruolo_nella_Famiglia,
+          _emails: emailMap[link.Contatto?.id_contatto] || []
+        })
+      }
+      return byFamiglia
+    },
+
+    async exportExcelDettagliato() {
+      this.exporting = true
+      this.error = null
+      try {
+        await this.fetchAllPages()
+
+        const famIds = [...new Set(this.rows.map(r => r.idFamiglia).filter(Boolean))]
+        const contattiByFamiglia = await this._fetchContattiByFamiglie(famIds)
+
+        const progettiRows = buildProgettiRows(this.rows, contattiByFamiglia)
+        const contattiRows = buildContattiRows(this.rows, contattiByFamiglia)
+        const giustificativiRows = buildGiustificativiRows(this.rows)
+
+        const { default: ExcelJS } = await import('exceljs')
+        const workbook = new ExcelJS.Workbook()
+        workbook.creator = 'Portale Volontario'
+        workbook.created = new Date()
+
+        writeSheet(
+          workbook,
+          'Info',
+          INFO_COLUMNS,
+          buildInfoRows({
+            data: new Date().toLocaleString('it-IT'),
+            versione: packageJson.version,
+            progetti: progettiRows.length,
+            contatti: contattiRows.length,
+            giustificativi: giustificativiRows.length
+          })
+        )
+        writeSheet(workbook, 'Progetti', PROGETTI_COLUMNS, progettiRows)
+        writeSheet(workbook, 'Contatti', CONTATTI_COLUMNS, contattiRows)
+        writeSheet(workbook, 'Giustificativi', GIUSTIFICATIVI_COLUMNS, giustificativiRows)
+
+        const buffer = await workbook.xlsx.writeBuffer()
+        downloadWorkbookBuffer(buffer, exportFileName())
+
+        Notify.create({
+          type: 'positive',
+          message: 'Export dettagliato completato',
+          caption: `${progettiRows.length} progetti, ${contattiRows.length} contatti, ${giustificativiRows.length} giustificativi`
+        })
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || "Errore durante l'export dettagliato"
+        Notify.create({
+          type: 'negative',
+          message: 'Errore export dettagliato',
+          caption: error.message
+        })
+      } finally {
+        this.exporting = false
       }
     },
 

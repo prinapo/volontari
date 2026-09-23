@@ -89,6 +89,7 @@ export const famiglieService = {
           'Contatto.id_contatto',
           'Contatto.Nome',
           'Contatto.Cognome',
+          'Contatto.Citta',
           'Contatto.user_id',
           'Contatto.Numero_di_cellulare',
           'Contatto.Numero_di_telefono',
@@ -155,6 +156,47 @@ export const famiglieService = {
           'Contatto.email.email_address',
           'Contatto.email.Primary'
         ].join(',')
+      }
+    })
+  },
+
+  getContattiByFamiglie(famigliaIds) {
+    const idList = Array.isArray(famigliaIds) ? famigliaIds.join(',') : famigliaIds
+    return api.get('/items/Famiglie_Contatti', {
+      params: {
+        'filter[Famiglia][_in]': idList,
+        'filter[_or][0][Disattivo][_null]': 'true',
+        'filter[_or][1][Disattivo][_eq]': 'false',
+        fields: [
+          'id',
+          'Ruolo_nella_Famiglia',
+          'Disattivo',
+          'Famiglia.id_famiglia',
+          'Contatto.id_contatto',
+          'Contatto.Nome',
+          'Contatto.Cognome',
+          'Contatto.Beneficiario',
+          'Contatto.CF',
+          'Contatto.Citta',
+          'Contatto.Indirizzo',
+          'Contatto.CAP',
+          'Contatto.Provincia',
+          'Contatto.Country',
+          'Contatto.Citta_Domicilio',
+          'Contatto.Indirizzo_Domicilio',
+          'Contatto.CAP_Domicilio',
+          'Contatto.Provincia_domicilio',
+          'Contatto.Citta_Nascita',
+          'Contatto.Data_di_nascita',
+          'Contatto.Cognome_da_sposata',
+          'Contatto.Numero_componenti_famiglia',
+          'Contatto.Numero_di_cellulare',
+          'Contatto.Numero_di_telefono',
+          'Contatto.IBAN',
+          'Contatto.Intestatario_CC',
+          'Contatto.Cointestatario_CC'
+        ].join(','),
+        limit: -1
       }
     })
   }

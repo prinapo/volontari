@@ -110,6 +110,19 @@
             >
               <q-tooltip>Esporta tutti i progetti in Excel (con dettagli contatti e giustificativi)</q-tooltip>
             </q-btn>
+            <q-btn
+              icon="table_view"
+              label="Esporta dettagliato"
+              color="primary"
+              outline
+              dense
+              data-testid="btn-export-dettagliato"
+              :loading="store.exporting"
+              :disable="store.exporting"
+              @click="store.exportExcelDettagliato"
+            >
+              <q-tooltip>Export multi-foglio: progetti, contatti (anagrafica completa) e giustificativi</q-tooltip>
+            </q-btn>
           </template>
         </TableToolbar>
       </div>
