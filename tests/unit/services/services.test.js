@@ -403,11 +403,17 @@ describe('services', () => {
     expect(mockDelete).toHaveBeenCalledWith('/items/ListePagamenti/l-1')
 
     mockPost.mockResolvedValueOnce({ data: { data: { id: 'file-1' } } })
-    expect(await listePagamentiService.uploadCsv('a;b', 'Lista giugno/2026')).toBe('file-1')
+    expect(await listePagamentiService.uploadExcel(new ArrayBuffer(8), 'Lista giugno/2026')).toBe('file-1')
     expect(mockPost).toHaveBeenCalledWith('/files', expect.any(FormData))
 
     await listePagamentiService.deleteFile('file-1')
     expect(mockDelete).toHaveBeenCalledWith('/files/file-1')
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ status: 200 }).mockResolvedValueOnce({ status: 403 }))
+    expect(await listePagamentiService.fileStatus('f-1')).toBe(200)
+    expect(await listePagamentiService.fileStatus('f-2')).toBe(403)
+    expect(await listePagamentiService.fileStatus(null)).toBe(0)
+    vi.unstubAllGlobals()
   })
 
   it('progetti.service', async () => {

@@ -7,7 +7,6 @@ import {
   ricalcolaPropostiDaProgetti,
   ricalcolaTotaliProgetto,
   riapriProgetto,
-  ripristinaInPagamento,
   ripristinaProposto,
   segnaAnnullato,
   segnaFallito,
@@ -29,6 +28,7 @@ const mockUpdateGiustificativo = vi.fn()
 const mockGetFamigliaVolontari = vi.fn()
 const mockGetFamigliaGenitori = vi.fn()
 const mockGetFamigliaById = vi.fn()
+const mockGetFamiglieBatch = vi.fn()
 const mockUpdateFamiglia = vi.fn()
 const mockSendEmail = vi.fn()
 
@@ -66,6 +66,7 @@ vi.mock('src/services/famiglie.service', () => ({
     getVolontariByFamiglia: (...a) => mockGetFamigliaVolontari(...a),
     getGenitoriByFamiglia: (...a) => mockGetFamigliaGenitori(...a),
     getById: (...a) => mockGetFamigliaById(...a),
+    getFamiglieBatch: (...a) => mockGetFamiglieBatch(...a),
     update: (...a) => mockUpdateFamiglia(...a)
   }
 }))
@@ -108,6 +109,51 @@ describe('ricalcolaProposta', () => {
     const payload = mockCreatePagamento.mock.calls[0][0]
     expect(payload.Importo).toBe(440)
     expect(payload.Stato).toBe('proposto')
+  })
+
+  it('usa IBAN e Intestatario correnti della famiglia', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase() } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '800' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockGetFamiglieBatch.mockResolvedValue({
+      data: { data: [{ id_famiglia: 'fam-1', IBAN: 'IT00FAM', Intestatario_CC: 'Mario Rossi' }] }
+    })
+    mockCreatePagamento.mockResolvedValue({ data: { data: {} } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaProposta(1)
+
+    expect(mockGetFamiglieBatch).toHaveBeenCalledWith(['fam-1'])
+    const payload = mockCreatePagamento.mock.calls[0][0]
+    expect(payload.IBAN).toBe('IT00FAM')
+    expect(payload.Intestatario).toBe('Mario Rossi')
+  })
+
+  it('riallinea IBAN e Intestatario sul proposto esistente', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase() } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'verificato', Importo: '800' }] }
+    })
+    mockGetPagamenti
+      .mockResolvedValueOnce({ data: { data: [] } })
+      .mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto', Importo: '100' }] } })
+      .mockResolvedValueOnce({ data: { data: [] } })
+      .mockResolvedValue({ data: { data: [] } })
+    mockGetFamiglieBatch.mockResolvedValue({
+      data: { data: [{ id_famiglia: 'fam-1', IBAN: 'IT00FAM', Intestatario_CC: 'Mario Rossi' }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await ricalcolaProposta(1)
+
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
+      Importo: 640,
+      IBAN: 'IT00FAM',
+      Intestatario: 'Mario Rossi'
+    })
   })
 
   it('annulla la proposta esistente quando non resta importo', async () => {
@@ -328,6 +374,21 @@ describe('ripristinaProposto', () => {
     expect(res.Stato).toBe('annullato')
   })
 
+  it('riporta un bonifico fallito a proposto (Batch azzerato)', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-3', Stato: 'fallito', Progetto: 7 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase({ id_progetto: 7 }) } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    const res = await ripristinaProposto('p-3')
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-3', { Batch: null, Stato: 'proposto' })
+    expect(res.Stato).toBe('fallito')
+  })
+
   it('rifiuta uno stato non valido senza scrivere', async () => {
     mockGetPagamenti.mockResolvedValueOnce({
       data: { data: [{ id: 'p-2', Stato: 'pagato', Progetto: 7 }] }
@@ -338,7 +399,7 @@ describe('ripristinaProposto', () => {
   })
 })
 
-describe('segnaFallito / ripristinaInPagamento', () => {
+describe('segnaFallito', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('segna fallito un pagamento in_pagamento', async () => {
@@ -362,28 +423,6 @@ describe('segnaFallito / ripristinaInPagamento', () => {
     })
     mockUpdatePagamento.mockResolvedValue({})
     await expect(segnaFallito('p-2', 'x')).rejects.toBeInstanceOf(TransizioneNonValidaError)
-    expect(mockUpdatePagamento).not.toHaveBeenCalled()
-  })
-
-  it('ripristina in pagamento un fallito', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-3', Stato: 'fallito', Progetto: 7 }] }
-    })
-    mockUpdatePagamento.mockResolvedValue({})
-    mockGetProgettoById.mockResolvedValue({ data: { data: progettoBase({ id_progetto: 7 }) } })
-    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
-    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
-
-    await ripristinaInPagamento('p-3')
-    expect(mockUpdatePagamento).toHaveBeenCalledWith('p-3', { NoteEsito: null, Stato: 'in_pagamento' })
-  })
-
-  it('ripristinaInPagamento rifiuta stati non validi senza scrivere', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({
-      data: { data: [{ id: 'p-4', Stato: 'pagato', Progetto: 7 }] }
-    })
-    mockUpdatePagamento.mockResolvedValue({})
-    await expect(ripristinaInPagamento('p-4')).rejects.toBeInstanceOf(TransizioneNonValidaError)
     expect(mockUpdatePagamento).not.toHaveBeenCalled()
   })
 })
@@ -629,6 +668,25 @@ describe('ricalcolaPropostiDaProgetti', () => {
       Stato: 'annullato',
       NoteEsito: 'Proposta annullata: importo non più dovuto',
       Batch: null
+    })
+  })
+
+  it('aggiorna IBAN e Intestatario sul proposto esistente a parità di importo', async () => {
+    mockGetGiustificativiByProgetti.mockResolvedValue({
+      data: { data: [{ Progetto: 'X', Stato: 'verificato', Importo: '500', Invalidato: false }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: {
+        data: [{ id: 'prop-1', Progetto: 'X', Stato: 'proposto', Importo: '400', IBAN: '', Intestatario: '' }]
+      }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+
+    await ricalcolaPropostiDaProgetti([row({ allocato: 800, iban: 'IT00FAM', intestatario: 'Mario Rossi' })])
+
+    expect(mockUpdatePagamento).toHaveBeenCalledWith('prop-1', {
+      IBAN: 'IT00FAM',
+      Intestatario: 'Mario Rossi'
     })
   })
 

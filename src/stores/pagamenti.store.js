@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { associazioniService } from 'src/services/associazioni.service'
 import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
+import { rigeneraListaBatch as rigeneraListaBatchUseCase } from 'src/usecases/listePagamenti'
 import {
   chiudiProgetto as chiudiProgettoUseCase,
   correggiDati as correggiDatiUseCase,
@@ -9,7 +10,6 @@ import {
   ricalcolaProposta as ricalcolaPropostaUseCase,
   ricalcolaPropostiDaProgetti as ricalcolaPropostiDaProgettiUseCase,
   ricalcolaTotaliProgetto as ricalcolaTotaliProgettoUseCase,
-  ripristinaInPagamento as ripristinaInPagamentoUseCase,
   ripristinaProposto as ripristinaPropostoUseCase,
   segnaAnnullato as segnaAnnullatoUseCase,
   segnaFallito as segnaFallitoUseCase,
@@ -260,71 +260,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async _aggiornaListaBatch(batchId, batchNome) {
       this.error = null
       try {
-        const pagamentiRes = await pagamentiService.getPagamenti({
-          'filter[Batch][_eq]': batchId,
-          'filter[_or][0][Stato][_eq]': STATO_PAGAMENTO.IN_PAGAMENTO,
-          'filter[_or][1][Stato][_eq]': STATO_PAGAMENTO.PAGATO,
-          fields: 'id,Stato,Importo,IBAN,Intestatario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia',
-          limit: -1
-        })
-        const pagamenti = pagamentiRes.data.data || []
-
-        let nome
-        if (batchNome) {
-          nome = batchNome
-        } else {
-          const batch = this.batches.find(b => b.id === batchId)
-          if (!batch) return
-          nome = batch.Nome
-        }
-
-        const allListe = await listePagamentiService.getAll()
-        const existingLista = allListe.find(l => l.Nome === `${nome} (batch)`)
-
-        if (pagamenti.length === 0) {
-          if (existingLista) {
-            if (existingLista.File) await listePagamentiService.deleteFile(existingLista.File)
-            await listePagamentiService.delete(existingLista.id)
-          }
-          await this.fetchListe()
-          return
-        }
-
-        // Valida nomi famiglia per CSV
-        const nomiInvalidi = pagamenti.map(p => p.Famiglia?.Nome_Famiglia || '').filter(n => n && /[\n\r";]/.test(n))
-        if (nomiInvalidi.length > 0) {
-          throw new Error(
-            `Impossibile generare CSV: ${nomiInvalidi.length} famiglia/e hanno caratteri non consentiti nel nome.\n` +
-              nomiInvalidi.map(n => `"${n}"`).join(', ')
-          )
-        }
-
-        const csvHeader = 'Famiglia,Importo,IBAN,Intestatario'
-        const csvRows = pagamenti.map(p => {
-          const importo = (Number.parseFloat(p.Importo) || 0).toFixed(2).replace('.', ',')
-          return `"${p.Famiglia?.Nome_Famiglia || ''}","${importo}","${p.IBAN || ''}","${p.Intestatario || ''}"`
-        })
-        const csv = [csvHeader, ...csvRows].join('\n')
-        const totale = pagamenti.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
-
-        const fileId = await listePagamentiService.uploadCsv(csv, nome)
-
-        if (existingLista) {
-          if (existingLista.File) await listePagamentiService.deleteFile(existingLista.File)
-          await listePagamentiService.update(existingLista.id, {
-            File: fileId,
-            Totale: totale,
-            ConteggioRighe: pagamenti.length
-          })
-        } else {
-          await listePagamentiService.create({
-            Nome: `${nome} (batch)`,
-            File: fileId,
-            Totale: totale,
-            ConteggioRighe: pagamenti.length,
-            DataCreazione: new Date().toISOString()
-          })
-        }
+        await rigeneraListaBatchUseCase(batchId, { batchNome })
         await this.fetchListe()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore aggiornamento lista batch'
@@ -428,20 +364,6 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         const { batchId } = await segnaAnnullatoUseCase(pagamentoId)
         if (batchId) await this._aggiornaListaBatch(batchId)
-        await this.init()
-      } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async ripristinaInPagamento(pagamentoId) {
-      this.loading = true
-      this.error = null
-      try {
-        await ripristinaInPagamentoUseCase(pagamentoId)
         await this.init()
       } catch (error) {
         this.error = error.response?.data?.errors?.[0]?.message || error.message

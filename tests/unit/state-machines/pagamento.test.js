@@ -11,7 +11,7 @@ const TRANSIZIONI_VALIDE = [
   ['in_pagamento', E.FALLISCI, 'fallito'],
   ['in_pagamento', E.ANNULLA, 'annullato'],
   ['fallito', E.ANNULLA, 'annullato'],
-  ['fallito', E.RIPRISTINA_IN_PAGAMENTO, 'in_pagamento'],
+  ['fallito', E.RIPRISTINA_PROPOSTO, 'proposto'],
   ['annullato', E.RIPRISTINA_PROPOSTO, 'proposto']
 ]
 
@@ -22,10 +22,10 @@ const TRANSIZIONI_NON_VALIDE = [
   ['proposto', E.RIPRISTINA_PROPOSTO],
   ['in_pagamento', E.IN_PAGAMENTO],
   ['in_pagamento', E.RIPRISTINA_PROPOSTO],
-  ['in_pagamento', E.RIPRISTINA_IN_PAGAMENTO],
   ['pagato', E.PAGA],
   ['pagato', E.FALLISCI],
   ['pagato', E.ANNULLA],
+  ['pagato', E.RIPRISTINA_PROPOSTO],
   ['fallito', E.PAGA],
   ['fallito', E.IN_PAGAMENTO],
   ['annullato', E.PAGA],

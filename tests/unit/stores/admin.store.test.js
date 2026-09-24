@@ -45,6 +45,20 @@ vi.mock('src/services/admin.service', () => ({
   }
 }))
 
+const mockValutaListe = vi.fn()
+const mockRigeneraListeSelezionate = vi.fn()
+vi.mock('src/usecases/listePagamenti', () => ({
+  valutaListe: (...a) => mockValutaListe(...a),
+  rigeneraListeSelezionate: (...a) => mockRigeneraListeSelezionate(...a)
+}))
+
+const mockFileStatus = vi.fn()
+vi.mock('src/services/liste-pagamenti.service', () => ({
+  listePagamentiService: {
+    fileStatus: (...a) => mockFileStatus(...a)
+  }
+}))
+
 describe('admin store', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -249,5 +263,69 @@ describe('admin store', () => {
     mockUpdateProgetto.mockRejectedValueOnce(new Error('boom'))
     await expect(store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')).rejects.toThrow()
     expect(store.error).toBe("Errore nell'aggiornamento del progetto")
+  })
+
+  it('fetchListeConsistency popola listeCheck', async () => {
+    mockValutaListe.mockResolvedValue({
+      batches: 2,
+      liste: [{ id: 'l-1', Nome: 'A (batch)' }],
+      mancanti: [],
+      orfane: [],
+      duplicati: []
+    })
+    const store = useAdminStore()
+    await store.fetchListeConsistency()
+    expect(store.listeCheck.liste).toHaveLength(1)
+    expect(store.listeCheckLoading).toBe(false)
+  })
+
+  it('fetchListeConsistency gestisce errore', async () => {
+    mockValutaListe.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'no access' }] } } })
+    const store = useAdminStore()
+    await store.fetchListeConsistency()
+    expect(store.error).toBe('no access')
+    expect(store.listeCheckLoading).toBe(false)
+  })
+
+  it('controllaFileListe arricchisce le liste con lo stato file', async () => {
+    const store = useAdminStore()
+    store.listeCheck = {
+      liste: [{ id: 'l-1', Nome: 'A (batch)', File: 'f-1' }],
+      mancanti: [],
+      orfane: [],
+      duplicati: []
+    }
+    mockFileStatus.mockResolvedValueOnce(200).mockResolvedValueOnce(403)
+    await store.controllaFileListe()
+    expect(store.listeCheck.liste[0].fileOk).toBe(true)
+
+    store.listeCheck = {
+      liste: [{ id: 'l-2', Nome: 'B (batch)', File: 'f-2' }],
+      mancanti: [],
+      orfane: [],
+      duplicati: []
+    }
+    await store.controllaFileListe()
+    expect(store.listeCheck.liste[0].fileOk).toBe(false)
+    expect(store.listeFileCheckLoading).toBe(false)
+  })
+
+  it('rigeneraListeSelezionate delega lo use case e aggiorna l anteprima', async () => {
+    mockRigeneraListeSelezionate.mockResolvedValue({ aggiornate: 2, create: 0, eliminate: 0, vuote: 0, errori: [] })
+    mockValutaListe.mockResolvedValue({ batches: 2, liste: [], mancanti: [], orfane: [], duplicati: [] })
+    const store = useAdminStore()
+    const res = await store.rigeneraListeSelezionate([{ id: 'l-1', Nome: 'A (batch)' }])
+    expect(res.aggiornate).toBe(2)
+    expect(mockRigeneraListeSelezionate).toHaveBeenCalledWith([{ id: 'l-1', Nome: 'A (batch)' }])
+    expect(mockValutaListe).toHaveBeenCalled()
+    expect(store.listeCheckLoading).toBe(false)
+  })
+
+  it('rigeneraListeSelezionate propaga gli errori', async () => {
+    mockRigeneraListeSelezionate.mockRejectedValueOnce(new Error('boom'))
+    const store = useAdminStore()
+    await expect(store.rigeneraListeSelezionate([{ id: 'l-1', Nome: 'A (batch)' }])).rejects.toThrow('boom')
+    expect(store.error).toBe('boom')
+    expect(store.listeCheckLoading).toBe(false)
   })
 })

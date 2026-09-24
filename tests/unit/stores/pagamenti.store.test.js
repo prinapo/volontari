@@ -18,7 +18,7 @@ const mockUpdateFamiglia = vi.fn()
 const mockSendEmail = vi.fn()
 const mockGetListe = vi.fn()
 const mockCreateLista = vi.fn()
-const mockUploadCsv = vi.fn()
+const mockUploadExcel = vi.fn()
 const mockDeleteLista = vi.fn()
 const mockDeleteFile = vi.fn()
 const mockVerificaStore = { filteredRows: [] }
@@ -72,7 +72,7 @@ vi.mock('src/services/liste-pagamenti.service', () => ({
   listePagamentiService: {
     getAll: (...a) => mockGetListe(...a),
     create: (...a) => mockCreateLista(...a),
-    uploadCsv: (...a) => mockUploadCsv(...a),
+    uploadExcel: (...a) => mockUploadExcel(...a),
     delete: (...a) => mockDeleteLista(...a),
     deleteFile: (...a) => mockDeleteFile(...a)
   }
@@ -85,7 +85,6 @@ const mockSegnaInPagamento = vi.fn()
 const mockRicalcolaProposta = vi.fn()
 const mockRicalcolaTotaliProgetto = vi.fn()
 const mockRipristinaProposto = vi.fn()
-const mockRipristinaInPagamento = vi.fn()
 const mockCorreggiDati = vi.fn()
 const mockChiudiProgetto = vi.fn()
 const mockRiapriProgetto = vi.fn()
@@ -99,7 +98,6 @@ vi.mock('src/usecases/pagamenti', () => ({
   ricalcolaProposta: (...a) => mockRicalcolaProposta(...a),
   ricalcolaTotaliProgetto: (...a) => mockRicalcolaTotaliProgetto(...a),
   ripristinaProposto: (...a) => mockRipristinaProposto(...a),
-  ripristinaInPagamento: (...a) => mockRipristinaInPagamento(...a),
   correggiDati: (...a) => mockCorreggiDati(...a),
   chiudiProgetto: (...a) => mockChiudiProgetto(...a),
   riapriProgetto: (...a) => mockRiapriProgetto(...a)
@@ -107,6 +105,11 @@ vi.mock('src/usecases/pagamenti', () => ({
 
 vi.mock('src/usecases/progetti', () => ({
   avanzaStatoProgetto: (...a) => mockAvanzaStatoProgetto(...a)
+}))
+
+const mockRigeneraListaBatch = vi.fn()
+vi.mock('src/usecases/listePagamenti', () => ({
+  rigeneraListaBatch: (...a) => mockRigeneraListaBatch(...a)
 }))
 
 vi.mock('stores/verifica.store', () => ({
@@ -274,6 +277,24 @@ describe('pagamenti store', () => {
     expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ CreatoDA: 'user-42' }))
     expect(mockSegnaInPagamento).toHaveBeenCalledWith({ pagamentoIds: ['p-1', 'p-2'], batchId: 'batch-2' })
     expect(initSpy).toHaveBeenCalled()
+  })
+
+  it('_aggiornaListaBatch delega allo use case e ricarica le liste', async () => {
+    mockRigeneraListaBatch.mockResolvedValue({ azione: 'aggiornata' })
+    mockGetListe.mockResolvedValue([])
+    const store = usePagamentiStore()
+
+    await store._aggiornaListaBatch('b-1', 'Batch 1')
+
+    expect(mockRigeneraListaBatch).toHaveBeenCalledWith('b-1', { batchNome: 'Batch 1' })
+    expect(mockGetListe).toHaveBeenCalled()
+  })
+
+  it('_aggiornaListaBatch propaga gli errori dello use case', async () => {
+    mockRigeneraListaBatch.mockRejectedValueOnce(new Error('upload fail'))
+    const store = usePagamentiStore()
+    await expect(store._aggiornaListaBatch('b-1', 'Batch 1')).rejects.toThrow('upload fail')
+    expect(store.error).toBe('upload fail')
   })
 
   it('segnaPagato delega allo use case e aggiorna', async () => {

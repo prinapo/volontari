@@ -176,10 +176,16 @@ stateDiagram-v2
         in_pagamento --> fallito : FALLISCI
         in_pagamento --> annullato : ANNULLA
         fallito --> annullato : ANNULLA
-        fallito --> in_pagamento : RIPRISTINA_IN_PAGAMENTO
+        fallito --> proposto : RIPRISTINA_PROPOSTO
         annullato --> proposto : RIPRISTINA_PROPOSTO
     }
 ```
+
+> Nota sul ciclo del bonifico: una tranche (batch) pagata è chiusa e non si
+> riapre. Un pagamento `fallito` (IBAN/intestatario errati, conto bloccato…) non
+> torna `in_pagamento` nello stesso gruppo: dopo la correzione dei dati
+> (`correggiDati`) si riporta a `proposto` con `RIPRISTINA_PROPOSTO` (`Batch`
+> azzerato) e confluisce in una **nuova** tranche.
 
 **Ponte driver → progetto**:
 
@@ -261,8 +267,7 @@ stateDiagram-v2
 | Segna pagato                    | `segnaPagato`                               | `pagamenti.store`                         | `PagamentiTab` ("Segna pagato")                       |
 | Segna fallito                   | `segnaFallito`                              | `pagamenti.store`                         | `PagamentiTab` ("Segna fallito")                      |
 | Rimuovi dal gruppo / annulla    | `segnaAnnullato`                            | `pagamenti.store`                         | `PagamentiTab` ("Rimuovi dal gruppo")                 |
-| Ripristina a "Bonifici da fare" | `ripristinaProposto`                        | `pagamenti.store`                         | `PagamentiTab` ("Ripristina")                         |
-| Ripristina a "Da riscontrare"   | `ripristinaInPagamento`                     | `pagamenti.store`                         | `PagamentiTab` ("Ripristina")                         |
+| Ripristina a "Bonifici da fare" | `ripristinaProposto`                        | `pagamenti.store`                         | `PagamentiTab` ("Ripristina a Bonifici", tab Falliti) |
 | Ricalcola proposte (bulk)       | `ricalcolaPropostiDaProgetti`               | `pagamenti.store`                         | `PagamentiTab` ("RICALCOLA")                          |
 | Verifica giustificativo         | `verificaGiustificativo`                    | `verifica.store`                          | `RendicontazioneTab` / `Verifica` (azione "Verifica") |
 | Rifiuta giustificativo          | `rifiutaGiustificativo`                     | `verifica.store`                          | `RendicontazioneTab` / `Verifica` (azione "Rifiuta")  |

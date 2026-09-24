@@ -4,8 +4,10 @@ import { adminService } from 'src/services/admin.service'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { gestioneService } from 'src/services/gestione.service'
+import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { usersService } from 'src/services/users.service'
 import { allineaPrimariaALogin, applicaCorrezioniEmailPrimarie } from 'src/usecases/email'
+import { rigeneraListeSelezionate as rigeneraListeSelezionateUseCase, valutaListe } from 'src/usecases/listePagamenti'
 import {
   aggiornaRuolo as aggiornaRuoloUseCase,
   creaUtente as creaUtenteUseCase,
@@ -33,7 +35,10 @@ export const useAdminStore = defineStore('admin', {
     emailPrimarieCheck: null,
     emailPrimarieCheckLoading: false,
     emailLoginCheck: null,
-    emailLoginCheckLoading: false
+    emailLoginCheckLoading: false,
+    listeCheck: null,
+    listeCheckLoading: false,
+    listeFileCheckLoading: false
   }),
 
   actions: {
@@ -380,6 +385,56 @@ export const useAdminStore = defineStore('admin', {
         throw error
       } finally {
         this.emailLoginCheckLoading = false
+      }
+    },
+
+    async fetchListeConsistency() {
+      this.listeCheckLoading = true
+      this.error = null
+      try {
+        this.listeCheck = await valutaListe()
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica delle liste pagamenti'
+      } finally {
+        this.listeCheckLoading = false
+      }
+    },
+
+    async controllaFileListe() {
+      if (!this.listeCheck) return
+      this.listeFileCheckLoading = true
+      this.error = null
+      try {
+        const liste = this.listeCheck.liste || []
+        const conStato = await Promise.all(
+          liste.map(async lista => {
+            const status = await listePagamentiService.fileStatus(lista.File)
+            return { ...lista, fileStato: status, fileOk: status >= 200 && status < 300 }
+          })
+        )
+        this.listeCheck = { ...this.listeCheck, liste: conStato }
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel controllo dei file liste'
+      } finally {
+        this.listeFileCheckLoading = false
+      }
+    },
+
+    async rigeneraListeSelezionate(liste) {
+      this.listeCheckLoading = true
+      this.error = null
+      try {
+        const summary = await rigeneraListeSelezionateUseCase(liste)
+        await this.fetchListeConsistency()
+        return summary
+      } catch (error) {
+        this.error =
+          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella rigenerazione delle liste'
+        throw error
+      } finally {
+        this.listeCheckLoading = false
       }
     },
 

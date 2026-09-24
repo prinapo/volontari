@@ -9,6 +9,7 @@ const mockSegnaPagato = vi.fn()
 const mockSegnaFallito = vi.fn()
 const mockSegnaAnnullato = vi.fn()
 const mockRipristinaProposto = vi.fn()
+const mockFetchFalliti = vi.fn()
 const mockEliminaLista = vi.fn()
 const mockResiduo = vi.fn()
 const mockNotifySuccess = vi.fn()
@@ -30,6 +31,7 @@ const pagamentiState = {
   segnaFallito: (...args) => mockSegnaFallito(...args),
   segnaAnnullato: (...args) => mockSegnaAnnullato(...args),
   ripristinaProposto: (...args) => mockRipristinaProposto(...args),
+  fetchFalliti: (...args) => mockFetchFalliti(...args),
   eliminaLista: (...args) => mockEliminaLista(...args),
   residuoAssociazione: (...args) => mockResiduo(...args)
 }
@@ -141,6 +143,7 @@ describe('PagamentiTab', () => {
     expect(wrapper.vm.formatNumber('10.5')).toBe('10.50')
     expect(wrapper.vm.residuo('Assoc 1')).toBe(100)
     expect(wrapper.vm.selectedTotal).toBe(0)
+    expect(wrapper.vm.incorsoColumns.some(c => c.name === 'Intestatario')).toBe(true)
   })
 
   it('opens batch dialog only when rows are selected', () => {

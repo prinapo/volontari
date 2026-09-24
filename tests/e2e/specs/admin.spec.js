@@ -279,6 +279,20 @@ test.describe('Admin — Impersonazione', () => {
     await expect(page.locator('.q-banner, .q-card').first()).toBeVisible({ timeout: 15_000 })
   })
 
+  test('AD-CHECK-03: Check liste pagamenti mostra elenco e rigenera selezionate @smoke', async ({ page }) => {
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.locator('.q-tab:has-text("Check")').click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    const btnVerifica = page.getByRole('button', { name: 'Verifica liste pagamenti' })
+    await expect(btnVerifica).toBeVisible({ timeout: 15_000 })
+    await btnVerifica.click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await expect(page.getByText('Liste pagamenti').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Controlla stato file' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Rigenera selezionate' })).toBeVisible({ timeout: 15_000 })
+  })
+
   test('AD-IMP-04: Pulsante Impersona visibile su mobile @smoke', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await loginAs(page, 'admin', auth)

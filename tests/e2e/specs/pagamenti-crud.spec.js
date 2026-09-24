@@ -1,5 +1,6 @@
+import ExcelJS from 'exceljs'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
-import { apiLogin, apiGet, apiPost, apiDelete } from '../helpers/api.js'
+import { apiLogin, apiGet, apiPost, apiDelete, apiPatch, getToken } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 import { createFamigliaViaUI } from '../helpers/pagina-gestione.js'
@@ -7,6 +8,7 @@ import { createProgettoViaUI } from '../pages/CreaProgettoPage.js'
 
 const TS = Date.now()
 const NOME_FAM = `TEST_PAG_${TS}`
+const API = process.env.API_URL || 'https://api-dev.sostienilsostegno.com'
 
 test.describe('Pagamenti CRUD', () => {
   let ids = { famiglia: null, progetto: null, giustificativi: [], pagamenti: [], associazione: null }
@@ -57,6 +59,84 @@ test.describe('Pagamenti CRUD', () => {
       },
       auth
     )
+  }
+
+  async function creaGruppoConLista(page, { nomeFam, assocName, batchName, importoGiust = 1000 }) {
+    const famRes = await apiGet('Famiglie', {
+      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+      fields: 'id_famiglia',
+      limit: 1
+    })
+    const famId = famRes.data?.[0]?.id_famiglia
+    expect(famId).toBeTruthy()
+
+    const giust = await apiPost('Giustificativi', {
+      Progetto: ids.progetto,
+      Famiglia: famId,
+      Importo: importoGiust,
+      Stato: 'verificato',
+      Data: '2026-01-01',
+      Descrizione: 'TEST_LISTA_' + Date.now(),
+      AnnoBando: new Date().getFullYear()
+    })
+    ids.giustificativi.push(giust.data.id)
+
+    const assoc = await apiPost('Associazioni', { Nome: assocName, Budget: 100_000 })
+    ids.associazione = assoc.data.id
+
+    await loginAs(page, 'manager', auth)
+    await page.goto('/pagamenti')
+    await page.waitForLoadState('networkidle')
+    await page.locator('button:has-text("RICALCOLA")').click()
+    await page.waitForLoadState('networkidle')
+
+    const propostiSearch = page.locator('input[placeholder="Cerca famiglia, IBAN..."]')
+    if (await propostiSearch.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await propostiSearch.fill(nomeFam)
+      await page.waitForLoadState('networkidle').catch(() => {})
+    }
+    const propostaRow = page
+      .locator('.q-table tbody tr, .q-table__grid-content .q-card')
+      .filter({ hasText: nomeFam })
+      .first()
+    await expect(propostaRow).toBeVisible({ timeout: 15_000 })
+
+    const assocSelect = page.locator('.q-select:has(.q-field__label:has-text("Associazione"))').first()
+    await assocSelect.click()
+    await page.getByRole('option', { name: assocName }).first().click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    await propostaRow.locator('.q-checkbox').first().click()
+    await page.locator('button:has-text("Crea gruppo di pagamento")').first().click()
+    await expect(page.locator('.q-dialog:has-text("Crea gruppo di pagamento")')).toBeVisible({ timeout: 5000 })
+    await page.locator('.q-dialog input').first().fill(batchName)
+    await page.locator('.q-dialog button:has-text("Conferma")').click()
+    await expect(page.locator('.q-notification:has-text("Gruppo creato")').first())
+      .toBeVisible({ timeout: 8000 })
+      .catch(() => {})
+
+    return { famId }
+  }
+
+  async function getListaByBatch(batchName) {
+    const res = await apiGet('ListePagamenti', {
+      filter: JSON.stringify({ Nome: { _eq: `${batchName} (batch)` } }),
+      fields: 'id,File,ConteggioRighe,Totale',
+      limit: 1
+    })
+    return (res.data || [])[0] || null
+  }
+
+  async function scaricaXlsxLista(fileId) {
+    const res = await fetch(`${API}/assets/${fileId}?access_token=${getToken()}`)
+    expect(res.status).toBe(200)
+    return globalThis.Buffer.from(await res.arrayBuffer())
+  }
+
+  async function parseWorkbook(buffer) {
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(buffer)
+    return workbook.getWorksheet('Pagamenti')
   }
 
   test('PAG-31: Bonifici da fare ha tabella @smoke', async ({ page }) => {
@@ -198,6 +278,7 @@ test.describe('Pagamenti CRUD', () => {
       .filter({ hasText: NOME_FAM })
       .first()
     await expect(incorsoRow).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Intestatario').first()).toBeVisible({ timeout: 5000 })
     const segnaPagatoBtn = incorsoRow
       .locator('button[aria-label="Segna pagato"], button:has-text("Segna pagato")')
       .first()
@@ -223,6 +304,10 @@ test.describe('Pagamenti CRUD', () => {
       paid = res.data?.[0] || null
     }
     expect(paid).toBeTruthy()
+
+    await page.locator('.q-tab:has-text("Liste esportazione")').click()
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('[aria-label="Scarica Excel"]').first()).toBeVisible({ timeout: 8000 })
   })
 
   test('PAG-51: giustificativo verificato dopo tranche parziale genera nuova proposta @crud', async ({ page }) => {
@@ -375,5 +460,106 @@ test.describe('Pagamenti CRUD', () => {
     // TotaleVerificato allineato ai giustificativi verificati reali
     const prog = await apiGet('Progetti/' + ids.progetto, { fields: 'TotaleVerificato' })
     expect(Number.parseFloat(prog.data?.TotaleVerificato)).toBeCloseTo(1500, 2)
+  })
+
+  test('PAG-52: la lista Excel scaricata contiene tutte le informazioni @crud', async ({ page }) => {
+    test.setTimeout(180_000)
+    const nomeFam = `TEST_PAG52_${Date.now()}`
+    const assocName = `TEST_ASSOC52_${Date.now()}`
+    const batchName = `TEST_LISTA52_${Date.now()}`
+    await setupData(page, nomeFam)
+
+    const famRes = await apiGet('Famiglie', {
+      filter: JSON.stringify({ Nome_Famiglia: { _eq: nomeFam } }),
+      fields: 'id_famiglia',
+      limit: 1
+    })
+    const famId = famRes.data?.[0]?.id_famiglia
+    await apiPatch('Famiglie', famId, {
+      IBAN: 'IT60X0542811101000000123456',
+      Intestatario_CC: 'Mario Rossi E2E'
+    })
+
+    await creaGruppoConLista(page, { nomeFam, assocName, batchName })
+    const lista = await getListaByBatch(batchName)
+    expect(lista).toBeTruthy()
+    expect(lista.File).toBeTruthy()
+
+    const sheet = await parseWorkbook(await scaricaXlsxLista(lista.File))
+    expect([1, 2, 3, 4].map(i => sheet.getRow(1).getCell(i).value)).toEqual([
+      'Famiglia',
+      'Importo',
+      'IBAN',
+      'Intestatario'
+    ])
+
+    const dataRows = sheet.rowCount - 1
+    expect(dataRows).toBe(lista.ConteggioRighe)
+    expect(dataRows).toBeGreaterThan(0)
+
+    const famiglie = []
+    let importoTotale = 0
+    for (let r = 2; r <= sheet.rowCount; r++) {
+      famiglie.push(sheet.getRow(r).getCell(1).value)
+      importoTotale += Number(sheet.getRow(r).getCell(2).value) || 0
+    }
+    expect(famiglie).toContain(nomeFam)
+    expect(importoTotale).toBeCloseTo(Number.parseFloat(lista.Totale), 2)
+
+    const rowFamiglia = famiglie.indexOf(nomeFam) + 2
+    expect(sheet.getRow(rowFamiglia).getCell(3).value).toBe('IT60X0542811101000000123456')
+    expect(sheet.getRow(rowFamiglia).getCell(4).value).toBe('Mario Rossi E2E')
+  })
+
+  test('PAG-53: Rigenera selezionate ripara la lista e il file è corretto @regression', async ({ page }) => {
+    test.setTimeout(180_000)
+    const nomeFam = `TEST_PAG53_${Date.now()}`
+    const assocName = `TEST_ASSOC53_${Date.now()}`
+    const batchName = `TEST_LISTA53_${Date.now()}`
+    await setupData(page, nomeFam)
+    await creaGruppoConLista(page, { nomeFam, assocName, batchName })
+
+    const lista = await getListaByBatch(batchName)
+    expect(lista?.File).toBeTruthy()
+
+    const tutte = await apiGet('ListePagamenti', { limit: -1, fields: 'id,Nome,File' })
+    const altra = (tutte.data || []).find(l => l.Nome !== `${batchName} (batch)`)
+
+    // Simula il file mancante (come dopo un sync prod->dev)
+    await apiPatch('ListePagamenti', lista.id, { File: null })
+
+    await loginAs(page, 'admin', auth)
+    await page.goto('/admin')
+    await page.locator('.q-tab:has-text("Check")').click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.getByRole('button', { name: 'Verifica liste pagamenti' }).click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    const row = page
+      .locator('tr')
+      .filter({ hasText: `${batchName} (batch)` })
+      .first()
+    await expect(row).toBeVisible({ timeout: 15_000 })
+    await row.locator('.q-checkbox').first().click()
+    await page.getByRole('button', { name: 'Rigenera selezionate' }).click()
+    await page.locator('.q-dialog button:has-text("Rigenera")').click()
+    await expect(page.getByText(/aggiornate|create|eliminate/).first()).toBeVisible({ timeout: 120_000 })
+    await page.waitForTimeout(1500)
+
+    const dopo = await getListaByBatch(batchName)
+    expect(dopo.File).toBeTruthy()
+    expect(dopo.File).not.toBe(lista.File)
+
+    const sheet = await parseWorkbook(await scaricaXlsxLista(dopo.File))
+    expect(sheet.getCell('A1').value).toBe('Famiglia')
+    const famiglie = []
+    for (let r = 2; r <= sheet.rowCount; r++) famiglie.push(sheet.getRow(r).getCell(1).value)
+    expect(famiglie).toContain(nomeFam)
+
+    // Le liste non selezionate restano intatte
+    if (altra) {
+      const check = await apiGet('ListePagamenti/' + altra.id, { fields: 'File' })
+      expect(check.data?.File).toBe(altra.File)
+    }
   })
 })

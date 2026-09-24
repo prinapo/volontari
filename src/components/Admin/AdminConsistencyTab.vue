@@ -324,6 +324,123 @@ icon="refresh"
     >
       Verifica login vs primaria
     </q-btn>
+
+    <q-separator class="q-my-md" />
+
+    <q-banner v-if="store.listeCheck" class="bg-grey-2 text-dark rounded-borders" rounded>
+      <template #avatar>
+        <q-icon name="receipt_long" color="primary" />
+      </template>
+      <div class="text-weight-medium q-mb-xs">Liste pagamenti</div>
+      <div class="text-body2 text-grey-7">
+        {{ store.listeCheck.liste.length }} liste · {{ store.listeCheck.mancanti.length }} mancanti,
+        {{ store.listeCheck.orfane.length }} orfane, {{ store.listeCheck.duplicati.length }} nomi duplicati.
+      </div>
+
+      <div class="text-caption text-grey-7 q-mt-sm">
+        Seleziona le liste e rigenera i file Excel dai pagamenti correnti (idempotente). Le liste non selezionate non
+        vengono toccate.
+      </div>
+
+      <q-table
+        v-model:selected="selectedListe"
+        :rows="store.listeCheck.liste"
+        :columns="listeColumns"
+        row-key="id"
+        selection="multiple"
+        dense
+        flat
+        bordered
+        hide-pagination
+        :pagination="{ rowsPerPage: 0 }"
+        class="bg-white q-mt-sm"
+      >
+        <template #body-cell-data="props">
+          <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
+        </template>
+        <template #body-cell-righe="props">
+          <q-td :props="props">{{ props.row.ConteggioRighe || 0 }}</q-td>
+        </template>
+        <template #body-cell-totale="props">
+          <q-td :props="props">€{{ formatNumber(props.row.Totale) }}</q-td>
+        </template>
+        <template #body-cell-file="props">
+          <q-td :props="props">
+            <q-badge v-if="props.row.fileOk === true" color="positive">OK</q-badge>
+            <q-badge v-else-if="props.row.fileOk === false" color="negative">KO</q-badge>
+            <span v-else class="text-grey-6">—</span>
+          </q-td>
+        </template>
+      </q-table>
+
+      <div class="row items-center q-gutter-sm q-mt-sm">
+        <q-btn
+          outline
+          color="primary"
+          icon="fact_check"
+          label="Controlla stato file"
+          :loading="store.listeFileCheckLoading"
+          @click="controllaFileListe"
+        />
+        <q-btn
+          color="primary"
+          icon="refresh"
+          label="Rigenera selezionate"
+          :disable="selectedListe.length === 0"
+          :loading="store.listeCheckLoading"
+          @click="rigeneraSelezionate"
+        />
+        <span v-if="selectedListe.length > 0" class="text-caption text-grey-7">
+          {{ selectedListe.length }} selezionate
+        </span>
+      </div>
+
+      <q-list
+        v-if="store.listeCheck.mancanti.length > 0 || store.listeCheck.orfane.length > 0"
+        dense
+        class="q-mt-sm"
+      >
+        <q-item v-for="m in store.listeCheck.mancanti" :key="'m-' + m.id" dense class="q-px-none">
+          <q-item-section>
+            <q-item-label caption>Batch senza lista: {{ m.Nome }} ({{ m.pagamenti }} pagamenti)</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item v-for="o in store.listeCheck.orfane" :key="'o-' + o.id" dense class="q-px-none">
+          <q-item-section>
+            <q-item-label caption>Lista orfana: {{ o.Nome }}</q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+
+      <template #action>
+        <q-btn
+          flat
+          round
+          dense
+          size="sm"
+          icon="refresh"
+          :loading="store.listeCheckLoading"
+          @click="runListeCheck"
+        >
+          <q-tooltip>Riesegui verifica</q-tooltip>
+        </q-btn>
+      </template>
+    </q-banner>
+
+    <q-btn
+      v-else
+      flat
+      round
+      dense
+      size="sm"
+      icon="receipt_long"
+      color="primary"
+      class="q-mt-sm"
+      :loading="store.listeCheckLoading"
+      @click="runListeCheck"
+    >
+      Verifica liste pagamenti
+    </q-btn>
   </div>
 </template>
 
@@ -339,6 +456,25 @@ const $q = useQuasar()
 const store = useAdminStore()
 
 const savingVolontario = ref(false)
+const selectedListe = ref([])
+
+const listeColumns = [
+  { name: 'nome', label: 'Nome', align: 'left', field: 'Nome' },
+  { name: 'data', label: 'Data', align: 'left' },
+  { name: 'righe', label: 'Righe', align: 'right' },
+  { name: 'totale', label: 'Totale', align: 'right' },
+  { name: 'file', label: 'File', align: 'center' }
+]
+
+function formatDate(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString('it-IT') : '—'
+}
+
+function formatNumber(value) {
+  return (Number.parseFloat(value) || 0).toFixed(2)
+}
 
 const emailPrimarieAnomalie = computed(() => {
   if (!store.emailPrimarieCheck) return -1
@@ -438,6 +574,47 @@ async function correggiEmailLogin() {
   } catch {
     notifyError($q, store.error || 'Errore nella correzione login vs primaria')
   }
+}
+
+async function runListeCheck() {
+  await store.fetchListeConsistency()
+  if (store.error) {
+    notifyError($q, store.error, 'Errore verifica liste')
+  } else {
+    selectedListe.value = []
+    notifySuccess($q, 'Verifica liste completata')
+  }
+}
+
+async function controllaFileListe() {
+  await store.controllaFileListe()
+  if (store.error) notifyError($q, store.error, 'Errore controllo file liste')
+  else notifySuccess($q, 'Controllo file completato')
+}
+
+function rigeneraSelezionate() {
+  if (selectedListe.value.length === 0) return
+  $q.dialog({
+    title: 'Rigenera liste selezionate',
+    message: `Verranno rigenerati i file Excel di ${selectedListe.value.length} liste dai pagamenti correnti. Confermare?`,
+    cancel: { label: 'Annulla', flat: true },
+    ok: { label: 'Rigenera', color: 'primary' },
+    persistent: true
+  }).onOk(async () => {
+    const selezionate = [...selectedListe.value]
+    try {
+      const summary = await store.rigeneraListeSelezionate(selezionate)
+      const nErrori = summary.errori?.length || 0
+      const msg =
+        `${summary.aggiornate} aggiornate, ${summary.create} create, ${summary.eliminate} eliminate` +
+        (nErrori ? `, ${nErrori} errori` : '')
+      if (nErrori) notifyError($q, null, msg)
+      else notifySuccess($q, msg)
+      selectedListe.value = []
+    } catch {
+      notifyError($q, store.error || 'Errore rigenerazione liste')
+    }
+  })
 }
 
 async function clearUserRef(c) {

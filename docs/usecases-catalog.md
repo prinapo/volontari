@@ -108,11 +108,13 @@ completare la rendicontazione); `chiuso` è l'unico stato finale.
 | Segna pagato              | `segnaPagato`                       | PagamentiTab                                  | estratto (side-effect: `inviaNotificaPagamento`) |
 | Segna fallito             | `segnaFallito`                      | PagamentiTab                                  | estratto                                         |
 | Segna annullato           | `segnaAnnullato`                    | PagamentiTab                                  | estratto                                         |
-| Ripristina in pagamento   | `ripristinaInPagamento`             | PagamentiTab                                  | estratto                                         |
 | Correggi dati pagamento   | `correggiDati`                      | PagamentiTab                                  | estratto                                         |
 | Invia notifica pagamento  | `inviaNotificaPagamento`            | side-effect di `segnaPagato`                  | estratto                                         |
-| Crea batch                | `creaBatch`                         | PagamentiTab                                  | in store (batch/CSV, UI-coupled)                 |
-| Aggiorna lista batch      | `_aggiornaListaBatch`               | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store (CSV)                                   |
+| Crea batch                | `creaBatch`                         | PagamentiTab                                  | in store (batch/Excel, UI-coupled)               |
+| Aggiorna lista batch      | `_aggiornaListaBatch`               | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store, delega a `rigeneraListaBatch`          |
+| Rigenera lista batch      | `rigeneraListaBatch`                | `_aggiornaListaBatch`, Admin Check            | estratto (Excel, idempotente)                    |
+| Rigenera liste scelte     | `rigeneraListeSelezionate`          | Admin Check ("Rigenera selezionate")          | estratto (idempotente)                           |
+| Valuta liste (anteprima)  | `valutaListe`                       | Admin Check                                   | estratto (sola lettura)                          |
 | Elimina lista             | `eliminaLista`                      | PagamentiTab                                  | in store                                         |
 
 ---

@@ -1,6 +1,6 @@
 {
-  "version": "4.0.11",
-  "updated": "2026-09-24T15:54:37.417Z",
+  "version": "4.0.12",
+  "updated": "2026-09-24T22:17:21.271Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1715,12 +1715,12 @@
       "lastPassed": "4.0.11"
     },
     "PG-AL-04": {
-      "name": "PG-AL-04: Bottone ripristina pagato presente @smoke",
+      "name": "PG-AL-04: Nessun ripristino riga in Da riscontrare @smoke",
       "file": "visual-alignment.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.11",
-      "lastPassed": "4.0.11"
+      "lastRun": "4.0.12",
+      "lastPassed": "4.0.12"
     },
     "VF-AL-01": {
       "name": "VF-AL-01: Bottone ripristina giustificativo presente @smoke",
@@ -1791,8 +1791,8 @@
       "file": "pagamenti-crud.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.11",
-      "lastPassed": "4.0.11"
+      "lastRun": "4.0.12",
+      "lastPassed": "4.0.12"
     },
     "PAG-35": {
       "name": "PAG-35: Admin vede tab Annullati con selettore motivo @smoke",
@@ -1865,6 +1865,30 @@
       "mobile": "pass",
       "lastRun": "4.0.11",
       "lastPassed": "4.0.11"
+    },
+    "AD-CHECK-03": {
+      "name": "AD-CHECK-03: Check liste pagamenti mostra elenco e rigenera selezionate @smoke",
+      "file": "admin.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.12",
+      "lastPassed": "4.0.12"
+    },
+    "PAG-52": {
+      "name": "PAG-52: la lista Excel scaricata contiene tutte le informazioni @crud",
+      "file": "pagamenti-crud.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.12",
+      "lastPassed": "4.0.12"
+    },
+    "PAG-53": {
+      "name": "PAG-53: Rigenera selezionate ripara la lista e il file è corretto @regression",
+      "file": "pagamenti-crud.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.12",
+      "lastPassed": "4.0.12"
     }
   }
 }

@@ -44,14 +44,14 @@ export default function quasarConfig(ctx) {
         VITE_API_URL: ctx.dev ? 'https://development.sostienilsostegno.com' : 'https://app.sostienilsostegno.com',
         VITE_APP_TITLE: ctx.dev ? 'Portale Volontario - Development' : 'Portale Volontario',
         VITE_SYNC_ENABLED: ctx.dev ? 'true' : 'false',
-        VITE_SYNC_ENDPOINT: '/sync/prod'
+        VITE_SYNC_ENDPOINT: '/sync/prod',
+        VITE_LISTE_PAGAMENTI_FOLDER: ctx.dev
+          ? 'c3e98185-5fcf-466a-9263-aa5515ed65c1'
+          : 'feb802e4-4a55-45d0-aaeb-b24803eca3ed'
       },
       env: {
         VITE_RESET_URL: `${process.env.VITE_APP_BASE_URL || (ctx.dev ? 'http://localhost:9000' : 'https://volontari.sostienilsostegno.com')}/reset-password?token=`,
         VITE_INVII_PUBBLICI_FOLDER: '25cd095a-20a2-48fd-9827-9b6754b429f6',
-        VITE_LISTE_PAGAMENTI_FOLDER: ctx.dev
-          ? 'c3e98185-5fcf-466a-9263-aa5515ed65c1'
-          : 'feb802e4-4a55-45d0-aaeb-b24803eca3ed',
         VITE_GIUSTIFICATIVI_FOLDER: '91a9c958-206f-4e1c-8143-e67f85398d0c'
       }
     },

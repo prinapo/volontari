@@ -1,3 +1,4 @@
+import { assetUrl } from 'src/utils/assets'
 import api from './api'
 import { filesService } from './files.service'
 
@@ -25,16 +26,29 @@ export const listePagamentiService = {
     await api.delete(`/items/ListePagamenti/${id}`)
   },
 
-  async uploadCsv(csvContent, nome) {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const file = new File([blob], `${nome.replaceAll(/[^\w-]/g, '_')}.csv`, {
-      type: 'text/csv;charset=utf-8;'
-    })
+  async uploadExcel(buffer, nome) {
+    const mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    const blob = new Blob([buffer], { type: mime })
+    const file = new File([blob], `${nome.replaceAll(/[^\w-]/g, '_')}.xlsx`, { type: mime })
     const uploadRes = await filesService.upload(file, import.meta.env.VITE_LISTE_PAGAMENTI_FOLDER)
     return uploadRes.data.data?.id
   },
 
   async deleteFile(fileId) {
     await filesService.delete(fileId)
+  },
+
+  /**
+   * Stato HTTP del file lista. Usa fetch diretto (non axios) per non far
+   * scattare interceptor/log su ErrorLog: un file mancante risponde 403.
+   */
+  async fileStatus(fileId) {
+    if (!fileId) return 0
+    try {
+      const res = await fetch(assetUrl(fileId), { headers: { Range: 'bytes=0-1' } })
+      return res.status
+    } catch {
+      return 0
+    }
   }
 }

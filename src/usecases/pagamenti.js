@@ -189,6 +189,20 @@ export async function ricalcolaTotaliProgetto(progettoId) {
 }
 
 /**
+ * Dati bancari correnti di una famiglia (snapshot per le proposte).
+ */
+async function getDatiBancariFamiglia(famigliaId) {
+  if (!famigliaId) return { iban: '', intestatario: '' }
+  try {
+    const res = await famiglieService.getFamiglieBatch([famigliaId])
+    const famiglia = res.data.data?.[0]
+    return { iban: famiglia?.IBAN || '', intestatario: famiglia?.Intestatario_CC || '' }
+  } catch {
+    return { iban: '', intestatario: '' }
+  }
+}
+
+/**
  * Ricalcola la proposta di pagamento di un progetto (crea/aggiorna/annulla il
  * pagamento PROPOSTO). Idempotente: si basa solo su dati freschi.
  */
@@ -229,10 +243,18 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
   })
   const esistente = (esistenteRes.data.data || [])[0]
 
+  const bancari = await getDatiBancariFamiglia(progetto.Famiglia)
+  const nuovoIban = iban || bancari.iban || progetto.IBAN || ''
+  const nuovoIntestatario = intestatario || bancari.intestatario || ''
+
   if (nuovoProposto > 0) {
     let pagamentoId = esistente?.id
     if (esistente) {
-      await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
+      await pagamentiService.updatePagamento(esistente.id, {
+        Importo: nuovoProposto,
+        IBAN: nuovoIban,
+        Intestatario: nuovoIntestatario
+      })
     } else {
       const created = await creaConStatoIniziale({
         machine: pagamentoMachine,
@@ -240,8 +262,8 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
           Progetto: progettoId,
           Famiglia: progetto.Famiglia,
           Importo: nuovoProposto,
-          IBAN: iban || progetto.IBAN || '',
-          Intestatario: intestatario || progetto.Intestatario_CC || '',
+          IBAN: nuovoIban,
+          Intestatario: nuovoIntestatario,
           DataProposta: new Date().toISOString()
         },
         scrivi: patch => pagamentiService.createPagamento(patch)
@@ -286,9 +308,11 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
   if (nuovoProposto > 0) {
     let pagamentoId = esistente?.id
     if (esistente) {
-      if (parseNum(esistente.Importo) !== nuovoProposto) {
-        await pagamentiService.updatePagamento(esistente.id, { Importo: nuovoProposto })
-      }
+      const patch = {}
+      if (parseNum(esistente.Importo) !== nuovoProposto) patch.Importo = nuovoProposto
+      if ((esistente.IBAN || '') !== (row.iban || '')) patch.IBAN = row.iban || ''
+      if ((esistente.Intestatario || '') !== (row.intestatario || '')) patch.Intestatario = row.intestatario || ''
+      if (Object.keys(patch).length) await pagamentiService.updatePagamento(esistente.id, patch)
     } else {
       const created = await creaConStatoIniziale({
         machine: pagamentoMachine,
@@ -499,19 +523,6 @@ export async function ripristinaProposto(pagamentoId) {
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   return pagamento
-}
-
-export async function ripristinaInPagamento(pagamentoId) {
-  const pagamento = await getPagamentoById(pagamentoId)
-  if (!pagamento) throw new Error('Pagamento non trovato')
-  await transita({
-    machine: pagamentoMachine,
-    statoCorrente: pagamento.Stato,
-    evento: EVENTI_PAGAMENTO.RIPRISTINA_IN_PAGAMENTO,
-    extra: { NoteEsito: null },
-    scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
-  })
-  if (pagamento.Progetto) await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
 }
 
 export async function correggiDati(pagamentoId, { iban, intestatario }) {

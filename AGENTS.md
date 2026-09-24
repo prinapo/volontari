@@ -344,7 +344,9 @@ la gestione le fa il manager.
   leggono via `/users` e `/files`.
 - **nginx (host)**: `development.sostienilsostegno.com` proxy-za a Directus
   (8055) le route API (`/items/`, `/users/`, `/roles/`, `/sync/`, …) e il resto
-  a `localhost:9000` (dev server). La route `/sync/` è stata aggiunta per il
+  a `127.0.0.1:9000` (dev server; usare l'IP esplicito, non `localhost`, per
+  evitare ambiguità IPv4/IPv6 dopo un boot a freddo). La route `/sync/` è stata
+  aggiunta per il
   sync — se manca, le chiamate del sync cadono sulla SPA. NOTA: per l'upload
   file serve ANCHE `location = /files` (esatta, senza slash) — altrimenti
   nginx 301 `/files` → `/files/` e il browser converte il POST in GET (lista
@@ -384,6 +386,14 @@ la gestione le fa il manager.
 - **Limite noto**: i file importati sono i metadati (`directus_files`); i
   binari reali (uploads) non vengono copiati → download/anteprime file non
   funzionano in dev dopo il sync.
+- **Rimedio liste pagamenti**: le liste con file mancante si rigenerano da
+  Admin → Check → sezione "Liste pagamenti" (`rigeneraListeSelezionate`,
+  `src/usecases/listePagamenti.js`): si selezionano le liste e si preme
+  "Rigenera selezionate", che ricrea gli Excel dai `Pagamenti` dei batch in modo
+  idempotente. "Controlla stato file" sondea `/assets` per evidenziare le liste
+  non scaricabili. È una scrittura reale anche in prod (crea file,
+  aggiorna/cancella `ListePagamenti`); le liste non selezionate non vengono
+  toccate.
 - Dopo un sync la sessione admin corrente è invalidata (truncate users): la UI
   chiede di accedere di nuovo.
 

@@ -7,6 +7,11 @@ const S = STATO_PAGAMENTO
  * Eventi dichiarati della macchina Pagamenti.
  * I target sono statici: ogni evento porta a un solo stato. La macchina NON
  * esegue I/O e NON persiste: valida soltanto (vedi `transita`).
+ *
+ * Nota sul fallito: una tranche (batch) pagata è chiusa e non si riapre. Un
+ * bonifico fallito non torna in `in_pagamento` nello stesso gruppo: si riporta
+ * a `proposto` (RIPRISTINA_PROPOSTO, `Batch` azzerato) dopo la correzione dei
+ * dati, per confluire in una nuova tranche.
  */
 export const EVENTI_PAGAMENTO = {
   IN_PAGAMENTO: 'IN_PAGAMENTO',
@@ -14,8 +19,7 @@ export const EVENTI_PAGAMENTO = {
   FALLISCI: 'FALLISCI',
   ANNULLA: 'ANNULLA',
   ANNULLA_PROPOSTA: 'ANNULLA_PROPOSTA',
-  RIPRISTINA_PROPOSTO: 'RIPRISTINA_PROPOSTO',
-  RIPRISTINA_IN_PAGAMENTO: 'RIPRISTINA_IN_PAGAMENTO'
+  RIPRISTINA_PROPOSTO: 'RIPRISTINA_PROPOSTO'
 }
 
 export const pagamentoMachine = createMachine({
@@ -39,7 +43,7 @@ export const pagamentoMachine = createMachine({
     [S.FALLITO]: {
       on: {
         [EVENTI_PAGAMENTO.ANNULLA]: S.ANNULLATO,
-        [EVENTI_PAGAMENTO.RIPRISTINA_IN_PAGAMENTO]: S.IN_PAGAMENTO
+        [EVENTI_PAGAMENTO.RIPRISTINA_PROPOSTO]: S.PROPOSTO
       }
     },
     [S.ANNULLATO]: {
