@@ -96,7 +96,7 @@
     "@quasar/extras": "^2.0.4",
     "@vue/devtools-api": "^8.1.5",
     "@xstate/fsm": "^2.1.0",
-    "axios": "^1.18.1",
+    "axios": "^1.20.0",
     "echarts": "^6.1.0",
     "eslint-plugin-import-x": "^4.17.1",
     "exceljs": "^4.4.0",
