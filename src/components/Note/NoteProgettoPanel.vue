@@ -32,12 +32,14 @@
       <q-btn
         color="primary"
         icon="add"
-        label="Aggiungi"
         :loading="store.saving"
         :disable="!testo.trim()"
+        aria-label="Aggiungi nota"
         data-testid="note-add"
         @click="handleSubmit"
-      />
+      >
+        <q-tooltip>Aggiungi nota</q-tooltip>
+      </q-btn>
     </div>
   </div>
 </template>
