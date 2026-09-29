@@ -121,6 +121,8 @@ async function espandiSezione(page, titolo) {
   await page.waitForLoadState('networkidle').catch(() => {})
 }
 
+export { espandiSezione }
+
 export async function loginConFamigliaViaUI(page, { role = 'volontario', auth, nomeFamiglia } = {}) {
   await loginAs(page, role, auth)
   await apriFamiglieESelezionaFamiglia(page, nomeFamiglia)

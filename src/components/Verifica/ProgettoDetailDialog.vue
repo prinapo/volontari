@@ -13,12 +13,13 @@
         </div>
         <q-space />
         <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
+          v-close-popup
+          icon="close"
+          flat
+          round
+          dense
+          aria-label="Chiudi"
+        >
           <q-tooltip>Chiudi</q-tooltip>
         </q-btn>
       </q-card-section>
@@ -298,6 +299,11 @@ aria-label="Chiudi">
         <div v-else class="text-grey-5 text-caption">Nessun giustificativo</div>
       </q-card-section>
 
+      <q-separator />
+      <q-card-section>
+        <NoteProgettoPanel :progetto-id="progetto.idProgetto" origine="verificatore" />
+      </q-card-section>
+
       <q-separator v-if="progetto.idFamiglia" />
       <q-card-section v-if="progetto.idFamiglia">
         <StoricoComunicazioni :famiglia-id="progetto.idFamiglia" />
@@ -305,13 +311,14 @@ aria-label="Chiudi">
 
       <q-card-actions align="right">
         <q-btn
-v-close-popup
-flat
-dense
-size="sm"
-label="Chiudi"
-color="primary"
-data-testid="detail-chiudi" />
+          v-close-popup
+          flat
+          dense
+          size="sm"
+          label="Chiudi"
+          color="primary"
+          data-testid="detail-chiudi"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -320,6 +327,7 @@ data-testid="detail-chiudi" />
 <script setup>
 import { computed } from 'vue'
 import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
+import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
 import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, statoLabel, statoColor } from 'src/utils/formatters'
 

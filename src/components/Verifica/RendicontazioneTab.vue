@@ -149,6 +149,84 @@
           @show="loadFamigliaContatti(props.row.idFamiglia)"
         >
           <q-card flat bordered>
+            <q-card-actions class="q-pa-sm q-gutter-xs">
+              <q-btn
+                v-if="canVerifica"
+                flat
+                round
+                dense
+                icon="add"
+                color="primary"
+                size="sm"
+                aria-label="Aggiungi giustificativo"
+                @click="addingForRow = props.row"
+              >
+                <q-tooltip>Aggiungi giustificativo</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                round
+                dense
+                icon="visibility"
+                size="sm"
+                aria-label="Dettaglio progetto"
+                @click="openRowDetail(props.row)"
+              >
+                <q-tooltip>Dettaglio progetto</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                round
+                dense
+                icon="sticky_note_2"
+                size="sm"
+                aria-label="Aggiungi nota"
+                @click="notaRapidaRow = props.row"
+              >
+                <q-tooltip>Aggiungi nota</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="canVerifica && isStatoManuale(props.row.statoProgetto)"
+                flat
+                round
+                dense
+                icon="play_arrow"
+                color="primary"
+                size="sm"
+                aria-label="Avanza stato progetto"
+                :loading="savingAvanzaStato"
+                @click="handleAvanzaStato(props.row)"
+              >
+                <q-tooltip>{{ labelAvanzaStato(props.row.statoProgetto) }}</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="canVerifica && isStatoOperativo(props.row.statoProgetto)"
+                flat
+                round
+                dense
+                size="sm"
+                icon="lock"
+                color="warning"
+                aria-label="Chiudi progetto"
+                @click="openChiudiProgetto(props.row)"
+              >
+                <q-tooltip>Chiudi progetto</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="canVerifica && isStatoFinale(props.row.statoProgetto)"
+                flat
+                round
+                dense
+                size="sm"
+                icon="lock_open"
+                color="positive"
+                aria-label="Riapri progetto"
+                :loading="savingRiapriProgetto"
+                @click="handleRiapriProgetto(props.row)"
+              >
+                <q-tooltip>Riapri progetto</q-tooltip>
+              </q-btn>
+            </q-card-actions>
             <q-card-section class="q-pa-sm">
               <div class="row q-col-gutter-md q-mb-md">
                 <div class="col-12 col-sm-6">
@@ -394,73 +472,9 @@ aria-label="Ripristina"
               </template>
               <div v-else class="text-caption text-grey">Nessun giustificativo presente.</div>
             </q-card-section>
-            <q-card-actions class="q-pa-sm q-gutter-xs">
-              <q-btn
-                v-if="canVerifica"
-                flat
-                round
-                dense
-                icon="add"
-                color="primary"
-                size="sm"
-                aria-label="Aggiungi giustificativo"
-                @click="addingForRow = props.row"
-              >
-                <q-tooltip>Aggiungi giustificativo</q-tooltip>
-              </q-btn>
-              <q-btn
-                flat
-                round
-                dense
-                icon="visibility"
-                size="sm"
-                aria-label="Dettaglio progetto"
-                @click="openRowDetail(props.row)"
-              >
-                <q-tooltip>Dettaglio progetto</q-tooltip>
-              </q-btn>
-              <q-btn
-                v-if="canVerifica && isStatoManuale(props.row.statoProgetto)"
-                flat
-                round
-                dense
-                icon="play_arrow"
-                color="primary"
-                size="sm"
-                aria-label="Avanza stato progetto"
-                :loading="savingAvanzaStato"
-                @click="handleAvanzaStato(props.row)"
-              >
-                <q-tooltip>{{ labelAvanzaStato(props.row.statoProgetto) }}</q-tooltip>
-              </q-btn>
-              <q-btn
-                v-if="canVerifica && isStatoOperativo(props.row.statoProgetto)"
-                flat
-                round
-                dense
-                size="sm"
-                icon="lock"
-                color="warning"
-                aria-label="Chiudi progetto"
-                @click="openChiudiProgetto(props.row)"
-              >
-                <q-tooltip>Chiudi progetto</q-tooltip>
-              </q-btn>
-              <q-btn
-                v-if="canVerifica && isStatoFinale(props.row.statoProgetto)"
-                flat
-                round
-                dense
-                size="sm"
-                icon="lock_open"
-                color="positive"
-                aria-label="Riapri progetto"
-                :loading="savingRiapriProgetto"
-                @click="handleRiapriProgetto(props.row)"
-              >
-                <q-tooltip>Riapri progetto</q-tooltip>
-              </q-btn>
-            </q-card-actions>
+            <q-card-section class="q-pa-sm">
+              <NoteProgettoPanel :progetto-id="props.row.idProgetto" origine="verificatore" />
+            </q-card-section>
           </q-card>
         </q-expansion-item>
       </div>
@@ -549,6 +563,18 @@ aria-label="Ripristina"
               @click="openRowDetail(props.row)"
             >
               <q-tooltip>Dettaglio progetto</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              dense
+              icon="sticky_note_2"
+              size="sm"
+              data-testid="btn-add-note"
+              aria-label="Aggiungi nota"
+              @click="notaRapidaRow = props.row"
+            >
+              <q-tooltip>Aggiungi nota</q-tooltip>
             </q-btn>
             <q-btn
               v-if="canVerifica && isStatoManuale(props.row.statoProgetto)"
@@ -814,6 +840,10 @@ aria-label="Ripristina"
             </q-list>
 
             <div v-else class="q-pa-md text-grey-5 text-center">Nessun giustificativo per questo progetto.</div>
+
+            <div class="q-px-md q-pb-md">
+              <NoteProgettoPanel :progetto-id="props.row.idProgetto" origine="verificatore" />
+            </div>
           </div>
         </q-td>
       </q-tr>
@@ -886,6 +916,8 @@ aria-label="Chiudi">
   />
 
   <ProgettoDetailDialog v-model="detailDialog" :progetto="selectedProgettoRow" />
+
+  <NotaRapidaDialog v-model="showNotaDialog" :progetto-id="notaRapidaRow?.idProgetto || ''" />
 </template>
 
 <script setup>
@@ -896,6 +928,7 @@ import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
+import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { assetUrl } from 'src/utils/assets'
 import {
@@ -913,6 +946,7 @@ import { statoProgettoEffettivo } from 'src/utils/statoProgetto'
 import { calcolaStatoRiga } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
+import NotaRapidaDialog from './NotaRapidaDialog.vue'
 import ProgettoDetailDialog from './ProgettoDetailDialog.vue'
 import RifiutaGiustificativoDialog from './RifiutaGiustificativoDialog.vue'
 
@@ -930,6 +964,14 @@ const showAddForm = computed({
   get: () => addingForRow.value !== null,
   set: val => {
     if (!val) addingForRow.value = null
+  }
+})
+
+const notaRapidaRow = ref(null)
+const showNotaDialog = computed({
+  get: () => notaRapidaRow.value !== null,
+  set: val => {
+    if (!val) notaRapidaRow.value = null
   }
 })
 

@@ -1,6 +1,6 @@
 {
-  "version": "4.0.12",
-  "updated": "2026-09-25T13:06:26.541Z",
+  "version": "4.0.14",
+  "updated": "2026-09-29T08:32:16.496863+00:00",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1889,6 +1889,38 @@
       "mobile": "pass",
       "lastRun": "4.0.12",
       "lastPassed": "4.0.12"
+    },
+    "NT-01": {
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.14",
+      "lastPassed": "4.0.14",
+      "name": "NT-01: Il volontario vede e crea una nota dalla FamigliePage @crud",
+      "file": "note-progetti.spec.js"
+    },
+    "NT-02": {
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.14",
+      "lastPassed": "4.0.14",
+      "name": "NT-02: Il manager vede e crea una nota dal Dettaglio progetto @crud",
+      "file": "note-progetti.spec.js"
+    },
+    "NT-03": {
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.14",
+      "lastPassed": "4.0.14",
+      "name": "NT-03: Il manager vede e usa la sezione Note nella riga espansa @crud",
+      "file": "note-progetti.spec.js"
+    },
+    "NT-04": {
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.14",
+      "lastPassed": "4.0.14",
+      "name": "NT-04: Bottone rapido aggiunge una nota dal dialog @crud",
+      "file": "note-progetti.spec.js"
     }
   }
 }

@@ -117,6 +117,7 @@ export async function deleteProgetti(...ids) {
       console.warn('[CLEANUP] Failed to check progetto', id, '— skipping delete')
       continue
     }
+    await deleteNoteProgettiByProgetto(id)
     await deleteProjectAttachments('Progetti_files', id)
     await deleteProjectAttachments('Progetti_files_1', id)
     await deleteProjectAttachments('Progetti_files_2', id)
@@ -125,6 +126,29 @@ export async function deleteProgetti(...ids) {
     } catch {
       console.warn('[CLEANUP] Failed to delete Progetti', id)
     }
+  }
+}
+
+/**
+ * Elimina le note di un progetto (FK NoteProgetti.Progetto ha on_delete SET NULL,
+ * quindi senza cleanup le note orfane resterebbero con Progetto null).
+ */
+async function deleteNoteProgettiByProgetto(progettoId) {
+  try {
+    const notes = await apiGet('NoteProgetti', {
+      filter: JSON.stringify({ Progetto: { _eq: progettoId } }),
+      fields: 'id',
+      limit: -1
+    })
+    for (const row of notes.data || []) {
+      try {
+        await apiDelete('NoteProgetti', row.id)
+      } catch {
+        console.warn('[CLEANUP] Failed to delete NoteProgetti', row.id)
+      }
+    }
+  } catch {
+    console.warn('[CLEANUP] Failed to query NoteProgetti for progetto', progettoId)
   }
 }
 

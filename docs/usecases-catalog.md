@@ -164,6 +164,20 @@ fuori dal frontend) con log CRM. Vedi `docs/comunicazioni.md`.
 
 ---
 
+## Area Note Progetto — `src/usecases/noteProgetti.js` ✅
+
+Note append-only sui progetti: autore e data sono campi di sistema Directus
+(`user_created`/`date_created`), compilati dal token di chi crea. Nessuna
+modifica/cancellazione. Permesso Volontario su `NoteProgetti` (dev E prod):
+create+read `fields:['*']` **senza filtro** — rischio accettato (la UI limita ai
+propri progetti; un filtro relazionale resta hardening futuro da valutare).
+
+| Azione    | Use case   | Entry point                                                     | Stato    |
+| --------- | ---------- | --------------------------------------------------------------- | -------- |
+| Crea nota | `creaNota` | ProgettoDetailDialog (verificatore) / FamigliePage (volontario) | estratto |
+
+---
+
 ## Esclusi dal layer use case
 
 | Area                                                                     | Motivazione                                           |

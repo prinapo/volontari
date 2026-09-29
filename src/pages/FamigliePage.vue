@@ -95,6 +95,17 @@
                 <ErogazioneList />
               </div>
             </q-expansion-item>
+
+            <q-expansion-item
+              class="bg-white q-mt-md"
+              icon="sticky_note_2"
+              :label="`Note (${noteCount})`"
+              header-class="text-subtitle1 text-weight-medium"
+            >
+              <div class="q-pa-md">
+                <NoteProgettoPanel :progetto-id="famiglieStore.selectedProgettoId" origine="volontario" />
+              </div>
+            </q-expansion-item>
           </template>
         </template>
 
@@ -128,14 +139,17 @@ import ErogazioneList from 'components/Erogazioni/ErogazioneList.vue'
 import FamigliaInfoCard from 'components/Famiglia/FamigliaInfoCard.vue'
 import ProgettoSelector from 'components/Famiglia/ProgettoSelector.vue'
 import GiustificativoList from 'components/Giustificativi/GiustificativoList.vue'
+import NoteProgettoPanel from 'components/Note/NoteProgettoPanel.vue'
 import { formatCurrency } from 'src/utils/formatters'
 import { useAuthStore } from 'stores/auth.store'
 import { useFamiglieStore } from 'stores/famiglie.store'
 import { useGiustificativiStore } from 'stores/giustificativi.store'
+import { useNoteStore } from 'stores/note.store'
 
 const authStore = useAuthStore()
 const famiglieStore = useFamiglieStore()
 const giustificativiStore = useGiustificativiStore()
+const noteStore = useNoteStore()
 
 const loading = computed(() => famiglieStore.loading)
 
@@ -156,6 +170,9 @@ const totaleRimborsabile = computed(() => {
 
 const giustificativiCount = computed(() => giustificativiStore.data.filter(i => !i.Invalidato).length)
 const erogazioniCount = computed(() => famiglieStore.erogazioni.length)
+const noteCount = computed(() =>
+  famiglieStore.selectedProgettoId ? noteStore.notesByProgetto(famiglieStore.selectedProgettoId).length : 0
+)
 
 watch(
   () => authStore.contattoId,
@@ -173,5 +190,6 @@ function handleFamigliaChange(famigliaId) {
 
 function handleProjectChange(progettoId) {
   famiglieStore.selectProgetto(progettoId)
+  if (progettoId) noteStore.fetchByProgetto(progettoId)
 }
 </script>
