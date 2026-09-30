@@ -1,52 +1,52 @@
 import { statoProgettoLabel } from './badges'
+import { RUOLI_FAMIGLIA } from './constants'
 import { calcolaStatoRendicontazione } from './rendicontazione'
 import { calcolaStatoRiga, residuoErogabile } from './statoRiga'
 
 /**
- * Costruzione pura delle righe del nuovo export dettagliato Verifica
- * (workbook multi-foglio). Nessun I/O: le righe prodotte sono consumate da
- * `src/utils/xlsxExport.js` (writer ExcelJS).
+ * Costruzione pura delle righe degli export Verifica: il foglio "basic"
+ * (una riga per progetto, celle multi-riga per contatti/giustificativi/note)
+ * e il workbook multi-foglio dell'export dettagliato.
+ * Nessun I/O: le righe prodotte sono consumate da `src/utils/xlsxExport.js`
+ * (writer ExcelJS).
  */
 
 const T = {
   TEXT: 'text',
   NUMBER: 'number',
+  INTEGER: 'integer',
   CURRENCY: 'currency',
   PERCENT: 'percent',
   DATE: 'date'
 }
 
-const MAX_CONTATTI_PIATTO = 8
-const MAX_GIUSTIFICATIVI_PIATTO = 12
-
-function contattiFlatColumns() {
-  const columns = []
-  for (let i = 1; i <= MAX_CONTATTI_PIATTO; i++) {
-    columns.push(
-      { key: `c${i}_nome`, header: `C${i}_Nome`, width: 16, type: T.TEXT },
-      { key: `c${i}_cognome`, header: `C${i}_Cognome`, width: 16, type: T.TEXT },
-      { key: `c${i}_citta`, header: `C${i}_Citta`, width: 16, type: T.TEXT },
-      { key: `c${i}_email`, header: `C${i}_Email`, width: 24, type: T.TEXT },
-      { key: `c${i}_ruolo`, header: `C${i}_Ruolo`, width: 12, type: T.TEXT }
-    )
+export const EXPORT_THEME = {
+  headerFontColor: 'FFFFFFFF',
+  headerFillColor: 'FF2E5D6E',
+  borderColor: 'FFBFBFBF',
+  numFmt: {
+    currency: '#,##0.00 "€"',
+    number: '#,##0.00',
+    integer: '0',
+    percent: '0.00%',
+    date: 'dd/mm/yyyy'
+  },
+  // Riempimento celle per Stato progetto (gli stessi colori usati nei badge).
+  statoProgettoFill: {
+    Proposto: 'FFE0E0E0',
+    Validato: 'FFB3E5FC',
+    Approvato: 'FFE1BEE7',
+    Accettato: 'FFC8E6C9',
+    'In rendicontazione': 'FFFFE0B2',
+    'Rimborso parziale': 'FFFFF3C4',
+    Chiuso: 'FFCFD8DC'
   }
-  return columns
 }
 
-function giustificativiFlatColumns() {
-  const columns = []
-  for (let i = 1; i <= MAX_GIUSTIFICATIVI_PIATTO; i++) {
-    columns.push(
-      { key: `g${i}_descrizione`, header: `G${i}_Descrizione`, width: 24, type: T.TEXT },
-      { key: `g${i}_importo`, header: `G${i}_Importo`, width: 12, type: T.CURRENCY },
-      { key: `g${i}_data`, header: `G${i}_Data`, width: 12, type: T.DATE },
-      { key: `g${i}_stato`, header: `G${i}_Stato`, width: 12, type: T.TEXT },
-      { key: `g${i}_rendicontazione`, header: `G${i}_Rendicontazione`, width: 22, type: T.TEXT },
-      { key: `g${i}_allegato`, header: `G${i}_Allegato`, width: 24, type: T.TEXT }
-    )
-  }
-  return columns
-}
+export const INFO_COLUMNS = [
+  { key: 'campo', header: 'Campo', width: 28, type: T.TEXT },
+  { key: 'valore', header: 'Valore', width: 55, type: T.TEXT }
+]
 
 export const FLAT_COLUMNS = [
   { key: 'idProgetto', header: 'ID Progetto', width: 38, type: T.TEXT },
@@ -75,35 +75,9 @@ export const FLAT_COLUMNS = [
   { key: 'totaleRendicontato', header: 'Totale Rendicontato', width: 16, type: T.CURRENCY },
   { key: 'totalePagato', header: 'Totale Pagato', width: 16, type: T.CURRENCY },
   { key: 'residuoAllocato', header: 'Residuo Allocato', width: 16, type: T.CURRENCY },
-  ...contattiFlatColumns(),
-  ...giustificativiFlatColumns()
-]
-
-export const EXPORT_THEME = {
-  headerFontColor: 'FFFFFFFF',
-  headerFillColor: 'FF2E5D6E',
-  borderColor: 'FFBFBFBF',
-  numFmt: {
-    currency: '#,##0.00 "€"',
-    number: '#,##0.00',
-    percent: '0.00%',
-    date: 'dd/mm/yyyy'
-  },
-  // Riempimento celle per Stato progetto (gli stessi colori usati nei badge).
-  statoProgettoFill: {
-    Proposto: 'FFE0E0E0',
-    Validato: 'FFB3E5FC',
-    Approvato: 'FFE1BEE7',
-    Accettato: 'FFC8E6C9',
-    'In rendicontazione': 'FFFFE0B2',
-    'Rimborso parziale': 'FFFFF3C4',
-    Chiuso: 'FFCFD8DC'
-  }
-}
-
-export const INFO_COLUMNS = [
-  { key: 'campo', header: 'Campo', width: 28, type: T.TEXT },
-  { key: 'valore', header: 'Valore', width: 55, type: T.TEXT }
+  { key: 'contatti', header: 'Genitori e volontari', width: 46, type: T.TEXT, wrap: true },
+  { key: 'giustificativi', header: 'Giustificativi', width: 52, type: T.TEXT, wrap: true },
+  { key: 'note', header: 'Note progetto', width: 46, type: T.TEXT, wrap: true }
 ]
 
 export const PROGETTI_COLUMNS = [
@@ -143,8 +117,8 @@ export const PROGETTI_COLUMNS = [
   { key: 'dataChiusura', header: 'Data chiusura', width: 12, type: T.DATE },
   { key: 'iban', header: 'IBAN', width: 30, type: T.TEXT },
   { key: 'intestatario', header: 'Intestatario', width: 24, type: T.TEXT },
-  { key: 'numGiustificativi', header: 'N. giustificativi', width: 12, type: T.NUMBER },
-  { key: 'numContatti', header: 'N. contatti', width: 12, type: T.NUMBER }
+  { key: 'numGiustificativi', header: 'N. giustificativi', width: 12, type: T.INTEGER },
+  { key: 'numContatti', header: 'N. contatti', width: 12, type: T.INTEGER }
 ]
 
 export const CONTATTI_COLUMNS = [
@@ -215,65 +189,6 @@ export function buildInfoRows({ data, versione, progetti, contatti, giustificati
     { campo: 'Contatti esportati', valore: String(contatti ?? '') },
     { campo: 'Giustificativi esportati', valore: String(giustificativi ?? '') }
   ]
-}
-
-function emailPrimaria(email = []) {
-  return email.find?.(e => e.Primary)?.email_address || email[0]?.email_address || ''
-}
-
-export function buildFlatRows(rows = []) {
-  return rows.map(row => {
-    const base = {
-      idProgetto: row.idProgetto,
-      anno: row.annoBando,
-      titolo: row.titolo,
-      famiglia: row.famiglia,
-      allocato: row.allocato,
-      rendicontato: row.totaleRendicontato,
-      pagato: row.totalePagato,
-      statoRendicontazione: calcolaStatoRendicontazione(row.giustificativi || []),
-      statoProgetto: statoProgettoLabel(row.statoProgetto),
-      dataInizio: row.dataInizio,
-      dataFine: row.dataFine,
-      eta: row.eta,
-      descrizione: row.descrizioneProgetto,
-      ambito: row.ambito,
-      iban: row.iban,
-      intestatario: row.intestatario,
-      stato: calcolaStatoRiga(row).label,
-      totaleRendicontato: row.totaleRendicontato,
-      totalePagato: row.totalePagato,
-      residuoAllocato: row.residuoAllocato
-    }
-
-    const contatti = [...(row.contatti || [])]
-      .sort((a, b) => new Date(b.DataCreazione) - new Date(a.DataCreazione))
-      .slice(0, MAX_CONTATTI_PIATTO)
-    for (let i = 1; i <= MAX_CONTATTI_PIATTO; i++) {
-      const c = contatti[i - 1]
-      base[`c${i}_nome`] = c?.Nome || ''
-      base[`c${i}_cognome`] = c?.Cognome || ''
-      base[`c${i}_citta`] = c?.Citta || ''
-      base[`c${i}_email`] = emailPrimaria(c?.email)
-      base[`c${i}_ruolo`] = c?.Ruolo || ''
-    }
-
-    const giustificativi = [...(row.giustificativi || [])]
-      .filter(g => !g.Invalidato)
-      .sort((a, b) => new Date(b.Data) - new Date(a.Data))
-      .slice(0, MAX_GIUSTIFICATIVI_PIATTO)
-    for (let i = 1; i <= MAX_GIUSTIFICATIVI_PIATTO; i++) {
-      const g = giustificativi[i - 1]
-      base[`g${i}_descrizione`] = g?.Descrizione || ''
-      base[`g${i}_importo`] = g?.Importo || ''
-      base[`g${i}_data`] = g?.Data || ''
-      base[`g${i}_stato`] = g?.Stato || ''
-      base[`g${i}_rendicontazione`] = g?.Rendicontazione || ''
-      base[`g${i}_allegato`] = g?.Allegato || ''
-    }
-
-    return base
-  })
 }
 
 export function buildProgettiRows(rows = [], contattiByFamiglia = {}) {
@@ -388,4 +303,96 @@ export function buildGiustificativiRows(rows = []) {
     }
   }
   return out
+}
+
+const RUOLI_CONTATTI = [RUOLI_FAMIGLIA.GENITORE, RUOLI_FAMIGLIA.VOLONTARIO, RUOLI_FAMIGLIA.TUTORE]
+
+function formatDateCell(value) {
+  if (!value) return ''
+  const [year, month, day] = String(value).split('-', 3)
+  if (!year || !month || !day) return ''
+  return `${day.slice(0, 2)}/${month}/${year}`
+}
+
+function formatEuro(value) {
+  const num = Number.parseFloat(value)
+  if (!Number.isFinite(num)) return ''
+  return num.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })
+}
+
+function personaRiga(contatto) {
+  const nome = [contatto?.Nome, contatto?.Cognome].filter(Boolean).join(' ').trim()
+  const identita = nome ? (contatto?.Ruolo ? `${contatto.Ruolo} · ${nome}` : nome) : ''
+  const telefono = contatto?.Numero_di_cellulare || contatto?.Numero_di_telefono || ''
+  const parts = [identita, primaryEmail(contatto?._emails), telefono]
+    .filter(Boolean)
+    .map(part => String(part).trim())
+    .filter(Boolean)
+  return parts.join(' — ')
+}
+
+function contattiCell(contatti = []) {
+  return contatti
+    .filter(contatto => RUOLI_CONTATTI.includes(contatto?.Ruolo))
+    .sort(
+      (a, b) =>
+        RUOLI_CONTATTI.indexOf(a.Ruolo) - RUOLI_CONTATTI.indexOf(b.Ruolo) ||
+        String(a.Cognome || '').localeCompare(String(b.Cognome || '')) ||
+        String(a.Nome || '').localeCompare(String(b.Nome || ''))
+    )
+    .map(personaRiga)
+    .filter(Boolean)
+    .join('\n')
+}
+
+function giustificativiCell(giustificativi = []) {
+  return [...giustificativi]
+    .filter(g => !g.Invalidato)
+    .sort((a, b) => new Date(b.Data) - new Date(a.Data))
+    .map(g => [g.Descrizione, formatEuro(g.Importo), formatDateCell(g.Data), g.Stato].filter(Boolean).join(' — '))
+    .filter(Boolean)
+    .join('\n')
+}
+
+function noteCell(note = []) {
+  return [...note]
+    .sort((a, b) => new Date(a.date_created) - new Date(b.date_created))
+    .map(nota => {
+      const testo = String(nota.Testo || '').trim()
+      if (!testo) return ''
+      const intestazione = [formatDateCell(nota.date_created), String(nota.AutoreNome || '').trim()]
+        .filter(Boolean)
+        .join(' · ')
+      return intestazione ? `${intestazione} — ${testo}` : testo
+    })
+    .filter(Boolean)
+    .join('\n')
+}
+
+export function buildProgettiPiattiRows(rows = [], contattiByFamiglia = {}, noteByProgetto = {}) {
+  return rows.map(row => ({
+    idProgetto: row.idProgetto,
+    anno: row.annoBando,
+    titolo: row.titolo,
+    famiglia: row.famiglia,
+    allocato: row.allocato,
+    rendicontato: row.totaleRendicontato,
+    pagato: row.totalePagato,
+    statoRendicontazione: calcolaStatoRendicontazione(row.giustificativi || []),
+    statoProgetto: statoProgettoLabel(row.statoProgetto),
+    dataInizio: row.dataInizio,
+    dataFine: row.dataFine,
+    eta: row.eta,
+    descrizione: row.descrizioneProgetto,
+    ambito: row.ambito,
+    iban: row.iban,
+    intestatario: row.intestatario,
+    stato: calcolaStatoRiga(row).label,
+    totaleRendicontato: row.totaleRendicontato,
+    totalePagato: row.totalePagato,
+    residuoAllocato: row.residuoAllocato,
+    contatti: contattiCell(contattiByFamiglia[row.idFamiglia]),
+    giustificativi: giustificativiCell(row.giustificativi),
+    note: noteCell(noteByProgetto[row.idProgetto])
+  }))
 }

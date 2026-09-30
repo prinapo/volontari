@@ -4,6 +4,7 @@ import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { gestioneService } from 'src/services/gestione.service'
+import { noteProgettiService } from 'src/services/note-progetti.service'
 import { verificaService } from 'src/services/verifica.service'
 import {
   aggiornaCampoGiustificativo,
@@ -19,9 +20,9 @@ import { enrichWithEmails } from 'src/utils/enrichment'
 import { calcolaDisallineati } from 'src/utils/statoProgetto'
 import {
   buildContattiRows,
-  buildFlatRows,
   buildGiustificativiRows,
   buildInfoRows,
+  buildProgettiPiattiRows,
   buildProgettiRows,
   CONTATTI_COLUMNS,
   FLAT_COLUMNS,
@@ -91,26 +92,6 @@ function normalizeProject(project, famiglia = {}) {
     allegatiGiustificativi: project.Allegati_Giustificativi || [],
     giustificativi: [],
     percentualeRimborso: Math.min(100, Math.max(0, project.MassimaPercentualeErogabile ?? 80))
-  }
-}
-
-async function fetchReferentiByFamiglia(famigliaId) {
-  if (!famigliaId) return []
-  try {
-    const res = await famiglieService.getReferentiByFamiglia(famigliaId)
-    const referenti = res.data.data || []
-    const ids = referenti.map(i => i.Contatto?.id_contatto).filter(Boolean)
-    if (ids.length > 0) {
-      const emailMap = await enrichWithEmails(ids, emailService.getByContatto.bind(emailService))
-      for (const item of referenti) {
-        if (item.Contatto?.id_contatto) {
-          item._emails = emailMap[item.Contatto.id_contatto] || []
-        }
-      }
-    }
-    return referenti
-  } catch {
-    return []
   }
 }
 
@@ -336,31 +317,12 @@ export const useVerificaStore = defineStore('verifica', {
         await this.fetchAllPages()
 
         const famIds = [...new Set(this.rows.map(r => r.idFamiglia).filter(Boolean))]
-        const contactsByFam = {}
-        await Promise.all(
-          famIds.map(async fid => {
-            const { genitori, volontari } = await this.loadFamigliaContacts(fid)
-            const referenti = await fetchReferentiByFamiglia(fid)
-            const tagged = [
-              ...genitori.map(item => ({ ...item, _ruolo: 'Genitore' })),
-              ...volontari.map(item => ({ ...item, _ruolo: 'Volontario' })),
-              ...referenti.map(item => ({ ...item, _ruolo: 'Referente' }))
-            ]
-            contactsByFam[fid] = tagged.map(item => ({
-              Nome: item.Contatto?.Nome || '',
-              Cognome: item.Contatto?.Cognome || '',
-              Citta: item.Contatto?.Citta || '',
-              email: item._emails || [],
-              Ruolo: item._ruolo,
-              DataCreazione: item.DataCreazione
-            }))
-          })
-        )
-        this.rows.forEach(row => {
-          row.contatti = contactsByFam[row.idFamiglia] || []
-        })
+        const contattiByFamiglia = await this._fetchContattiByFamiglie(famIds)
 
-        const rows = buildFlatRows(this.rows)
+        const progettoIds = this.rows.map(r => r.idProgetto).filter(Boolean)
+        const noteByProgetto = await this._fetchNoteProgetti(progettoIds)
+
+        const rows = buildProgettiPiattiRows(this.rows, contattiByFamiglia, noteByProgetto)
 
         const { default: ExcelJS } = await import('exceljs')
         const workbook = new ExcelJS.Workbook()
@@ -410,6 +372,22 @@ export const useVerificaStore = defineStore('verifica', {
         })
       }
       return byFamiglia
+    },
+    async _fetchNoteProgetti(progettoIds) {
+      const byProgetto = {}
+      if (!progettoIds || progettoIds.length === 0) return byProgetto
+      try {
+        const res = await noteProgettiService.getByProgetti(progettoIds)
+        for (const nota of res.data.data || []) {
+          const progettoId = typeof nota.Progetto === 'object' ? nota.Progetto?.id_progetto : nota.Progetto
+          if (!progettoId) continue
+          if (!byProgetto[progettoId]) byProgetto[progettoId] = []
+          byProgetto[progettoId].push(nota)
+        }
+      } catch {
+        /* silent */
+      }
+      return byProgetto
     },
 
     async exportExcelDettagliato() {
