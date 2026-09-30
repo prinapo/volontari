@@ -15,6 +15,30 @@ ESLint 8 | Prettier 3 | Stylelint 16 | commitlint | Husky 9 | lint-staged | knip
 "unused" da knip, verificare SEMPRE che il componente non sia referenziato come tag
 in un template prima di eliminare il file/import.
 
+## Sicurezza / dipendenze
+
+- **Fix vulnerabilità**: su branch dedicato con `npm audit fix` **senza `--force`**.
+  Mai `npm audit fix --force`: propone fix "breaking" errati (es. downgrade
+  `exceljs@3.4.0`, che resta comunque vulnerabile). Poi `npm run lint`,
+  `npm run lint:css`, `npm run test:unit`, `npm run knip`, `npm run build` e la
+  suite E2E prima del merge/release.
+- **Rischio accettato — `uuid <11.1.1` (moderate) via `exceljs@4.4.0`**: unica
+  vulnerabilità senza fix compatibile (exceljs 4.x richiede uuid ^8; la proposta
+  npm è un downgrade a exceljs@3.4.0). **Motivazione**: l'advisory
+  (GHSA-w5hq-g745-h8pq) riguarda uuid **v3/v5/v6** con buffer corto; exceljs usa
+  solo **v4** per gli id dei file xlsx → codice non raggiungibile. Rivalutare al
+  prossimo upgrade di exceljs.
+- **Override attivo**: `overrides.markdownlint-cli.js-yaml = ^5.4.2` —
+  markdownlint-cli@0.49.1 pinna `js-yaml ~5.2.1` (vulnerabile ≤5.4.0) e l'unico
+  fix proposto da npm (markdownlint-cli@0.49.0) resterebbe su `js-yaml ~4.2.0`
+  (≤4.3.1, comunque vulnerabile). Dopo ogni `npm install` verificare `npm run lint:md`.
+- **axios** ha floor `^1.20.0` in package.json (security upgrade da 1.18.1).
+- `directus-extensions/communications/` ha **lockfile separato**: fixarlo nella sua
+  cartella (`npm audit fix` lì dentro), poi `npm run build` (`dist/` non è tracciato).
+  Il deploy dell'estensione in Directus è una procedura separata dal rilascio SPA.
+- Stato atteso prima del push: `npm audit` root = **solo `uuid`/`exceljs`**,
+  estensione = **0**.
+
 ## Comandi chiave
 
 - npm run dev (porta :9000)
