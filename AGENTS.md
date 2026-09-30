@@ -36,6 +36,8 @@ in un template prima di eliminare il file/import.
 - `directus-extensions/communications/` ha **lockfile separato**: fixarlo nella sua
   cartella (`npm audit fix` lì dentro), poi `npm run build` (`dist/` non è tracciato).
   Il deploy dell'estensione in Directus è una procedura separata dal rilascio SPA.
+  Override attivo lì: `overrides.axios = ^1.20.0` (`@directus/composables` pinna
+  axios **1.18.1** esatto, quindi `npm audit fix` non può aggiornarlo).
 - Stato atteso prima del push: `npm audit` root = **solo `uuid`/`exceljs`**,
   estensione = **0**.
 
