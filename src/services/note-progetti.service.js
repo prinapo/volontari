@@ -22,6 +22,18 @@ export const noteProgettiService = {
     })
   },
 
+  getByProgetti(progettoIds) {
+    const idList = Array.isArray(progettoIds) ? progettoIds.join(',') : progettoIds
+    return api.get('/items/NoteProgetti', {
+      params: {
+        'filter[Progetto][_in]': idList,
+        sort: 'date_created',
+        limit: -1,
+        fields: NOTE_FIELDS
+      }
+    })
+  },
+
   create(data) {
     return api.post('/items/NoteProgetti', data)
   }

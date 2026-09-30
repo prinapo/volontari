@@ -25,22 +25,46 @@ function applyFill(cell, key) {
   if (argb) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } }
 }
 
+function applyWrap(cell, col) {
+  if (!col.wrap) return
+  cell.alignment = { ...cell.alignment, wrapText: true, vertical: 'top' }
+}
+
+function rowLineCount(columns, row) {
+  let maxLines = 1
+  for (const col of columns) {
+    if (!col.wrap) continue
+    const value = row[col.key]
+    if (typeof value === 'string' && value) {
+      maxLines = Math.max(maxLines, value.split('\n').length)
+    }
+  }
+  return maxLines
+}
+
 function applyFormats(sheet, columns, rowCount) {
   for (let r = 0; r < rowCount; r++) {
     const excelRow = sheet.getRow(r + 2)
     columns.forEach((col, index) => {
       const cell = excelRow.getCell(index + 1)
+      applyWrap(cell, col)
       if (col.fillByStatoProgetto) applyFill(cell, cell.value)
       const raw = cell.value
       if (raw === null || raw === undefined || raw === '') return
 
       switch (col.type) {
         case 'currency':
-        case 'number': {
+        case 'number':
+        case 'integer': {
           const num = Number.parseFloat(raw)
           if (Number.isFinite(num)) {
             cell.value = num
-            cell.numFmt = col.type === 'currency' ? EXPORT_THEME.numFmt.currency : EXPORT_THEME.numFmt.number
+            cell.numFmt =
+              col.type === 'currency'
+                ? EXPORT_THEME.numFmt.currency
+                : col.type === 'integer'
+                  ? EXPORT_THEME.numFmt.integer
+                  : EXPORT_THEME.numFmt.number
           }
           break
         }
@@ -70,7 +94,11 @@ function applyFormats(sheet, columns, rowCount) {
 export function writeSheet(workbook, name, columns, rows) {
   const sheet = workbook.addWorksheet(name)
   sheet.columns = columns.map(col => ({ header: col.header, key: col.key, width: col.width }))
-  for (const row of rows) sheet.addRow(row)
+  rows.forEach(row => {
+    const added = sheet.addRow(row)
+    const lines = rowLineCount(columns, row)
+    if (lines > 1) added.height = Math.min(lines * 15, 409)
+  })
 
   styleHeader(sheet, columns.length)
   applyFormats(sheet, columns, rows.length)

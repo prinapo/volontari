@@ -104,6 +104,7 @@
               label="Esporta Excel"
               color="primary"
               dense
+              data-testid="btn-export-excel"
               :loading="store.loading"
               :disable="store.loading"
               @click="store.exportExcel"
