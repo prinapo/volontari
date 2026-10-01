@@ -181,7 +181,6 @@ test.describe('Giustificativi', () => {
     })
 
     test('CG-08: Importo zero → Salva disabilitato @regression', async ({ page }) => {
-      test.setTimeout(60_000)
       const aggiungiBtn = page.locator('button:has-text("Aggiungi")')
 
       await aggiungiBtn.click()

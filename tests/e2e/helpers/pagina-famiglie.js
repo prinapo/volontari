@@ -38,9 +38,25 @@ export async function selezionaFamiglia(page, nomeFamiglia) {
     const menu = page.locator('.q-menu').first()
     for (let i = 0; i < 20 && !selezionata; i++) {
       if (await target.isVisible({ timeout: 400 }).catch(() => false)) {
-        await target.click({ force: true })
-        selezionata = true
-        break
+        // Click normale (attende posizione stabile): force su menu in
+        // animazione può colpire un'opzione adiacente e selezionare la
+        // famiglia sbagliata. Fallback force solo se il click normale fallisce.
+        let clicked = false
+        try {
+          await target.click({ timeout: 2500 })
+          clicked = true
+        } catch {
+          await target
+            .click({ force: true, timeout: 2500 })
+            .then(() => {
+              clicked = true
+            })
+            .catch(() => {})
+        }
+        if (clicked) {
+          selezionata = true
+          break
+        }
       }
       await menu.hover().catch(() => {})
       await page.mouse.wheel(0, 400).catch(() => {})

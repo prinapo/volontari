@@ -1,8 +1,8 @@
-import { test, expect } from '../helpers/console.js'
-import { SubmitPage } from '../pages/SubmitPage.js'
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
 import { deleteFamiglie } from '../helpers/cleanup.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
+import { test, expect } from '../helpers/console.js'
+import { SubmitPage } from '../pages/SubmitPage.js'
 
 const formData = {
   nome_richiedente: 'Mario',
@@ -15,13 +15,15 @@ const formData = {
   cognome_beneficiario: 'Rossi'
 }
 
-const today = new Date().toISOString().slice(0, 10)
+// Data fissa: nelle screenshot @visual una data "oggi" rende il baseline
+// valido solo per il giorno in cui è stato generato.
+const fixedDate = '2026-01-15'
 
 function makeGiustificativo(prefix = 'A') {
   return {
     descrizione: `Spesa ${prefix} - Acquisto materiale`,
-    importo: prefix === 'A' ? 50.0 : prefix === 'B' ? 75.5 : 120.0,
-    data: today
+    importo: prefix === 'A' ? 50 : prefix === 'B' ? 75.5 : 120,
+    data: fixedDate
   }
 }
 
@@ -62,7 +64,7 @@ test.describe('SubmitPage', () => {
 
   test('SP-02: Torna al login naviga a /login @smoke', async ({ page }) => {
     await submitPage.goto()
-    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10_000 })
     await expect(submitPage.tornaAlLoginLink).toBeVisible()
 
     await submitPage.clickTornaAlLogin()
@@ -131,7 +133,7 @@ test.describe('SubmitPage', () => {
   test('SP-07: Submit 1 giustificativo mostra notifica successo @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
@@ -191,7 +193,7 @@ test.describe('SubmitPage', () => {
   test('SP-09: Submit resetta automaticamente il form @regression', async ({ page }) => {
     await submitPage.goto()
     await submitPage.clickAddGiustificativo()
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     await submitPage.fillForm(formData)
     await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
 
