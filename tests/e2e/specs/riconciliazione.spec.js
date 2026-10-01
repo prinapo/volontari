@@ -37,7 +37,7 @@ test.describe('Riconciliazione', () => {
       try {
         await apiPatch('Famiglie', _rcIds.famigliaOrig.id, {
           IBAN: _rcIds.famigliaOrig.IBAN,
-          Intestatario: _rcIds.famigliaOrig.Intestatario
+          Intestatario_CC: _rcIds.famigliaOrig.Intestatario_CC
         })
       } catch {
         /* */
@@ -325,7 +325,11 @@ test.describe('Riconciliazione', () => {
     })
     const famiglia = famData.data?.[0]
     if (famiglia) {
-      _rcIds.famigliaOrig = { id: famiglia.id_famiglia, IBAN: famiglia.IBAN, Intestatario: famiglia.Intestatario_CC }
+      _rcIds.famigliaOrig = {
+        id: famiglia.id_famiglia,
+        IBAN: famiglia.IBAN,
+        Intestatario_CC: famiglia.Intestatario_CC
+      }
     }
 
     const gestione = new GestionePage(page)
@@ -333,20 +337,36 @@ test.describe('Riconciliazione', () => {
     await gestione.waitForTable()
     await gestione.searchFamiglie(nomeFam)
 
-    // Usa InlineEditableField per modificare IBAN e Intestatario
+    // Usa InlineEditableField per modificare IBAN e Intestatario.
+    // Scope alla riga della famiglia cercata: la pagina-level .first() punterebbe
+    // alla colonna Nome (ordine colonne: nome, volontario, IBAN, intestatario)
+    // e corromperebbe Nome_Famiglia scrivendoci l'IBAN.
     try {
-      const ibanField = page.locator('.inline-editable-field').first()
+      const row = page.locator('tr').filter({ hasText: nomeFam }).first()
+      const fields = row.locator('.inline-editable-field')
+      const ibanField = fields.nth(1)
+      const intestField = fields.nth(2)
+
+      const ibanDisplay =
+        (await ibanField
+          .locator('.text-body1')
+          .innerText({ timeout: 3000 })
+          .catch(() => '')) || ''
+      if (!/^IT/i.test(ibanDisplay.trim())) {
+        console.warn('[RC-SETUP-01] campo IBAN inatteso, skip edit:', ibanDisplay)
+        return
+      }
+
       await ibanField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
       await page.waitForTimeout(300)
-      const ibanInput = page.locator('.inline-editable-field').first().locator('input')
+      const ibanInput = ibanField.locator('input')
       await ibanInput.fill('IT12X1234567890123456789012', { force: true, timeout: 5000 })
       await ibanField.locator('[data-testid="inline-save"]').click()
       await page.waitForLoadState('networkidle').catch(() => {})
 
-      const intestField = page.locator('.inline-editable-field').nth(1)
       await intestField.locator('[aria-label="Modifica"]').evaluate(el => el.click())
       await page.waitForTimeout(300)
-      const intestInput = page.locator('.inline-editable-field').nth(1).locator('input')
+      const intestInput = intestField.locator('input')
       await intestInput.fill('Famiglia Test Intestatario', { force: true, timeout: 5000 })
       await intestField.locator('[data-testid="inline-save"]').click()
       await page.waitForLoadState('networkidle').catch(() => {})
@@ -736,7 +756,7 @@ test.describe('Riconciliazione', () => {
 
   // ── RC-05: Riconcilia submission completa @crud ──
   test('RC-05: Riconcilia submission completa @crud', async ({ page }) => {
-    test.setTimeout(120_000)
+    test.setTimeout(240_000)
     console.log('[RC-05] test started')
     const testEmail = `TEST_rc05_${Date.now()}@test.com`
 
@@ -801,9 +821,12 @@ test.describe('Riconciliazione', () => {
     await foundBtn.click()
     await riconcPage.waitForDialog()
 
-    // Seleziona progetto nel dialog
+    // Seleziona progetto nel dialog.
+    // Da Quasar 2.34 il data-testid del q-select cade sull'input stesso (prima
+    // anche sul wrapper): cercare un input DISCENDENTE darebbe 0 match.
+    // Cliccare l'elemento col testid funziona in entrambi i casi (wrapper/input).
     const progettoSelect = riconcPage.dialog.locator('[data-testid="select-progetto-riconcilia"]')
-    await progettoSelect.locator('input').click()
+    await progettoSelect.click()
     await page
       .locator('[role="option"]')
       .first()

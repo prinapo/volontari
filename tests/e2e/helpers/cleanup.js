@@ -166,11 +166,14 @@ export async function invalidateGiustificativi(...ids) {
 export async function deleteFamiglie(...ids) {
   for (const id of ids) {
     if (!id) continue
-    // Sicurezza: verifica che la famiglia sia stata creata dal test (nome contiene TEST)
+    // Sicurezza: verifica che la famiglia sia stata creata dal test (nome contiene TEST).
+    // Fallback su Intestatario_CC: se un bug ha sovrascritto il nome (es. IBAN al
+    // posto del nome), la famiglia altrimenti resterebbe per sempre nel DB.
     try {
-      const check = await apiGet('Famiglie/' + id, { fields: 'Nome_Famiglia' })
+      const check = await apiGet('Famiglie/' + id, { fields: 'Nome_Famiglia,Intestatario_CC' })
       const nome = check?.data?.Nome_Famiglia || ''
-      if (!nome.includes('TEST')) {
+      const intestatario = check?.data?.Intestatario_CC || ''
+      if (!nome.includes('TEST') && !intestatario.includes('TEST')) {
         console.warn('[CLEANUP] SKIP delete famiglia', id, '— nome non contiene TEST:', nome)
         continue
       }
