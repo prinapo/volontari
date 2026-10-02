@@ -1,5 +1,5 @@
-import { vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { afterEach, beforeEach, vi } from 'vitest'
 
 vi.mock('quasar', () => {
   const $q = {
@@ -22,14 +22,23 @@ vi.mock('quasar', () => {
 let storageStore = {}
 const mockStorage = {
   getItem: vi.fn(key => storageStore[key] ?? null),
-  setItem: vi.fn((key, value) => { storageStore[key] = String(value) }),
-  removeItem: vi.fn(key => { delete storageStore[key] }),
-  clear: vi.fn(() => { storageStore = {} })
+  setItem: vi.fn((key, value) => {
+    storageStore[key] = String(value)
+  }),
+  removeItem: vi.fn(key => {
+    delete storageStore[key]
+  }),
+  clear: vi.fn(() => {
+    storageStore = {}
+  })
 }
-if (typeof window !== 'undefined') {
-  window.localStorage = mockStorage
-}
-globalThis.localStorage = mockStorage
+// vitest 5 propaga gli assignment a globalThis/window sull'implementazione
+// DOM (localStorage è getter read-only): defineProperty contorna il getter
+Object.defineProperty(globalThis, 'localStorage', {
+  value: mockStorage,
+  configurable: true,
+  writable: true
+})
 
 beforeEach(() => {
   const store = createPinia()

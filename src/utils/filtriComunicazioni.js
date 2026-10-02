@@ -4,20 +4,28 @@
  * dagli id dei destinatari (family-id sets) e dai ruoli selezionati.
  */
 
-/** Ruoli disponibili nel selettore contatti (mappa su booleani del contatto). */
+/**
+Ruoli disponibili nel selettore contatti (mappa su booleani del contatto).
+*/
 export const RUOLI_CANALE_CONTATTI = [
   { value: 'Volontario', field: 'IsVolontario' },
   { value: 'Genitore', field: 'IsGenitore' },
   { value: 'Referente', field: 'IsReferente' }
 ]
 
-/** Ruoli disponibili nel selettore famiglie (Ruolo_nella_Famiglia). */
+/**
+Ruoli disponibili nel selettore famiglie (Ruolo_nella_Famiglia).
+*/
 export const RUOLI_FAMIGLIA = ['Volontario', 'Genitore', 'Tutore', 'Referente']
 
-/** Stati pagamento selezionabili (+ "nessuno"). */
+/**
+Stati pagamento selezionabili (+ "nessuno").
+*/
 export const STATI_PAGAMENTO_SELEZIONABILI = ['nessuno', 'proposto', 'in_pagamento', 'pagato', 'fallito', 'annullato']
 
-/** Condizioni giustificativi selezionabili. */
+/**
+Condizioni giustificativi selezionabili.
+*/
 export const GIUSTIFICATIVI_SELEZIONABILI = ['nessuno', 'solo_draft', 'almeno_inviato']
 
 /**
@@ -32,7 +40,9 @@ export function buildContattiRoleFilter(ruoli = []) {
   return conditions.length === 1 ? conditions[0] : { _or: conditions }
 }
 
-/** Intersezione di più set/array di id. Ritorna null se non ci sono set. */
+/**
+Intersezione di più set/array di id. Ritorna null se non ci sono set.
+*/
 export function intersectIdSets(sets = []) {
   const valid = sets.filter(set => set instanceof Set || Array.isArray(set)).map(set => new Set(set))
   if (valid.length === 0) return null
@@ -44,7 +54,9 @@ export function intersectIdSets(sets = []) {
   return result
 }
 
-/** Unione di più set/array di id. */
+/**
+Unione di più set/array di id.
+*/
 export function unionIdSets(sets = []) {
   const result = new Set()
   for (const set of sets) {
@@ -68,7 +80,9 @@ export function assembleFamiglieIdFilter({ includeIds = null, excludeIds = null 
   return { _and: conditions }
 }
 
-/** Estrae l'id/scalar da una relazione M2O (numero oppure oggetto). */
+/**
+Estrae l'id/scalar da una relazione M2O (numero oppure oggetto).
+*/
 export function relId(value) {
   if (value == null) return null
   if (typeof value === 'object') return value.id ?? value.id_contatto ?? value.id_famiglia ?? null

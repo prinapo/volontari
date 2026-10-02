@@ -71,7 +71,9 @@ export async function creaProgetto(payload) {
   })
 }
 
-/** Evento della macchina per l'avanzamento di uno step nella fase manuale. */
+/**
+Evento della macchina per l'avanzamento di uno step nella fase manuale.
+*/
 const EVENTO_AVANZAMENTO = {
   [STATO_PROGETTO.PROPOSTO]: EVENTI_PROGETTO.VALIDA,
   [STATO_PROGETTO.VALIDATO]: EVENTI_PROGETTO.APPROVA,

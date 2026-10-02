@@ -13,6 +13,8 @@ export function logSessionEvent(reason, detail = '') {
     if (events.length > 50) events.splice(0, events.length - 50)
     localStorage.setItem(SESSION_LOG_KEY, JSON.stringify(events))
   } catch {
-    /* silent */
+    /*
+    silent
+    */
   }
 }

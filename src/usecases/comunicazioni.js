@@ -144,14 +144,18 @@ export async function buildPayload(filters = {}) {
   return { audience: 'contatti', filter: buildContattiRoleFilter(ruoli) || undefined, cognome: cognomeFiltro }
 }
 
-/** Conteggio + anteprima destinatari. */
+/**
+Conteggio + anteprima destinatari.
+*/
 export async function contaDestinatari(filters) {
   const payload = await buildPayload(filters)
   const res = await comunicazioniService.countRecipients(payload)
   return res.data
 }
 
-/** Invio effettivo: ritorna { comunicazioneId, totale, inviati, falliti, errori }. */
+/**
+Invio effettivo: ritorna { comunicazioneId, totale, inviati, falliti, errori }.
+*/
 export async function inviaComunicazione({ subject, body, link, tipo, ...filters }) {
   const payload = await buildPayload(filters)
   const res = await comunicazioniService.send({ ...payload, subject, body, link, tipo })

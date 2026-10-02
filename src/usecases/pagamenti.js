@@ -62,13 +62,17 @@ async function _collegaGiustificativi(giustificativi, pagamentoId) {
   await Promise.all(daCollegare.map(g => giustificativiService.update(g.id, { Pagamento: pagamentoId })))
 }
 
-/** Scollega i giustificativi legati a un pagamento (es. proposta annullata). */
+/**
+Scollega i giustificativi legati a un pagamento (es. proposta annullata).
+*/
 async function _scollegaGiustificativi(giustificativi, pagamentoId) {
   const daScollegare = giustificativi.filter(g => pagamentoIdDi(g) === pagamentoId)
   await Promise.all(daScollegare.map(g => giustificativiService.update(g.id, { Pagamento: null })))
 }
 
-/** Evento di ricalcolo della macchina Giustificativo per il target contabile. */
+/**
+Evento di ricalcolo della macchina Giustificativo per il target contabile.
+*/
 function _eventoRicalcolo(nuovo) {
   if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) return EVENTI_GIUSTIFICATIVO.RICALCOLA_PAGATO
   if (nuovo === STATO_GIUSTIFICATIVO.IN_PAGAMENTO) return EVENTI_GIUSTIFICATIVO.RICALCOLA_IN_PAGAMENTO
