@@ -32,7 +32,7 @@ const routes = [
         path: '',
         redirect: () => {
           const authStore = useAuthStore()
-          return authStore.canManager ? { name: 'Dashboard' } : { name: 'Famiglie' }
+          return { name: authStore.canManager ? 'Dashboard' : 'Famiglie' }
         }
       },
       {
@@ -99,7 +99,7 @@ const routes = [
     path: '/:pathMatch(.*)*',
     redirect: () => {
       const authStore = useAuthStore()
-      return authStore.canManager ? { name: 'Dashboard' } : { name: 'Famiglie' }
+      return { name: authStore.canManager ? 'Dashboard' : 'Famiglie' }
     }
   }
 ]

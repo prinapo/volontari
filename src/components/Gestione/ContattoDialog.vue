@@ -363,7 +363,9 @@ async function saveEmails(contattoId) {
       try {
         await emailService.remove(origId)
       } catch {
-        /* best effort */
+        /*
+        best effort
+        */
       }
     }
   }

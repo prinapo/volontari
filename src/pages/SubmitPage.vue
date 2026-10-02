@@ -273,8 +273,7 @@ function removeGiustificativo(index) {
 }
 
 const canSubmit = computed(() => {
-  if (giustificativi.value.length === 0) return false
-  if (!form.iban || !IBAN_REGEX.test(form.iban)) return false
+  if ((giustificativi.value.length === 0) || !form.iban || !IBAN_REGEX.test(form.iban)) return false
   return giustificativi.value.every(g => g.descrizione && g.importo && g.file)
 })
 

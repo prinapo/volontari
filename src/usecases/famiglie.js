@@ -25,7 +25,9 @@ async function _findOrCreateUser(contattoId) {
         if (ruoloId) await usersService.update(contatto.user_id, { role: ruoloId })
       }
     } catch {
-      /* skip */
+      /*
+      skip
+      */
     }
     return { success: true, contatto }
   }

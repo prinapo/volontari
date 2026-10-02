@@ -48,7 +48,9 @@ async function getPagamentiBatch(batchId) {
   return res.data.data || []
 }
 
-/** Costruisce il workbook Excel della lista. Espone le righe per i test/summary. */
+/**
+Costruisce il workbook Excel della lista. Espone le righe per i test/summary.
+*/
 export async function buildListaBatchWorkbook(pagamenti) {
   const { default: ExcelJS } = await import('exceljs')
   const workbook = new ExcelJS.Workbook()
@@ -112,7 +114,9 @@ export async function rigeneraListaBatch(batchId, { batchNome, liste } = {}) {
   return { azione: 'creata', listaId: created?.id, nome: nomeLista, righe: pagamenti.length, totale }
 }
 
-/** Anteprima (sola lettura) dello stato delle liste rispetto ai batch. */
+/**
+Anteprima (sola lettura) dello stato delle liste rispetto ai batch.
+*/
 export async function valutaListe() {
   const [batchesRes, liste, pagamentiRes] = await Promise.all([
     pagamentiService.getBatches({ fields: 'id,Nome', limit: -1 }),

@@ -200,7 +200,9 @@ export const useVerificaStore = defineStore('verifica', {
         }))
         this.statoDisallineati = calcolaDisallineati(rows)
       } catch {
-        /* il warning è informativo: in caso di errore non blocca la pagina */
+        /*
+        il warning è informativo: in caso di errore non blocca la pagina
+        */
         this.statoDisallineati = []
       }
     },
@@ -224,7 +226,9 @@ export const useVerificaStore = defineStore('verifica', {
                 }
               })
             } catch {
-              /* silent */
+              /*
+              silent
+              */
             }
           }
           return allGiustificativi
@@ -385,7 +389,9 @@ export const useVerificaStore = defineStore('verifica', {
           byProgetto[progettoId].push(nota)
         }
       } catch {
-        /* silent */
+        /*
+        silent
+        */
       }
       return byProgetto
     },
@@ -552,7 +558,9 @@ export const useVerificaStore = defineStore('verifica', {
           }
         }
       } catch {
-        /* silent */
+        /*
+        silent
+        */
       }
       return linkedMap
     },
