@@ -8,7 +8,6 @@ const mockCreateContatto = vi.fn()
 const mockCreateEmail = vi.fn()
 const mockCreateUser = vi.fn()
 const mockUpdateUser = vi.fn()
-const mockSendEmail = vi.fn()
 const mockGetProgetti = vi.fn()
 const mockUpdateProgetto = vi.fn()
 const mockContattoUpdate = vi.fn()
@@ -39,7 +38,6 @@ vi.mock('src/services/admin.service', () => ({
     getUsers: (...a) => mockGetUsers(...a),
     getRoles: (...a) => mockGetRoles(...a),
     searchContattoByEmail: (...a) => mockSearchEmail(...a),
-    sendEmail: (...a) => mockSendEmail(...a),
     getProgetti: (...a) => mockGetProgetti(...a),
     updateProgetto: (...a) => mockUpdateProgetto(...a)
   }
@@ -153,19 +151,6 @@ describe('admin store', () => {
     expect(store.saving).toBe(false)
   })
 
-  it('sendCustomEmail sends with template', async () => {
-    mockSendEmail.mockResolvedValue({})
-    const store = useAdminStore()
-    await store.sendCustomEmail('test@r.it', 'Subject', 'Ciao {email} {link_login}')
-    expect(mockSendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: 'test@r.it',
-        body: expect.stringContaining('test@r.it')
-      })
-    )
-    expect(store.sending).toBe(false)
-  })
-
   it('fetchProgetti loads projects', async () => {
     mockGetProgetti.mockResolvedValue({ data: { data: [{ id_progetto: 1 }] } })
     const store = useAdminStore()
@@ -215,17 +200,6 @@ describe('admin store', () => {
     mockUpdateUser.mockRejectedValueOnce(new Error('boom'))
     await expect(store.resetUserPassword('u-1', 'pwd')).rejects.toThrow()
     expect(store.error).toBe('Errore nel reset della password')
-  })
-
-  it('sendCustomEmail handles specific and generic errors', async () => {
-    mockSendEmail.mockRejectedValueOnce({ response: { data: { errors: [{ message: 'email fail' }] } } })
-    const store = useAdminStore()
-    await expect(store.sendCustomEmail('test@r.it', 'Sub', 'body')).rejects.toThrow()
-    expect(store.error).toBe('email fail')
-
-    mockSendEmail.mockRejectedValueOnce(new Error('smtp'))
-    await expect(store.sendCustomEmail('test@r.it', 'Sub', 'body')).rejects.toThrow()
-    expect(store.error).toBe("Errore nell'invio dell'email")
   })
 
   it('fetchProgetti handles specific and generic errors', async () => {

@@ -30,7 +30,7 @@ const mockGetFamigliaGenitori = vi.fn()
 const mockGetFamigliaById = vi.fn()
 const mockGetFamiglieBatch = vi.fn()
 const mockUpdateFamiglia = vi.fn()
-const mockSendEmail = vi.fn()
+const mockInviaComunicazione = vi.fn()
 
 vi.mock('src/services/pagamenti.service', () => ({
   pagamentiService: {
@@ -71,10 +71,8 @@ vi.mock('src/services/famiglie.service', () => ({
   }
 }))
 
-vi.mock('src/services/admin.service', () => ({
-  adminService: {
-    sendEmail: (...a) => mockSendEmail(...a)
-  }
+vi.mock('src/usecases/comunicazioni', () => ({
+  inviaComunicazione: (...a) => mockInviaComunicazione(...a)
 }))
 
 const progettoBase = (extra = {}) => ({
@@ -550,17 +548,24 @@ describe('segnaAnnullato', () => {
 describe('inviaNotificaPagamento', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('invia email al volontario', async () => {
+  it('invia la notifica via mailer interno e marca NotificaInviata', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
     mockGetFamigliaVolontari.mockResolvedValue({
       data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
     })
     mockGetFamigliaById.mockResolvedValue({ data: { data: { Nome_Famiglia: 'Fam Test' } } })
-    mockSendEmail.mockResolvedValue({})
+    mockInviaComunicazione.mockResolvedValue({ inviati: 1, falliti: 0 })
     mockUpdatePagamento.mockResolvedValue({})
 
     await inviaNotificaPagamento({ id: 'p-1', Progetto: 1, Famiglia: 'fam-1', Importo: 100, NotificaInviata: false })
-    expect(mockSendEmail).toHaveBeenCalled()
+    expect(mockInviaComunicazione).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audience: 'email',
+        email: 'v@r.it',
+        subject: 'Pagamento effettuato',
+        tipo: 'pagamento'
+      })
+    )
     expect(mockUpdatePagamento).toHaveBeenCalledWith('p-1', { NotificaInviata: true })
   })
 
@@ -577,17 +582,49 @@ describe('inviaNotificaPagamento', () => {
       data: { data: [{ Contatto: { email: [{ email_address: 'gen@test.it', Primary: true }] } }] }
     })
     mockGetFamigliaById.mockResolvedValueOnce({ data: { data: { Nome_Famiglia: 'Famiglia Uno' } } })
-    mockSendEmail.mockResolvedValueOnce({})
+    mockInviaComunicazione.mockResolvedValueOnce({ inviati: 1, falliti: 0 })
     mockUpdatePagamento.mockResolvedValueOnce({})
 
     await inviaNotificaPagamento({ id: 'p-1', Progetto: 1, Famiglia: 'fam-1', Importo: 100, NotificaInviata: false })
-    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'gen@test.it' }))
+    expect(mockInviaComunicazione).toHaveBeenCalledWith(expect.objectContaining({ email: 'gen@test.it' }))
 
     mockGetProgettoById.mockResolvedValueOnce({ data: { data: { id_progetto: 1 } } })
     mockGetFamigliaVolontari.mockResolvedValueOnce({ data: { data: [] } })
     mockGetFamigliaGenitori.mockResolvedValueOnce({ data: { data: [] } })
 
     await inviaNotificaPagamento({ id: 'p-2', Progetto: 1, Famiglia: 'fam-2', Importo: 50, NotificaInviata: false })
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('best-effort: un errore del mailer non propaga e non marca NotificaInviata', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
+    mockGetFamigliaVolontari.mockResolvedValue({
+      data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
+    })
+    mockGetFamigliaById.mockResolvedValue({ data: { data: { Nome_Famiglia: 'Fam Test' } } })
+    mockInviaComunicazione.mockRejectedValueOnce(new Error('brevo down'))
+
+    await expect(
+      inviaNotificaPagamento({ id: 'p-1', Progetto: 1, Famiglia: 'fam-1', Importo: 100, NotificaInviata: false })
+    ).resolves.toBeUndefined()
+    expect(mockUpdatePagamento).not.toHaveBeenCalledWith('p-1', { NotificaInviata: true })
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('non marca NotificaInviata se il mailer riporta 0 inviati', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
+    mockGetFamigliaVolontari.mockResolvedValue({
+      data: { data: [{ Contatto: { user_id: 'u-1', email: [{ email_address: 'v@r.it' }] } }] }
+    })
+    mockGetFamigliaById.mockResolvedValue({ data: { data: { Nome_Famiglia: 'Fam Test' } } })
+    mockInviaComunicazione.mockResolvedValueOnce({ inviati: 0, falliti: 1 })
+
+    await inviaNotificaPagamento({ id: 'p-1', Progetto: 1, Famiglia: 'fam-1', Importo: 100, NotificaInviata: false })
+    expect(mockUpdatePagamento).not.toHaveBeenCalledWith('p-1', { NotificaInviata: true })
     expect(warnSpy).toHaveBeenCalled()
     warnSpy.mockRestore()
   })

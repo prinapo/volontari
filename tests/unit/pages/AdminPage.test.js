@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
-import AdminPage from 'src/pages/AdminPage.vue'
 import AdminAssociazioniTab from 'src/components/Admin/AdminAssociazioniTab.vue'
 import AdminConsistencyTab from 'src/components/Admin/AdminConsistencyTab.vue'
 import AdminUtentiTab from 'src/components/Admin/AdminUtentiTab.vue'
+import AdminPage from 'src/pages/AdminPage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockFetchAll = vi.fn()
 const mockGetUsers = vi.fn()
@@ -11,7 +11,6 @@ const mockFetchProgetti = vi.fn()
 const mockUpdateBeneficiario = vi.fn()
 const mockSearchContatto = vi.fn()
 const mockCreateUser = vi.fn()
-const mockSendCustomEmail = vi.fn()
 const mockResetUserPassword = vi.fn()
 const mockUpdateUserRole = vi.fn()
 const mockGetVolontariSenzaUtente = vi.fn()
@@ -41,7 +40,6 @@ const adminState = {
   updateProgettoBeneficiario: (...a) => mockUpdateBeneficiario(...a),
   searchContatto: (...a) => mockSearchContatto(...a),
   createUser: (...a) => mockCreateUser(...a),
-  sendCustomEmail: (...a) => mockSendCustomEmail(...a),
   resetUserPassword: (...a) => mockResetUserPassword(...a),
   updateUserRole: (...a) => mockUpdateUserRole(...a),
   fetchVolontariConsistency: vi.fn()

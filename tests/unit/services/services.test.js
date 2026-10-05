@@ -20,8 +20,6 @@ describe('services', () => {
     expect(mockGet).toHaveBeenCalledWith('/users', expect.any(Object))
     await adminService.getRoles()
     expect(mockGet).toHaveBeenCalledWith('/roles', expect.any(Object))
-    await adminService.sendEmail({ to: 'a@b.it' })
-    expect(mockPost).toHaveBeenCalledWith('/mail', { to: 'a@b.it' })
     await adminService.searchContattoByEmail('a@b.it')
     expect(mockGet).toHaveBeenCalledWith('/items/email', expect.any(Object))
     await adminService.getProgetti({})

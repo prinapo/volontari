@@ -15,7 +15,6 @@ const mockGetFamigliaVolontari = vi.fn()
 const mockGetFamigliaGenitori = vi.fn()
 const mockGetFamigliaById = vi.fn()
 const mockUpdateFamiglia = vi.fn()
-const mockSendEmail = vi.fn()
 const mockGetListe = vi.fn()
 const mockCreateLista = vi.fn()
 const mockUploadExcel = vi.fn()
@@ -59,12 +58,6 @@ vi.mock('src/services/famiglie.service', () => ({
     getGenitoriByFamiglia: (...a) => mockGetFamigliaGenitori(...a),
     getById: (...a) => mockGetFamigliaById(...a),
     update: (...a) => mockUpdateFamiglia(...a)
-  }
-}))
-
-vi.mock('src/services/admin.service', () => ({
-  adminService: {
-    sendEmail: (...a) => mockSendEmail(...a)
   }
 }))
 

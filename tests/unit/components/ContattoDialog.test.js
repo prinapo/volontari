@@ -112,26 +112,6 @@ describe('ContattoDialog', () => {
     expect(wrapper.vm.emails[0].Primary).toBe(true)
   })
 
-  it('updates or creates email on blur in edit mode', async () => {
-    mockUpdateEmail.mockResolvedValue({})
-    mockCreateEmail.mockResolvedValue({ data: { data: { id: 'mail-2' } } })
-    const wrapper = quasarMount(ContattoDialog, {
-      props: { modelValue: false, editItem: { id_contatto: 'cont-1', Nome: 'Mario', Cognome: 'Rossi' } }
-    })
-    await wrapper.setProps({ modelValue: true })
-    await flushDialog()
-
-    await wrapper.vm.onEmailBlur({ id: 'mail-1', email_address: 'UP@MAIL.IT', Primary: true }, 0)
-    expect(mockUpdateEmail).toHaveBeenCalledWith('mail-1', { email_address: 'up@mail.it' })
-
-    await wrapper.vm.onEmailBlur({ id: null, email_address: 'NEW@MAIL.IT', Primary: false }, 1)
-    expect(mockCreateEmail).toHaveBeenCalledWith({
-      email_address: 'new@mail.it',
-      Contatto_Relation: 'cont-1',
-      Primary: false
-    })
-  })
-
   it('saves edit mode and syncs emails', async () => {
     mockUpdateContatto.mockResolvedValue(true)
     mockUpdateEmail.mockResolvedValue({})

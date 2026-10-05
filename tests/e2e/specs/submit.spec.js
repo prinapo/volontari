@@ -2,6 +2,7 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiGet, apiDelete } from '../helpers/api.js'
 import { deleteFamiglie } from '../helpers/cleanup.js'
 import { test, expect } from '../helpers/console.js'
+import { LoginPage } from '../pages/LoginPage.js'
 import { SubmitPage } from '../pages/SubmitPage.js'
 
 const formData = {
@@ -27,6 +28,13 @@ function makeGiustificativo(prefix = 'A') {
   }
 }
 
+async function loginAs(page, user) {
+  const loginPage = new LoginPage(page)
+  await loginPage.goto()
+  await loginPage.login(user.email, user.password)
+  await expect(page).toHaveURL(/\/(famiglie|dashboard)/)
+}
+
 let createdSubmissionIds = []
 
 test.describe('SubmitPage', () => {
@@ -41,7 +49,9 @@ test.describe('SubmitPage', () => {
       try {
         await apiDelete('InviiGiustificativiNoLogin', id)
       } catch {
-        /* best-effort */
+        /*
+        best-effort
+        */
       }
     }
     createdSubmissionIds = []
@@ -239,4 +249,65 @@ test.describe('SubmitPage', () => {
   // SP-11 e SP-12: validazione file via q-file non testabile con setInputFiles
   // perché Quasar usa l'evento nativo del file picker (non programmatico).
   // Testati manualmente: max-file-size = 5MB, accept = .jpg,.jpeg,.png,.gif,.heic,.pdf
+
+  // Il modulo libero deve funzionare anche da utenti loggati: il guard non
+  // reindirizza (meta allowAuthenticated) e la policy del ruolo ha `create` su
+  // InviiGiustificativiNoLogin (vedi AGENTS.md).
+  test('SP-13: Volontario loggato invia dal modulo pubblico @regression', async ({ page }) => {
+    await loginAs(page, auth.volontario)
+    await submitPage.goto()
+    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10_000 })
+
+    await submitPage.clickAddGiustificativo()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await submitPage.fillForm(formData)
+    await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST'
+      ),
+      submitPage.clickSubmit()
+    ])
+    expect(postResp.ok()).toBe(true)
+    await submitPage.waitForSuccess()
+    let subId = null
+    try {
+      const s = await postResp.json()
+      subId = s?.data?.id || s?.data?.[0]?.id
+    } catch {
+      /* */
+    }
+    if (subId) createdSubmissionIds.push(subId)
+    await expect(submitPage.successNotification).toBeVisible()
+  })
+
+  test('SP-14: Manager loggato invia dal modulo pubblico @regression', async ({ page }) => {
+    await loginAs(page, auth.manager)
+    await submitPage.goto()
+    await expect(page.locator('.submit-page')).toBeVisible({ timeout: 10_000 })
+
+    await submitPage.clickAddGiustificativo()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await submitPage.fillForm(formData)
+    await submitPage.fillGiustificativo(0, makeGiustificativo('A'))
+
+    const [postResp] = await Promise.all([
+      page.waitForResponse(
+        resp => resp.url().includes('/items/InviiGiustificativiNoLogin') && resp.request().method() === 'POST'
+      ),
+      submitPage.clickSubmit()
+    ])
+    expect(postResp.ok()).toBe(true)
+    await submitPage.waitForSuccess()
+    let subId = null
+    try {
+      const s = await postResp.json()
+      subId = s?.data?.id || s?.data?.[0]?.id
+    } catch {
+      /* */
+    }
+    if (subId) createdSubmissionIds.push(subId)
+    await expect(submitPage.successNotification).toBeVisible()
+  })
 })

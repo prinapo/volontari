@@ -1,4 +1,3 @@
-import { adminService } from 'src/services/admin.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { giustificativiService } from 'src/services/giustificativi.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
@@ -7,6 +6,7 @@ import { verificaService } from 'src/services/verifica.service'
 import { EVENTI_GIUSTIFICATIVO, giustificativoMachine } from 'src/state-machines/giustificativo'
 import { EVENTI_PAGAMENTO, pagamentoMachine } from 'src/state-machines/pagamento'
 import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
+import { inviaComunicazione } from 'src/usecases/comunicazioni'
 import { creaConStatoIniziale, transita } from 'src/usecases/stato/transita'
 import {
   STATI_GIUSTIFICATIVO_CONTABILI,
@@ -417,13 +417,24 @@ export async function inviaNotificaPagamento(pagamento) {
   const famigliaRes = await famiglieService.getById(pagamento.Famiglia)
   const nomeFamiglia = famigliaRes.data.data?.Nome_Famiglia || 'Famiglia'
 
-  await adminService.sendEmail({
-    to: destinatario,
-    subject: 'Pagamento effettuato',
-    body: `Gentile volontario, il pagamento di €${parseNum(pagamento.Importo).toFixed(2)} per la famiglia "${nomeFamiglia}" è stato effettuato con successo.`
-  })
-
-  await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
+  // Best-effort: un errore email non deve far fallire segnaPagato (lo stato è
+  // già transitato). L'invio passa dal mailer interno (estensione communications).
+  try {
+    const esito = await inviaComunicazione({
+      audience: 'email',
+      email: destinatario,
+      subject: 'Pagamento effettuato',
+      body: `Gentile volontario, il pagamento di €${parseNum(pagamento.Importo).toFixed(2)} per la famiglia "${nomeFamiglia}" è stato effettuato con successo.`,
+      tipo: 'pagamento'
+    })
+    if (esito?.inviati > 0) {
+      await pagamentiService.updatePagamento(pagamento.id, { NotificaInviata: true })
+    } else {
+      console.warn(`[Pagamento] Notifica non inviata a ${destinatario}`)
+    }
+  } catch (error) {
+    console.warn(`[Pagamento] Invio notifica fallito: ${error.message}`)
+  }
 }
 
 /**

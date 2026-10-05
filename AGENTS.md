@@ -305,8 +305,9 @@ la gestione le fa il manager.
   (`PAG-50`: giustificativo verificato → RICALCOLA → creaBatch → segnaPagato).
 - Gap documentati (NON coperti, da valutare in iterazioni future):
   - Chiusura automatica progetto (pagato ≥ allocato) e riapertura (`riapriProgetto`)
-  - Invio email reale di notifica pagamento (il PATCH a `pagato` è verificato,
-    l'email Brevo/SMTP no)
+  - Invio email reale di notifica pagamento: ora passa dal mailer interno
+    (`inviaNotificaPagamento` → `/communications/send`, best-effort); l'E2E
+    verifica il PATCH a `pagato`, non l'invio Brevo.
   - Edge: 413 file troppo grande, network error, refresh token concorrente
   - Stato riga Verifica derivato "Pagato"/"In pagamento" (residuo erogabile
     ≤ 0.01) e badge per-giustificativo derivato: la logica è coperta da unit
@@ -315,8 +316,9 @@ la gestione le fa il manager.
     creaBatch → segnaPagato, ma va aggiunto quando ne vale la pena).
     L'helper `VerificaPage.getStatoRiga` accetta già i label 'Pagato' e
     'In pagamento'.
-- Nota PAG-50: `segnaPagato` spedisce un'email (POST /mail); il test verifica lo
-  stato `pagato` via API con retry (25s) per non dipendere dal timing dell'email.
+- Nota PAG-50: `segnaPagato` invia l'email via mailer interno
+  (`/communications/send`, best-effort); il test verifica lo stato `pagato` via
+  API con retry (25s) per non dipendere dal timing dell'email.
 
 ### Esecuzione e tracciamento E2E
 
@@ -380,9 +382,7 @@ la gestione le fa il manager.
   Stesso discorso per gli endpoint chiamati **senza slash** (`/users?…`,
   `/roles?…`, `/revisions?…`, `/items?…`): servono le `location = /users`,
   `= /roles`, `= /revisions`, `= /items`, altrimenti cadono sulla SPA (redirect
-  → CORS preflight fallito). Aggiunte su dev. Stesso motivo per cui serve
-  `location = /mail` (esatta): il `POST /mail` di `admin.service.js` altrimenti
-  subisce il 301 e l'email non parte.
+  → CORS preflight fallito). Aggiunte su dev.
 - **Basic Auth dev (nginx, DB/config host non git)**: il vhost dev è protetto da
   `auth_basic` (utente `dev`, hash in `/etc/nginx/.htpasswd-development`) ma
   **solo dentro `location /`** (UI + sorgenti), con `satisfy any` +
@@ -405,6 +405,13 @@ la gestione le fa il manager.
   PATCHa questi campi dal frontend. Una PATCH volontario con altri campi
   (es. `Allocato`) riceve 403. Va applicato a mano via UI Admin o SQL su dev e
   prod (UUID policy `e7242c87-4b9e-4f34-a539-1f9c10ce71fb`).
+- **Modulo libero usabile anche da loggati (dev E prod, DB non git)**: la pagina
+  pubblica `/submit` è accessibile anche con sessione attiva (rotta `Submit`
+  con `meta.allowAuthenticated: true`, il guard NON reindirizza i loggati). Per
+  questo TUTTE le policy non-admin (`Volontario`, `MangerPolicy`/`GestoreVolontari`,
+  `Verificatore`) hanno `create` (fields `*`) su `InviiGiustificativiNoLogin`,
+  oltre alla Public. Senza questo permesso un invio da loggato riceve 403.
+  Da applicare a mano via UI Admin su dev e prod.
 - **E2E**: test `SY-01`/`SY-02` in `admin.spec.js` verificano la tab Sync e il
   download da produzione (solo lettura, NON l'import che è distruttivo).
 - **Snapshot/backup**: dentro `directus-dev/db-sync/` (host), montato come
@@ -436,6 +443,10 @@ la gestione le fa il manager.
 - La API key Brevo (`BREVO_API_KEY`) e i ruoli abilitati (`COMMS_ALLOWED_ROLES`)
   vivono SOLO nell'env del compose Directus, mai nel frontend.
 - Log in `Comunicazioni` + `Comunicazioni_Contatti` (DB non git).
+- Anche la **notifica di pagamento** (`inviaNotificaPagamento`, side-effect di
+  `segnaPagato` in `src/usecases/pagamenti.js`) usa lo stesso endpoint
+  `/communications/send` con `audience: 'email'`, in **best-effort**: un errore
+  email non fa fallire `segnaPagato` (lo stato è già transitato).
 
 ## Email contatti — invariante primaria
 

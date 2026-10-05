@@ -11,7 +11,6 @@ import { rigeneraListeSelezionate as rigeneraListeSelezionateUseCase, valutaList
 import {
   aggiornaRuolo as aggiornaRuoloUseCase,
   creaUtente as creaUtenteUseCase,
-  inviaEmailCustom as inviaEmailCustomUseCase,
   resetPasswordUtente as resetPasswordUtenteUseCase
 } from 'src/usecases/utenti'
 import { calcolaDisallineatiLoginPrimaria, calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
@@ -25,7 +24,6 @@ export const useAdminStore = defineStore('admin', {
     nuovaPassword: '',
     loading: false,
     saving: false,
-    sending: false,
     error: null,
     progetti: [],
     progettiLoading: false,
@@ -123,19 +121,6 @@ export const useAdminStore = defineStore('admin', {
         throw error
       } finally {
         this.saving = false
-      }
-    },
-
-    async sendCustomEmail(to, subject, body) {
-      this.sending = true
-      this.error = null
-      try {
-        await inviaEmailCustomUseCase(to, subject, body)
-      } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio dell'email"
-        throw error
-      } finally {
-        this.sending = false
       }
     },
 

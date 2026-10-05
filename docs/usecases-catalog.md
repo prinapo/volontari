@@ -144,7 +144,6 @@ completare la rendicontazione); `chiuso` è l'unico stato finale.
 | Crea utente                 | `creaUtente`                             | Admin Utenti      | estratto                                                   |
 | Aggiorna ruolo              | `aggiornaRuolo`                          | Admin Utenti      | estratto                                                   |
 | Reset password              | `resetPasswordUtente`                    | Admin Utenti      | estratto                                                   |
-| Invio email custom          | `inviaEmailCustom`                       | Admin Utenti      | estratto                                                   |
 | Disabilita/abilita utente   | `disabilitaUtente`/`abilitaUtente`       | Gestione          | estratto                                                   |
 | Impersonation start/stop    | `startImpersonation`/`stopImpersonation` | Admin Utenti      | in store (fire-and-forget + Notify, eccezione documentata) |
 | Flag/consistenza volontario | `gestisciVolontario`                     | Admin Consistenza | in store                                                   |

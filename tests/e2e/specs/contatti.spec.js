@@ -458,18 +458,14 @@ test.describe('ContattiTab — CRUD', () => {
       const emailInput = dialog.locator('[data-testid^="contatto-email-"]').last()
       if ((await emailInput.count()) > 0) {
         await emailInput.fill(testEmail)
-        // Trigger blur per far completare onEmailBlur prima del salvataggio
-        await dialog.locator('[data-testid="contatto-nome"]').click()
-        await page
-          .waitForResponse(resp => resp.url().includes('/items/email') && resp.request().method() === 'POST', {
-            timeout: 5000
-          })
-          .catch(() => {})
 
-        const [patchResp] = await Promise.all([
+        // L'email viene persistita solo al salvataggio (niente più create-on-blur).
+        const [postResp, patchResp] = await Promise.all([
+          page.waitForResponse(resp => resp.url().includes('/items/email') && resp.request().method() === 'POST'),
           page.waitForResponse(resp => resp.url().includes('/items/contatti') && resp.request().method() === 'PATCH'),
           dialog.locator('button:has-text("Salva")').click()
         ])
+        expect(postResp.status()).toBe(200)
         expect(patchResp.status()).toBe(200)
         await expect(dialog).not.toBeVisible({ timeout: 10_000 })
       } else {

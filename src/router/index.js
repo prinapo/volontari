@@ -21,7 +21,8 @@ const routes = [
     path: '/submit',
     name: 'Submit',
     component: () => import('pages/SubmitPage.vue'),
-    meta: { public: true }
+    // Modulo libero accessibile anche da utenti loggati: niente redirect.
+    meta: { public: true, allowAuthenticated: true }
   },
   {
     path: '/',
@@ -116,7 +117,7 @@ router.beforeEach(to => {
     return
   }
 
-  if (authStore.isAuthenticated && to.meta.public) {
+  if (authStore.isAuthenticated && to.meta.public && !to.meta.allowAuthenticated) {
     return authStore.canManager ? '/dashboard' : '/famiglie'
   }
 

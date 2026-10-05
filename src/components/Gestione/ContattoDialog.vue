@@ -85,7 +85,6 @@ aria-label="Chiudi">
               :disable="hasAccount && em.Primary"
               :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Inserisci un indirizzo email valido']"
               lazy-rules
-              @blur="onEmailBlur(em, idx)"
             />
             <q-btn
               v-if="!em.Primary"
@@ -253,7 +252,7 @@ async function loadEmails(contattoId) {
 }
 
 function addEmail() {
-  emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0, _saving: false })
+  emails.value.push({ id: null, email_address: '', Primary: emails.value.length === 0 })
 }
 
 async function removeEmail(idx) {
@@ -312,28 +311,6 @@ function confirmEliminaContatto() {
       deletingContatto.value = false
     }
   })
-}
-
-async function onEmailBlur(em, _idx) {
-  if (!em.email_address || !isEdit.value || !props.editItem?.id_contatto) return
-  if (em.id) {
-    try {
-      await emailService.updateSafe(em.id, { email_address: em.email_address.toLowerCase() })
-    } catch (error) {
-      notifyError($q, error, "Errore nell'aggiornamento dell'email")
-    }
-  } else {
-    try {
-      const res = await emailService.createSafe({
-        email_address: em.email_address.toLowerCase(),
-        Contatto_Relation: props.editItem.id_contatto,
-        Primary: em.Primary
-      })
-      em.id = res.data.data?.id
-    } catch (error) {
-      notifyError($q, error, 'Errore creazione email')
-    }
-  }
 }
 
 watch(visible, val => {

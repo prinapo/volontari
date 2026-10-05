@@ -37,10 +37,6 @@ export const adminService = {
     })
   },
 
-  sendEmail(data) {
-    return api.post('/mail', data)
-  },
-
   getProgetti({ search } = {}) {
     const params = {
       fields: ['id_progetto', 'Cognome_Beneficiario', 'Nome_Beneficiario', 'AnnoBando'].join(','),

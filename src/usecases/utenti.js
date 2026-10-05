@@ -1,4 +1,3 @@
-import { adminService } from 'src/services/admin.service'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { usersService } from 'src/services/users.service'
@@ -49,9 +48,4 @@ export async function aggiornaRuolo(userId, roleId) {
 
 export async function resetPasswordUtente(userId, password) {
   await usersService.update(userId, { password })
-}
-
-export async function inviaEmailCustom(to, subject, body) {
-  const resolvedBody = body.replaceAll('{email}', to).replaceAll('{link_login}', globalThis.location.origin + '/login')
-  await adminService.sendEmail({ to, subject, body: resolvedBody })
 }
