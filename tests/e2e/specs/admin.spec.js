@@ -228,7 +228,9 @@ test.describe('Admin — Impersonazione', () => {
       try {
         await apiPatchSystem('users', targetUserId, { token: null })
       } catch {
-        /* cleanup */
+        /*
+        cleanup
+        */
       }
     }
   })
@@ -378,10 +380,18 @@ test.describe('Admin — Utenti CRUD', () => {
     const { uid, row } = await createThrowawayUser(page, 'e2e_role')
 
     const roleSelect = row.locator('.admin-role-select').first()
+    await roleSelect.scrollIntoViewIfNeeded()
     await roleSelect.click()
+    // Su mobile il q-select non usa .q-menu ma rende le opzioni con role=option.
+    // Attende che l'opzione sia visibile/stabile prima del click (evita il flake
+    // in cui il click si perde durante l'apertura → timeout sul PATCH).
+    const managerOption = page.getByRole('option', { name: 'Manager' }).first()
+    await expect(managerOption).toBeVisible({ timeout: 10_000 })
     const [patchResp] = await Promise.all([
-      page.waitForResponse(resp => resp.url().includes('/users/' + uid) && resp.request().method() === 'PATCH'),
-      page.getByRole('option', { name: 'Manager' }).first().click()
+      page.waitForResponse(resp => resp.url().includes('/users/' + uid) && resp.request().method() === 'PATCH', {
+        timeout: 20_000
+      }),
+      managerOption.click()
     ])
     expect(patchResp.status()).toBe(200)
 
