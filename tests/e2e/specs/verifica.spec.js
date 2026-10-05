@@ -283,7 +283,9 @@ test.describe('VerificaPage', () => {
             const res = await apiGet('Famiglie/' + famId, { fields: 'IBAN' })
             _vSavedIBAN = res.data?.IBAN || ''
           } catch {
-            /* best-effort */
+            /*
+            best-effort
+            */
           }
         }
       }
@@ -453,6 +455,15 @@ test.describe('VerificaPage', () => {
       const sendBtn = page.locator('.q-card').filter({ hasText: giustDesc }).locator('button:has-text("Invia")').first()
       if (await sendBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
         await sendBtn.click()
+        // submitGiustificativo include syncProgettoAggregati (PATCH Progetti):
+        // attende la notifica di invio prima di cancellare la sessione, per non
+        // far partire il PATCH senza token (→ 403 anonimo).
+        await page
+          .locator('.q-notification')
+          .filter({ hasText: 'Giustificativo inviato' })
+          .first()
+          .waitFor({ state: 'visible', timeout: 20_000 })
+          .catch(() => {})
         await page.waitForLoadState('networkidle').catch(() => {})
       }
 

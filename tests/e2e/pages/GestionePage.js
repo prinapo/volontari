@@ -293,6 +293,16 @@ export class GestionePage {
       throw new Error(`Contatto con email "${searchEmail}" non trovato nella ricerca`)
     }
     await this.contattiDialog.locator('button:has-text("Volontario")').first().click()
+    // Attende il completamento dell'assegnazione: il flag contatti.IsVolontario
+    // viene PATCHato dopo il link famiglia. Senza questa attesa il test può
+    // cercare il banner/referente prima che il flag sia persistito.
+    await this.page
+      .locator('.q-notification')
+      .filter({ hasText: 'associato come Volontario' })
+      .first()
+      .waitFor({ state: 'visible', timeout: 20_000 })
+      .catch(() => {})
+    await this.page.waitForLoadState('networkidle').catch(() => {})
   }
 
   async removeFromFamiglia(fullName) {

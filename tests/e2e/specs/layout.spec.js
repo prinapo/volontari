@@ -1,9 +1,9 @@
-import { test, expect } from '../helpers/console.js'
-import { loginAs } from '../helpers/login.js'
+import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin } from '../helpers/api.js'
 import { deleteFamiglie } from '../helpers/cleanup.js'
+import { test, expect } from '../helpers/console.js'
+import { loginAs } from '../helpers/login.js'
 import { createFamigliaViaUI, assegnaContattoAFamigliaViaUI } from '../helpers/pagina-gestione.js'
-import auth from '../fixtures/auth-test.json' with { type: 'json' }
 
 let createdFamiglia = null
 
@@ -78,10 +78,13 @@ test.describe('AppLayout — Sidebar Navigation', () => {
   test('LB-SS-01: Sidebar volontario screenshot @visual', async ({ page }) => {
     await loginAs(page, 'volontario', auth)
     await openDrawerIfMobile(page)
-    await page.waitForLoadState("networkidle").catch(() => {})
+    await page.waitForLoadState('networkidle').catch(() => {})
     const drawer = page.locator('.q-drawer')
     await expect(drawer).toBeVisible({ timeout: 5000 })
-    await expect(page).toHaveScreenshot('sidebar-volontario.png', { maxDiffPixels: 1500, animations: 'disabled' })
+    // Screenshot del solo drawer: il contenuto della pagina sottostante è
+    // data-driven (famiglia/progetto del volontario) e renderebbe il test
+    // instabile. Il test verifica la sidebar, quindi si isola il drawer.
+    await expect(drawer).toHaveScreenshot('sidebar-volontario.png', { maxDiffPixels: 1500, animations: 'disabled' })
   })
 
   test('LB-03: Admin vede tutte le voci di navigazione @smoke', async ({ page }) => {
@@ -108,5 +111,4 @@ test.describe('AppLayout — Sidebar Navigation', () => {
     await famiglieItem.click()
     await expect(page).toHaveURL(/\/famiglie/, { timeout: 5000 })
   })
-
 })
