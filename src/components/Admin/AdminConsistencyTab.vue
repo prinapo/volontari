@@ -377,6 +377,7 @@ icon="refresh"
             <q-card flat bordered>
               <q-card-section>
                 <div class="row items-center q-gutter-x-sm">
+                  <q-checkbox v-model="selectedListe" :val="props.row" dense />
                   <span class="text-weight-medium">{{ props.row.Nome }}</span>
                   <q-space />
                   <q-badge v-if="props.row.fileOk === true" color="positive">OK</q-badge>

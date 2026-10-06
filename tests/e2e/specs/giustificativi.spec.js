@@ -487,12 +487,16 @@ test.describe('Giustificativi', () => {
 
       const scaricaBtn = cardWithAttach.first().locator('a[aria-label="Scarica allegato"]')
       const href = await scaricaBtn.getAttribute('href')
+      expect(href).toContain('/assets/')
+      expect(href).toContain('access_token=')
 
-      const [download] = await Promise.all([
-        page.waitForEvent('download', { timeout: 5000 }).catch(() => null),
-        scaricaBtn.click({ force: true })
-      ])
-      expect(typeof (await download.path())).toBe('string')
+      // Verifica il contenuto scaricato via API: l'evento `download` del browser
+      // è instabile in emulazione mobile (path() null). Stesso URL del pulsante.
+      const res = await page.request.get(href)
+      expect(res.ok()).toBeTruthy()
+      expect(res.headers()['content-type']).toContain('pdf')
+      const body = await res.body()
+      expect(body.subarray(0, 5).toString()).toBe('%PDF-')
     })
 
     test('AL-04: Apri file si apre in nuova scheda con URL corretto @crud', async ({ page }) => {

@@ -536,7 +536,7 @@ test.describe('Pagamenti CRUD', () => {
     await page.waitForLoadState('networkidle').catch(() => {})
 
     const row = page
-      .locator('tr')
+      .locator('tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
       .filter({ hasText: `${batchName} (batch)` })
       .first()
     await expect(row).toBeVisible({ timeout: 15_000 })
