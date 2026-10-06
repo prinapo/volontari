@@ -233,6 +233,42 @@ SubmitPage passa dallo `submit.store` → `creaSubmission` (mai il service diret
 - Prefisso use*, vivono in src/composables/
 - Dipendenze esplicite passate come argomenti/parametri, non import diretto di uno store specifico se il composable deve restare riutilizzabile
 
+## Tabelle — aspetto canonico
+
+Tutte le `q-table` del progetto condividono lo stesso aspetto. Attributi da
+usare (quasi) sempre:
+
+```html
+<q-table
+  :rows / :columns / row-key
+  :loading
+  flat
+  bordered
+  class="bg-white"
+  :grid="$q.screen.lt.sm"   <!-- card grid su schermi piccoli -->
+  :dense="$q.screen.lt.md"  <!-- dense solo su schermi piccoli -->
+>
+  <template #item="props"><!-- card per la modalità grid su mobile --></template>
+</q-table>
+```
+
+- **Server-side**: `useServerTable` + `v-model:pagination="pagination"` +
+  `@request="onRequest"` (vedi “Tabelle server-side”).
+- **Lista intera in memoria**: `:pagination="{ rowsPerPage: 0 }"` +
+  `hide-pagination`.
+- **Selezione**: `selection="multiple"` + `v-model:selected`.
+- **Ricerca/filtri/refresh**: slot `#top` con `TableToolbar`
+  (`src/components/TableToolbar.vue`).
+- Con `:grid` va fornito **anche lo slot `#item`**, altrimenti su mobile la card
+  usa il layout di default e perde la formattazione delle celle.
+- Stile globale in `src/css/app.scss` (`.q-table { background: white }`): `bg-white`
+  è di fatto ridondante ma mantenuto per coerenza.
+- Non introdurre attributi/stili ad-hoc su una singola tabella: allinearsi a
+  questo modello. Le uniche eccezioni vanno motivate nel codice/qui.
+
+Riferimenti: `ContattiTab.vue`, `FamiglieTab.vue`, `RiconciliazionePage.vue`,
+`PagamentiTab.vue`, `RendicontazioneTab.vue`, `AdminUtentiTab.vue`.
+
 ## Tabelle server-side
 
 - Usare sempre `useServerTable` (src/composables/useServerTable.js) per QTable con

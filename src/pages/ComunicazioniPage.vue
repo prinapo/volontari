@@ -138,9 +138,11 @@ clearable />
           :selected="store.selected"
           :loading="store.loading"
           :pagination="{ rowsPerPage: 25 }"
-          dense
           flat
           bordered
+          class="bg-white"
+          :grid="$q.screen.lt.sm"
+          :dense="$q.screen.lt.md"
           @update:selected="store.setSelected"
         />
 
@@ -162,9 +164,11 @@ clearable />
           :rows="store.selected"
           :columns="recipientColumns"
           row-key="email"
-          dense
           flat
           bordered
+          class="bg-white"
+          :grid="$q.screen.lt.sm"
+          :dense="$q.screen.lt.md"
           :pagination="{ rowsPerPage: 25 }"
         />
         <q-stepper-navigation>

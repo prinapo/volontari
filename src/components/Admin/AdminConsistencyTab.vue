@@ -348,12 +348,13 @@ icon="refresh"
         :columns="listeColumns"
         row-key="id"
         selection="multiple"
-        dense
         flat
         bordered
         hide-pagination
         :pagination="{ rowsPerPage: 0 }"
         class="bg-white q-mt-sm"
+        :grid="$q.screen.lt.sm"
+        :dense="$q.screen.lt.md"
       >
         <template #body-cell-data="props">
           <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
@@ -370,6 +371,25 @@ icon="refresh"
             <q-badge v-else-if="props.row.fileOk === false" color="negative">KO</q-badge>
             <span v-else class="text-grey-6">—</span>
           </q-td>
+        </template>
+        <template #item="props">
+          <div class="q-pa-xs col-12">
+            <q-card flat bordered>
+              <q-card-section>
+                <div class="row items-center q-gutter-x-sm">
+                  <span class="text-weight-medium">{{ props.row.Nome }}</span>
+                  <q-space />
+                  <q-badge v-if="props.row.fileOk === true" color="positive">OK</q-badge>
+                  <q-badge v-else-if="props.row.fileOk === false" color="negative">KO</q-badge>
+                  <span v-else class="text-grey-6">—</span>
+                </div>
+                <div class="text-caption q-mt-xs">Data: {{ formatDate(props.row.DataCreazione) }}</div>
+                <div class="text-caption">
+                  Righe: {{ props.row.ConteggioRighe || 0 }} · Totale: €{{ formatNumber(props.row.Totale) }}
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
         </template>
       </q-table>
 

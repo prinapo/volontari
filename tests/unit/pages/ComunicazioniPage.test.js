@@ -54,7 +54,7 @@ vi.mock('src/utils/notify', () => ({
 }))
 
 vi.mock('quasar', () => ({
-  useQuasar: () => ({ notify: vi.fn() })
+  useQuasar: () => ({ notify: vi.fn(), screen: { lt: { sm: false, md: false } } })
 }))
 
 const extraStubs = {
