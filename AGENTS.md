@@ -479,6 +479,12 @@ la gestione le fa il manager.
 - La API key Brevo (`BREVO_API_KEY`) e i ruoli abilitati (`COMMS_ALLOWED_ROLES`)
   vivono SOLO nell'env del compose Directus, mai nel frontend.
 - Log in `Comunicazioni` + `Comunicazioni_Contatti` (DB non git).
+  Le due collezioni (con relazioni M2O) si (ri)creano in modo **idempotente** con
+  `scripts/directus-comunicazioni-collections.mjs` (serve un token admin), utile
+  quando si allestisce una nuova istanza Directus (in prod mancavano e l'invio
+  falliva con `reading 'primary'`). Per confrontare la config di due istanze:
+  `scripts/directus-config-dump.mjs` (esporta ruoli, policy, access, permessi,
+  collezioni, campi e relazioni in un JSON).
 - Anche la **notifica di pagamento** (`inviaNotificaPagamento`, side-effect di
   `segnaPagato` in `src/usecases/pagamenti.js`) usa lo stesso endpoint
   `/communications/send` con `audience: 'email'`, in **best-effort**: un errore
