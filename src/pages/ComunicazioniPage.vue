@@ -245,11 +245,19 @@ function onAudienceChange() {
 
 async function filterContatti(input, update) {
   try {
-    const res = input ? await contattiService.search(input) : { data: { data: [] } }
+    // input vuoto → contattiService.search('') ritorna i primi 20 (lista iniziale)
+    const res = await contattiService.search(input)
     const rows = res.data.data || []
-    update(rows.map(row => ({ label: `${row.Nome || ''} ${row.Cognome || ''}`.trim(), value: row.id_contatto })))
+    update(() => {
+      contattiOptions.value = rows.map(row => ({
+        label: `${row.Nome || ''} ${row.Cognome || ''}`.trim(),
+        value: row.id_contatto
+      }))
+    })
   } catch {
-    update([])
+    update(() => {
+      contattiOptions.value = []
+    })
   }
 }
 
