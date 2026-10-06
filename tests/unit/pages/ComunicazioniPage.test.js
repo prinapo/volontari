@@ -73,14 +73,23 @@ describe('ComunicazioniPage — filtro "Contatto singolo"', () => {
 
   it('carica i primi contatti con input vuoto (usa il callback di Quasar)', async () => {
     mockSearchContatti.mockResolvedValue({
-      data: { data: [{ id_contatto: 'c-1', Nome: 'Mario', Cognome: 'Rossi' }] }
+      data: {
+        data: [
+          {
+            id_contatto: 'c-1',
+            Nome: 'Mario',
+            Cognome: 'Rossi',
+            email: [{ email_address: 'mario@x.it', Primary: true }]
+          }
+        ]
+      }
     })
     const wrapper = mountPage()
 
     await wrapper.vm.filterContatti('', fn => fn())
 
     expect(mockSearchContatti).toHaveBeenCalledWith('')
-    expect(wrapper.vm.contattiOptions).toEqual([{ label: 'Mario Rossi', value: 'c-1' }])
+    expect(wrapper.vm.contattiOptions).toEqual([{ label: 'Mario Rossi (mario@x.it)', value: 'c-1' }])
   })
 
   it('filtra i contatti con input valorizzato', async () => {

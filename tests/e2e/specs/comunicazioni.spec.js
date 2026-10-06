@@ -95,6 +95,8 @@ test.describe('Comunicazioni — wizard', () => {
     await filtri.locator('.q-select input').fill(contatto.Nome)
     const option = page.getByRole('option', { name: fullName }).first()
     await expect(option).toBeVisible({ timeout: 10_000 })
+    // l'opzione mostra anche l'email primaria (per riconoscere il contatto)
+    await expect(option).toContainText(TARGET_EMAIL)
     await option.click()
     await filtri.getByRole('button', { name: 'Continua' }).click()
 

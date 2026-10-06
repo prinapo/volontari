@@ -243,16 +243,19 @@ function onAudienceChange() {
   step.value = 2
 }
 
+function contattoLabel(row) {
+  const nome = `${row.Nome || ''} ${row.Cognome || ''}`.trim()
+  const primary = row.email?.find(e => e.Primary === true)?.email_address || row.email?.[0]?.email_address
+  return primary ? `${nome} (${primary})` : nome
+}
+
 async function filterContatti(input, update) {
   try {
     // input vuoto → contattiService.search('') ritorna i primi 20 (lista iniziale)
     const res = await contattiService.search(input)
     const rows = res.data.data || []
     update(() => {
-      contattiOptions.value = rows.map(row => ({
-        label: `${row.Nome || ''} ${row.Cognome || ''}`.trim(),
-        value: row.id_contatto
-      }))
+      contattiOptions.value = rows.map(row => ({ label: contattoLabel(row), value: row.id_contatto }))
     })
   } catch {
     update(() => {
