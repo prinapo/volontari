@@ -39,8 +39,9 @@ Risolve i destinatari da un audience/filtro e ritorna la **lista completa**
 destinatari risolti (sottostringa). `limit` (opzionale) tronca la lista
 restituita; senza `limit` ritorna tutti i destinatari.
 
-Risposta: `{ "count": 42, "recipients": [ { "contattoId", "nome", "cognome", "email", "famigliaId", "famiglia" } ] }`
-(`count` = totale risolto, `recipients` = lista, eventualmente troncata da `limit`).
+Risposta: `{ "count": 42, "recipients": [ … ], "sample": [ … ] }`
+(`count` = totale risolto, `recipients` = lista, eventualmente troncata da `limit`;
+`sample` = primi 25, mantenuto per retro-compatibilità con la SPA ≤ 4.0.17).
 
 ### `POST /communications/send`
 

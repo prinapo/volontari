@@ -5,6 +5,7 @@ import { resolveRecipients } from './lib/recipients.js'
 import { buildHtmlBody, renderTemplate } from './lib/render.js'
 
 const CONCURRENCY = 5
+const SAMPLE_SIZE = 25
 
 /**
  * Esegue `worker` su tutti gli elementi con concorrenza limitata.
@@ -85,7 +86,12 @@ export default {
           email
         })
         const max = Number(limit) > 0 ? Number(limit) : recipients.length
-        res.json({ count: recipients.length, recipients: recipients.slice(0, max).map(publicRecipient) })
+        res.json({
+          count: recipients.length,
+          // `sample` mantenuto per retro-compatibilità con la SPA <= 4.0.17
+          sample: recipients.slice(0, SAMPLE_SIZE).map(publicRecipient),
+          recipients: recipients.slice(0, max).map(publicRecipient)
+        })
       } catch (error) {
         logger?.error?.(error, '[communications] resolve recipients')
         next(error)
