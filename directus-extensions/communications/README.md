@@ -20,7 +20,8 @@ Diagnostica: `{ ok, brevo, sender }` (non espone la chiave).
 
 ### `POST /communications/recipients`
 
-Anteprima/conteggio destinatari.
+Risolve i destinatari da un audience/filtro e ritorna la **lista completa**
+(usata dal wizard per la selezione manuale).
 
 ```json
 {
@@ -29,18 +30,25 @@ Anteprima/conteggio destinatari.
   "filterFamiglia": { "Progetti": { "_some": { "StatoProgetto": { "_eq": "accettato" } } } },
   "ruoli": ["Volontario", "Genitore"],
   "contattoId": 123,
-  "cognome": "prin"
+  "cognome": "prin",
+  "limit": 1000
 }
 ```
 
 `cognome` (opzionale) è un post-filtro case-insensitive sul cognome dei
-destinatari risolti (sottostringa).
+destinatari risolti (sottostringa). `limit` (opzionale) tronca la lista
+restituita; senza `limit` ritorna tutti i destinatari.
 
-Risposta: `{ "count": 42, "sample": [ { "contattoId", "nome", "cognome", "email", "famigliaId", "famiglia" } ] }`.
+Risposta: `{ "count": 42, "recipients": [ { "contattoId", "nome", "cognome", "email", "famigliaId", "famiglia" } ] }`
+(`count` = totale risolto, `recipients` = lista, eventualmente troncata da `limit`).
 
 ### `POST /communications/send`
 
 Come `/recipients`, più `subject`, `body`, `link` (opzionale), `tipo`.
+
+In alternativa alla risoluzione da audience/filtro, puoi passare un elenco
+esplicito **`recipients`** (gli oggetti restituiti da `/recipients`): se presente
+e non vuoto, l'invio avviene **solo** verso quelli (selezione manuale del wizard).
 
 Risposta: `{ comunicazioneId, totale, inviati, falliti, errori: [{ email, message }] }`.
 

@@ -116,11 +116,64 @@ clearable />
 
         <q-stepper-navigation>
           <q-btn flat label="Indietro" @click="step = 1" />
-          <q-btn color="primary" label="Continua" @click="step = 3" />
+          <q-btn color="primary" label="Continua" :loading="store.loading" @click="vaiAllaLista" />
         </q-stepper-navigation>
       </q-step>
 
-      <q-step :name="3" title="Componi" icon="edit_note" :done="step > 3">
+      <q-step :name="3" title="Lista destinatari" icon="format_list_bulleted" :done="step > 3">
+        <div class="row items-center q-gutter-sm q-mb-sm">
+          <q-btn dense outline color="primary" label="Seleziona tutti" @click="store.selectAll()" />
+          <q-btn dense outline color="primary" label="Deseleziona tutti" @click="store.deselectAll()" />
+          <q-space />
+          <div class="text-caption">
+            <strong>{{ store.selected.length }}</strong> selezionati su {{ store.recipients.length }}
+          </div>
+        </div>
+
+        <q-table
+          :rows="store.recipients"
+          :columns="recipientColumns"
+          row-key="email"
+          selection="multiple"
+          :selected="store.selected"
+          :loading="store.loading"
+          :pagination="{ rowsPerPage: 25 }"
+          dense
+          flat
+          bordered
+          @update:selected="store.setSelected"
+        />
+
+        <q-banner v-if="!store.loading && store.recipients.length === 0" dense class="bg-orange-1 q-mt-sm">
+          Nessun destinatario trovato con i filtri scelti.
+        </q-banner>
+
+        <q-stepper-navigation>
+          <q-btn flat label="Indietro" @click="step = 2" />
+          <q-btn color="primary" label="Continua" :disable="store.selected.length === 0" @click="step = 4" />
+        </q-stepper-navigation>
+      </q-step>
+
+      <q-step :name="4" title="Riepilogo" icon="checklist" :done="step > 4">
+        <q-banner dense class="bg-blue-1 text-primary q-mb-md">
+          Destinatari selezionati: <strong>{{ store.selected.length }}</strong>
+        </q-banner>
+        <q-table
+          :rows="store.selected"
+          :columns="recipientColumns"
+          row-key="email"
+          dense
+          flat
+          bordered
+          :pagination="{ rowsPerPage: 25 }"
+        />
+        <q-stepper-navigation>
+          <q-btn flat label="Indietro" @click="step = 3" />
+          <q-btn color="primary" label="Continua" :disable="store.selected.length === 0" @click="step = 5" />
+        </q-stepper-navigation>
+      </q-step>
+
+      <q-step :name="5" title="Componi" icon="edit_note" :done="step > 5">
         <q-input
 v-model="store.oggetto"
 label="Oggetto *"
@@ -139,39 +192,18 @@ counter />
         />
         <q-input v-model="store.link" label="Link allegato (opzionale)" outlined dense class="q-mt-sm" />
         <q-stepper-navigation>
-          <q-btn flat label="Indietro" @click="step = 2" />
-          <q-btn color="primary" label="Continua" :disable="!store.oggetto || !store.corpo" @click="step = 4" />
-        </q-stepper-navigation>
-      </q-step>
-
-      <q-step :name="4" title="Anteprima" icon="preview" :done="step > 4">
-        <q-btn color="secondary" label="Calcola destinatari" :loading="store.loading" @click="calcolaDestinatari" />
-        <div v-if="store.preview.count >= 0" class="q-mt-md">
-          <q-banner dense class="bg-blue-1 text-primary q-mb-md">Destinatari trovati: <strong>{{ store.preview.count }}</strong></q-banner>
-          <q-table
-            v-if="store.preview.sample.length > 0"
-            :rows="store.preview.sample"
-            :columns="sampleColumns"
-            row-key="email"
-            dense
-            flat
-            bordered
-            hide-bottom
-          />
-        </div>
-        <q-stepper-navigation>
-          <q-btn flat label="Indietro" @click="step = 3" />
+          <q-btn flat label="Indietro" @click="step = 4" />
           <q-btn
             color="positive"
             label="Invia"
             :loading="store.sending"
-            :disable="store.preview.count === 0"
+            :disable="!store.oggetto || !store.corpo || store.selected.length === 0"
             @click="invia"
           />
         </q-stepper-navigation>
       </q-step>
 
-      <q-step :name="5" title="Esito" icon="check_circle">
+      <q-step :name="6" title="Esito" icon="check_circle">
         <q-banner v-if="store.esito" dense class="bg-green-1 text-positive">
           Inviati: <strong>{{ store.esito.inviati }}</strong> · Falliti: <strong>{{ store.esito.falliti }}</strong> ·
           Totale: <strong>{{ store.esito.totale }}</strong>
@@ -232,15 +264,24 @@ const statiProgettoOptions = [
 const giustificativiOptions = GIUSTIFICATIVI_SELEZIONABILI.map(valore => ({ label: valore, value: valore }))
 const pagamentiOptions = STATI_PAGAMENTO_SELEZIONABILI.map(valore => ({ label: valore, value: valore }))
 
-const sampleColumns = [
-  { name: 'nome', label: 'Nome', field: 'nome', align: 'left' },
-  { name: 'cognome', label: 'Cognome', field: 'cognome', align: 'left' },
-  { name: 'email', label: 'Email', field: 'email', align: 'left' },
-  { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left' }
+const recipientColumns = [
+  { name: 'nome', label: 'Nome', field: 'nome', align: 'left', sortable: true },
+  { name: 'cognome', label: 'Cognome', field: 'cognome', align: 'left', sortable: true },
+  { name: 'email', label: 'Email', field: 'email', align: 'left', sortable: true },
+  { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left', sortable: true }
 ]
 
 function onAudienceChange() {
   step.value = 2
+}
+
+async function vaiAllaLista() {
+  try {
+    await store.caricaDestinatari()
+    step.value = 3
+  } catch (error) {
+    notifyError($q, error, 'Errore nel calcolo dei destinatari')
+  }
 }
 
 function contattoLabel(row) {
@@ -287,19 +328,11 @@ async function caricaReferenti() {
   }
 }
 
-async function calcolaDestinatari() {
-  try {
-    await store.anteprimaDestinatari()
-  } catch (error) {
-    notifyError($q, error, 'Errore nel calcolo dei destinatari')
-  }
-}
-
 async function invia() {
   try {
     await store.invia()
     notifySuccess($q, `Comunicazione inviata a ${store.esito?.inviati ?? 0} destinatari`)
-    step.value = 5
+    step.value = 6
   } catch (error) {
     notifyError($q, error, "Errore nell'invio della comunicazione")
   }

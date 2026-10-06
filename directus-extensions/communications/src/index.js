@@ -5,7 +5,6 @@ import { resolveRecipients } from './lib/recipients.js'
 import { buildHtmlBody, renderTemplate } from './lib/render.js'
 
 const CONCURRENCY = 5
-const SAMPLE_SIZE = 25
 
 /**
  * Esegue `worker` su tutti gli elementi con concorrenza limitata.
@@ -40,6 +39,25 @@ function fullName(recipient) {
   return `${recipient.nome || ''} ${recipient.cognome || ''}`.trim()
 }
 
+/**
+ * Normalizza un elenco esplicito di destinatari inviato dal frontend (selezione
+ * manuale nella lista). Ritorna null se non è un array, altrimenti solo le voci
+ * con email valida.
+ */
+function normalizeRecipients(list) {
+  if (!Array.isArray(list)) return null
+  return list
+    .filter(item => item && typeof item.email === 'string' && item.email.trim())
+    .map(item => ({
+      contattoId: item.contattoId ?? null,
+      nome: item.nome ?? '',
+      cognome: item.cognome ?? '',
+      email: String(item.email).trim().toLowerCase(),
+      famigliaId: item.famigliaId ?? null,
+      famiglia: item.famiglia ?? ''
+    }))
+}
+
 export default {
   id: 'communications',
   handler: (router, ctx) => {
@@ -55,7 +73,7 @@ export default {
           res.status(403).json({ error: 'Non autorizzato all invio di comunicazioni' })
           return
         }
-        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, email } = req.body || {}
+        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, email, limit } = req.body || {}
         const recipients = await resolveRecipients({
           ctx,
           audience,
@@ -66,7 +84,8 @@ export default {
           cognome,
           email
         })
-        res.json({ count: recipients.length, sample: recipients.slice(0, SAMPLE_SIZE).map(publicRecipient) })
+        const max = Number(limit) > 0 ? Number(limit) : recipients.length
+        res.json({ count: recipients.length, recipients: recipients.slice(0, max).map(publicRecipient) })
       } catch (error) {
         logger?.error?.(error, '[communications] resolve recipients')
         next(error)
@@ -85,23 +104,39 @@ export default {
           return
         }
 
-        const { audience, filter, filterFamiglia, ruoli, contattoId, cognome, email, subject, body, link, tipo } =
-          req.body || {}
-        if (!subject || !body) {
-          res.status(400).json({ error: 'Oggetto e corpo sono obbligatori' })
-          return
-        }
-
-        const recipients = await resolveRecipients({
-          ctx,
+        const {
           audience,
           filter,
           filterFamiglia,
           ruoli,
           contattoId,
           cognome,
-          email
-        })
+          email,
+          subject,
+          body,
+          link,
+          tipo,
+          recipients: providedRecipients
+        } = req.body || {}
+        if (!subject || !body) {
+          res.status(400).json({ error: 'Oggetto e corpo sono obbligatori' })
+          return
+        }
+
+        const explicit = normalizeRecipients(providedRecipients)
+        const recipients =
+          explicit && explicit.length > 0
+            ? explicit
+            : await resolveRecipients({
+                ctx,
+                audience,
+                filter,
+                filterFamiglia,
+                ruoli,
+                contattoId,
+                cognome,
+                email
+              })
         const sender = brevoSender(env)
 
         comunicazioneId = await createComunicazione(ctx, {

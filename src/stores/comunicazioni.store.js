@@ -18,10 +18,11 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
   state: () => ({
     audience: 'contatti',
     filters: FILTERS_DEFAULT(),
+    recipients: [],
+    selected: [],
     oggetto: '',
     corpo: '',
     link: '',
-    preview: { count: 0, sample: [] },
     esito: null,
     loading: false,
     sending: false,
@@ -30,17 +31,19 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
   }),
 
   getters: {
-    payloadFilters: state => ({ audience: state.audience, ...state.filters })
+    payloadFilters: state => ({ audience: state.audience, ...state.filters }),
+    selectedRecipients: state => state.selected
   },
 
   actions: {
     reset() {
       this.audience = 'contatti'
       this.filters = FILTERS_DEFAULT()
+      this.recipients = []
+      this.selected = []
       this.oggetto = ''
       this.corpo = ''
       this.link = ''
-      this.preview = { count: 0, sample: [] }
       this.esito = null
       this.error = null
     },
@@ -48,18 +51,23 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
     setAudience(audience) {
       this.audience = audience
       this.filters = FILTERS_DEFAULT()
-      this.preview = { count: 0, sample: [] }
+      this.recipients = []
+      this.selected = []
       this.esito = null
     },
 
-    async anteprimaDestinatari() {
+    async caricaDestinatari() {
       this.loading = true
       this.error = null
       this.esito = null
       try {
-        this.preview = await contaDestinatari(this.payloadFilters)
-        return this.preview
+        const res = await contaDestinatari(this.payloadFilters)
+        this.recipients = res.recipients || []
+        this.selected = [...this.recipients]
+        return res
       } catch (error) {
+        this.recipients = []
+        this.selected = []
         this.error =
           error.response?.data?.error ||
           error.response?.data?.errors?.[0]?.message ||
@@ -71,12 +79,25 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
       }
     },
 
+    selectAll() {
+      this.selected = [...this.recipients]
+    },
+
+    deselectAll() {
+      this.selected = []
+    },
+
+    setSelected(list) {
+      this.selected = Array.isArray(list) ? list : []
+    },
+
     async invia() {
       this.sending = true
       this.error = null
       try {
         this.esito = await inviaComunicazione({
           ...this.payloadFilters,
+          recipients: this.selected,
           subject: this.oggetto,
           body: this.corpo,
           link: this.link || null,

@@ -156,8 +156,8 @@ export async function contaDestinatari(filters) {
 /**
 Invio effettivo: ritorna { comunicazioneId, totale, inviati, falliti, errori }.
 */
-export async function inviaComunicazione({ subject, body, link, tipo, ...filters }) {
+export async function inviaComunicazione({ subject, body, link, tipo, recipients, ...filters }) {
   const payload = await buildPayload(filters)
-  const res = await comunicazioniService.send({ ...payload, subject, body, link, tipo })
+  const res = await comunicazioniService.send({ ...payload, subject, body, link, tipo, recipients })
   return res.data
 }

@@ -73,7 +73,7 @@ test.describe('Comunicazioni — wizard', () => {
     }
   })
 
-  test('CM-01: Contatto singolo — selezione e invio reale @crud', async ({ page }) => {
+  test('CM-01: Contatto singolo — lista, riepilogo e invio reale @crud', async ({ page }) => {
     test.setTimeout(120_000)
 
     const contatto = await ensureContatto()
@@ -83,35 +83,39 @@ test.describe('Comunicazioni — wizard', () => {
     await page.goto('/comunicazioni')
 
     const filtri = page.getByRole('group', { name: 'Filtri' })
+    const lista = page.getByRole('group', { name: 'Lista destinatari' })
+    const riepilogo = page.getByRole('group', { name: 'Riepilogo' })
     const componi = page.getByRole('group', { name: 'Componi' })
-    const anteprima = page.getByRole('group', { name: 'Anteprima' })
     const esito = page.getByRole('group', { name: 'Esito' })
 
     // 1. Destinatari → Contatto singolo
     await page.getByRole('radio', { name: 'Contatto singolo' }).click()
 
-    // 2. Filtri → select "Cerca contatto" (verifica che le opzioni compaiano)
+    // 2. Filtri → select "Cerca contatto" (verifica opzioni con email primaria)
     await filtri.locator('.q-select').click()
     await filtri.locator('.q-select input').fill(contatto.Nome)
     const option = page.getByRole('option', { name: fullName }).first()
     await expect(option).toBeVisible({ timeout: 10_000 })
-    // l'opzione mostra anche l'email primaria (per riconoscere il contatto)
     await expect(option).toContainText(TARGET_EMAIL)
     await option.click()
     await filtri.getByRole('button', { name: 'Continua' }).click()
 
-    // 3. Componi
+    // 3. Lista destinatari (auto-caricata): 1 riga, selezionata di default
+    await expect(lista.getByText(/selezionati su/)).toContainText('1 selezionati su 1', { timeout: 15_000 })
+    await expect(lista.getByText(TARGET_EMAIL)).toBeVisible()
+    await lista.getByRole('button', { name: 'Continua' }).click()
+
+    // 4. Riepilogo selezionati
+    await expect(riepilogo.getByText(/Destinatari selezionati/)).toContainText('1')
+    await expect(riepilogo.getByText(TARGET_EMAIL)).toBeVisible()
+    await riepilogo.getByRole('button', { name: 'Continua' }).click()
+
+    // 5. Componi → invia solo i selezionati
     await fieldInput(componi, 'Oggetto *').fill('Test CM-01')
     await fieldInput(componi, 'Corpo *').fill('Email di test dal wizard Comunicazioni.')
-    await componi.getByRole('button', { name: 'Continua' }).click()
-
-    // 4. Anteprima → calcola e invia
-    await anteprima.getByRole('button', { name: 'Calcola destinatari' }).click()
-    await expect(anteprima.locator('.q-banner')).toContainText('Destinatari trovati: 1', { timeout: 15_000 })
-
     const [sendResp] = await Promise.all([
       page.waitForResponse(r => r.url().includes('/communications/send') && r.request().method() === 'POST'),
-      anteprima.getByRole('button', { name: 'Invia' }).click()
+      componi.getByRole('button', { name: 'Invia' }).click()
     ])
     expect(sendResp.status()).toBe(200)
     const esitoBody = await sendResp.json()
@@ -119,7 +123,7 @@ test.describe('Comunicazioni — wizard', () => {
     expect(esitoBody.inviati).toBe(1)
     expect(esitoBody.falliti).toBe(0)
 
-    // 5. Esito
+    // 6. Esito
     await expect(esito.locator('.q-banner').filter({ hasText: 'Inviati' })).toContainText('Inviati: 1')
   })
 })
