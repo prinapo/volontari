@@ -9,9 +9,5 @@ export const syncService = {
   async importSnapshot(dir) {
     const { data } = await api.post(`${SYNC.ENDPOINT}/import`, { dir })
     return data
-  },
-  async snapshots() {
-    const { data } = await api.get(`${SYNC.ENDPOINT}/snapshots`)
-    return data.data
   }
 }

@@ -97,6 +97,7 @@ import { useQuasar } from 'quasar'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from 'src/services/auth.service'
+import { apiErrorMessage } from 'src/utils/errors'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -127,7 +128,7 @@ async function handleReset() {
     })
     setTimeout(() => router.push('/login'), 2000)
   } catch (error_) {
-    const msg = error_.response?.data?.errors?.[0]?.message || 'Errore durante il reset della password'
+    const msg = apiErrorMessage(error_, 'Errore durante il reset della password')
     error.value = msg
   } finally {
     loading.value = false

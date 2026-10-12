@@ -262,7 +262,7 @@ describe('verifica store', () => {
 
     mockAggiornaCampoGiustificativo.mockRejectedValueOnce(new Error('boom'))
     await expect(store.updateGiustificativoField(2, 'g-1', 'Importo', '20')).rejects.toBeTruthy()
-    expect(store.error).toBe("Errore nell'aggiornamento del campo Importo")
+    expect(store.error).toBe('boom')
   })
 
   it('rejectGiustificativo rejects and marks file', async () => {
@@ -317,8 +317,7 @@ describe('verifica store', () => {
       new File([], 'x.pdf')
     )
     expect(mockCreaGiustificativo).toHaveBeenCalledWith(
-      expect.objectContaining({ Progetto: 1, file: expect.any(File) }),
-      { origine: 'verificatore' }
+      expect.objectContaining({ Progetto: 1, file: expect.any(File) })
     )
   })
 
@@ -645,7 +644,7 @@ describe('verifica store', () => {
     await expect(
       store.reconcileSubmission({ submissionId: 'missing', famigliaId: 'fam-1', progettoId: 1 })
     ).rejects.toBeTruthy()
-    expect(store.error).toBe('Errore nella riconciliazione')
+    expect(store.error).toBe('Submission not found')
   })
 
   it('reconcileSubmission delega lo use case con i valori risolti', async () => {

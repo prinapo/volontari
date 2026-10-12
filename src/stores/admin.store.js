@@ -14,6 +14,7 @@ import {
   resetPasswordUtente as resetPasswordUtenteUseCase
 } from 'src/usecases/utenti'
 import { calcolaDisallineatiLoginPrimaria, calcolaViolazioniEmailPrimarie } from 'src/utils/emailPrimarie'
+import { apiErrorMessage } from 'src/utils/errors'
 import { VOLONTARIO_ROLE_NAMES } from 'src/utils/permissions'
 
 export const useAdminStore = defineStore('admin', {
@@ -51,7 +52,7 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminService.getUsers()
         this.users = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento degli utenti'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento degli utenti')
       } finally {
         this.loading = false
       }
@@ -62,7 +63,7 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminService.getRoles()
         this.roles = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
       }
     },
 
@@ -77,7 +78,7 @@ export const useAdminStore = defineStore('admin', {
           this.contattoTrovato = emails[0].Contatto_Relation
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
       }
     },
 
@@ -90,7 +91,7 @@ export const useAdminStore = defineStore('admin', {
         this.nuovaPassword = pwd
         await this.fetchUsers()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nella creazione dell'utente"
+        this.error = apiErrorMessage(error, "Errore nella creazione dell'utente")
         throw error
       } finally {
         this.saving = false
@@ -104,7 +105,7 @@ export const useAdminStore = defineStore('admin', {
         await aggiornaRuoloUseCase(userId, roleId)
         await this.fetchUsers()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del ruolo"
+        this.error = apiErrorMessage(error, "Errore nell'aggiornamento del ruolo")
         throw error
       } finally {
         this.saving = false
@@ -117,7 +118,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         await resetPasswordUtenteUseCase(userId, password)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel reset della password'
+        this.error = apiErrorMessage(error, 'Errore nel reset della password')
         throw error
       } finally {
         this.saving = false
@@ -131,7 +132,7 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminService.getProgetti({ search: this.searchProgetti || undefined })
         this.progetti = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei progetti'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento dei progetti')
       } finally {
         this.progettiLoading = false
       }
@@ -146,7 +147,7 @@ export const useAdminStore = defineStore('admin', {
           Nome_Beneficiario: nome
         })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento del progetto"
+        this.error = apiErrorMessage(error, "Errore nell'aggiornamento del progetto")
         throw error
       } finally {
         this.saving = false
@@ -254,8 +255,7 @@ export const useAdminStore = defineStore('admin', {
           senzaRuolo: await this._checkSenzaRuolo()
         }
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica consistenza volontari'
+        this.error = apiErrorMessage(error, 'Errore nella verifica consistenza volontari')
       } finally {
         this.volontariCheckLoading = false
       }
@@ -290,8 +290,7 @@ export const useAdminStore = defineStore('admin', {
           senzaPrimaria: senzaPrimaria.map(enrich)
         }
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica email primarie'
+        this.error = apiErrorMessage(error, 'Errore nella verifica email primarie')
       } finally {
         this.emailPrimarieCheckLoading = false
       }
@@ -309,8 +308,7 @@ export const useAdminStore = defineStore('admin', {
         await this.fetchEmailPrimarieConsistency()
         return result
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella correzione email primarie'
+        this.error = apiErrorMessage(error, 'Errore nella correzione email primarie')
         throw error
       } finally {
         this.emailPrimarieCheckLoading = false
@@ -347,8 +345,7 @@ export const useAdminStore = defineStore('admin', {
 
         this.emailLoginCheck = { disallineati: calcolaDisallineatiLoginPrimaria(candidate) }
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica login vs primaria'
+        this.error = apiErrorMessage(error, 'Errore nella verifica login vs primaria')
       } finally {
         this.emailLoginCheckLoading = false
       }
@@ -365,8 +362,7 @@ export const useAdminStore = defineStore('admin', {
         await this.fetchEmailLoginConsistency()
         return { contattiCorretti: disallineati.length }
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella correzione login vs primaria'
+        this.error = apiErrorMessage(error, 'Errore nella correzione login vs primaria')
         throw error
       } finally {
         this.emailLoginCheckLoading = false
@@ -379,8 +375,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         this.listeCheck = await valutaListe()
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella verifica delle liste pagamenti'
+        this.error = apiErrorMessage(error, 'Errore nella verifica delle liste pagamenti')
       } finally {
         this.listeCheckLoading = false
       }
@@ -400,8 +395,7 @@ export const useAdminStore = defineStore('admin', {
         )
         this.listeCheck = { ...this.listeCheck, liste: conStato }
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel controllo dei file liste'
+        this.error = apiErrorMessage(error, 'Errore nel controllo dei file liste')
       } finally {
         this.listeFileCheckLoading = false
       }
@@ -415,8 +409,7 @@ export const useAdminStore = defineStore('admin', {
         await this.fetchListeConsistency()
         return summary
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nella rigenerazione delle liste'
+        this.error = apiErrorMessage(error, 'Errore nella rigenerazione delle liste')
         throw error
       } finally {
         this.listeCheckLoading = false
@@ -427,7 +420,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         await contattiService.update(contattoId, { IsVolontario: false })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         throw error
       }
     },
@@ -436,7 +429,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         await contattiService.update(contattoId, { user_id: null })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         throw error
       }
     },
@@ -445,7 +438,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         await contattiService.update(contattoId, { user_id: userId })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         throw error
       }
     },
@@ -454,7 +447,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         await contattiService.update(contattoId, { IsVolontario: true })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         throw error
       }
     },
@@ -487,8 +480,7 @@ export const useAdminStore = defineStore('admin', {
         localStorage.removeItem('refresh_token')
         globalThis.location.reload()
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || "Errore nell'avvio dell'impersonazione"
+        this.error = apiErrorMessage(error, "Errore nell'avvio dell'impersonazione")
         // Notify diretto perché i chiamanti sono fire-and-forget
         // (@click senza await/try-catch) — eccezione alla regola "store non fa UI"
         Notify.create({
@@ -517,8 +509,7 @@ export const useAdminStore = defineStore('admin', {
         localStorage.removeItem('impersonating_user_id')
         globalThis.location.reload()
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || "Errore nel termine dell'impersonazione"
+        this.error = apiErrorMessage(error, "Errore nel termine dell'impersonazione")
         // Notify diretto perché i chiamanti sono fire-and-forget
         // (@click senza await/try-catch) — eccezione alla regola "store non fa UI"
         Notify.create({

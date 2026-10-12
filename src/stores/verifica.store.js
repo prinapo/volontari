@@ -17,6 +17,7 @@ import {
 } from 'src/usecases/giustificativi'
 import { STATI_GIUSTIFICATIVO_CONTABILI, STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { apiErrorMessage } from 'src/utils/errors'
 import { calcolaDisallineati } from 'src/utils/statoProgetto'
 import {
   buildContattiRows,
@@ -262,7 +263,7 @@ export const useVerificaStore = defineStore('verifica', {
 
         await this._loadProjectRows(projects)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento della rendicontazione')
       } finally {
         this.loading = false
       }
@@ -298,7 +299,7 @@ export const useVerificaStore = defineStore('verifica', {
 
         await this._loadProjectRows(allProjects)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della rendicontazione'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento della rendicontazione')
       } finally {
         this.loading = false
       }
@@ -344,7 +345,7 @@ export const useVerificaStore = defineStore('verifica', {
           caption: `Esportati ${rows.length} progetti`
         })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore durante l'export Excel"
+        this.error = apiErrorMessage(error, "Errore durante l'export Excel")
         Notify.create({
           type: 'negative',
           message: 'Errore export Excel',
@@ -439,8 +440,7 @@ export const useVerificaStore = defineStore('verifica', {
           caption: `${progettiRows.length} progetti, ${contattiRows.length} contatti, ${giustificativiRows.length} giustificativi`
         })
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || "Errore durante l'export dettagliato"
+        this.error = apiErrorMessage(error, "Errore durante l'export dettagliato")
         Notify.create({
           type: 'negative',
           message: 'Errore export dettagliato',
@@ -464,7 +464,7 @@ export const useVerificaStore = defineStore('verifica', {
           await pagStore.ricalcolaProposta(progettoId)
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella verifica del giustificativo'
+        this.error = apiErrorMessage(error, 'Errore nella verifica del giustificativo')
         throw error
       }
     },
@@ -482,7 +482,7 @@ export const useVerificaStore = defineStore('verifica', {
           await pagStore.ricalcolaProposta(progettoId)
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || `Errore nell'aggiornamento del campo ${field}`
+        this.error = apiErrorMessage(error, `Errore nell'aggiornamento del campo ${field}`)
         throw error
       }
     },
@@ -641,7 +641,7 @@ export const useVerificaStore = defineStore('verifica', {
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
         await this.fetchPage({})
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella riconciliazione'
+        this.error = apiErrorMessage(error, 'Errore nella riconciliazione')
         throw error
       }
     },
@@ -653,7 +653,7 @@ export const useVerificaStore = defineStore('verifica', {
         await scartaSubmission({ id, nota: note, statoCorrente: submission?.stato })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nello scarto'
+        this.error = apiErrorMessage(error, 'Errore nello scarto')
         throw error
       }
     },
@@ -665,7 +665,7 @@ export const useVerificaStore = defineStore('verifica', {
         await ripristinaSubmission({ id, statoCorrente: submission?.stato })
         await this.fetchSubmissions({ includeScartati: this.includeScartati })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel ripristino'
+        this.error = apiErrorMessage(error, 'Errore nel ripristino')
         throw error
       }
     },
@@ -690,7 +690,7 @@ export const useVerificaStore = defineStore('verifica', {
           await pagStore.ricalcolaProposta(progettoId)
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel rifiuto del giustificativo'
+        this.error = apiErrorMessage(error, 'Errore nel rifiuto del giustificativo')
         throw error
       }
     },
@@ -709,20 +709,20 @@ export const useVerificaStore = defineStore('verifica', {
           }
         })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento dati bancari"
+        this.error = apiErrorMessage(error, "Errore nell'aggiornamento dati bancari")
         throw error
       }
     },
 
     async addGiustificativo(formData, file) {
       try {
-        await creaGiustificativo({ ...formData, file }, { origine: 'verificatore' })
+        await creaGiustificativo({ ...formData, file })
         await this.fetchPage({})
       } catch (error) {
         if (error.message === 'Progetto non operativo') {
           this.error = 'Non è possibile caricare giustificativi finché il progetto non è accettato.'
         } else {
-          this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiunta del giustificativo"
+          this.error = apiErrorMessage(error, "Errore nell'aggiunta del giustificativo")
         }
         throw error
       }

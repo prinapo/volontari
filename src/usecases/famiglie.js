@@ -4,13 +4,7 @@ import { gestioneService } from 'src/services/gestione.service'
 import { referentiService } from 'src/services/referenti.service'
 import { usersService } from 'src/services/users.service'
 import { RUOLI_FAMIGLIA } from 'src/utils/constants'
-
-function generateSecurePassword() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
-  const array = new Uint32Array(16)
-  crypto.getRandomValues(array)
-  return 'Temp_' + Array.from(array, v => chars[v % chars.length]).join('') + '_2026!'
-}
+import { generatePassword } from 'src/utils/password'
 
 async function _findOrCreateUser(contattoId) {
   const contattoRes = await contattiService.getById(contattoId)
@@ -53,7 +47,7 @@ async function _findOrCreateUser(contattoId) {
 
   const newUserRes = await usersService.create({
     email,
-    password: generateSecurePassword(),
+    password: `Temp_${generatePassword()}_2026!`,
     first_name: contatto.Nome || '',
     last_name: contatto.Cognome || '',
     role: ruoloId

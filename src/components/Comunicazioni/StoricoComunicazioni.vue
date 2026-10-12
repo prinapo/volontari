@@ -21,7 +21,7 @@ label="Invia email"
         <q-item-section>
           <q-item-label>{{ item.Comunicazione?.Oggetto || '(senza oggetto)' }}</q-item-label>
           <q-item-label caption>
-            {{ formatDate(item.Comunicazione?.DataInvio) }} · {{ item.Esito }}
+            {{ formatDateTime(item.Comunicazione?.DataInvio) }} · {{ item.Esito }}
             <span v-if="item.Errore"> · {{ item.Errore }}</span>
           </q-item-label>
         </q-item-section>
@@ -35,6 +35,7 @@ label="Invia email"
 <script setup>
 import { onMounted, ref } from 'vue'
 import InviaEmailDialog from 'src/components/Comunicazioni/InviaEmailDialog.vue'
+import { formatDateTime } from 'src/utils/formatters'
 import { useComunicazioniStore } from 'stores/comunicazioni.store'
 
 const props = defineProps({
@@ -44,12 +45,6 @@ const props = defineProps({
 
 const store = useComunicazioniStore()
 const dialogOpen = ref(false)
-
-function formatDate(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('it-IT')
-}
 
 async function reload() {
   if (props.contattoId) await store.fetchStoricoContatto(props.contattoId).catch(() => {})

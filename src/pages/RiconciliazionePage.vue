@@ -86,21 +86,7 @@
                   </div>
                   <div class="col-6">
                     <div class="text-caption text-grey-7">Allegato</div>
-                    <q-btn
-                      v-if="props.row.allegato"
-                      :href="assetUrl(props.row.allegato)"
-                      target="_blank"
-                      type="a"
-                      flat
-                      dense
-                      round
-                      icon="open_in_new"
-                      size="sm"
-                      aria-label="Apri allegato"
-                    >
-                      <q-tooltip>Apri allegato</q-tooltip>
-                    </q-btn>
-                    <span v-else class="text-grey-5">—</span>
+                    <AllegatoButtons :allegato="props.row.allegato" show-download="false" />
                   </div>
                 </div>
                 <q-separator class="q-my-md" />
@@ -243,21 +229,7 @@
 
       <template #body-cell-allegato="props">
         <q-td :props="props">
-          <q-btn
-            v-if="props.value"
-            :href="assetUrl(props.value)"
-            target="_blank"
-            type="a"
-            flat
-            dense
-            round
-            icon="open_in_new"
-            size="sm"
-            aria-label="Apri allegato"
-          >
-            <q-tooltip>Apri allegato</q-tooltip>
-          </q-btn>
-          <span v-else class="text-grey-5">—</span>
+          <AllegatoButtons :allegato="props.value" show-download="false" />
         </q-td>
       </template>
 
@@ -444,8 +416,8 @@ disabled>
     <!-- RiconciliaDialog: il componente ha già il proprio <q-dialog> -->
     <RiconciliaDialog v-model="riconciliaDialog" :submission="reconcilingSubmission" @reconcile="handleRiconcilia" />
 
-    <!-- ContattoDialog: 🔴 not_found -->
-    <ContattoDialog
+    <!-- ContattoFormDialog: 🔴 not_found -->
+    <ContattoFormDialog
       v-model="contattoDialogVisible"
       :initial-data="contattoInitialData"
       @saved="handleContattoCreated"
@@ -455,44 +427,29 @@ disabled>
     <AssegnaFamigliaDialog v-model="assegnaDialogVisible" :contatto="assegnaContatto" ruolo="Genitore" />
 
     <!-- Dialog descrizione completa -->
-    <q-dialog v-model="descrizioneDialog.visible">
-      <q-card>
-        <q-card-section class="row items-center">
-          <div class="text-h6">Descrizione</div>
-          <q-space />
-          <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-            <q-tooltip>Chiudi</q-tooltip>
-          </q-btn>
-        </q-card-section>
-        <q-separator />
-        <q-card-section class="q-pt-none text-body2 text-pre-wrap">
-          {{ descrizioneDialog.text }}
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppDialog v-model="descrizioneDialog.visible" :persistent="false" title="Descrizione">
+      <q-card-section class="q-pt-none text-body2 text-pre-wrap">
+        {{ descrizioneDialog.text }}
+      </q-card-section>
+      <template #footer>
+        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
+      </template>
+    </AppDialog>
   </q-page>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { onMounted, ref, computed, watch } from 'vue'
+import AllegatoButtons from 'components/Common/AllegatoButtons.vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import AssegnaFamigliaDialog from 'components/Gestione/AssegnaFamigliaDialog.vue'
-import ContattoDialog from 'components/Gestione/ContattoDialog.vue'
+import ContattoFormDialog from 'components/Gestione/ContattoFormDialog.vue'
 import RiconciliaDialog from 'components/RiconciliaDialog.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { verificaService } from 'src/services/verifica.service'
-import { assetUrl } from 'src/utils/assets'
 import { formatCurrency, formatDate } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useGestioneStore } from 'stores/gestione.store'

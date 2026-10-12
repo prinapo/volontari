@@ -172,7 +172,7 @@ describe('CreaProgettoPage', () => {
     expect(mockNotifyError).toHaveBeenCalled()
   })
 
-  it('falls back to generic error message on submit failure without backend details', async () => {
+  it("propaga il messaggio d'errore quando non c'è dettaglio backend", async () => {
     mockCreateProgetto.mockRejectedValue(new Error('boom'))
     const wrapper = quasarMount(CreaProgettoPage)
     Object.assign(wrapper.vm.form, {
@@ -183,7 +183,7 @@ describe('CreaProgettoPage', () => {
 
     await wrapper.vm.handleSubmit()
 
-    expect(wrapper.vm.error).toBe('Errore nella creazione del progetto')
+    expect(wrapper.vm.error).toBe('boom')
     expect(mockNotifyError).toHaveBeenCalled()
   })
 })

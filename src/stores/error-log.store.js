@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { errorLogService } from 'src/services/error-log.service'
+import { apiErrorMessage } from 'src/utils/errors'
 
 export const useErrorLogStore = defineStore('errorLog', {
   state: () => ({
@@ -20,7 +21,7 @@ export const useErrorLogStore = defineStore('errorLog', {
         const res = await errorLogService.getAll()
         this.data = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore caricamento log'
+        this.error = apiErrorMessage(error, 'Errore caricamento log')
       } finally {
         this.loading = false
       }
@@ -33,7 +34,7 @@ export const useErrorLogStore = defineStore('errorLog', {
         const item = this.data.find(i => i.id === id)
         if (item) item.read = true
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
       }
     },
 
@@ -43,7 +44,7 @@ export const useErrorLogStore = defineStore('errorLog', {
         await errorLogService.delete(id)
         this.data = this.data.filter(i => i.id !== id)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
       }
     }
   }

@@ -20,7 +20,7 @@ describe('submit store', () => {
     mockCreaSubmission.mockResolvedValue({ id: 's-1' })
     const store = useSubmitStore()
     const res = await store.inviaSubmission({ email: 'a@b.it' })
-    expect(mockCreaSubmission).toHaveBeenCalledWith({ email: 'a@b.it' }, { origine: 'modulo_libero' })
+    expect(mockCreaSubmission).toHaveBeenCalledWith({ email: 'a@b.it' })
     expect(res).toEqual({ id: 's-1' })
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()

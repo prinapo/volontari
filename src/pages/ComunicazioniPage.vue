@@ -237,7 +237,7 @@ import { STATO_PROGETTO } from 'src/utils/constants'
 import {
   GIUSTIFICATIVI_SELEZIONABILI,
   RUOLI_CANALE_CONTATTI,
-  RUOLI_FAMIGLIA,
+  RUOLI_FAMIGLIA_VALUES,
   STATI_PAGAMENTO_SELEZIONABILI
 } from 'src/utils/filtriComunicazioni'
 import { notifyError, notifySuccess } from 'src/utils/notify'
@@ -256,7 +256,7 @@ const audienceOptions = [
 ]
 
 const ruoliContattiOptions = RUOLI_CANALE_CONTATTI.map(ruolo => ({ label: ruolo.value, value: ruolo.value }))
-const ruoliFamigliaOptions = RUOLI_FAMIGLIA.map(ruolo => ({ label: ruolo, value: ruolo }))
+const ruoliFamigliaOptions = RUOLI_FAMIGLIA_VALUES.map(ruolo => ({ label: ruolo, value: ruolo }))
 
 const statiProgettoOptions = [
   STATO_PROGETTO.ACCETTATO,

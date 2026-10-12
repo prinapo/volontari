@@ -1,59 +1,39 @@
 <template>
-  <q-dialog v-model="visible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Aggiungi nota</div>
-        <q-space />
-        <q-btn
-          v-close-popup
-          flat
-          round
-          dense
-          icon="close"
-          aria-label="Chiudi"
-        >
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <q-input
-          v-model="testo"
-          label="Nota"
-          outlined
-          dense
-          autogrow
-          type="textarea"
-          placeholder="Scrivi una nota per il progetto..."
-          data-testid="nota-rapida-input"
-          @keydown.enter.exact.prevent="handleSubmit"
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          v-close-popup
-          flat
-          dense
-          size="sm"
-          label="Annulla"
-          data-testid="nota-rapida-annulla"
-        />
-        <q-btn
-          color="primary"
-          label="Aggiungi nota"
-          :loading="saving"
-          :disable="!testo.trim()"
-          data-testid="nota-rapida-salva"
-          @click="handleSubmit"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <AppDialog v-model="visible" title="Aggiungi nota">
+    <q-card-section>
+      <NotaInput
+        v-model="testo"
+        label="Nota"
+        placeholder="Scrivi una nota per il progetto..."
+        testid-input="nota-rapida-input"
+        :show-button="false"
+      />
+    </q-card-section>
+    <template #footer>
+      <q-btn
+v-close-popup
+flat
+dense
+size="sm"
+label="Annulla"
+data-testid="nota-rapida-annulla" />
+      <q-btn
+        color="primary"
+        label="Aggiungi nota"
+        :loading="saving"
+        :disable="!testo.trim()"
+        data-testid="nota-rapida-salva"
+        @click="handleSubmit"
+      />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { computed, ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
+import NotaInput from 'src/components/Note/NotaInput.vue'
 import { useNoteStore } from 'src/stores/note.store'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
@@ -79,7 +59,7 @@ async function handleSubmit() {
   const value = testo.value.trim()
   if (!value) return
   try {
-    await store.createNota(props.progettoId, value, 'verificatore')
+    await store.createNota(props.progettoId, value)
     testo.value = ''
     emit('update:modelValue', false)
     notifySuccess($q, 'Nota aggiunta')

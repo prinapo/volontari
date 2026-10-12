@@ -10,6 +10,7 @@ import { EVENTI_SUBMISSION, submissionMachine } from 'src/state-machines/submiss
 import { creaConStato, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
 import { FOLDERS, STATI_PROGETTO_OPERATIVI, STATO_GIUSTIFICATIVO, STATO_SUBMISSION } from 'src/utils/constants'
 import { markFileObsolete, markFileRejected, uploadAndPrefixFile } from 'src/utils/file-naming'
+import { relId } from 'src/utils/relations'
 import { syncProgettoAggregati } from './progetti'
 
 /**
@@ -51,10 +52,9 @@ async function _ensureRendicontazione({ Famiglia, Progetto, AnnoBando }) {
  * caricato) e termina SEMPRE con `syncProgettoAggregati`.
  *
  * @param {Object} payload - { Progetto, Famiglia, Descrizione, Importo, Data, Stato, NotaVolontario, AnnoBando, Rendicontazione } + (file | Allegato)
- * @param {Object} _ctx - { origine } per audit/permessi (riservato: non altera la logica)
  * @returns {Promise<Object>} il giustificativo creato
  */
-async function _creaGiustificativoRecord(payload, _ctx = {}) {
+async function _creaGiustificativoRecord(payload) {
   await guardiaProgettoOperativo(payload.Progetto)
   let allegatoId = payload.Allegato ?? null
   if (payload.file) {
@@ -89,12 +89,11 @@ async function _creaGiustificativoRecord(payload, _ctx = {}) {
  * per quei due ingressi. Garantisce la rendicontazione e delega al primitivo.
  *
  * @param {Object} payload - { Progetto, Famiglia, Descrizione, Importo, Data, Stato, NotaVolontario, AnnoBando, file }
- * @param {Object} _ctx - { origine } per audit/permessi
  * @returns {Promise<Object>} il giustificativo creato
  */
-export async function creaGiustificativo(payload, _ctx = {}) {
+export async function creaGiustificativo(payload) {
   const rendicontazioneId = await _ensureRendicontazione(payload)
-  return _creaGiustificativoRecord({ ...payload, Rendicontazione: rendicontazioneId }, _ctx)
+  return _creaGiustificativoRecord({ ...payload, Rendicontazione: rendicontazioneId })
 }
 
 /**
@@ -103,7 +102,7 @@ export async function creaGiustificativo(payload, _ctx = {}) {
  * `inserito`. La materializzazione in giustificativo avviene alla
  * riconciliazione (manager). Nessuna guardia: la submission non ha un progetto.
  */
-export async function creaSubmission(payload, _ctx = {}) {
+export async function creaSubmission(payload) {
   const res = await creaConStato({
     machine: submissionMachine,
     campo: 'stato',
@@ -253,7 +252,7 @@ function _patchFamigliaFromCopied(famigliaId, copiedFields, rightValues) {
 
 async function _handleAllegatoRiconciliazione(allegato, famigliaId) {
   if (!allegato) return
-  const fileId = typeof allegato === 'object' ? allegato?.id : allegato
+  const fileId = relId(allegato)
   if (!fileId) return
   await filesService.updateFolder(fileId, FOLDERS.GIUSTIFICATIVI).catch(() => {})
   const famRes = await famiglieService.getFamiglieBatch([famigliaId])
@@ -299,19 +298,16 @@ export async function riconciliaSubmission({
 
   const progRes = await verificaService.findProgettoByFamiglia(famigliaId)
   const progetto = (progRes.data.data || []).find(p => p.id_progetto === progettoId)
-  const created = await _creaGiustificativoRecord(
-    {
-      Descrizione: descrizione,
-      Importo: importo,
-      Data: data,
-      Allegato: allegato,
-      Progetto: progettoId,
-      Famiglia: famigliaId,
-      AnnoBando: progetto?.AnnoBando,
-      stato: STATO_GIUSTIFICATIVO.INVIATO
-    },
-    { origine: 'modulo_libero' }
-  )
+  const created = await _creaGiustificativoRecord({
+    Descrizione: descrizione,
+    Importo: importo,
+    Data: data,
+    Allegato: allegato,
+    Progetto: progettoId,
+    Famiglia: famigliaId,
+    AnnoBando: progetto?.AnnoBando,
+    stato: STATO_GIUSTIFICATIVO.INVIATO
+  })
   const giustificativoId = created.id
 
   await transita({

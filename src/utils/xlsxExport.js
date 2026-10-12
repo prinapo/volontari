@@ -1,3 +1,4 @@
+import { exportFile } from 'quasar'
 import { EXPORT_THEME } from './verificaExport'
 
 /**
@@ -111,17 +112,9 @@ export function writeSheet(workbook, name, columns, rows) {
 }
 
 export function downloadWorkbookBuffer(buffer, filename) {
-  const blob = new globalThis.Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  return exportFile(filename, buffer, {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   })
-  const url = globalThis.URL.createObjectURL(blob)
-  const link = globalThis.document.createElement('a')
-  link.href = url
-  link.download = filename
-  globalThis.document.body.append(link)
-  link.click()
-  link.remove()
-  globalThis.URL.revokeObjectURL(url)
 }
 
 export function exportFileName(date = new Date()) {

@@ -60,34 +60,12 @@ label="Elimina"
       <div>
         <div class="text-caption text-grey q-mb-xs">Allegato</div>
         <div class="row items-center q-gutter-sm">
-          <template v-if="item.Allegato">
-            <span class="text-caption text-grey-7">{{ item.Allegato.filename_download || 'File' }}</span>
-            <q-btn
-              :href="allegatoUrl(item.Allegato)"
-              target="_blank"
-              type="a"
-              flat
-              dense
-              round
-              icon="open_in_new"
-              size="sm"
-              aria-label="Apri allegato"
-            >
-              <q-tooltip>Apri allegato</q-tooltip>
-            </q-btn>
-            <q-btn
-              :href="downloadUrl(item.Allegato)"
-              type="a"
-              flat
-              dense
-              round
-              icon="file_download"
-              size="sm"
-              aria-label="Scarica allegato"
-            >
-              <q-tooltip>Scarica allegato</q-tooltip>
-            </q-btn>
-          </template>
+          <AllegatoButtons
+            :allegato="item.Allegato"
+            show-filename
+            :filename="item.Allegato?.filename_download || 'File'"
+            empty-text=""
+          />
 
           <GiustificativoFilePicker
             v-if="canEdit"
@@ -113,9 +91,10 @@ label="Elimina"
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref } from 'vue'
+import AllegatoButtons from 'components/Common/AllegatoButtons.vue'
 import InlineEditableField from 'components/Common/InlineEditableField.vue'
-import { assetUrl } from 'src/utils/assets'
-import { formatCurrency, formatDate, statoLabel, statoColor } from 'src/utils/formatters'
+import { statoColor, statoLabel } from 'src/utils/badges'
+import { formatCurrency, formatDate } from 'src/utils/formatters'
 import GiustificativoFilePicker from './GiustificativoFilePicker.vue'
 
 const $q = useQuasar()
@@ -128,14 +107,6 @@ const props = defineProps({
 const emit = defineEmits(['save-field', 'submit', 'file-change', 'invalida'])
 
 const newFile = ref(null)
-
-function allegatoUrl(fileId) {
-  return assetUrl(fileId)
-}
-
-function downloadUrl(fileId) {
-  return assetUrl(fileId, true)
-}
 
 function confirmDelete() {
   $q.dialog({

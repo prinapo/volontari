@@ -1,13 +1,7 @@
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
 import { usersService } from 'src/services/users.service'
-
-function generatePassword(length = 16) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
-  const array = new Uint32Array(length)
-  crypto.getRandomValues(array)
-  return Array.from(array, v => chars[v % chars.length]).join('')
-}
+import { generatePassword } from 'src/utils/password'
 
 export async function disabilitaUtente(userId) {
   await usersService.update(userId, { status: 'suspended' })

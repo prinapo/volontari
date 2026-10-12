@@ -157,12 +157,12 @@ export default [
         {
           selector: "Property[key.name='Stato']",
           message:
-            'Campo di stato scritto fuori dal layer macchina: usa transita()/creaConStato()/ripara() in src/usecases/stato.'
+            'Campo di stato scritto fuori dal layer macchina: usa transita()/creaConStato()/creaConStatoIniziale() in src/usecases/stato.'
         },
         {
           selector: "Property[key.name='StatoProgetto']",
           message:
-            'StatoProgetto scritto fuori dal layer macchina: usa transita()/creaConStato()/ripara() in src/usecases/stato.'
+            'StatoProgetto scritto fuori dal layer macchina: usa transita()/creaConStato()/creaConStatoIniziale() in src/usecases/stato.'
         }
       ]
     }

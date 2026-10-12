@@ -53,19 +53,14 @@
         />
       </div>
 
-      <q-table
-        v-model:selected="selected"
-        v-model:pagination="paginationProposti"
+      <PagamentiTabella
         :rows="filteredProposti"
         :columns="propostiColumns"
-        row-key="id"
-        flat
-        bordered
-        class="bg-white"
-        selection="multiple"
         :loading="store.loading"
-        :grid="$q.screen.lt.sm"
-        :dense="$q.screen.lt.md"
+        selectable
+        :selected="selected"
+        :client-pagination="{ rowsPerPage: 25 }"
+        @update:selected="val => (selected = val)"
       >
         <template #top>
           <div class="full-width">
@@ -102,7 +97,7 @@
             </q-card>
           </div>
         </template>
-      </q-table>
+      </PagamentiTabella>
 
       <div v-if="selected.length > 0" class="q-mt-md q-mb-sm text-weight-medium text-right text-primary text-h6">
         Selezionato: €{{ formatNumber(selectedTotal) }}
@@ -111,19 +106,14 @@
 
     <!-- Sotto-vista: In corso / Da riscontrare -->
     <template v-if="subTab === 'incorso'">
-      <q-table
-        v-model:selected="selectedInCorso"
-        v-model:pagination="paginationInCorso"
+      <PagamentiTabella
         :rows="store.inCorso"
         :columns="incorsoColumns"
-        row-key="id"
-        flat
-        bordered
-        class="bg-white"
-        selection="multiple"
         :loading="store.loading"
-        :grid="$q.screen.lt.sm"
-        :dense="$q.screen.lt.md"
+        selectable
+        :selected="selectedInCorso"
+        :client-pagination="{ rowsPerPage: 25 }"
+        @update:selected="val => (selectedInCorso = val)"
       >
         <template #top>
           <div class="full-width">
@@ -294,24 +284,19 @@
             </q-card>
           </div>
         </template>
-      </q-table>
+      </PagamentiTabella>
     </template>
 
     <!-- Sotto-vista: Falliti -->
     <template v-if="subTab === 'falliti'">
-      <q-table
-        v-model:selected="selectedFalliti"
-        v-model:pagination="paginationFalliti"
+      <PagamentiTabella
         :rows="filteredFalliti"
         :columns="fallitiColumns"
-        row-key="id"
-        flat
-        bordered
-        class="bg-white"
-        selection="multiple"
         :loading="store.loading"
-        :grid="$q.screen.lt.sm"
-        :dense="$q.screen.lt.md"
+        selectable
+        :selected="selectedFalliti"
+        :client-pagination="{ rowsPerPage: 25 }"
+        @update:selected="val => (selectedFalliti = val)"
       >
         <template #top>
           <div class="full-width">
@@ -384,23 +369,15 @@
             </q-card>
           </div>
         </template>
-      </q-table>
+      </PagamentiTabella>
     </template>
 
     <!-- Sotto-vista: Annullati -->
     <template v-if="subTab === 'annullati' && authStore.canAdmin">
-      <q-table
+      <PagamentiTabella
         :rows="filteredAnnullati"
         :columns="annullatiColumns"
-        row-key="id"
-        flat
-        bordered
-        class="bg-white"
         :loading="store.loading"
-        :pagination="{ rowsPerPage: 0 }"
-        hide-pagination
-        :grid="$q.screen.lt.sm"
-        :dense="$q.screen.lt.md"
       >
         <template #top>
           <div class="full-width">
@@ -445,7 +422,7 @@
             </q-card>
           </div>
         </template>
-      </q-table>
+      </PagamentiTabella>
     </template>
 
     <!-- Sotto-vista: Liste esportazione -->
@@ -454,125 +431,42 @@
         Le liste vengono generate automaticamente alla creazione di un gruppo di pagamento.
       </div>
 
-      <q-table
+      <ListePagamentiTable
         :rows="filteredListe"
-        :columns="listeColumns"
-        row-key="id"
-        flat
-        bordered
-        class="bg-white"
         :loading="store.loading"
-        :pagination="{ rowsPerPage: 0 }"
-        hide-pagination
-        :grid="$q.screen.lt.sm"
-        :dense="$q.screen.lt.md"
-      >
-        <template #top>
-          <div class="full-width">
-            <TableToolbar
-              v-model:search="searchListe"
-              search-placeholder="Cerca lista..."
-              :loading="store.loading"
-              refresh
-              @refresh="store.fetchListe()"
-            />
-          </div>
-        </template>
-
-        <template #body-cell-data="props">
-          <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
-        </template>
-        <template #body-cell-totale="props">
-          <q-td :props="props">€{{ formatNumber(props.row.Totale) }}</q-td>
-        </template>
-        <template #body-cell-azioni="props">
-          <q-td :props="props">
-            <q-btn
-              flat
-              round
-              dense
-              icon="download"
-              color="primary"
-              type="a"
-              aria-label="Scarica Excel"
-              :disable="!props.row.File"
-              :href="assetUrl(props.row.File, true)"
-              target="_blank"
-            >
-              <q-tooltip>Scarica Excel</q-tooltip>
-            </q-btn>
-          </q-td>
-        </template>
-        <template #item="props">
-          <div class="q-pa-xs col-12">
-            <q-card flat bordered>
-              <q-card-section>
-                <div class="text-weight-medium">{{ props.row.Nome || '—' }}</div>
-                <div class="text-caption">{{ formatDate(props.row.DataCreazione) }}</div>
-                <div class="text-caption">Righe: {{ props.row.ConteggioRighe || 0 }}</div>
-                <div class="row items-center q-gutter-sm q-mt-sm">
-                  <span>€{{ formatNumber(props.row.Totale) }}</span>
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    icon="download"
-                    color="primary"
-                    size="sm"
-                    type="a"
-                    aria-label="Scarica Excel"
-                    :disable="!props.row.File"
-                    :href="assetUrl(props.row.File, true)"
-                    target="_blank"
-                  >
-                    <q-tooltip>Scarica Excel</q-tooltip>
-                  </q-btn>
-                </div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </template>
-      </q-table>
+        mode="download"
+        :search-model="searchListe"
+        @update:search="val => (searchListe = val)"
+        @refresh="store.fetchListe()"
+      />
     </template>
 
     <!-- Dialog Crea Batch -->
-    <q-dialog v-model="showBatchDialog" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
-          <div class="text-h6">Crea gruppo di pagamento</div>
-          <q-space /><q-btn
-v-close-popup
-flat
-round
-dense
-icon="close"
-aria-label="Chiudi">
-            <q-tooltip>Chiudi</q-tooltip>
-          </q-btn>
-        </q-card-section>
-        <q-separator />
-        <q-card-section>
-          <q-input v-model="batchNome" label="Nome gruppo *" outlined dense />
-          <div class="text-caption q-mt-sm">
-            {{ selected.length }} pagamenti selezionati, totale €{{ formatNumber(selectedTotal) }}
-          </div>
-          <div class="text-caption text-grey-7">Associazione: {{ batchAssociazioneLabel }}</div>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-          <q-btn color="primary" label="Conferma" :disable="!batchNome" :loading="store.loading" @click="creaBatch" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppDialog v-model="showBatchDialog" title="Crea gruppo di pagamento">
+      <q-card-section>
+        <q-input v-model="batchNome" label="Nome gruppo *" outlined dense />
+        <div class="text-caption q-mt-sm">
+          {{ selected.length }} pagamenti selezionati, totale €{{ formatNumber(selectedTotal) }}
+        </div>
+        <div class="text-caption text-grey-7">Associazione: {{ batchAssociazioneLabel }}</div>
+      </q-card-section>
+      <template #footer>
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+        <q-btn color="primary" label="Conferma" :disable="!batchNome" :loading="store.loading" @click="creaBatch" />
+      </template>
+    </AppDialog>
   </div>
 </template>
 
 <script setup>
-import { useQuasar } from 'quasar'
+import { debounce, useQuasar } from 'quasar'
 import { ref, computed, watch, onMounted } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import TableToolbar from 'components/TableToolbar.vue'
-import { assetUrl } from 'src/utils/assets'
-import { formatDate } from 'src/utils/formatters'
+import ListePagamentiTable from 'src/components/Pagamenti/ListePagamentiTable.vue'
+import PagamentiTabella from 'src/components/Verifica/PagamentiTabella.vue'
+import { runBulk } from 'src/utils/bulk'
+import { formatDate, formatNumber } from 'src/utils/formatters'
 import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
@@ -588,9 +482,6 @@ const subTab = ref('proposti')
 const selected = ref([])
 const selectedInCorso = ref([])
 const selectedFalliti = ref([])
-const paginationProposti = ref({ rowsPerPage: 25 })
-const paginationInCorso = ref({ rowsPerPage: 25 })
-const paginationFalliti = ref({ rowsPerPage: 25 })
 const batchAssociazione = ref(null)
 const batchFilter = ref(null)
 const searchInCorso = ref('')
@@ -603,16 +494,14 @@ const motiviAnnullati = [
   { label: 'Proposta annullata: importo non più dovuto', value: 'Proposta annullata: importo non più dovuto' }
 ]
 const searchListe = ref('')
-let debounceTimer
- 
+
 function loadInCorso() {
   store.fetchInCorso(searchInCorso.value, batchFilter.value)
 }
- 
-watch(searchInCorso, () => {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => loadInCorso(), 300)
-})
+
+const debouncedLoadInCorso = debounce(loadInCorso, 300)
+
+watch(searchInCorso, debouncedLoadInCorso)
 watch(batchFilter, () => loadInCorso())
 
 watch(subTab, val => {
@@ -728,18 +617,6 @@ const annullatiColumns = [
   { name: 'note', label: 'Motivo', field: 'NoteEsito', align: 'left' }
 ]
 
-const listeColumns = [
-  { name: 'nome', label: 'Nome', align: 'left', field: 'Nome' },
-  { name: 'data', label: 'Data creazione', align: 'left' },
-  { name: 'righe', label: 'Righe', align: 'right', field: 'ConteggioRighe' },
-  { name: 'totale', label: 'Totale', align: 'right' },
-  { name: 'azioni', label: 'Azioni', align: 'center' }
-]
-
-function formatNumber(v) {
-  return (Number.parseFloat(v) || 0).toFixed(2)
-}
-
 function residuo(nome) {
   return store.residuoAssociazione(nome)
 }
@@ -851,16 +728,7 @@ async function handleAnnullato(pagamento) {
 }
 
 async function handleBatchPagato() {
-  let successi = 0
-  let errori = 0
-  for (const p of selectedInCorso.value) {
-    try {
-      await store.segnaPagato(p.id)
-      successi++
-    } catch {
-      errori++
-    }
-  }
+  const { successi, errori } = await runBulk(selectedInCorso.value, p => store.segnaPagato(p.id))
   if (errori > 0) {
     notifyError($q, null, `${successi} pagamenti segnati, ${errori} errori`)
   } else {
@@ -882,16 +750,7 @@ async function handleBatchFallito() {
       notifyError($q, new Error('Il motivo è obbligatorio'), 'Errore')
       return
     }
-    let successi = 0
-    let errori = 0
-    for (const p of selectedInCorso.value) {
-      try {
-        await store.segnaFallito(p.id, note)
-        successi++
-      } catch {
-        errori++
-      }
-    }
+    const { successi, errori } = await runBulk(selectedInCorso.value, p => store.segnaFallito(p.id, note))
     if (errori > 0) {
       notifyError($q, null, `${successi} segnati, ${errori} errori`)
     } else {
@@ -902,16 +761,7 @@ async function handleBatchFallito() {
 }
 
 async function handleBatchAnnullato() {
-  let successi = 0
-  let errori = 0
-  for (const p of selectedInCorso.value) {
-    try {
-      await store.segnaAnnullato(p.id)
-      successi++
-    } catch {
-      errori++
-    }
-  }
+  const { successi, errori } = await runBulk(selectedInCorso.value, p => store.segnaAnnullato(p.id))
   if (errori > 0) {
     notifyError($q, null, `${successi} rimossi, ${errori} errori`)
   } else {

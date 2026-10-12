@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import ResetPasswordPage from 'src/pages/ResetPasswordPage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockPush = vi.fn()
 const mockResetPassword = vi.fn()
@@ -75,7 +75,7 @@ describe('ResetPasswordPage', () => {
     expect(wrapper.vm.loading).toBe(false)
   })
 
-  it('falls back to generic message when backend error has no details', async () => {
+  it('propaga il messaggio quando il backend non fornisce dettagli', async () => {
     mockResetPassword.mockRejectedValue(new Error('boom'))
     const wrapper = quasarMount(ResetPasswordPage)
     wrapper.vm.newPassword = 'Password123!'
@@ -83,7 +83,7 @@ describe('ResetPasswordPage', () => {
 
     await wrapper.vm.handleReset()
 
-    expect(wrapper.vm.error).toBe('Errore durante il reset della password')
+    expect(wrapper.vm.error).toBe('boom')
     expect(wrapper.vm.loading).toBe(false)
   })
 })

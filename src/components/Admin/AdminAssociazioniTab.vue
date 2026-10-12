@@ -101,25 +101,10 @@ size="sm"
   </q-table>
 
   <!-- Nuova Associazione Dialog -->
-  <q-dialog v-model="showNewAssociazioneDialog" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Nuova associazione</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <q-input v-model="newAssociazioneNome" label="Nome *" outlined dense class="q-mb-md" />
-        <q-input
+  <AppDialog v-model="showNewAssociazioneDialog" title="Nuova associazione">
+    <q-card-section>
+      <q-input v-model="newAssociazioneNome" label="Nome *" outlined dense class="q-mb-md" />
+      <q-input
 v-model="newAssociazioneBudget"
 label="Budget (€)"
 outlined
@@ -127,25 +112,25 @@ dense
 type="number"
 min="0"
 step="0.01" />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-        <q-btn
-          color="primary"
-          label="Crea"
-          :disable="!newAssociazioneNome"
-          :loading="savingAssociazione"
-          @click="createAssociazione"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn
+        color="primary"
+        label="Crea"
+        :disable="!newAssociazioneNome"
+        :loading="savingAssociazione"
+        @click="createAssociazione"
+      />
+    </template>
+  </AppDialog>
   </div>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, reactive, onMounted } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { associazioniService } from 'src/services/associazioni.service'

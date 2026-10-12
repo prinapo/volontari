@@ -172,7 +172,7 @@ describe('admin store', () => {
     expect(mockSearchEmail).not.toHaveBeenCalled()
   })
 
-  it('fetchRoles fails silently and fetchUsers can use generic fallback error', async () => {
+  it('fetchRoles fails silently and fetchUsers propagates the error message', async () => {
     mockGetRoles.mockRejectedValueOnce(new Error('forbidden'))
     mockGetUsers.mockRejectedValueOnce(new Error('boom'))
     const store = useAdminStore()
@@ -180,7 +180,7 @@ describe('admin store', () => {
     expect(store.roles).toEqual([])
 
     await store.fetchUsers()
-    expect(store.error).toBe('Errore nel caricamento degli utenti')
+    expect(store.error).toBe('boom')
   })
 
   it('updateUserRole handles error', async () => {
@@ -199,7 +199,7 @@ describe('admin store', () => {
 
     mockUpdateUser.mockRejectedValueOnce(new Error('boom'))
     await expect(store.resetUserPassword('u-1', 'pwd')).rejects.toThrow()
-    expect(store.error).toBe('Errore nel reset della password')
+    expect(store.error).toBe('boom')
   })
 
   it('fetchProgetti handles specific and generic errors', async () => {
@@ -211,7 +211,7 @@ describe('admin store', () => {
 
     mockGetProgetti.mockRejectedValueOnce(new Error('boom'))
     await store.fetchProgetti()
-    expect(store.error).toBe('Errore nel caricamento dei progetti')
+    expect(store.error).toBe('boom')
   })
 
   it('clearUserReference clears user_id on contatto', async () => {
@@ -236,7 +236,7 @@ describe('admin store', () => {
 
     mockUpdateProgetto.mockRejectedValueOnce(new Error('boom'))
     await expect(store.updateProgettoBeneficiario(1, 'Rossi', 'Mario')).rejects.toThrow()
-    expect(store.error).toBe("Errore nell'aggiornamento del progetto")
+    expect(store.error).toBe('boom')
   })
 
   it('fetchListeConsistency popola listeCheck', async () => {

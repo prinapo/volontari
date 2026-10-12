@@ -103,7 +103,7 @@
               header-class="text-subtitle1 text-weight-medium"
             >
               <div class="q-pa-md">
-                <NoteProgettoPanel :progetto-id="famiglieStore.selectedProgettoId" origine="volontario" />
+                <NoteProgettoPanel :progetto-id="famiglieStore.selectedProgettoId" />
               </div>
             </q-expansion-item>
           </template>

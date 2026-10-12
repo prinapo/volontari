@@ -9,39 +9,17 @@ import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/s
 import { inviaComunicazione } from 'src/usecases/comunicazioni'
 import { creaConStatoIniziale, transita } from 'src/usecases/stato/transita'
 import {
-  STATI_GIUSTIFICATIVO_CONTABILI,
+  isContabile,
   STATI_PROGETTO_OPERATIVI,
   STATO_GIUSTIFICATIVO,
   STATO_PAGAMENTO,
   STATO_PROGETTO
 } from 'src/utils/constants'
+import { pickEmail } from 'src/utils/emailPrimarie'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
+import { parseNum } from 'src/utils/number'
+import { relId } from 'src/utils/relations'
 import { calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
-
-function parseNum(v) {
-  return Number.parseFloat(v) || 0
-}
-
-/**
- * Email preferita di un contatto: la Primary (se i dati sono ambigui, quella
- * con id minore); fallback all'email con id minore.
- */
-function pickEmail(emails) {
-  if (!Array.isArray(emails) || emails.length === 0) return null
-  const withAddress = emails.filter(email => email?.email_address).sort((a, b) => (a?.id ?? 0) - (b?.id ?? 0))
-  if (withAddress.length === 0) return null
-  return (withAddress.find(email => email.Primary) || withAddress[0]).email_address
-}
-
-function isContabile(stato) {
-  return STATI_GIUSTIFICATIVO_CONTABILI.includes(stato)
-}
-
-function pagamentoIdDi(giustificativo) {
-  const p = giustificativo?.Pagamento
-  if (p == null) return null
-  return typeof p === 'object' ? p.id : p
-}
 
 async function getPagamentoById(pagamentoId) {
   const res = await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })
@@ -57,7 +35,7 @@ async function _collegaGiustificativi(giustificativi, pagamentoId) {
     g =>
       !g.Invalidato &&
       g.Stato === STATO_GIUSTIFICATIVO.VERIFICATO &&
-      (pagamentoIdDi(g) == null || pagamentoIdDi(g) === pagamentoId)
+      (relId(g.Pagamento) == null || relId(g.Pagamento) === pagamentoId)
   )
   await Promise.all(daCollegare.map(g => giustificativiService.update(g.id, { Pagamento: pagamentoId })))
 }
@@ -66,7 +44,7 @@ async function _collegaGiustificativi(giustificativi, pagamentoId) {
 Scollega i giustificativi legati a un pagamento (es. proposta annullata).
 */
 async function _scollegaGiustificativi(giustificativi, pagamentoId) {
-  const daScollegare = giustificativi.filter(g => pagamentoIdDi(g) === pagamentoId)
+  const daScollegare = giustificativi.filter(g => relId(g.Pagamento) === pagamentoId)
   await Promise.all(daScollegare.map(g => giustificativiService.update(g.id, { Pagamento: null })))
 }
 
@@ -103,7 +81,7 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
   const ops = []
   for (const g of giustificativi) {
     if (g.Invalidato || !isContabile(g.Stato)) continue
-    const pag = pagMap.get(pagamentoIdDi(g))
+    const pag = pagMap.get(relId(g.Pagamento))
     let nuovo
     if (capRaggiunto || pag?.Stato === STATO_PAGAMENTO.PAGATO) nuovo = STATO_GIUSTIFICATIVO.PAGATO
     else if (pag?.Stato === STATO_PAGAMENTO.IN_PAGAMENTO) nuovo = STATO_GIUSTIFICATIVO.IN_PAGAMENTO
@@ -135,7 +113,7 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
  * Chiusura automatica quando il derivato differisce dall'attuale.
  */
 export async function ricalcolaTotaliProgetto(progettoId) {
-  const id = typeof progettoId === 'object' ? progettoId?.id_progetto || progettoId?.id : progettoId
+  const id = relId(progettoId)
   if (!id) return
   const progRes = await progettiService.getById(id)
   const progetto = progRes.data.data
@@ -366,13 +344,13 @@ export async function ricalcolaPropostiDaProgetti(progetti) {
 
   const giustByProgetto = {}
   for (const g of giustRes.data.data || []) {
-    const pid = typeof g.Progetto === 'object' ? g.Progetto?.id_progetto : g.Progetto
+    const pid = relId(g.Progetto)
     if (!pid) continue
     ;(giustByProgetto[pid] ||= []).push(g)
   }
   const pagByProgetto = {}
   for (const p of pagRes.data.data || []) {
-    const pid = typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto
+    const pid = relId(p.Progetto)
     if (!pid) continue
     ;(pagByProgetto[pid] ||= []).push(p)
   }
@@ -460,11 +438,7 @@ export async function segnaInPagamento({ pagamentoIds, batchId }) {
       })
     )
   )
-  const progetti = [
-    ...new Set(
-      pagamenti.map(p => (typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto)).filter(Boolean)
-    )
-  ]
+  const progetti = [...new Set(pagamenti.map(p => relId(p.Progetto)).filter(Boolean))]
   for (const pid of progetti) {
     await ricalcolaTotaliProgetto(pid)
     await sincronizzaStatiPagamentoProgetto(pid)

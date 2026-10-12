@@ -170,21 +170,8 @@ export const verificaService = {
     return api.get('/items/InviiGiustificativiNoLogin', { params })
   },
 
-  getSubmissionsInAttesa() {
-    return this.getSubmissions({ limit: -1 })
-  },
-
   updateSubmission(id, data) {
     return api.patch(`/items/InviiGiustificativiNoLogin/${id}`, data)
-  },
-
-  findFamigliaByIBAN(iban, intestatario) {
-    return api.get('/items/Famiglie', {
-      params: {
-        'filter[IBAN][_eq]': iban,
-        'filter[Intestatario_CC][_eq]': intestatario
-      }
-    })
   },
 
   searchFamiglie(search) {

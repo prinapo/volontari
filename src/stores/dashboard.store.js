@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { dashboardService } from 'src/services/dashboard.service'
 import { STATI_PROGETTO_FINALI, STATO_PROGETTO } from 'src/utils/constants'
+import { apiErrorMessage } from 'src/utils/errors'
 
 const toNum = v => Number.parseFloat(v) || 0
 
@@ -260,7 +261,7 @@ export const useDashboardStore = defineStore('dashboard', {
         const [progRes, pagRes] = await Promise.all([dashboardService.getProgetti(), dashboardService.getPagamenti()])
         this.data = buildAggregati(progRes.data.data || [], pagRes.data.data || [])
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore caricamento dashboard'
+        this.error = apiErrorMessage(error, 'Errore caricamento dashboard')
         this.data = null
       } finally {
         this.loading = false

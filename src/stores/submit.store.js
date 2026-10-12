@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { creaSubmission } from 'src/usecases/giustificativi'
+import { apiErrorMessage } from 'src/utils/errors'
 
 /**
  * Adapter UI per la submission pubblica (modulo libero, utente non loggato).
@@ -17,9 +18,9 @@ export const useSubmitStore = defineStore('submit', {
       this.saving = true
       this.error = null
       try {
-        return await creaSubmission(payload, { origine: 'modulo_libero' })
+        return await creaSubmission(payload)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || "Errore nell'invio"
+        this.error = apiErrorMessage(error, "Errore nell'invio")
         throw error
       } finally {
         this.saving = false

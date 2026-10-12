@@ -4,6 +4,7 @@ import { famiglieService } from 'src/services/famiglie.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { referentiService } from 'src/services/referenti.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { apiErrorMessage } from 'src/utils/errors'
 import { useAuthStore } from 'stores/auth.store'
 
 export const useFamiglieStore = defineStore('famiglie', {
@@ -62,7 +63,7 @@ export const useFamiglieStore = defineStore('famiglie', {
         }
         // Se 0 o >1 famiglie, nessun auto-caricamento — l'utente sceglie
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento dei dati')
       } finally {
         this.loading = false
       }
@@ -87,7 +88,7 @@ export const useFamiglieStore = defineStore('famiglie', {
           this.selectedProgettoId ? this.fetchErogazioni(this.selectedProgettoId) : Promise.resolve()
         ])
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento della famiglia'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento della famiglia')
       }
     },
 
@@ -102,7 +103,7 @@ export const useFamiglieStore = defineStore('famiglie', {
         this.erogazioni = res.data.data || []
       } catch (error) {
         this.erogazioni = []
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento delle erogazioni'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento delle erogazioni')
       } finally {
         this.erogazioniLoading = false
       }
@@ -136,7 +137,7 @@ export const useFamiglieStore = defineStore('famiglie', {
           }
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         this.genitori = []
       } finally {
         this.contattiLoading = false
@@ -197,7 +198,7 @@ export const useFamiglieStore = defineStore('famiglie', {
         }
         this.altriVolontari = filtered
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         this.altriVolontari = []
       } finally {
         this.contattiLoading = false
@@ -230,7 +231,7 @@ export const useFamiglieStore = defineStore('famiglie', {
         this.famiglia.IBAN = updated.IBAN
         this.famiglia.Intestatario_CC = updated.Intestatario_CC
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel salvataggio'
+        this.error = apiErrorMessage(error, 'Errore nel salvataggio')
         throw error
       } finally {
         this.saving = false

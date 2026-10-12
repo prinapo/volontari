@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatDate, statoLabel, statoColor, displayFullName } from 'src/utils/formatters'
+import { statoColor, statoLabel } from 'src/utils/badges'
+import { formatCurrency, formatDate, displayFullName } from 'src/utils/formatters'
 
 describe('formatCurrency', () => {
   it('formats a number to EUR', () => {

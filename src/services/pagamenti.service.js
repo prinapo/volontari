@@ -28,10 +28,6 @@ export const pagamentiService = {
     return api.patch(`/items/Pagamenti/${id}`, data)
   },
 
-  deletePagamento(id) {
-    return api.delete(`/items/Pagamenti/${id}`)
-  },
-
   getBatch(id) {
     return api.get(`/items/BatchPagamenti/${id}`)
   },

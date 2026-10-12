@@ -5,6 +5,7 @@
  * (pagamenti) e ricalcolo batch (pagamenti). Evita che le tre copie divergano
  * (tolleranze, cap sull'allocato, percentuali).
  */
+import { parseNum } from './number'
 
 /**
  * Importo erogabile: il minore tra il verificato al netto della percentuale di
@@ -17,8 +18,8 @@
  * @returns {number}
  */
 export function calcolaErogabile({ allocato = 0, totaleVerificato = 0, percentualeRimborso = 80 } = {}) {
-  const allocatoNum = Number.parseFloat(allocato) || 0
-  const verificatoNum = Number.parseFloat(totaleVerificato) || 0
+  const allocatoNum = parseNum(allocato)
+  const verificatoNum = parseNum(totaleVerificato)
   const pct = Math.min(100, Math.max(0, Number.parseFloat(percentualeRimborso) || 80)) / 100
   return Math.min(verificatoNum * pct, allocatoNum)
 }
@@ -32,7 +33,7 @@ export function calcolaErogabile({ allocato = 0, totaleVerificato = 0, percentua
  * @returns {number}
  */
 export function residuoDaCoprire(erogabile, importoGiaCoperto) {
-  const e = Number.parseFloat(erogabile) || 0
-  const c = Number.parseFloat(importoGiaCoperto) || 0
+  const e = parseNum(erogabile)
+  const c = parseNum(importoGiaCoperto)
   return Math.round((e - c) * 100) / 100
 }

@@ -87,32 +87,16 @@
     </q-page-container>
 
     <!-- Forgot Password Dialog -->
-    <q-dialog v-model="showForgotPassword" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
-          <div class="text-h6">Recupera password</div>
-          <q-space />
-          <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-            <q-tooltip>Chiudi</q-tooltip>
-          </q-btn>
-        </q-card-section>
-        <q-separator />
-        <q-card-section>
-          <p class="text-body2 text-grey">Inserisci la tua email riceverai un link per reimpostare la password.</p>
-          <q-input v-model="resetEmail" label="Email" type="email" outlined dense />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-          <q-btn color="primary" label="Invia link" :loading="sendingReset" @click="handleForgotPassword" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppDialog v-model="showForgotPassword" title="Recupera password">
+      <q-card-section>
+        <p class="text-body2 text-grey">Inserisci la tua email riceverai un link per reimpostare la password.</p>
+        <q-input v-model="resetEmail" label="Email" type="email" outlined dense />
+      </q-card-section>
+      <template #footer>
+        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+        <q-btn color="primary" label="Invia link" :loading="sendingReset" @click="handleForgotPassword" />
+      </template>
+    </AppDialog>
   </q-layout>
 </template>
 
@@ -120,6 +104,7 @@ aria-label="Chiudi">
 import { useQuasar } from 'quasar'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { authService } from 'src/services/auth.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'

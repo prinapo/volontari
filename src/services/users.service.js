@@ -32,12 +32,6 @@ export const usersService = {
     return api.patch(`/users/${id}`, data)
   },
 
-  sendInvite(email, resetUrl) {
-    const data = { email }
-    if (resetUrl) data.reset_url = resetUrl
-    return api.post('/auth/password/request', data)
-  },
-
   getRoleByName(name) {
     return api.get('/roles', {
       params: {

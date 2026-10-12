@@ -18,6 +18,7 @@ import {
 } from 'src/usecases/pagamenti'
 import { avanzaStatoProgetto as avanzaStatoProgettoUseCase } from 'src/usecases/progetti'
 import { STATO_PAGAMENTO, STORAGE_KEYS } from 'src/utils/constants'
+import { apiErrorMessage } from 'src/utils/errors'
 
 export const usePagamentiStore = defineStore('pagamenti', {
   state: () => ({
@@ -66,7 +67,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           this.fetchListe()
         ])
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore inizializzazione pagamenti'
+        this.error = apiErrorMessage(error, 'Errore inizializzazione pagamenti')
       }
     },
 
@@ -77,7 +78,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchProposti()
         await this.fetchAnnullati()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel ricalcolo proposte'
+        this.error = apiErrorMessage(error, 'Errore nel ricalcolo proposte')
       }
     },
 
@@ -91,8 +92,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
           this.budgetMap[a.Nome] = Number.parseFloat(a.Budget) || 0
         }
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento associazioni'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento associazioni')
         this.associazioni = []
       }
     },
@@ -117,7 +117,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const res = await pagamentiService.getPagamenti(params)
         this.proposti = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento proposti'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento proposti')
         this.proposti = []
       }
     },
@@ -158,8 +158,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const res = await pagamentiService.getPagamenti(params)
         this.inCorso = res.data.data || []
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento pagamenti in corso'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento pagamenti in corso')
         this.inCorso = []
       }
     },
@@ -182,8 +181,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const res = await pagamentiService.getPagamenti(params)
         this.falliti = res.data.data || []
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento pagamenti falliti'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento pagamenti falliti')
         this.falliti = []
       }
     },
@@ -214,8 +212,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         const res = await pagamentiService.getPagamenti(params)
         this.annullati = res.data.data || []
       } catch (error) {
-        this.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento pagamenti annullati'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento pagamenti annullati')
         this.annullati = []
       }
     },
@@ -230,7 +227,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         this.batches = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento batch'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento batch')
         this.batches = []
       }
     },
@@ -242,7 +239,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.fetchProposti()
         await this.fetchAnnullati()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       }
     },
@@ -252,7 +249,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         await ricalcolaTotaliProgettoUseCase(progettoId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       }
     },
@@ -263,7 +260,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await rigeneraListaBatchUseCase(batchId, { batchNome })
         await this.fetchListe()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore aggiornamento lista batch'
+        this.error = apiErrorMessage(error, 'Errore aggiornamento lista batch')
         throw error
       }
     },
@@ -275,7 +272,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await ripristinaPropostoUseCase(pagamentoId)
         await this.fetchProposti()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       } finally {
         this.loading = false
@@ -322,7 +319,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await this.init()
         return batchId
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore creazione batch'
+        this.error = apiErrorMessage(error, 'Errore creazione batch')
         throw error
       } finally {
         this.loading = false
@@ -336,7 +333,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await segnaPagatoUseCase(pagamentoId)
         await this.init()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       } finally {
         this.loading = false
@@ -351,7 +348,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         if (pagamento.Batch) await this._aggiornaListaBatch(pagamento.Batch)
         await this.init()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       } finally {
         this.loading = false
@@ -366,7 +363,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         if (batchId) await this._aggiornaListaBatch(batchId)
         await this.init()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       } finally {
         this.loading = false
@@ -380,7 +377,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await correggiDatiUseCase(pagamentoId, { iban, intestatario })
         await this.fetchFalliti()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
       } finally {
         this.loading = false
       }
@@ -390,7 +387,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         await chiudiProgettoUseCase(progettoId, { automatica, motivo })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       }
     },
@@ -399,7 +396,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         await riapriProgettoUseCase(progettoId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       }
     },
@@ -408,7 +405,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         return await avanzaStatoProgettoUseCase(progettoId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message
+        this.error = apiErrorMessage(error)
         throw error
       }
     },
@@ -417,7 +414,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
       try {
         this.liste = await listePagamentiService.getAll(search)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento liste'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento liste')
         this.liste = []
       }
     },
@@ -431,7 +428,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         await listePagamentiService.delete(id)
         await this.fetchListe()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore eliminazione lista'
+        this.error = apiErrorMessage(error, 'Errore eliminazione lista')
         throw error
       } finally {
         this.loading = false

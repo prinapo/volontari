@@ -1,33 +1,20 @@
 <template>
-  <q-dialog v-model="visible" persistent data-testid="progetto-detail-dialog">
-    <q-card>
-      <q-card-section class="row items-center">
-        <div>
-          <div class="text-h6">
-            {{ progetto.famiglia }}
-          </div>
-          <div class="text-body2 text-grey-7">{{ progetto.beneficiario }} — Anno {{ progetto.annoBando }}</div>
-          <div class="text-caption text-grey-5">
-            ID Progetto: {{ progetto.idProgetto }} | ID Famiglia: {{ progetto.idFamiglia }}
-          </div>
+  <AppDialog v-model="visible" dialog-testid="progetto-detail-dialog">
+    <template #header>
+      <div>
+        <div class="text-h6">
+          {{ progetto.famiglia }}
         </div>
-        <q-space />
-        <q-btn
-          v-close-popup
-          icon="close"
-          flat
-          round
-          dense
-          aria-label="Chiudi"
-        >
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
+        <div class="text-body2 text-grey-7">{{ progetto.beneficiario }} — Anno {{ progetto.annoBando }}</div>
+        <div class="text-caption text-grey-5">
+          ID Progetto: {{ progetto.idProgetto }} | ID Famiglia: {{ progetto.idFamiglia }}
+        </div>
+      </div>
+    </template>
 
-      <q-card-section>
-        <div class="text-subtitle2 text-grey-8 q-mb-sm">Dati progetto</div>
-        <div class="row q-col-gutter-md q-mb-sm">
+    <q-card-section>
+      <div class="text-subtitle2 text-grey-8 q-mb-sm">Dati progetto</div>
+      <div class="row q-col-gutter-md q-mb-sm">
           <div class="col-6">
             <div class="text-caption text-grey-7">Anno bando</div>
             <div>{{ progetto.annoBando || '—' }}</div>
@@ -104,55 +91,34 @@
         <div v-if="progetto.allegatiProgetto?.length" class="q-mb-sm">
           <div class="text-caption text-grey-7">Progetto</div>
           <div v-for="f in progetto.allegatiProgetto" :key="f.directus_files_id?.id" class="q-ml-sm">
-            <q-btn
-              :href="assetUrl(f.directus_files_id?.id)"
-              target="_blank"
-              type="a"
-              flat
-              dense
-              round
-              icon="open_in_new"
-              size="sm"
-              aria-label="Apri allegato progetto"
-            >
-              <q-tooltip>{{ f.directus_files_id?.filename_download || 'Apri allegato progetto' }}</q-tooltip>
-            </q-btn>
+            <AllegatoButtons
+              :allegato="f.directus_files_id"
+              show-download="false"
+              open-label="Apri allegato progetto"
+              :open-tooltip="f.directus_files_id?.filename_download || 'Apri allegato progetto'"
+            />
           </div>
         </div>
         <div v-if="progetto.allegatiISEE?.length" class="q-mb-sm">
           <div class="text-caption text-grey-7">ISEE</div>
           <div v-for="f in progetto.allegatiISEE" :key="f.directus_files_id?.id" class="q-ml-sm">
-            <q-btn
-              :href="assetUrl(f.directus_files_id?.id)"
-              target="_blank"
-              type="a"
-              flat
-              dense
-              round
-              icon="open_in_new"
-              size="sm"
-              aria-label="Apri allegato ISEE"
-            >
-              <q-tooltip>{{ f.directus_files_id?.filename_download || 'Apri allegato ISEE' }}</q-tooltip>
-            </q-btn>
+            <AllegatoButtons
+              :allegato="f.directus_files_id"
+              show-download="false"
+              open-label="Apri allegato ISEE"
+              :open-tooltip="f.directus_files_id?.filename_download || 'Apri allegato ISEE'"
+            />
           </div>
         </div>
         <div v-if="progetto.allegatiGiustificativi?.length" class="q-mb-sm">
           <div class="text-caption text-grey-7">Giustificativi</div>
           <div v-for="f in progetto.allegatiGiustificativi" :key="f.directus_files_id?.id" class="q-ml-sm">
-            <q-btn
-              :href="assetUrl(f.directus_files_id?.id)"
-              target="_blank"
-              type="a"
-              flat
-              dense
-              round
-              icon="open_in_new"
-              size="sm"
-              aria-label="Apri giustificativo"
-            >
-              <q-tooltip>{{ f.directus_files_id?.filename_download || 'Apri giustificativo' }}</q-tooltip>
-            </q-btn>
+            <AllegatoButtons
+              :allegato="f.directus_files_id"
+              show-download="false"
+              open-label="Apri giustificativo"
+              :open-tooltip="f.directus_files_id?.filename_download || 'Apri giustificativo'"
+            />
           </div>
         </div>
       </q-card-section>
@@ -249,21 +215,7 @@
                       {{ statoLabel(slotProps.row.Stato) }}
                     </q-badge>
                     <q-space />
-                    <q-btn
-                      v-if="slotProps.row.Allegato"
-                      :href="assetUrl(slotProps.row.Allegato)"
-                      target="_blank"
-                      type="a"
-                      flat
-                      dense
-                      round
-                      icon="open_in_new"
-                      size="sm"
-                      aria-label="Apri allegato"
-                    >
-                      <q-tooltip>Apri allegato</q-tooltip>
-                    </q-btn>
-                    <span v-else class="text-grey-5 text-caption">—</span>
+                    <AllegatoButtons :allegato="slotProps.row.Allegato" show-download="false" />
                   </div>
                 </q-card-section>
               </q-card>
@@ -278,21 +230,7 @@
           </template>
           <template #body-cell-allegato="cellProps">
             <q-td :props="cellProps">
-              <q-btn
-                v-if="cellProps.value"
-                :href="assetUrl(cellProps.value)"
-                target="_blank"
-                type="a"
-                flat
-                dense
-                round
-                icon="open_in_new"
-                size="sm"
-                aria-label="Apri allegato"
-              >
-                <q-tooltip>Apri allegato</q-tooltip>
-              </q-btn>
-              <span v-else class="text-grey-5">—</span>
+              <AllegatoButtons :allegato="cellProps.value" show-download="false" />
             </q-td>
           </template>
         </q-table>
@@ -301,7 +239,7 @@
 
       <q-separator />
       <q-card-section>
-        <NoteProgettoPanel :progetto-id="progetto.idProgetto" origine="verificatore" />
+        <NoteProgettoPanel :progetto-id="progetto.idProgetto" />
       </q-card-section>
 
       <q-separator v-if="progetto.idFamiglia" />
@@ -309,27 +247,28 @@
         <StoricoComunicazioni :famiglia-id="progetto.idFamiglia" />
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn
-          v-close-popup
-          flat
-          dense
-          size="sm"
-          label="Chiudi"
-          color="primary"
-          data-testid="detail-chiudi"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+    <template #footer>
+      <q-btn
+        v-close-popup
+        flat
+        dense
+        size="sm"
+        label="Chiudi"
+        color="primary"
+        data-testid="detail-chiudi"
+      />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import AllegatoButtons from 'components/Common/AllegatoButtons.vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
-import { assetUrl } from 'src/utils/assets'
-import { formatCurrency, statoLabel, statoColor } from 'src/utils/formatters'
+import { statoColor, statoLabel } from 'src/utils/badges'
+import { formatCurrency } from 'src/utils/formatters'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

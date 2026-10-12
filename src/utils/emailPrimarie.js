@@ -18,6 +18,19 @@ function pickKeep(candidates, loginEmail) {
   return candidates[0]
 }
 
+/**
+ * Email preferita di un contatto: la Primary (a parità, quella con id minore);
+ * fallback all'email con id minore. Ritorna null se non c'è un indirizzo.
+ * @param {Array} emails
+ * @returns {string|null}
+ */
+export function pickEmail(emails) {
+  if (!Array.isArray(emails) || emails.length === 0) return null
+  const withAddress = emails.filter(email => email?.email_address).sort((a, b) => (a?.id ?? 0) - (b?.id ?? 0))
+  if (withAddress.length === 0) return null
+  return (withAddress.find(email => email.Primary) || withAddress[0]).email_address
+}
+
 export function calcolaViolazioniEmailPrimarie(emails = [], loginByContatto = new Map()) {
   const byContatto = new Map()
   for (const email of emails) {

@@ -70,10 +70,14 @@ describe('creaGiustificativo', () => {
     mockCreate.mockResolvedValue({ data: { data: { Descrizione: 'test', id: 'g-1' } } })
     mockUpdateProgetto.mockResolvedValue({})
 
-    const created = await creaGiustificativo(
-      { Progetto: 1, Famiglia: 'fam-1', Descrizione: 'test', Importo: 10, Stato: 'inviato', file: new File([], 'x') },
-      { origine: 'volontario' }
-    )
+    const created = await creaGiustificativo({
+      Progetto: 1,
+      Famiglia: 'fam-1',
+      Descrizione: 'test',
+      Importo: 10,
+      Stato: 'inviato',
+      file: new File([], 'x')
+    })
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -91,9 +95,9 @@ describe('creaGiustificativo', () => {
 
   it('applica la guardia "progetto non operativo" senza creare nulla', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: { StatoProgetto: 'proposto' } } })
-    await expect(
-      creaGiustificativo({ Progetto: 1, Descrizione: 'x', Importo: 1 }, { origine: 'verificatore' })
-    ).rejects.toThrow('Progetto non operativo')
+    await expect(creaGiustificativo({ Progetto: 1, Descrizione: 'x', Importo: 1 })).rejects.toThrow(
+      'Progetto non operativo'
+    )
     expect(mockCreate).not.toHaveBeenCalled()
     expect(mockCreateRendicontazione).not.toHaveBeenCalled()
     expect(mockUpdateProgetto).not.toHaveBeenCalled()
@@ -109,10 +113,7 @@ describe('creaGiustificativo', () => {
     mockCreate.mockResolvedValue({ data: { data: { Descrizione: 'x', id: 'g-1' } } })
     mockUpdateProgetto.mockResolvedValue({})
 
-    await creaGiustificativo(
-      { Progetto: 1, Famiglia: 'fam-1', Descrizione: 'x', Importo: 10 },
-      { origine: 'volontario' }
-    )
+    await creaGiustificativo({ Progetto: 1, Famiglia: 'fam-1', Descrizione: 'x', Importo: 10 })
 
     expect(mockCreate).toHaveBeenCalled()
     expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
@@ -122,9 +123,9 @@ describe('creaGiustificativo', () => {
     mockGetProgettoById.mockResolvedValue(operativo)
     mockFindByProject.mockResolvedValue({ data: { data: [] } })
     mockCreate.mockResolvedValue({ data: { data: { Descrizione: 'other' } } })
-    await expect(
-      creaGiustificativo({ Progetto: 1, Descrizione: 'x', Importo: 1 }, { origine: 'volontario' })
-    ).rejects.toThrow('Creazione giustificativo fallita')
+    await expect(creaGiustificativo({ Progetto: 1, Descrizione: 'x', Importo: 1 })).rejects.toThrow(
+      'Creazione giustificativo fallita'
+    )
   })
 })
 

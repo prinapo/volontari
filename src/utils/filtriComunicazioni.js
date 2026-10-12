@@ -3,6 +3,7 @@
  * Nessuna chiamata di rete: qui solo il montaggio del filtro Directus a partire
  * dagli id dei destinatari (family-id sets) e dai ruoli selezionati.
  */
+import { RUOLI_FAMIGLIA } from './constants'
 
 /**
 Ruoli disponibili nel selettore contatti (mappa su booleani del contatto).
@@ -14,9 +15,10 @@ export const RUOLI_CANALE_CONTATTI = [
 ]
 
 /**
-Ruoli disponibili nel selettore famiglie (Ruolo_nella_Famiglia).
+Ruoli disponibili nel selettore famiglie (`Ruolo_nella_Famiglia`), derivati
+dalla fonte unica `constants.RUOLI_FAMIGLIA`.
 */
-export const RUOLI_FAMIGLIA = ['Volontario', 'Genitore', 'Tutore', 'Referente']
+export const RUOLI_FAMIGLIA_VALUES = Object.values(RUOLI_FAMIGLIA)
 
 /**
 Stati pagamento selezionabili (+ "nessuno").
@@ -78,13 +80,4 @@ export function assembleFamiglieIdFilter({ includeIds = null, excludeIds = null 
   if (conditions.length === 0) return {}
   if (conditions.length === 1) return conditions[0]
   return { _and: conditions }
-}
-
-/**
-Estrae l'id/scalar da una relazione M2O (numero oppure oggetto).
-*/
-export function relId(value) {
-  if (value == null) return null
-  if (typeof value === 'object') return value.id ?? value.id_contatto ?? value.id_famiglia ?? null
-  return value
 }

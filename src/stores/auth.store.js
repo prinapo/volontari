@@ -3,6 +3,7 @@ import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { STORAGE_KEYS } from 'src/utils/constants'
+import { apiErrorMessage } from 'src/utils/errors'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { logSessionEvent } from 'src/utils/session-log'
 
@@ -116,7 +117,7 @@ export const useAuthStore = defineStore('auth', {
         }
         await this.fetchUserData()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore di login'
+        this.error = apiErrorMessage(error, 'Errore di login')
         throw error
       } finally {
         this.loading = false
@@ -131,11 +132,8 @@ export const useAuthStore = defineStore('auth', {
 
         if (!this.user?.id) return
       } catch (error) {
-        logSessionEvent(
-          'fetch_user_fallito',
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore recupero utente'
-        )
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore recupero utente'
+        logSessionEvent('fetch_user_fallito', apiErrorMessage(error, 'Errore recupero utente'))
+        this.error = apiErrorMessage(error, 'Errore recupero utente')
         return
       }
 
@@ -150,11 +148,8 @@ export const useAuthStore = defineStore('auth', {
           await this.resolveFamiglieAccess()
         }
       } catch (error) {
-        logSessionEvent(
-          'contatto_lookup_fallito',
-          error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
-        )
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        logSessionEvent('contatto_lookup_fallito', apiErrorMessage(error, 'Errore generico'))
+        this.error = apiErrorMessage(error, 'Errore generico')
         this.contatto = null
         this.hasFamiglieAccess = false
       }
@@ -170,7 +165,7 @@ export const useAuthStore = defineStore('auth', {
         const fcRes = await famiglieService.getFamiglieByVolontario(this.contatto.id_contatto)
         this.hasFamiglieAccess = (fcRes.data.data || []).length > 0
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         this.hasFamiglieAccess = false
       }
     },
@@ -194,7 +189,7 @@ export const useAuthStore = defineStore('auth', {
           this.user.role = role
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
         // If directus_roles is not readable, canAdmin can still match ADMIN_ROLE_NAMES.
       }
     },
@@ -205,7 +200,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         await authService.logout(refreshToken)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Error message'
+        this.error = apiErrorMessage(error, 'Errore generico')
       } finally {
         this.token = null
         this.refreshToken = null

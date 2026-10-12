@@ -57,50 +57,15 @@
                 {{ props.row.role?.name || 'Nessun ruolo' }}
               </q-badge>
               <q-space />
-              <q-select
-                :model-value="props.row.role?.id"
-                :options="roleOptions"
-                option-value="id"
-                option-label="name"
-                dense
-                options-dense
-                outlined
-                emit-value
-                map-options
-                class="admin-role-select select-min-width"
-                :loading="store.saving"
-                @update:model-value="val => handleRoleChange(props.row.id, val)"
-              >
-                <template #selected-item="opt">
-                  <div class="text-caption">
-                    {{ opt.opt.name }}
-                  </div>
-                </template>
-              </q-select>
-              <q-btn
-flat
-round
-dense
-              icon="theater_comedy"
-                color="grey-6"
-                size="sm"
-                aria-label="Impersona utente"
-                @click="store.startImpersonation(props.row.id)"
-              >
-                <q-tooltip>Impersona {{ props.row.first_name || props.row.email }}</q-tooltip>
-              </q-btn>
-              <q-btn
-                flat
-                round
-                dense
-                icon="lock_reset"
-                color="grey-6"
-                size="sm"
-                aria-label="Reset password"
-                @click="openResetPasswordDialog(props.row)"
-              >
-                <q-tooltip>Reset password</q-tooltip>
-              </q-btn>
+              <UtenteRuoloAzioni
+                :row="props.row"
+                :role-options="roleOptions"
+                :saving="store.saving"
+                select-class="select-min-width"
+                @role-change="val => handleRoleChange(props.row.id, val)"
+                @impersona="store.startImpersonation"
+                @reset="openResetPasswordDialog"
+              />
             </div>
           </q-card-section>
         </q-card>
@@ -130,75 +95,21 @@ dense
 
     <template #body-cell-actions="props">
       <q-td :props="props">
-        <div class="row items-center q-gutter-xs no-wrap">
-          <q-select
-            :model-value="props.row.role?.id"
-            :options="roleOptions"
-            option-value="id"
-            option-label="name"
-            dense
-            options-dense
-            outlined
-            emit-value
-            map-options
-            class="admin-role-select"
-            :loading="store.saving"
-            @update:model-value="val => handleRoleChange(props.row.id, val)"
-          >
-            <template #selected-item="opt">
-              <div class="text-caption">
-                {{ opt.opt.name }}
-              </div>
-            </template>
-          </q-select>
-          <q-btn
-flat
-round
-dense
-icon="theater_comedy"
-            color="grey-6"
-            size="sm"
-            aria-label="Impersona utente"
-            @click="store.startImpersonation(props.row.id)"
-          >
-            <q-tooltip>Impersona {{ props.row.first_name || props.row.email }}</q-tooltip>
-          </q-btn>
-          <q-btn
-flat
-round
-dense
-icon="lock_reset"
-color="grey-6"
-size="sm"
-aria-label="Reset password"
-@click="openResetPasswordDialog(props.row)">
-            <q-tooltip>Reset password</q-tooltip>
-          </q-btn>
-        </div>
+        <UtenteRuoloAzioni
+          :row="props.row"
+          :role-options="roleOptions"
+          :saving="store.saving"
+          @role-change="val => handleRoleChange(props.row.id, val)"
+          @impersona="store.startImpersonation"
+          @reset="openResetPasswordDialog"
+        />
       </q-td>
     </template>
   </q-table>
 
   <!-- Create User Dialog -->
-  <q-dialog v-model="showCreateDialog" persistent maximized>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Aggiungi utente</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-section class="scroll scroll-area-70">
+  <AppDialog v-model="showCreateDialog" title="Aggiungi utente" maximized>
+    <q-card-section class="scroll scroll-area-70">
         <!-- Step 1: Email search -->
         <div class="row q-col-gutter-sm items-end q-mb-md">
           <div class="col">
@@ -268,72 +179,57 @@ aria-label="Chiudi">
         </q-card-section>
       </template>
 
-      <q-card-actions align="right">
+      <template #footer>
         <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </template>
+  </AppDialog>
 
   <!-- Reset Password Dialog -->
-  <q-dialog v-model="showResetDialog" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Reset password</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <div class="text-body2 q-mb-md">
-          Nuova password per <strong>{{ resetUser?.email }}</strong>
-        </div>
-        <q-input
-          v-model="resetPassword"
-          label="Nuova password *"
-          outlined
-          dense
-          :type="showResetPwd ? 'text' : 'password'"
-        >
-          <template #append>
-            <q-icon
-              :name="showResetPwd ? 'visibility_off' : 'visibility'"
-              class="cursor-pointer"
-              @click="showResetPwd = !showResetPwd"
-            />
-          </template>
-        </q-input>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-        <q-btn
-          color="primary"
-          label="Salva password"
-          :disable="!resetPassword"
-          :loading="store.saving"
-          @click="handleResetPassword"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <AppDialog v-model="showResetDialog" title="Reset password">
+    <q-card-section>
+      <div class="text-body2 q-mb-md">
+        Nuova password per <strong>{{ resetUser?.email }}</strong>
+      </div>
+      <q-input
+        v-model="resetPassword"
+        label="Nuova password *"
+        outlined
+        dense
+        :type="showResetPwd ? 'text' : 'password'"
+      >
+        <template #append>
+          <q-icon
+            :name="showResetPwd ? 'visibility_off' : 'visibility'"
+            class="cursor-pointer"
+            @click="showResetPwd = !showResetPwd"
+          />
+        </template>
+      </q-input>
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn
+        color="primary"
+        label="Salva password"
+        :disable="!resetPassword"
+        :loading="store.saving"
+        @click="handleResetPassword"
+      />
+    </template>
+  </AppDialog>
   </div>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { adminService } from 'src/services/admin.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAdminStore } from 'stores/admin.store'
+import UtenteRuoloAzioni from './UtenteRuoloAzioni.vue'
 
 const $q = useQuasar()
 const store = useAdminStore()

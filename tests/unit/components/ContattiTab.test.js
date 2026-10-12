@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { quasarMount } from '../quasar-mount'
 import ContattiTab from 'src/components/Gestione/ContattiTab.vue'
+import { displayFullName } from 'src/utils/formatters'
+import { quasarMount } from '../quasar-mount'
 
 const mockQuery = vi.fn()
 const mockGetByIds = vi.fn()
@@ -93,7 +94,7 @@ describe('ContattiTab', () => {
     return quasarMount(ContattiTab, {
       global: {
         stubs: {
-          ContattoDialog: { template: '<div />' },
+          ContattoFormDialog: { template: '<div />' },
           AssegnaFamigliaDialog: { template: '<div />' },
           AssegnaReferenteDialog: { template: '<div />' }
         }
@@ -127,8 +128,8 @@ describe('ContattiTab', () => {
   it('computes display labels, badge colors and filters', () => {
     const wrapper = mountTab()
 
-    expect(wrapper.vm.displayNome({ Nome: 'Mario', Cognome: 'Rossi' })).toBe('Mario Rossi')
-    expect(wrapper.vm.displayNome({})).toBe('—')
+    expect(displayFullName({ Nome: 'Mario', Cognome: 'Rossi' }, 'nome_cognome')).toBe('Mario Rossi')
+    expect(displayFullName({}, 'nome_cognome') || '—').toBe('—')
     expect(wrapper.vm.tipoBadgeColor('Volontario')).toBe('primary')
     expect(wrapper.vm.tipoBadgeColor('Genitore')).toBe('secondary')
     expect(wrapper.vm.tipoBadgeColor('Referente')).toBe('accent')

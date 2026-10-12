@@ -92,7 +92,7 @@ describe('badges', () => {
       expect(statoProgettoColor('in_rendicontazione')).toBe('orange')
       expect(statoProgettoColor('rimborso_parziale')).toBe('warning')
       expect(statoProgettoColor('chiuso')).toBe('grey')
-      expect(statoProgettoColor('valido')).toBe('info')
+      expect(statoProgettoColor('validato')).toBe('info')
       expect(statoProgettoColor('proposto')).toBe('grey')
       expect(statoProgettoColor('approvato')).toBe('primary')
       expect(statoProgettoColor('boh')).toBe('grey')

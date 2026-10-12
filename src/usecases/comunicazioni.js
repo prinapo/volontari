@@ -4,9 +4,9 @@ import {
   assembleFamiglieIdFilter,
   buildContattiRoleFilter,
   intersectIdSets,
-  relId,
   unionIdSets
 } from 'src/utils/filtriComunicazioni'
+import { relId } from 'src/utils/relations'
 
 function toIds(rows = [], field) {
   const ids = new Set()

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { comunicazioniService } from 'src/services/comunicazioni.service'
 import { contaDestinatari, inviaComunicazione } from 'src/usecases/comunicazioni'
+import { apiErrorMessage } from 'src/utils/errors'
 
 const FILTERS_DEFAULT = () => ({
   ruoli: [],
@@ -68,11 +69,7 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
       } catch (error) {
         this.recipients = []
         this.selected = []
-        this.error =
-          error.response?.data?.error ||
-          error.response?.data?.errors?.[0]?.message ||
-          error.message ||
-          'Errore nel calcolo dei destinatari'
+        this.error = apiErrorMessage(error, 'Errore nel calcolo dei destinatari')
         throw error
       } finally {
         this.loading = false
@@ -105,11 +102,7 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
         })
         return this.esito
       } catch (error) {
-        this.error =
-          error.response?.data?.error ||
-          error.response?.data?.errors?.[0]?.message ||
-          error.message ||
-          "Errore nell'invio"
+        this.error = apiErrorMessage(error, "Errore nell'invio")
         throw error
       } finally {
         this.sending = false
@@ -132,8 +125,7 @@ export const useComunicazioniStore = defineStore('comunicazioni', {
         this.storico.data = res.data.data || []
         return this.storico.data
       } catch (error) {
-        this.storico.error =
-          error.response?.data?.errors?.[0]?.message || error.message || 'Errore nel caricamento dello storico'
+        this.storico.error = apiErrorMessage(error, 'Errore nel caricamento dello storico')
         throw error
       } finally {
         this.storico.loading = false

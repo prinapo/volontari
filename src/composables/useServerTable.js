@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { apiErrorMessage } from 'src/utils/errors'
 
 /**
  * Composable per tabelle server-side con QTable + Directus.
@@ -16,7 +17,7 @@ import { ref, computed } from 'vue'
  *
  * Convenzioni rispettate:
  * - stato: `{ data (rows), loading, error }`
- * - error: `err.response?.data?.errors?.[0]?.message || err.message || 'Errore caricamento'`
+ * - error: `apiErrorMessage(error, 'Errore caricamento')`
  *
  * @param {Function} fetchFn  — riceve `{ page, limit, sort, search, ...extraFilters }`
  *                              e deve tornare `{ rows, total }` (rows = array, total = number)
@@ -41,11 +42,7 @@ import { ref, computed } from 'vue'
  * }}
  */
 export function useServerTable(fetchFn, options = {}) {
-  const {
-    sortMap = {},
-    defaultSort = null,
-    perPage = 25
-  } = options
+  const { sortMap = {}, defaultSort = null, perPage = 25 } = options
 
   const rows = ref([])
   const loading = ref(false)
@@ -83,7 +80,7 @@ export function useServerTable(fetchFn, options = {}) {
       rows.value = result.rows
       pagination.value.rowsNumber = result.total
     } catch (error) {
-      _error.value = error.response?.data?.errors?.[0]?.message || error.message || 'Errore caricamento'
+      _error.value = apiErrorMessage(error, 'Errore caricamento')
       rows.value = []
     } finally {
       loading.value = false

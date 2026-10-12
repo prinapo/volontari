@@ -1,25 +1,8 @@
 <template>
-  <q-dialog v-model="visible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Associa a famiglia</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-section>
-        <q-table
-          :rows="famiglie"
+  <AppDialog v-model="visible" title="Associa a famiglia">
+    <q-card-section>
+      <q-table
+        :rows="famiglie"
           :columns="famigliaColumns"
           row-key="id"
           flat
@@ -109,16 +92,16 @@ aria-label="Rimuovi"
         </div>
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { gestioneService } from 'src/services/gestione.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useGestioneStore } from 'stores/gestione.store'

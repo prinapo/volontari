@@ -1,22 +1,35 @@
 # State Management Document
 
-**Version:** 2.1.0
-**Last Updated:** 2026-05-26
-**Status:** Final
+**Version:** 3.0.0
+**Last Updated:** 2026-10-09
+**Status:** Current (per le macchine a stati); le sezioni per-store "storiche" restano indicative
 
-## Change Log
-
-| Date       | Version | Author | Change                                                                                                                                        |
-| ---------- | ------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-05-25 | 1.0.0   | System | Initial draft                                                                                                                                 |
-| 2026-05-25 | 1.1.0   | System | Final — added email query in famiglie.store, genitori mapping                                                                                 |
-| 2026-05-25 | 2.0.0   | System | Final — added verifica.store, updated auth.store with initFromStorage/canVerifica, giustificativi.store with invalidate/ensureRendicontazione |
+> ⚠️ **Nota.** Lo stato asincrono canonico è `{ data/data_*, loading, error }`
+> (vedi `AGENTS.md`). Lo strato **macchine a stati** (§8) è il riferimento
+> autorevole. Le descrizioni puntuali dei primi store sono state scritte a inizio
+> progetto e possono non riflettere ogni campo attuale: in caso di dubbio fare
+> riferimento al codice. `src/usecases/` è la sede delle azioni di business.
 
 ---
 
 ## 1. Overview
 
-State management uses Pinia (official Vue 3 store). Four stores manage the application state.
+Lo stato globale usa **Pinia**. Gli store attuali sono:
+
+| Store            | Responsabilità                                               |
+| ---------------- | ------------------------------------------------------------ |
+| `auth`           | Sessione (login/logout/refresh, `canManager`, `canAdmin`)    |
+| `famiglie`       | Famiglia selezionata, genitori/volontari, erogazioni         |
+| `giustificativi` | Giustificativi del progetto selezionato (flusso volontario)  |
+| `verifica`       | Righe Verifica/Rendicontazione, submission e riconciliazione |
+| `pagamenti`      | Proposte, pagamenti, batch e liste                           |
+| `gestione`       | Famiglie/contatti (CRUD), referenti, utenti                  |
+| `admin`          | Utenti/ruoli, consistenza, impersonation                     |
+| `dashboard`      | Aggregati KPI                                                |
+| `comunicazioni`  | Wizard email 1-a-1 e storico                                 |
+| `note`           | Note progetto (append-only)                                  |
+| `submit`         | Modulo libero (submission)                                   |
+| `error-log`      | Log errori applicativi                                       |
 
 ---
 
@@ -313,6 +326,9 @@ LoginPage.vue                    FamigliePage.vue                     VerificaPa
 - **giustificativi.store.fetchByProgetto()** is called whenever `selectedProgettoId` changes (via watch in GiustificativoList)
 - **verifica.store.fetchAll()** is called in VerificaPage.vue on mount
 - All stores are independent (no cross-store imports) — auth info is passed to service functions as needed
+- **Eccezioni note (debito tecnico):** `verifica.store` legge `auth.store`
+  (`canManager`) e invoca `pagamenti.store.ricalcolaProposta`; `api.js` legge
+  `auth.store`. Da spostare in use case dedicati in una pulizia futura.
 - On logout: stores are reset individually (auth.store handles its own reset)
 
 ---

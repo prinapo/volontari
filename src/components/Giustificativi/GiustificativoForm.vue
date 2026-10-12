@@ -1,22 +1,7 @@
 <template>
-  <q-dialog v-model="model" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Nuovo giustificativo</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
-      <q-card-section class="q-pt-sm">
-        <q-form @submit="handleSave">
+  <AppDialog v-model="model" title="Nuovo giustificativo" hide-footer>
+    <q-card-section class="q-pt-sm">
+      <q-form @submit="handleSave">
           <q-input
             v-model="form.Descrizione"
             label="Descrizione *"
@@ -97,12 +82,12 @@ type="submit" />
           </q-card-actions>
         </q-form>
       </q-card-section>
-    </q-card>
-  </q-dialog>
+  </AppDialog>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import GiustificativoFilePicker from './GiustificativoFilePicker.vue'
 
 const props = defineProps({

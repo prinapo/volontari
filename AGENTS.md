@@ -80,7 +80,7 @@ Commit message → conventional-changelog
 - Nessuna azione ritorna boolean per successo/fallimento: throw o this.error, mai `return true/false`
   È invece ACCETTABILE ritornare un dato utile (es. l'id della risorsa creata)
 - Chiamate sempre via `src/services/`, mai `api.*` diretto nello store
-- Errori: `catch (error) { this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore generico' }`
+- Errori: `catch (error) { this.error = apiErrorMessage(error, 'Errore generico') }` usando l'helper unico `src/utils/errors.js` (preferisce `errors[0].message`, poi `data.error`, poi `error.message`).
   Eccezione: admin.store.js usa Notify.create() direttamente nei catch di
   startImpersonation/stopImpersonation perché i chiamanti sono fire-and-forget
   (@click senza await/try-catch), non c'è altro punto dove intercettare l'errore.
@@ -227,6 +227,22 @@ SubmitPage passa dallo `submit.store` → `creaSubmission` (mai il service diret
 - Ogni chiamata a Directus passa da src/services/, mai da componenti o store direttamente
 - Gestione errori centralizzata in un unico helper condiviso, mai try/catch ad-hoc duplicato nei singoli service
 - Refresh token e logica di auth: gestiti solo da services/auth.js, nessun altro file la reimplementa
+
+## Utility condivise (non duplicare)
+
+Prima di scrivere un helper, controlla `src/utils/`:
+
+- `errors.js` → `apiErrorMessage(error, fallback)`: messaggio d'errore canonico per store/UI
+- `formatters.js` → `formatCurrency`, `formatCurrencyOrDash`, `formatDate`, `formatDateTime`, `formatNumber`, `displayFullName`
+- `number.js` → `parseNum(value)`
+- `relations.js` → `relId(value)`: id da relazione Directus M2O (numero/oggetto)
+- `password.js` → `generatePassword(length)`
+- `emailPrimarie.js` → `pickEmail(emails)` (email preferita di un contatto)
+- `badges.js` → colori/etichette di stato e `ACTION_VERIFY`/`ACTION_REJECT`
+- `isContabile(stato)` da `constants.js`
+
+Per date/debounce/download usare le utility Quasar (`date`, `debounce`, `exportFile`)
+prima di reimplementarle.
 
 ## Composable
 

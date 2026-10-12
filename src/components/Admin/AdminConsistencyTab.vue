@@ -342,57 +342,14 @@ icon="refresh"
         vengono toccate.
       </div>
 
-      <q-table
-        v-model:selected="selectedListe"
+      <ListePagamentiTable
         :rows="store.listeCheck.liste"
-        :columns="listeColumns"
-        row-key="id"
-        selection="multiple"
-        flat
-        bordered
-        hide-pagination
-        :pagination="{ rowsPerPage: 0 }"
-        class="bg-white q-mt-sm"
-        :grid="$q.screen.lt.sm"
-        :dense="$q.screen.lt.md"
-      >
-        <template #body-cell-data="props">
-          <q-td :props="props">{{ formatDate(props.row.DataCreazione) }}</q-td>
-        </template>
-        <template #body-cell-righe="props">
-          <q-td :props="props">{{ props.row.ConteggioRighe || 0 }}</q-td>
-        </template>
-        <template #body-cell-totale="props">
-          <q-td :props="props">€{{ formatNumber(props.row.Totale) }}</q-td>
-        </template>
-        <template #body-cell-file="props">
-          <q-td :props="props">
-            <q-badge v-if="props.row.fileOk === true" color="positive">OK</q-badge>
-            <q-badge v-else-if="props.row.fileOk === false" color="negative">KO</q-badge>
-            <span v-else class="text-grey-6">—</span>
-          </q-td>
-        </template>
-        <template #item="props">
-          <div class="q-pa-xs col-12">
-            <q-card flat bordered>
-              <q-card-section>
-                <div class="row items-center q-gutter-x-sm">
-                  <q-checkbox v-model="selectedListe" :val="props.row" dense />
-                  <span class="text-weight-medium">{{ props.row.Nome }}</span>
-                  <q-space />
-                  <q-badge v-if="props.row.fileOk === true" color="positive">OK</q-badge>
-                  <q-badge v-else-if="props.row.fileOk === false" color="negative">KO</q-badge>
-                  <span v-else class="text-grey-6">—</span>
-                </div>
-                <div class="text-caption q-mt-xs">Data: {{ formatDate(props.row.DataCreazione) }}</div>
-                <div class="text-caption">
-                  Righe: {{ props.row.ConteggioRighe || 0 }} · Totale: €{{ formatNumber(props.row.Totale) }}
-                </div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </template>
-      </q-table>
+        :loading="store.listeCheckLoading"
+        mode="check"
+        selectable
+        :selected="selectedListe"
+        @update:selected="val => (selectedListe = val)"
+      />
 
       <div class="row items-center q-gutter-sm q-mt-sm">
         <q-btn
@@ -468,6 +425,7 @@ icon="refresh"
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, onMounted } from 'vue'
+import ListePagamentiTable from 'src/components/Pagamenti/ListePagamentiTable.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { usersService } from 'src/services/users.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'
@@ -478,24 +436,6 @@ const store = useAdminStore()
 
 const savingVolontario = ref(false)
 const selectedListe = ref([])
-
-const listeColumns = [
-  { name: 'nome', label: 'Nome', align: 'left', field: 'Nome' },
-  { name: 'data', label: 'Data', align: 'left' },
-  { name: 'righe', label: 'Righe', align: 'right' },
-  { name: 'totale', label: 'Totale', align: 'right' },
-  { name: 'file', label: 'File', align: 'center' }
-]
-
-function formatDate(value) {
-  if (!value) return '—'
-  const date = new Date(value)
-  return Number.isFinite(date.getTime()) ? date.toLocaleDateString('it-IT') : '—'
-}
-
-function formatNumber(value) {
-  return (Number.parseFloat(value) || 0).toFixed(2)
-}
 
 const emailPrimarieAnomalie = computed(() => {
   if (!store.emailPrimarieCheck) return -1

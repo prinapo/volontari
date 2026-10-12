@@ -14,6 +14,7 @@ import {
   rimuoviReferente as rimuoviReferenteUseCase
 } from 'src/usecases/famiglie'
 import { abilitaUtente as abilitaUtenteUseCase, disabilitaUtente as disabilitaUtenteUseCase } from 'src/usecases/utenti'
+import { apiErrorMessage } from 'src/utils/errors'
 
 export const useGestioneStore = defineStore('gestione', {
   state: () => ({
@@ -76,7 +77,7 @@ export const useGestioneStore = defineStore('gestione', {
 
         this.famiglie = famiglie
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei dati'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento dei dati')
         this.famiglie = []
       } finally {
         this.loading = false
@@ -92,7 +93,7 @@ export const useGestioneStore = defineStore('gestione', {
         this.error =
           error.message === 'Email duplicata'
             ? 'Questa email è già associata a un altro contatto'
-            : error.response?.data?.errors?.[0]?.message || 'Errore nella creazione del contatto'
+            : apiErrorMessage(error, 'Errore nella creazione del contatto')
         throw error
       } finally {
         this.saving = false
@@ -108,7 +109,7 @@ export const useGestioneStore = defineStore('gestione', {
         this.error =
           error.message === 'Email duplicata'
             ? 'Questa email è già associata a un altro contatto'
-            : error.response?.data?.errors?.[0]?.message || 'Errore nella modifica del contatto'
+            : apiErrorMessage(error, 'Errore nella modifica del contatto')
         throw error
       } finally {
         this.saving = false
@@ -119,7 +120,7 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await disabilitaUtenteUseCase(userId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella disattivazione'
+        this.error = apiErrorMessage(error, 'Errore nella disattivazione')
         throw error
       }
     },
@@ -128,7 +129,7 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await abilitaUtenteUseCase(userId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella riattivazione'
+        this.error = apiErrorMessage(error, 'Errore nella riattivazione')
         throw error
       }
     },
@@ -140,7 +141,7 @@ export const useGestioneStore = defineStore('gestione', {
         await creaFamigliaUseCase(data)
         await this.fetchAll()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione della famiglia'
+        this.error = apiErrorMessage(error, 'Errore nella creazione della famiglia')
         throw error
       } finally {
         this.saving = false
@@ -154,7 +155,7 @@ export const useGestioneStore = defineStore('gestione', {
         await aggiornaFamigliaUseCase(id, data)
         await this.fetchAll()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella modifica della famiglia'
+        this.error = apiErrorMessage(error, 'Errore nella modifica della famiglia')
         throw error
       } finally {
         this.saving = false
@@ -169,7 +170,7 @@ export const useGestioneStore = defineStore('gestione', {
         this.error =
           error.message === 'Email mancante'
             ? 'Email mancante: sistema il contatto prima di associarlo come volontario'
-            : error.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione"
+            : apiErrorMessage(error, "Errore nell'assegnazione")
         throw error
       }
     },
@@ -178,7 +179,7 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await rimuoviDaFamigliaUseCase(fcId, contattoId, ruolo)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella rimozione'
+        this.error = apiErrorMessage(error, 'Errore nella rimozione')
         throw error
       }
     },
@@ -188,7 +189,7 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await assegnaReferenteUseCase(volontarioId, referenteId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'assegnazione referente"
+        this.error = apiErrorMessage(error, "Errore nell'assegnazione referente")
         throw error
       }
     },
@@ -198,7 +199,7 @@ export const useGestioneStore = defineStore('gestione', {
       try {
         await rimuoviReferenteUseCase(relationId)
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella rimozione referente'
+        this.error = apiErrorMessage(error, 'Errore nella rimozione referente')
         throw error
       }
     },
@@ -211,7 +212,7 @@ export const useGestioneStore = defineStore('gestione', {
         this.error =
           error.message === 'Email mancante'
             ? "Email mancante: prima aggiungi un'email al contatto"
-            : error.response?.data?.errors?.[0]?.message || "Errore nell'impostazione referente"
+            : apiErrorMessage(error, "Errore nell'impostazione referente")
         throw error
       }
     },
@@ -224,7 +225,7 @@ export const useGestioneStore = defineStore('gestione', {
         this.volontariSenzaUtente = res.data.data || []
       } catch (error) {
         this.volontariSenzaUtente = []
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento')
       } finally {
         this.loadingVolontariSenzaUtente = false
       }
@@ -237,7 +238,7 @@ export const useGestioneStore = defineStore('gestione', {
         await creaUtentePerVolontarioUseCase(contattoId)
         await this.fetchVolontariSenzaUtente()
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || error.message || 'Errore creazione utente'
+        this.error = apiErrorMessage(error, 'Errore creazione utente')
         throw error
       } finally {
         this.saving = false

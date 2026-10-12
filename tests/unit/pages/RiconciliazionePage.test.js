@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { quasarMount } from '../quasar-mount'
 import RiconciliazionePage from 'src/pages/RiconciliazionePage.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockFetchSubmissions = vi.fn()
 const mockReconcileSubmission = vi.fn()
@@ -81,13 +81,25 @@ vi.mock('quasar', () => ({
 }))
 
 vi.mock('components/Gestione/AssegnaFamigliaDialog.vue', () => ({
-  default: { name: 'AssegnaFamigliaDialog', template: '<div>AssegnaFamigliaDialog Stub</div>', props: ['modelValue', 'contatto', 'ruolo'] }
+  default: {
+    name: 'AssegnaFamigliaDialog',
+    template: '<div>AssegnaFamigliaDialog Stub</div>',
+    props: ['modelValue', 'contatto', 'ruolo']
+  }
 }))
-vi.mock('components/Gestione/ContattoDialog.vue', () => ({
-  default: { name: 'ContattoDialog', template: '<div>ContattoDialog Stub</div>', props: ['modelValue', 'initialData'] }
+vi.mock('components/Gestione/ContattoFormDialog.vue', () => ({
+  default: {
+    name: 'ContattoFormDialog',
+    template: '<div>ContattoFormDialog Stub</div>',
+    props: ['modelValue', 'initialData']
+  }
 }))
 vi.mock('components/RiconciliaDialog.vue', () => ({
-  default: { name: 'RiconciliaDialog', template: '<div>RiconciliaDialog Stub</div>', props: ['modelValue', 'submission'] }
+  default: {
+    name: 'RiconciliaDialog',
+    template: '<div>RiconciliaDialog Stub</div>',
+    props: ['modelValue', 'submission']
+  }
 }))
 
 describe('RiconciliazionePage', () => {

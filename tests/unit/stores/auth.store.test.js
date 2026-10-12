@@ -196,12 +196,12 @@ describe('auth store', () => {
       expect(store.token).toBeNull()
     })
 
-    it('sets generic error on network failure', async () => {
+    it('propaga il messaggio di errore di rete', async () => {
       mockLogin.mockRejectedValue(new Error('Network failure'))
 
       const store = useAuthStore()
       await expect(store.login('test@example.com', 'password')).rejects.toThrow()
-      expect(store.error).toBe('Errore di login')
+      expect(store.error).toBe('Network failure')
     })
   })
 

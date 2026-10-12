@@ -13,6 +13,7 @@
  * assume questo stato indipendentemente dallo stato precedente.
  */
 import { STATI_GIUSTIFICATIVO_VALIDI, STATO_PROGETTO } from './constants'
+import { parseNum } from './number'
 import { calcolaStatoRendicontazione } from './rendicontazione'
 
 // Un giustificativo conta per lo stato progetto solo se ha avviato la
@@ -52,8 +53,8 @@ export function statoProgettoEffettivo(statoProgetto) {
  * @returns {string} Valore di STATO_PROGETTO
  */
 export function calcolaStatoProgetto({ statoProgetto, allocato = 0, rimborsato = 0, giustificativi = [] } = {}) {
-  const allocatoNum = Number.parseFloat(allocato) || 0
-  const rimborsatoNum = Number.parseFloat(rimborsato) || 0
+  const allocatoNum = parseNum(allocato)
+  const rimborsatoNum = parseNum(rimborsato)
 
   // 1. Legacy 'aperto' e assenza valore → 'accettato'
   const stato = !statoProgetto || statoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : statoProgetto
@@ -132,7 +133,7 @@ export function calcolaDisallineati(rows = []) {
  */
 export function calcolaAggregatiProgetto(progetto = {}, giustificativi = []) {
   const validi = giustificativi.filter(g => !g.Invalidato)
-  const totaleImporto = validi.reduce((sum, g) => sum + (Number.parseFloat(g.Importo) || 0), 0)
+  const totaleImporto = validi.reduce((sum, g) => sum + parseNum(g.Importo), 0)
   return {
     TotaleGiustificativi: validi.length,
     TotaleImporto: totaleImporto,

@@ -29,7 +29,7 @@ describe('NotaRapidaDialog', () => {
     expect(wrapper.find('[data-testid="nota-rapida-salva"]').exists()).toBe(true)
   })
 
-  it('crea la nota con origine verificatore e chiude il dialog', async () => {
+  it('crea la nota e chiude il dialog', async () => {
     mockCreateNota.mockResolvedValue({ id: 1 })
     const wrapper = quasarMount(NotaRapidaDialog, {
       props: { modelValue: true, progettoId: 'p-1' }
@@ -38,7 +38,7 @@ describe('NotaRapidaDialog', () => {
     wrapper.vm.testo = 'nota di prova'
     await wrapper.vm.handleSubmit()
 
-    expect(mockCreateNota).toHaveBeenCalledWith('p-1', 'nota di prova', 'verificatore')
+    expect(mockCreateNota).toHaveBeenCalledWith('p-1', 'nota di prova')
     expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
   })
 

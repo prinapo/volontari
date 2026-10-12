@@ -1,75 +1,55 @@
 <template>
-  <q-dialog v-model="visible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">
-          {{ isEdit ? 'Modifica Famiglia' : 'Nuova Famiglia' }}
-        </div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-section>
-        <q-form @submit.prevent="handleSave">
-          <q-input
-            v-model="form.Nome_Famiglia"
-            label="Nome Famiglia *"
-            data-testid="famiglia-nome"
-            :rules="[val => !!val || 'Campo obbligatorio']"
-            lazy-rules
-            outlined
-            dense
-            class="q-mb-md"
-          />
-          <q-input
-            v-model="form.IBAN"
-            label="IBAN"
-            data-testid="famiglia-iban"
-            outlined
-            dense
-            class="q-mb-md"
-            :rules="IBAN_RULES"
-            lazy-rules
-            @update:model-value="val => (form.IBAN = sanitizeIBAN(val))"
-          />
-          <q-input
-            v-model="form.Intestatario_CC"
-            label="Intestatario conto corrente"
-            data-testid="famiglia-intestatario"
-            outlined
-            dense
-            class="q-mb-md"
-          />
-        </q-form>
-      </q-card-section>
-
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-        <q-btn
-          color="primary"
-          label="Salva"
-          :loading="store.saving"
-          :disable="!form.Nome_Famiglia || (!!form.IBAN && !IBAN_REGEX.test(form.IBAN))"
-          @click="handleSave"
+  <AppDialog v-model="visible" :title="isEdit ? 'Modifica Famiglia' : 'Nuova Famiglia'">
+    <q-card-section>
+      <q-form @submit.prevent="handleSave">
+        <q-input
+          v-model="form.Nome_Famiglia"
+          label="Nome Famiglia *"
+          data-testid="famiglia-nome"
+          :rules="[val => !!val || 'Campo obbligatorio']"
+          lazy-rules
+          outlined
+          dense
+          class="q-mb-md"
         />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+        <q-input
+          v-model="form.IBAN"
+          label="IBAN"
+          data-testid="famiglia-iban"
+          outlined
+          dense
+          class="q-mb-md"
+          :rules="IBAN_RULES"
+          lazy-rules
+          @update:model-value="val => (form.IBAN = sanitizeIBAN(val))"
+        />
+        <q-input
+          v-model="form.Intestatario_CC"
+          label="Intestatario conto corrente"
+          data-testid="famiglia-intestatario"
+          outlined
+          dense
+          class="q-mb-md"
+        />
+      </q-form>
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn
+        color="primary"
+        label="Salva"
+        :loading="store.saving"
+        :disable="!form.Nome_Famiglia || (!!form.IBAN && !IBAN_REGEX.test(form.IBAN))"
+        @click="handleSave"
+      />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useGestioneStore } from 'stores/gestione.store'

@@ -191,6 +191,7 @@ import { filesService } from 'src/services/files.service'
 import { gestioneService } from 'src/services/gestione.service'
 import { progettiService } from 'src/services/progetti.service'
 import { creaProgetto } from 'src/usecases/progetti'
+import { apiErrorMessage } from 'src/utils/errors'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
 const $q = useQuasar()
@@ -317,7 +318,7 @@ async function handleSubmit() {
     notifySuccess($q, `Progetto creato (ID: ${progettoId})`)
     await router.push({ name: 'Admin' })
   } catch (error_) {
-    error.value = error_.response?.data?.errors?.[0]?.message || 'Errore nella creazione del progetto'
+    error.value = apiErrorMessage(error_, 'Errore nella creazione del progetto')
     notifyError($q, error_)
   } finally {
     saving.value = false

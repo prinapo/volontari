@@ -160,35 +160,20 @@
   </q-table>
 
   <!-- Error detail dialog -->
-  <q-dialog v-model="errorDetail.visible">
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Dettaglio errore</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
-      <q-card-section class="q-pt-none text-body2 text-pre-wrap">
-        {{ errorDetail.text }}
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <AppDialog v-model="errorDetail.visible" :persistent="false" title="Dettaglio errore">
+    <q-card-section class="q-pt-none text-body2 text-pre-wrap">
+      {{ errorDetail.text }}
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
+    </template>
+  </AppDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { errorLogService } from 'src/services/error-log.service'

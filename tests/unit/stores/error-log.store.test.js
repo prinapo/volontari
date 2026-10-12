@@ -51,13 +51,13 @@ describe('errorLog store', () => {
       expect(store.loading).toBe(false)
     })
 
-    it('handles generic error', async () => {
+    it('propaga il messaggio di errore', async () => {
       mockGetAll.mockRejectedValue(new Error('Network failure'))
       const store = useErrorLogStore()
 
       await store.fetchAll()
 
-      expect(store.error).toBe('Errore caricamento log')
+      expect(store.error).toBe('Network failure')
     })
   })
 

@@ -31,13 +31,21 @@ function normalizeFileId(fileId) {
   return typeof fileId === 'object' ? fileId?.id : fileId
 }
 
-export async function markFileObsolete(fileId) {
+async function _markFile(fileId, prefix) {
   const id = normalizeFileId(fileId)
   if (!id) return
   const fileRes = await filesService.getFile(id)
   const origName = fileRes.data.data?.filename_download || 'file'
   const date = new Date().toISOString().slice(0, 10)
-  await filesService.renameFile(id, `OBSOLETE_${date}_${origName}`)
+  await filesService.renameFile(id, `${prefix}_${date}_${origName}`)
+}
+
+/**
+ * Marca un file come obsoleto rinominandolo con prefisso OBSOLETE_ e data
+ * @param {string} fileId - ID del file Directus
+ */
+export async function markFileObsolete(fileId) {
+  return _markFile(fileId, 'OBSOLETE')
 }
 
 /**
@@ -45,10 +53,5 @@ export async function markFileObsolete(fileId) {
  * @param {string} fileId - ID del file Directus
  */
 export async function markFileRejected(fileId) {
-  const id = normalizeFileId(fileId)
-  if (!id) return
-  const fileRes = await filesService.getFile(id)
-  const origName = fileRes.data.data?.filename_download || 'file'
-  const date = new Date().toISOString().slice(0, 10)
-  await filesService.renameFile(id, `RIFIUTATO_${date}_${origName}`)
+  return _markFile(fileId, 'RIFIUTATO')
 }

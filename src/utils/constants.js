@@ -42,6 +42,15 @@ export const STATI_GIUSTIFICATIVO_CONTABILI = [
 // Stati che avviano la rendicontazione (per lo stato progetto).
 export const STATI_GIUSTIFICATIVO_VALIDI = [STATO_GIUSTIFICATIVO.INVIATO, ...STATI_GIUSTIFICATIVO_CONTABILI]
 
+/**
+ * True se lo stato di un giustificativo è contabile (verificato/in_pagamento/pagato).
+ * @param {string} stato
+ * @returns {boolean}
+ */
+export function isContabile(stato) {
+  return STATI_GIUSTIFICATIVO_CONTABILI.includes(stato)
+}
+
 // Stati della submission del modulo libero (InviiGiustificativiNoLogin).
 // Il giustificativo nasce solo al riscontro, con Stato `inviato`.
 export const STATO_SUBMISSION = {

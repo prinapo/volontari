@@ -10,12 +10,9 @@
  *
  * Nessuna scrittura: sola lettura dello stato salvato.
  */
-import { STATI_GIUSTIFICATIVO_CONTABILI, STATO_GIUSTIFICATIVO } from './constants'
+import { isContabile, STATO_GIUSTIFICATIVO } from './constants'
 import { calcolaErogabile, residuoDaCoprire } from './erogabile'
-
-function isContabile(stato) {
-  return STATI_GIUSTIFICATIVO_CONTABILI.includes(stato)
-}
+import { parseNum } from './number'
 
 /**
  * Calcolo erogabile/residuo del progetto (importi). I dati non superano mai il
@@ -27,9 +24,9 @@ function isContabile(stato) {
  * @returns {{erogabile: number, pagato: number, residuo: number}}
  */
 function calcoloErogabile(row) {
-  const dbVerificato = Number.parseFloat(row.totaleVerificato) || 0
+  const dbVerificato = parseNum(row.totaleVerificato)
   const giustVerificato = (row.giustificativi || []).reduce(
-    (acc, g) => (!g.Invalidato && isContabile(g.Stato) ? acc + (Number.parseFloat(g.Importo) || 0) : acc),
+    (acc, g) => (!g.Invalidato && isContabile(g.Stato) ? acc + parseNum(g.Importo) : acc),
     0
   )
   const totaleVerificato = dbVerificato || giustVerificato
@@ -38,8 +35,8 @@ function calcoloErogabile(row) {
     totaleVerificato,
     percentualeRimborso: row.percentualeRimborso
   })
-  const pagato = Number.parseFloat(row.totalePagato) || 0
-  const inPagamento = Number.parseFloat(row.totaleInPagamento) || 0
+  const pagato = parseNum(row.totalePagato)
+  const inPagamento = parseNum(row.totaleInPagamento)
   return { erogabile, pagato, residuo: residuoDaCoprire(erogabile, pagato + inPagamento) }
 }
 
@@ -67,7 +64,7 @@ export function residuoErogabile(row) {
  * @returns {{key: string, label: string, color: string}}
  */
 export function calcolaStatoRiga(row) {
-  const totaleRendicontato = Number.parseFloat(row?.totaleRendicontato) || 0
+  const totaleRendicontato = parseNum(row?.totaleRendicontato)
   if (totaleRendicontato === 0) {
     return { key: 'nessuno', label: 'Non ricevuta', color: 'grey' }
   }

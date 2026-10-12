@@ -1,22 +1,11 @@
 <template>
-  <q-dialog v-model="model" persistent :full-width="$q.screen.lt.sm" @show="initData">
-    <q-card class="bg-grey-1">
-      <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6">Riconcilia giustificativo</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-card-section class="text-caption text-grey-7 q-pt-sm">
-        {{ submission?.nome_richiedente }} {{ submission?.cognome_richiedente }} — {{ submission?.email }}
-      </q-card-section>
+  <AppDialog v-model="model" :full-width="$q.screen.lt.sm" card-class="bg-grey-1" footer-class="q-pa-md q-pb-xl" @show="initData">
+    <template #header>
+      <div class="text-h6">Riconcilia giustificativo</div>
+    </template>
+    <q-card-section class="text-caption text-grey-7 q-pt-sm">
+      {{ submission?.nome_richiedente }} {{ submission?.cognome_richiedente }} — {{ submission?.email }}
+    </q-card-section>
 
       <q-card-section v-if="famigliaDetail?.Nome_Famiglia" class="q-pt-none q-pb-sm">
         <div class="row items-center">
@@ -408,31 +397,7 @@ type="tel"
               <q-separator v-if="submission?.allegato" class="q-my-sm" />
               <div v-if="submission?.allegato" class="row items-center q-gutter-sm q-pt-xs">
                 <span class="text-caption text-grey-7 q-mr-xs">Allegato:</span>
-                <q-btn
-                  type="a"
-                  :href="assetUrl(submission.allegato)"
-                  target="_blank"
-                  flat
-                  round
-                  dense
-                  icon="open_in_new"
-                  size="sm"
-                  color="primary"
-                >
-                  <q-tooltip>Apri allegato</q-tooltip>
-                </q-btn>
-                <q-btn
-                  type="a"
-                  :href="assetUrl(submission.allegato, true)"
-                  flat
-                  round
-                  dense
-                  icon="file_download"
-                  size="sm"
-                  color="primary"
-                >
-                  <q-tooltip>Scarica allegato</q-tooltip>
-                </q-btn>
+                <AllegatoButtons :allegato="submission.allegato" color="primary" />
               </div>
             </q-card-section>
           </q-card>
@@ -459,34 +424,29 @@ rows="2" />
         </div>
       </div>
 
-      <q-card-actions align="right" class="q-pa-md q-pb-xl">
-        <q-btn
-v-close-popup
-flat
-dense
-size="sm"
-label="Annulla" />
-        <q-btn
-          label="Crea giustificativo"
-          color="primary"
-          dense
-          size="sm"
-          :disable="!selectedProgettoId || savingField !== null || hasUnresolvedDiffs"
-          :loading="saving"
-          data-testid="btn-crea-giustificativo"
-          @click="confirmReconcile"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn
+        label="Crea giustificativo"
+        color="primary"
+        dense
+        size="sm"
+        :disable="!selectedProgettoId || savingField !== null || hasUnresolvedDiffs"
+        :loading="saving"
+        data-testid="btn-crea-giustificativo"
+        @click="confirmReconcile"
+      />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
+import AllegatoButtons from 'components/Common/AllegatoButtons.vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import { verificaService } from 'src/services/verifica.service'
-import { assetUrl } from 'src/utils/assets'
 import { displayFullName } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useVerificaStore } from 'stores/verifica.store'

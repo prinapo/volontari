@@ -56,7 +56,7 @@ describe('giustificativi store', () => {
     expect(store.error).toBe('Err')
   })
 
-  it('createGiustificativo delega allo use case con origine volontario', async () => {
+  it('createGiustificativo delega allo use case', async () => {
     mockCreaGiustificativo.mockResolvedValue({ id: 'g-1' })
     const store = useGiustificativiStore()
     await store.createGiustificativo(
@@ -64,8 +64,7 @@ describe('giustificativi store', () => {
       new File([], 'x')
     )
     expect(mockCreaGiustificativo).toHaveBeenCalledWith(
-      expect.objectContaining({ Progetto: 1, Famiglia: 'fam-1', file: expect.any(File) }),
-      { origine: 'volontario' }
+      expect.objectContaining({ Progetto: 1, Famiglia: 'fam-1', file: expect.any(File) })
     )
     expect(store.saving).toBe(false)
     expect(store.error).toBeNull()

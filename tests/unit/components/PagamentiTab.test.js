@@ -50,7 +50,8 @@ vi.mock('src/utils/assets', () => ({
 }))
 
 vi.mock('src/utils/formatters', () => ({
-  formatDate: () => '2026-06-30'
+  formatDate: () => '2026-06-30',
+  formatNumber: value => (Number.parseFloat(value) || 0).toFixed(2)
 }))
 
 vi.mock('src/utils/iban-validator', () => ({
@@ -59,6 +60,7 @@ vi.mock('src/utils/iban-validator', () => ({
 }))
 
 vi.mock('quasar', () => ({
+  debounce: fn => fn,
   useQuasar: () => ({
     screen: { lt: { sm: false } },
     dialog: (...args) => mockDialog(...args)

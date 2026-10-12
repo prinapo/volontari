@@ -1,23 +1,10 @@
 <template>
-  <q-dialog v-model="visible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Contatti di {{ famiglia?.Nome_Famiglia }}</div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
+  <AppDialog v-model="visible">
+    <template #header>
+      <div class="text-h6">Contatti di {{ famiglia?.Nome_Famiglia }}</div>
+    </template>
 
-      <q-separator />
-
-      <template v-if="!hideExisting">
+    <template v-if="!hideExisting">
         <q-card-section>
           <div class="text-subtitle1 q-mb-sm">Volontari assegnati</div>
         <q-table
@@ -221,34 +208,34 @@ color="negative"
         </div>
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
+    </template>
+  </AppDialog>
 
-  <ContattoDialog v-model="showNewContatto" @saved="onNewContattoSaved" />
+  <ContattoFormDialog v-model="showNewContatto" @saved="onNewContattoSaved" />
 
-  <q-dialog v-model="showRoleDialog" persistent>
-    <q-card>
-      <q-card-section class="text-center">
-        <div class="text-h6 q-mb-md">Associare {{ newContattoNome }} alla famiglia?</div>
-        <div class="text-body2 text-grey q-mb-lg">
-          Scegli come aggiungere il contatto alla famiglia {{ famiglia?.Nome_Famiglia }}
-        </div>
-        <div class="row q-gutter-sm justify-center">
-          <q-btn color="primary" icon="badge" label="Volontario" @click="assignNewContatto('Volontario')" />
-          <q-btn color="secondary" icon="person_add" label="Genitore" @click="assignNewContatto('Genitore')" />
-          <q-btn flat color="grey" icon="person_off" label="Solo contatto" @click="showRoleDialog = false" />
-        </div>
-      </q-card-section>
-    </q-card>
-  </q-dialog>
+  <AppDialog v-model="showRoleDialog" hide-footer>
+    <template #header>
+      <div class="text-h6">Associare {{ newContattoNome }} alla famiglia?</div>
+    </template>
+    <q-card-section>
+      <div class="text-body2 text-grey q-mb-lg">
+        Scegli come aggiungere il contatto alla famiglia {{ famiglia?.Nome_Famiglia }}
+      </div>
+      <div class="row q-gutter-sm justify-center">
+        <q-btn color="primary" icon="badge" label="Volontario" @click="assignNewContatto('Volontario')" />
+        <q-btn color="secondary" icon="person_add" label="Genitore" @click="assignNewContatto('Genitore')" />
+        <q-btn flat color="grey" icon="person_off" label="Solo contatto" @click="showRoleDialog = false" />
+      </div>
+    </q-card-section>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { emailService } from 'src/services/email.service'
@@ -256,7 +243,7 @@ import { gestioneService } from 'src/services/gestione.service'
 import { enrichWithEmails } from 'src/utils/enrichment'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useGestioneStore } from 'stores/gestione.store'
-import ContattoDialog from './ContattoDialog.vue'
+import ContattoFormDialog from './ContattoFormDialog.vue'
 
 const $q = useQuasar()
 

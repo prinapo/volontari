@@ -14,10 +14,6 @@ const STORICO_FIELDS = [
 ].join(',')
 
 export const comunicazioniService = {
-  ping() {
-    return api.get('/communications/ping')
-  },
-
   countRecipients(payload) {
     return api.post('/communications/recipients', payload)
   },

@@ -39,14 +39,14 @@ export function eventoDichiarato(machine, statoCorrente, evento) {
  *         l'evento non è dichiarato per quello stato.
  * @returns {string} lo stato di destinazione
  */
-export function calcolaStatoSuccessivo(machine, statoCorrente, evento, ctx = {}) {
+export function calcolaStatoSuccessivo(machine, statoCorrente, evento) {
   if (statoCorrente == null || statoCorrente === '') {
     throw new TransizioneNonValidaError(statoCorrente, evento, 'stato corrente assente')
   }
   if (!eventoDichiarato(machine, statoCorrente, evento)) {
     throw new TransizioneNonValidaError(statoCorrente, evento)
   }
-  return machine.transition(statoCorrente, { type: evento, ...ctx }).value
+  return machine.transition(statoCorrente, { type: evento }).value
 }
 
 /**
@@ -82,13 +82,12 @@ export async function creaConStato({ machine, campo = 'Stato', stato, extra = {}
  * @param {string} [input.campo='Stato'] - nome del campo di stato persistito
  * @param {string} input.statoCorrente
  * @param {string} input.evento
- * @param {Object} [input.ctx] - dati extra passati all'evento (guardie)
  * @param {Object} [input.extra] - altri campi da includere nella patch
  * @param {(patch: Object) => Promise<void>} [input.scrivi]
  * @returns {Promise<string>} lo stato di destinazione
  */
-export async function transita({ machine, campo = 'Stato', statoCorrente, evento, ctx = {}, extra = {}, scrivi }) {
-  const target = calcolaStatoSuccessivo(machine, statoCorrente, evento, ctx)
+export async function transita({ machine, campo = 'Stato', statoCorrente, evento, extra = {}, scrivi }) {
+  const target = calcolaStatoSuccessivo(machine, statoCorrente, evento)
   if (typeof scrivi === 'function') {
     await scrivi({ ...extra, [campo]: target })
   }

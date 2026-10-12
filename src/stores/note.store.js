@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { noteProgettiService } from 'src/services/note-progetti.service'
 import { creaNota } from 'src/usecases/noteProgetti'
+import { apiErrorMessage } from 'src/utils/errors'
 import { useAuthStore } from 'stores/auth.store'
 
 export const useNoteStore = defineStore('note', {
@@ -26,27 +27,28 @@ export const useNoteStore = defineStore('note', {
           [progettoId]: res.data.data || []
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento delle note'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento delle note')
       } finally {
         this.loading = false
       }
     },
 
-    async createNota(progettoId, testo, origine = 'volontario') {
+    async createNota(progettoId, testo) {
       this.saving = true
       this.error = null
       try {
         const authStore = useAuthStore()
-        const created = await creaNota(
-          { Progetto: progettoId, Testo: testo, AutoreNome: authStore.userName || null },
-          { origine }
-        )
+        const created = await creaNota({
+          Progetto: progettoId,
+          Testo: testo,
+          AutoreNome: authStore.userName || null
+        })
         this.dataByProgetto = {
           ...this.dataByProgetto,
           [progettoId]: [created, ...(this.dataByProgetto[progettoId] || [])]
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione della nota'
+        this.error = apiErrorMessage(error, 'Errore nella creazione della nota')
         throw error
       } finally {
         this.saving = false

@@ -8,23 +8,24 @@ This document describes the software quality stack adopted for the volontari pro
 
 ### 1. ESLint (Static Analysis — JS/Vue)
 
-**Version:** 8.x  
-**Config:** `.eslintrc.cjs`  
-**Ignored:** `tests/`, `scripts/`, `*.config.cjs`, `dist/`, `.quasar/`
+**Version:** 10.x (flat config)
+**Config:** `eslint.config.js`
+**Ignored:** `dist/`, `node_modules/`, `.quasar/`, `src-pwa/`, `tests/e2e/obsolete/`, `directus-extensions/`
 
 **Plugins added:**
 
-| Plugin | Purpose |
-|---|---|
-| `eslint-plugin-vue` | Vue 3 recommended rules |
-| `eslint-plugin-import` | Import ordering, unresolved path detection |
-| `eslint-plugin-unicorn` | Modern JS best practices |
-| `eslint-plugin-sonarjs` | Cognitive complexity, duplication, bug patterns |
-| `eslint-plugin-security` | Detect insecure patterns (eval, regex DoS, etc.) |
-| `eslint-plugin-promise` | Proper promise/async handling |
+| Plugin                   | Purpose                                           |
+| ------------------------ | ------------------------------------------------- |
+| `eslint-plugin-vue`      | Vue 3 recommended rules                           |
+| `eslint-plugin-import`   | Import ordering, unresolved path detection        |
+| `eslint-plugin-unicorn`  | Modern JS best practices                          |
+| `eslint-plugin-sonarjs`  | Cognitive complexity, duplication, bug patterns   |
+| `eslint-plugin-security` | Detect insecure patterns (eval, regex DoS, etc.)  |
+| `eslint-plugin-promise`  | Proper promise/async handling                     |
 | `eslint-config-prettier` | Disables ESLint rules that conflict with Prettier |
 
 **Key rules overridden:**
+
 - `vue/multi-word-component-names: off` (Quasar convention)
 - `vue/require-default-prop: off`
 - `no-console: warn` (only `warn` and `error` allowed)
@@ -36,6 +37,7 @@ This document describes the software quality stack adopted for the volontari pro
 - `unicorn/prefer-string-replace-all: error` (use `replaceAll` over `replace` with regex)
 
 **Commands:**
+
 ```bash
 npm run lint                 # Lint src/
 npm run lint -- --fix        # Auto-fix
@@ -48,17 +50,19 @@ npm run lint -- --fix        # Auto-fix
 **Rules:** `semi: false`, `singleQuote: true`, `trailingComma: "none"`, `printWidth: 120`, `arrowParens: "avoid"`
 
 **Command:**
+
 ```bash
 npm run format
 ```
 
 ### 3. Stylelint (SCSS Linting)
 
-**Version:** 16.x  
+**Version:** 17.x  
 **Config:** `.stylelintrc.cjs`  
 **Standard config:** `stylelint-config-standard-scss`
 
 **Command:**
+
 ```bash
 npm run lint:css             # Lint src/**/*.scss
 npm run lint:css -- --fix    # Auto-fix
@@ -66,7 +70,7 @@ npm run lint:css -- --fix    # Auto-fix
 
 ### 4. commitlint (Commit Convention)
 
-**Version:** 19.x  
+**Version:** 21.x  
 **Config:** `commitlint.config.cjs`  
 **Standard:** `@commitlint/config-conventional`
 
@@ -75,6 +79,7 @@ npm run lint:css -- --fix    # Auto-fix
 **Format:** `type(scope): description`
 
 **Examples:**
+
 ```
 feat: add export CSV button
 fix(verifica): prevent duplicate rows on sort
@@ -89,26 +94,28 @@ Enforced via Husky `commit-msg` hook.
 **lint-staged version:** 17.x
 
 **Hooks:**
-| Hook | Action |
-|---|---|
+
+| Hook         | Action           |
+| ------------ | ---------------- |
 | `pre-commit` | Runs lint-staged |
-| `commit-msg` | Runs commitlint |
+| `commit-msg` | Runs commitlint  |
 
 **lint-staged rules:**
 
-| Pattern | Actions |
-|---|---|
-| `*.js` | ESLint --fix → Prettier --write |
-| `*.vue` | ESLint --fix |
-| `*.scss` | Stylelint --fix → Prettier --write |
-| `*.json`, `*.md` | Prettier --write |
+| Pattern          | Actions                            |
+| ---------------- | ---------------------------------- |
+| `*.js`           | ESLint --fix → Prettier --write    |
+| `*.vue`          | ESLint --fix                       |
+| `*.scss`         | Stylelint --fix → Prettier --write |
+| `*.json`, `*.md` | Prettier --write                   |
 
 ### 6. knip (Dead Code Detection)
 
-**Version:** 5.x  
+**Version:** 6.x
 **Config:** In `package.json` under `"knip"` key
 
 **Command:**
+
 ```bash
 npm run knip
 ```
@@ -118,6 +125,7 @@ npm run knip
 ### 7. npm audit (Security)
 
 **Commands:**
+
 ```bash
 npm run audit            # Show vulnerabilities (high+)
 npm run audit:fix        # Auto-fix vulnerabilities
@@ -127,11 +135,12 @@ Dependabot is configured in `.github/dependabot.yml` to open automatic PRs for d
 
 ### 8. Playwright (E2E Tests)
 
-**Version:** 1.40+  
+**Version:** 1.63+  
 **Config:** `tests/e2e/playwright.config.js`  
 **Test dir:** `tests/e2e/specs/`
 
 **Commands:**
+
 ```bash
 npm run test:e2e              # Headless
 npm run test:e2e:ui           # Interactive UI mode
@@ -161,25 +170,18 @@ npx playwright test --grep @smoke  # Run smoke tests only
 
 ## Environment Consistency
 
-| File | Purpose |
-|---|---|
+| File            | Purpose                                        |
+| --------------- | ---------------------------------------------- |
 | `.editorconfig` | Editor settings (indent, charset, line ending) |
-| `.nvmrc` | Node.js version pinning (20) |
-| `.env.example` | Environment variable template |
+| `.nvmrc`        | Node.js version pinning (20)                   |
+| `.env.example`  | Environment variable template                  |
 
-## Reference: Remaining Warnings
+## Reference: stato corrente
 
-After the initial setup, these warnings remain (all non-blocking):
-
-| File | Warning | Severity |
-|---|---|---|
-| `src/stores/verifica.store.js` | Cognitive complexity 27/45/32 (3 functions) | Refactoring needed |
-| `src/stores/auth.store.js` | Cognitive complexity 26 | Refactoring needed |
-| `src/stores/gestione.store.js` | Cognitive complexity 29 | Refactoring needed |
-| `src/components/Gestione/ContattoDialog.vue` | Cognitive complexity 35 | Refactoring needed |
-| `src/stores/pagamenti.store.js` | Unused import `contattiService` | Can be removed |
-| `src/services/contatti.service.js` | Duplicate string literal 8x | Extract constant |
-| `src/services/gestione.service.js` | Duplicate string literal 8x | Extract constant |
+`npm run lint` gira con `--max-warnings 0`: non ci sono warning ammessi in
+`src/`. Le complessità cognitive un tempo segnalate sono state rientrate; la
+duplicazione storica dei messaggi d'errore è stata centralizzata in
+`apiErrorMessage` (`src/utils/errors.js`).
 
 ## Recommended Workflow
 

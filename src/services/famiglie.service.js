@@ -142,27 +142,6 @@ export const famiglieService = {
     })
   },
 
-  getReferentiByFamiglia(famigliaId) {
-    return api.get('/items/Famiglie_Contatti', {
-      params: {
-        'filter[Famiglia][_eq]': famigliaId,
-        'filter[Ruolo_nella_Famiglia][_eq]': RUOLI_FAMIGLIA.REFERENTE,
-        fields: [
-          'id',
-          'Contatto.id_contatto',
-          'Contatto.Nome',
-          'Contatto.Cognome',
-          'Contatto.user_id',
-          'Contatto.Numero_di_cellulare',
-          'Contatto.Numero_di_telefono',
-          'Contatto.email.id',
-          'Contatto.email.email_address',
-          'Contatto.email.Primary'
-        ].join(',')
-      }
-    })
-  },
-
   getContattiByFamiglie(famigliaIds) {
     const idList = Array.isArray(famigliaIds) ? famigliaIds.join(',') : famigliaIds
     return api.get('/items/Famiglie_Contatti', {

@@ -1,25 +1,27 @@
 # Architecture Document
 
-**Version:** 2.1.0
-**Last Updated:** 2026-05-26
-**Status:** Final
+**Version:** 3.0.0
+**Last Updated:** 2026-10-09
+**Status:** Current
 
-## Change Log
-
-| Date | Version | Author | Change |
-|---|---|---|---|
-| 2026-05-25 | 1.0.0 | System | Initial draft |
-| 2026-05-25 | 1.1.0 | System | Final — test suite 43/46 ✅; fixed email query, Dati bancari expansion, Elimina button |
-| 2026-05-25 | 2.0.0 | System | Final — added Verifica/Rendicontazione page, AppLayout with sidebar, role-based routing, initFromStorage boot flow |
+> Fonti di verità primarie: `AGENTS.md` (convenzioni e layer),
+> `docs/usecases-catalog.md` (azioni di business → entry point),
+> `docs/state-management.md` (store e macchine a stati).
 
 ---
 
 ## 1. Overview
 
-This document describes the architecture of the **Portale Volontario** application, a Quasar (Vue 3) SPA that consumes a Directus backend. The application was migrated from Appsmith.
+**Portale Volontario** è una SPA Quasar (Vue 3) che consuma un backend Directus
+11.x. Nata come migrazione da Appsmith, gestisce il ciclo di vita dei rimborsi
+volontari: famiglie/progetti, giustificativi, verifica, rendicontazione,
+pagamenti, riconciliazione del modulo libero, comunicazioni email e
+amministrazione.
 
-**Target domain:** `https://volontari.sostienilsostegno.com`
-**Backend API:** `https://app.sostienilsostegno.com`
+- **Target:** `https://volontari.sostienilsostegno.com`
+- **Backend API:** `https://app.sostienilsostegno.com` (dev: `development…`)
+- **Archivio estensioni Directus:** `directus-extensions/` (comunicazioni, fuori
+  dal bundle SPA).
 
 ---
 
@@ -28,39 +30,23 @@ This document describes the architecture of the **Portale Volontario** applicati
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        BROWSER                                │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │               Quasar SPA (Vue 3)                     │    │
-│  │                                                      │    │
-│  │  ┌──────────┐  ┌────────┐  ┌────────────────────┐  │    │
-│  │  │  Router   │  │  Pinia │  │ Axios Interceptor  │  │    │
-│  │  │ (Vue-Rtr) │  │ Stores │  │ (auto-refresh 401) │  │    │
-│  │  └────┬─────┘  └────────┘  └──────┬─────────────┘  │    │
-│  │       │                            │                │    │
-│  │  ┌────▼────────────────────────────▼─────────────┐  │    │
-│  │  │         Pages & Components                     │  │    │
-│  │  │  Login | Famiglie | Verifica                  │  │    │
-│  │  └───────────────────────────────────────────────┘  │    │
-│  └──────────────────────────┬──────────────────────────┘    │
-└─────────────────────────────┼──────────────────────────────┘
-                               │ HTTPS
-                               ▼
+│  Quasar SPA (Vue 3)                                           │
+│  ┌────────┐  ┌────────┐  ┌──────────┐  ┌───────────────────┐  │
+│  │ Router │  │ Pinia  │  │ Axios    │  │  Pages/Components  │  │
+│  │ (guard)│  │ Stores │  │ (refresh)│  │                    │  │
+│  └───┬────┘  └───┬────┘  └────┬─────┘  └─────────┬─────────┘  │
+│      │           │            │                  │            │
+│      │      usecases/  ← orchestrazione + side-effect         │
+│      │           │            │                  │            │
+│      │      services/  ← sole chiamate Directus REST          │
+│      └───────────┴────────────┴──────────────────┘            │
+└────────────────────────────────┬─────────────────────────────┘
+                                 │ HTTPS (Bearer/cookie JWT)
+                                 ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              Directus Backend (API)                           │
-│         https://app.sostienilsostegno.com                     │
-│                                                              │
-│  /auth            → Authentication & token refresh           │
-│  /users/me        → Current user info                        │
-│  /roles/:id       → Role details                             │
-│  /items/*         → CRUD on collections                      │
-│  /files           → File upload/management                   │
-│  /assets/*        → File download/serve                      │
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │              PostgreSQL Database                    │     │
-│  │  contatti | Famiglie | Famiglie_Contatti           │     │
-│  │  Progetti | Giustificativi | email                 │     │
-│  │  Rendicontazioni | directus_users | directus_files │     │
-│  └────────────────────────────────────────────────────┘     │
+│  Directus 11.x  →  PostgreSQL                                 │
+│  /auth /users/me /roles /items/* /files /assets/*             │
+│  + estensioni endpoint (/communications, /sync/prod)          │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,127 +54,107 @@ This document describes the architecture of the **Portale Volontario** applicati
 
 ## 3. Technology Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Quasar v2 (Vue 3 Composition API) |
-| Build tool | Vite |
-| State management | Pinia |
-| HTTP client | Axios |
-| Router | Vue Router 4 (history mode) |
-| Styling | SCSS + Quasar CSS framework |
-| Testing | Playwright (e2e, 46 tests) |
-| Linting | ESLint + Prettier |
-| Backend | Directus 11.17.4 |
-| Database | PostgreSQL |
+| Layer            | Tecnologia                                           |
+| ---------------- | ---------------------------------------------------- |
+| Framework        | Quasar v2 (Vue 3, Composition API, `<script setup>`) |
+| Build            | Vite (`@quasar/app-vite`)                            |
+| State management | Pinia                                                |
+| HTTP client      | Axios (istanza unica in `src/services/api.js`)       |
+| Router           | Vue Router (history mode) + route guard              |
+| State machine    | `@xstate/fsm` (solo validazione transizioni)         |
+| Export Excel     | `exceljs` (+ `exportFile`/`writeSheet`)              |
+| Grafici          | `echarts` / `vue-echarts`                            |
+| Styling          | SCSS + Quasar                                        |
+| Test             | Vitest (unit) + Playwright (E2E)                     |
+| Qualità          | ESLint · Prettier · Stylelint · knip · Husky         |
+| Backend          | Directus 11.x + PostgreSQL                           |
 
 ---
 
-## 4. Data Flow
+## 4. Layered architecture (regola fondamentale)
+
+Ogni richiesta segue il flusso a strati definito in `AGENTS.md`:
 
 ```
-User Action → Component Event → Pinia Store Action → Service Method → Axios → Directus API
-                                                    │
-                                            Response ← JSON ← Database
-                                                    │
-                              Store updates state → Component re-renders
+Component/Page (presentazione)
+      ↓
+Store Pinia (adapter UI: stato + chiamata allo use case)
+      ↓
+src/usecases/ (validazioni/guardie → scrittura → side-effect obbligatori)
+      ↓
+src/services/ (una funzione = una chiamata Directus; nessuna logica)
+      ↓
+Directus REST API
 ```
 
-### Authentication Flow (Detailed)
+Regole chiave:
 
-See [auth-flow.md](./auth-flow.md)
+- **Un'azione di business = un solo use case**, invocata da ogni entry point
+  (volontario, manager, modulo libero, admin). Catalogo: `docs/usecases-catalog.md`.
+- I componenti **non** chiamano mai `services/` direttamente (i residui noti sono
+  elencati come debito tecnico, non come pattern da imitare).
+- I **valori derivati** (stati riga, totali, erogabile) sono funzioni pure in
+  `src/utils/`; gli **stati persistiti** si scrivono solo via
+  `src/usecases/stato/transita.js`.
+- Gli errori UI usano l'helper unico `apiErrorMessage` (`src/utils/errors.js`).
 
 ---
 
-## 5. Component Tree
+## 5. Page / route map
 
-```
-App.vue
-└── <router-view>
-    ├── LoginPage.vue (public)
-    │   ├── Login form (q-card)
-    │   └── ForgotPasswordDialog (q-dialog)
-    │
-    ├── AppLayout.vue (protected)
-    │   ├── AppHeader (q-header)
-    │   │   ├── User display name + dropdown
-    │   │   ├── Change password (q-dialog)
-    │   │   └── Logout button
-    │   ├── QDrawer sidebar
-    │   │   ├── Famiglie link
-    │   │   └── Verifica link (if canVerifica)
-    │   └── QPageContainer
-    │       └── <router-view>
-    │           ├── FamigliePage.vue
-    │           │   ├── FamigliaInfoCard.vue
-    │           │   │   ├── text (Nome_Famiglia)
-    │           │   │   ├── genitori section (Nome, Email mailto:, Telefono tel:)
-    │           │   │   └── q-expansion-item (Dati bancari)
-    │           │   │       ├── InlineEditableField.vue (IBAN)
-    │           │   │       └── InlineEditableField.vue (Intestatario_CC)
-    │           │   ├── ProgettoSelector.vue (q-select)
-    │           │   ├── Card totali (Totale Giustificativi, Totale Rimborsabile)
-    │           │   └── GiustificativoList.vue
-    │           │       ├── GiustificativoCard.vue (per item)
-    │           │   │   ├── q-badge (Stato: Bozza/Inviato/Verificato/Rifiutato)
-    │           │       │   ├── InlineEditableField.vue (Descrizione, if draft)
-    │           │       │   ├── InlineEditableField.vue (Importo, if draft)
-    │           │       │   ├── InlineEditableField.vue (Data, if draft)
-    │           │       │   ├── a (Apri, allegato link)
-    │           │       │   ├── a (Scarica, allegato download)
-    │           │       │   ├── q-btn (Cambia file, if draft)
-    │           │       │   ├── q-btn (Elimina, if draft)
-    │           │       │   └── q-btn (Invia, if draft)
-    │           │       └── GiustificativoForm.vue (q-dialog for add)
-    │           │           ├── q-input (Descrizione)
-    │           │           ├── q-input (Importo, number)
-    │           │           ├── q-date (Data)
-      │           │           ├── q-select (Stato: Bozza/Inviato)
-    │           │           ├── FileUploader.vue (q-file)
-    │           │           └── q-btn (Salva)
-    │           │
-    │           └── VerificaPage.vue (admin/verifica role only)
-    │               ├── Filtri (AnnoBando, Rendicontazione, Cerca)
-    │               ├── Summary grid (count, rendicontato, rimborsabile, ASPI ready)
-    │               └── q-table (progetti con colonne personalizzate)
-```
+Route protette sotto `AppLayout` (`meta.requiresAuth`), con ruolo richiesto:
+
+| Path               | Page                       | Ruolo                    |
+| ------------------ | -------------------------- | ------------------------ |
+| `/login`           | LoginPage                  | pubblico                 |
+| `/reset-password`  | ResetPasswordPage          | pubblico                 |
+| `/submit`          | SubmitPage (modulo libero) | pubblico (anche loggati) |
+| `/famiglie`        | FamigliePage               | volontario               |
+| `/dashboard`       | DashboardPage              | manager                  |
+| `/verifica`        | VerificaPage               | manager                  |
+| `/pagamenti`       | PagamentiPage              | manager                  |
+| `/riconciliazione` | RiconciliazionePage        | manager                  |
+| `/comunicazioni`   | ComunicazioniPage          | manager                  |
+| `/gestione`        | GestionePage               | manager                  |
+| `/impostazioni`    | ImpostazioniPage           | autenticato              |
+| `/admin`           | AdminPage                  | admin                    |
+| `/progetti/crea`   | CreaProgettoPage           | admin                    |
+
+`/` e il fallback `*` reindirizzano a `/dashboard` (manager) o `/famiglie`
+(volontario).
 
 ---
 
-## 6. Routing Strategy
+## 6. Store Pinia
 
-```
-/login          → LoginPage.vue        (public)
-/               → redirect → /famiglie
-/famiglie       → FamigliePage.vue     (requiresAuth)
-/verifica       → VerificaPage.vue     (requiresAuth + requiredRole: Verifica)
-/:pathMatch*    → redirect → /famiglie
-```
+Gli store sono **adapter UI**, non contengono logica di business duplicata:
 
-**Route guard logic:**
-1. Logged-in user on `/login` → redirect to `/famiglie` (or `/verifica` if `canVerifica`)
-2. Unauthenticated user on protected route → redirect to `/login`
-3. Non-Verifica user on `/verifica` → redirect to `/famiglie`
+`auth`, `famiglie`, `giustificativi`, `verifica`, `pagamenti`, `gestione`,
+`admin`, `dashboard`, `comunicazioni`, `note`, `submit`, `error-log`.
 
-See [auth-flow.md](./auth-flow.md) for detailed route guard code.
+Regole di stato asincrono (da `AGENTS.md`): `{ data/data_*, loading, error }`,
+naming azioni `verb+entity`, nessun ritorno booleano. Dettaglio e macchine a
+stati in `docs/state-management.md`.
 
 ---
 
-## 7. Key Design Decisions
+## 7. Key design decisions
 
-| Decision | Rationale |
-|---|---|
-| SPA (no SSR) | Simpler deployment, Directus handles auth via JWT |
-| Pinia over Vuex | Official recommendation for Vue 3 |
-| Inline editing over modals | Better UX, direct manipulation, less context switching |
-| No backend proxy layer | Directus REST API is sufficient; CORS configured directly |
-| localStorage for JWT | SPA limitation; refresh token mitigates risk |
-| Boot-time auth restore | `auth.store.initFromStorage()` in boot file restores session before mount |
-| Role-based routing | `canVerifica` getter determines visible routes (Famiglie vs Verifica) |
-| Separate email query | Email fetched from `email` table via `_in` filter (not o2m on contatti) to avoid 403 |
-| Axios interceptor for refresh | Automatically catches 401, attempts refresh, retries original request |
-| Cache-buster on GET | `_t=${Date.now()}` param prevents browser caching of API responses |
-| Reject with note | Rifiuto giustificativo obbliga una `NotaRifiuto` (textarea in dialog); salvata su Directus + visibile a volontario |
-| File rename on reject | Allegato rifiutato ridenominato `RIFIUTATO_<data>` sul filesystem (nessuna eliminazione) |
-| IBAN/Intestatario editing inline | Dialog di modifica dati bancari con salvataggio su `PATCH /items/Famiglie/:id` |
-| Global rimborsabile | `totaleRimborsabile` = `min(80% totale rendicontato, allocato)` — unico valore globale per progetto |
-| "Da verificare" stato intermedio | Stato arancione per progetti con giustificativi ancora `Inviato` (dopo aver verificato IBAN) |
+| Decisione                                                                    | Motivazione                                                     |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| SPA cache-buster su GET (`_t`)                                               | Evita caching delle risposte API                                |
+| JWT + refresh su 401 (interceptor)                                           | Sessione trasparente; logica solo in `services/api.js`          |
+| Layer `usecases/`                                                            | Una sola implementazione per azione, side-effect deterministici |
+| Macchine a stati (`@xstate/fsm`)                                             | Unico scrittore degli stati persistiti; ESLint lo impone        |
+| Export Excel centralizzato (`utils/verificaExport` + `utils/xlsxExport`)     | Nessuna logica export nei componenti                            |
+| Helper condivisi (`errors`, `formatters`, `number`, `relations`, `password`) | Eliminare duplicazioni tra store/componenti                     |
+| Estensioni Directus fuori dal frontend                                       | API key/segreti mai nel bundle                                  |
+
+---
+
+## 8. Nota storica
+
+Le versioni precedenti di questo documento citavano una UI a 2 pagine
+(famiglie/verifica) e 4 store. L'applicazione è cresciuta fino alla mappa
+attuale; fare riferimento a codice e `AGENTS.md` per l'elenco aggiornato di
+store, use case e componenti.

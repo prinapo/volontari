@@ -61,7 +61,7 @@
           >
             <template #header>
               <q-item-section>
-                <q-item-label>{{ displayNome(props.row) }}</q-item-label>
+                <q-item-label>{{ displayFullName(props.row, 'nome_cognome') || '—' }}</q-item-label>
                 <q-item-label caption>
                   <q-badge v-if="props.row.IsReferente" color="primary" class="q-mr-xs"> Referente </q-badge>
                   <q-badge
@@ -210,7 +210,7 @@ color="grey-6"
 
       <template #body-cell-nome="props">
         <q-td :props="props">
-          {{ displayNome(props.row) }}
+          {{ displayFullName(props.row, 'nome_cognome') || '—' }}
         </q-td>
       </template>
 
@@ -339,7 +339,7 @@ aria-label="Assegna famiglia"
       </template>
     </q-table>
 
-    <ContattoDialog v-model="showDialog" :edit-item="editingItem" @saved="onSaved" />
+    <ContattoFormDialog v-model="showDialog" :edit-item="editingItem" @saved="onSaved" />
 
     <AssegnaFamigliaDialog
       v-model="showFamiglie"
@@ -349,21 +349,18 @@ aria-label="Assegna famiglia"
 
     <AssegnaReferenteDialog v-model="showReferente" :volontario="referenteTarget" />
 
-    <q-dialog v-model="showComms">
-      <q-card style="min-width: 420px; max-width: 640px">
-        <q-card-section class="text-h6">Comunicazioni inviate</q-card-section>
-        <q-separator />
-        <q-card-section>
-          <StoricoComunicazioni v-if="commsTarget" :contatto-id="commsTarget" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
+    <AppDialog v-model="showComms" :persistent="false" title="Comunicazioni inviate" width="640" hide-footer>
+      <q-card-section>
+        <StoricoComunicazioni v-if="commsTarget" :contatto-id="commsTarget" />
+      </q-card-section>
+    </AppDialog>
   </div>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, watch, onMounted } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import ContactLink from 'components/Common/ContactLink.vue'
 import FieldHistoryButton from 'components/Common/FieldHistoryButton.vue'
 import TableToolbar from 'components/TableToolbar.vue'
@@ -376,10 +373,11 @@ import { revisionsService } from 'src/services/revisions.service'
 import { usersService } from 'src/services/users.service'
 import { tipoBadgeColor } from 'src/utils/badges'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { displayFullName } from 'src/utils/formatters'
 import { useAuthStore } from 'stores/auth.store'
 import AssegnaFamigliaDialog from './AssegnaFamigliaDialog.vue'
 import AssegnaReferenteDialog from './AssegnaReferenteDialog.vue'
-import ContattoDialog from './ContattoDialog.vue'
+import ContattoFormDialog from './ContattoFormDialog.vue'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -476,7 +474,7 @@ const columns = [
   {
     name: 'nome',
     label: 'Nome e Cognome',
-    field: row => displayNome(row),
+    field: row => displayFullName(row, 'nome_cognome') || '—',
     align: 'left',
     sortable: true,
     sort: 'Cognome'
@@ -494,11 +492,6 @@ const columns = [
   { name: 'famiglie', label: 'Famiglie', align: 'center' },
   { name: 'azioni', label: 'Azioni', align: 'center', sortable: false }
 ]
-
-function displayNome(row) {
-  const parts = [row.Nome, row.Cognome].filter(Boolean)
-  return parts.length ? parts.join(' ') : '—'
-}
 
 function computedTipi(row) {
   const tipi = []

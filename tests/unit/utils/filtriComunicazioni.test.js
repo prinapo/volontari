@@ -3,9 +3,9 @@ import {
   assembleFamiglieIdFilter,
   buildContattiRoleFilter,
   intersectIdSets,
-  relId,
   unionIdSets
 } from 'src/utils/filtriComunicazioni'
+import { relId } from 'src/utils/relations'
 
 describe('buildContattiRoleFilter', () => {
   it('ritorna null senza ruoli', () => {
@@ -75,5 +75,6 @@ describe('relId', () => {
   it('estrae l id da oggetto', () => {
     expect(relId({ id: 7 })).toBe(7)
     expect(relId({ id_famiglia: 9 })).toBe(9)
+    expect(relId({ id_progetto: 11 })).toBe(11)
   })
 })

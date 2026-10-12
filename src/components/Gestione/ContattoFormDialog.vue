@@ -1,25 +1,6 @@
 <template>
-  <q-dialog v-model="visible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">
-          {{ isEdit ? 'Modifica Contatto' : 'Nuovo Contatto' }}
-        </div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-section>
+  <AppDialog v-model="visible" :title="isEdit ? 'Modifica Contatto' : 'Nuovo Contatto'">
+    <q-card-section>
         <q-form ref="formRef" @submit.prevent="handleSave">
           <div class="row q-col-gutter-sm q-mb-md">
             <q-input
@@ -129,37 +110,37 @@ aria-label="Chiudi">
         </q-form>
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn
-          v-if="canDeleteContatto"
-          flat
-          dense
-          size="sm"
-          color="negative"
-          icon="delete"
-          label="Elimina contatto"
-          :loading="deletingContatto"
-          @click="confirmEliminaContatto"
-        />
-        <q-space />
-        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-        <q-btn
-          color="primary"
-          label="Salva"
-          :loading="store.saving"
-          :disable="
-            !form.Nome || !form.Cognome || (!!form.Numero_di_cellulare && !/[\d+]/.test(form.Numero_di_cellulare))
-          "
-          @click="handleSave"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+    <template #footer>
+      <q-btn
+        v-if="canDeleteContatto"
+        flat
+        dense
+        size="sm"
+        color="negative"
+        icon="delete"
+        label="Elimina contatto"
+        :loading="deletingContatto"
+        @click="confirmEliminaContatto"
+      />
+      <q-space />
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn
+        color="primary"
+        label="Salva"
+        :loading="store.saving"
+        :disable="
+          !form.Nome || !form.Cognome || (!!form.Numero_di_cellulare && !/[\d+]/.test(form.Numero_di_cellulare))
+        "
+        @click="handleSave"
+      />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, computed, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { emailService } from 'src/services/email.service'
 import { eliminaContatto, eliminaEmail, impostaEmailPrimaria } from 'src/usecases/email'
 import { notifyError, notifySuccess } from 'src/utils/notify'

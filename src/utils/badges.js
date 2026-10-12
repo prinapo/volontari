@@ -141,7 +141,7 @@ export function statoProgettoColor(stato) {
   if (stato === 'in_rendicontazione') return 'orange'
   if (stato === 'rimborso_parziale') return 'warning'
   if (stato === 'chiuso') return 'grey'
-  if (stato === 'valido') return 'info'
+  if (stato === 'validato') return 'info'
   if (stato === 'proposto') return 'grey'
   if (stato === 'approvato') return 'primary'
   return 'grey'

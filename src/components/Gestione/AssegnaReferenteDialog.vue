@@ -1,91 +1,73 @@
 <template>
-  <q-dialog v-model="visible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Assegna Referente</div>
-        <q-space />
+  <AppDialog v-model="visible" title="Assegna Referente">
+    <q-card-section v-if="volontario">
+      <div class="text-body2 q-mb-md">
+        Volontario: <strong>{{ volontario.Nome }} {{ volontario.Cognome }}</strong>
+      </div>
+
+      <div class="text-subtitle2 q-mb-sm">Referenti assegnati</div>
+      <div v-if="assignedReferenti.length === 0" class="text-caption text-grey q-mb-sm">
+        Nessun referente assegnato
+      </div>
+      <div v-for="r in assignedReferenti" :key="r.id" class="row items-center q-gutter-xs q-mb-xs">
+        <span class="text-body2 col">{{ r.Nome }} {{ r.Cognome }}</span>
         <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
+          flat
+          round
+          dense
+          icon="delete"
+          color="negative"
+          size="sm"
+          data-testid="btn-remove-referente"
+          aria-label="Rimuovi referente"
+          @click="removeReferente(r)"
+        >
+          <q-tooltip>Rimuovi referente</q-tooltip>
         </q-btn>
-      </q-card-section>
+      </div>
 
-      <q-separator />
+      <q-separator class="q-my-md" />
 
-      <q-card-section v-if="volontario">
-        <div class="text-body2 q-mb-md">
-          Volontario: <strong>{{ volontario.Nome }} {{ volontario.Cognome }}</strong>
-        </div>
-
-        <div class="text-subtitle2 q-mb-sm">Referenti assegnati</div>
-        <div v-if="assignedReferenti.length === 0" class="text-caption text-grey q-mb-sm">
-          Nessun referente assegnato
-        </div>
-        <div v-for="r in assignedReferenti" :key="r.id" class="row items-center q-gutter-xs q-mb-xs">
-          <span class="text-body2 col">{{ r.Nome }} {{ r.Cognome }}</span>
-          <q-btn
-            flat
-            round
-            dense
-            icon="delete"
-            color="negative"
-            size="sm"
-            data-testid="btn-remove-referente"
-            aria-label="Rimuovi referente"
-            @click="removeReferente(r)"
-          >
-            <q-tooltip>Rimuovi referente</q-tooltip>
-          </q-btn>
-        </div>
-
-        <q-separator class="q-my-md" />
-
-        <div class="text-subtitle2 q-mb-sm">Aggiungi referente</div>
-        <div class="row items-start q-gutter-sm">
-          <q-select
-            v-model="selectedReferente"
-            :options="referenteOptions"
-            option-label="label"
-            option-value="value"
-            emit-value
-            map-options
-            use-input
-            input-debounce="300"
-            dense
-            outlined
-            class="col-12 col-sm"
-            label="Cerca referente..."
-            @filter="filterReferenti"
-          />
-          <q-btn
-            color="primary"
-            icon="person_add"
-            data-testid="btn-add-referente"
-            aria-label="Aggiungi referente"
-            :disable="!selectedReferente"
-            class="q-mt-sm-sm"
-            @click="addReferente"
-          >
-            <q-tooltip>Aggiungi referente</q-tooltip>
-          </q-btn>
-        </div>
-      </q-card-section>
-
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      <div class="text-subtitle2 q-mb-sm">Aggiungi referente</div>
+      <div class="row items-start q-gutter-sm">
+        <q-select
+          v-model="selectedReferente"
+          :options="referenteOptions"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+          use-input
+          input-debounce="300"
+          dense
+          outlined
+          class="col-12 col-sm"
+          label="Cerca referente..."
+          @filter="filterReferenti"
+        />
+        <q-btn
+          color="primary"
+          icon="person_add"
+          data-testid="btn-add-referente"
+          aria-label="Aggiungi referente"
+          :disable="!selectedReferente"
+          class="q-mt-sm-sm"
+          @click="addReferente"
+        >
+          <q-tooltip>Aggiungi referente</q-tooltip>
+        </q-btn>
+      </div>
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Chiudi" />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { contattiService } from 'src/services/contatti.service'
 import { referentiService } from 'src/services/referenti.service'
 import { notifyError, notifySuccess } from 'src/utils/notify'

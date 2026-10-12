@@ -228,254 +228,23 @@
                 <q-tooltip>Riapri progetto</q-tooltip>
               </q-btn>
             </q-card-actions>
-            <q-card-section class="q-pa-sm">
-              <div class="row q-col-gutter-md q-mb-md">
-                <div class="col-12 col-sm-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Dati bancari</div>
-                  <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
-                    Intestatario: {{ props.row.intestatario }}
-                  </div>
-                  <div class="row items-center q-gutter-xs">
-                    <q-badge :color="props.row.iban && props.row.intestatario ? 'positive' : 'warning'" outline>
-                      {{ props.row.iban && props.row.intestatario ? 'Completi' : 'Da completare' }}
-                    </q-badge>
-                    <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      size="sm"
-                      icon="edit"
-                      color="grey-6"
-                      data-testid="btn-edit-bancari"
-                      aria-label="Modifica dati bancari"
-                      @click="openBancariDialog(props.row)"
-                    >
-                      <q-tooltip>Modifica dati bancari</q-tooltip>
-                    </q-btn>
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile {{ props.row.percentualeRimborso }}%</div>
-                  <div class="text-positive text-weight-medium">
-                    {{ formatCurrency(props.row.totaleRimborsabile) }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="row items-center q-gutter-x-sm q-mb-sm">
-                <div class="text-caption text-grey-7">Pagato:</div>
-                <div class="text-body2 text-weight-medium">{{ formatCurrency(props.row.totalePagato) }}</div>
-                <div class="text-caption text-grey-7">/ {{ formatCurrency(props.row.allocato) }}</div>
-                <q-space />
-                <q-badge :color="statoProgettoColor(props.row.statoProgetto)" outline>
-                  {{ statoProgettoLabel(props.row.statoProgetto) }}
-                </q-badge>
-              </div>
-              <div class="row items-center q-gutter-x-sm q-mb-sm">
-                <q-badge :color="statoRiga(props.row).color">
-                  {{ statoRiga(props.row).label }}
-                </q-badge>
-              </div>
-              <q-separator class="q-mb-md" />
-              <div class="text-subtitle2 text-grey-8 q-mb-xs">Genitori</div>
-              <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
-                <q-spinner size="xs" /> Caricamento...
-              </div>
-              <div
-                v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0"
-                class="text-caption text-grey"
-              >
-                Nessun genitore assegnato.
-              </div>
-              <q-list v-else dense class="q-mb-sm">
-                <q-item v-for="g in genitoriCache[props.row.idFamiglia]" :key="g.id" dense class="q-px-none q-py-xs">
-                  <q-item-section><ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []" /></q-item-section>
-                </q-item>
-              </q-list>
-              <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">Volontari</div>
-              <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
-                <q-spinner size="xs" /> Caricamento...
-              </div>
-              <div
-                v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0"
-                class="text-caption text-grey"
-              >
-                Nessun volontario assegnato.
-              </div>
-              <q-list v-else dense class="q-mb-sm">
-                <q-item v-for="v in volontariCache[props.row.idFamiglia]" :key="v.id" dense class="q-px-none q-py-xs">
-                  <q-item-section><ContattoInfoLine :contact="v.Contatto" :emails="v._emails || []" /></q-item-section>
-                </q-item>
-              </q-list>
-              <q-separator />
-            </q-card-section>
-            <q-card-section class="q-pa-sm">
-              <div class="text-subtitle2 text-grey-8 q-mb-sm">Giustificativi — {{ props.row.annoBando || 'N/A' }}</div>
-              <template v-if="props.row.giustificativi?.length > 0">
-                <div v-for="g in props.row.giustificativi || []" :key="g.id" class="q-mb-sm">
-                  <q-card flat bordered>
-                    <q-card-section class="q-pa-sm">
-                      <div class="row q-col-gutter-xs items-start">
-                        <div class="col-12">
-                          <InlineEditableField
-                            :model-value="g.Descrizione"
-                            label="Descrizione"
-                            type="text"
-                            :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :saving="savingField === `${g.id}-Descrizione`"
-                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
-                          />
-                          <div v-if="g.NotaVolontario" class="text-caption text-grey-6 ellipsis-2">
-                            {{ g.NotaVolontario }}
-                          </div>
-                        </div>
-                        <div class="col-6 col-sm-3">
-                          <InlineEditableField
-                            :model-value="g.Importo"
-                            label="Importo"
-                            type="number"
-                            :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :format-display="v => formatCurrency(v)"
-                            :saving="savingField === `${g.id}-Importo`"
-                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
-                          />
-                        </div>
-                        <div class="col-6 col-sm-3">
-                          <InlineEditableField
-                            :model-value="g.Data"
-                            label="Data"
-                            type="date"
-                            :readonly="!canVerifica || g.Stato !== 'inviato'"
-                            :format-display="v => formatDate(v) || '—'"
-                            :saving="savingField === `${g.id}-Data`"
-                            @save="val => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
-                          />
-                        </div>
-                        <div class="col-6 col-sm-3">
-                          <div class="text-caption text-grey">Allegato</div>
-                          <div v-if="g.Allegato" class="row q-gutter-x-xs">
-                            <q-btn
-                              :href="assetUrl(g.Allegato)"
-                              target="_blank"
-                              type="a"
-                              flat
-                              dense
-                              round
-                              icon="open_in_new"
-                              size="sm"
-                              aria-label="Apri allegato"
-                            >
-                              <q-tooltip>Apri allegato</q-tooltip>
-                            </q-btn>
-                            <q-btn
-                              :href="assetUrl(g.Allegato, true)"
-                              type="a"
-                              flat
-                              dense
-                              round
-                              icon="file_download"
-                              size="sm"
-                              aria-label="Scarica allegato"
-                            >
-                              <q-tooltip>Scarica allegato</q-tooltip>
-                            </q-btn>
-                          </div>
-                          <div v-else class="text-grey-5">—</div>
-                        </div>
-                        <div class="col-3 col-sm-1">
-                          <q-badge :color="statoColor(getGiustStato(props.row, g).Stato)" outline>
-                            {{ statoLabel(getGiustStato(props.row, g).Stato) }}
-                          </q-badge>
-                        </div>
-                        <div class="col-12 col-sm-5">
-                          <div v-if="g.Stato === 'inviato'" class="row q-gutter-xs">
-                            <q-btn
-                              dense
-                              flat
-                              icon="check_circle"
-                              :color="ACTION_VERIFY"
-                              size="sm"
-                              data-testid="btn-verify"
-                              aria-label="Verifica"
-                              :loading="verifyingId === g.id"
-                              @click="handleVerify(props.row.idProgetto, g)"
-                            >
-                              <q-tooltip>Verifica</q-tooltip>
-                            </q-btn>
-                            <q-btn
-                              dense
-                              flat
-                              icon="cancel"
-                              :color="ACTION_REJECT"
-                              size="sm"
-                              data-testid="btn-reject"
-                              aria-label="Rifiuta"
-                              :loading="verifyingId === g.id"
-                              @click="handleReject(props.row.idProgetto, g)"
-                            >
-                              <q-tooltip>Rifiuta</q-tooltip>
-                            </q-btn>
-                          </div>
-                          <div v-else-if="g.Stato === 'verificato'" class="row items-center q-gutter-xs">
-                            <q-icon name="check_circle" size="md" color="positive" /><span class="text-body2 text-positive">Verificato</span>
-                            <q-btn
-flat
-dense
-round
-size="sm"
-icon="undo"
-color="grey"
-aria-label="Ripristina"
-@click="handleRevert(props.row.idProgetto, g)">
-                              <q-tooltip>Ripristina come 'inviato'</q-tooltip>
-                            </q-btn>
-                          </div>
-                          <div v-else-if="g.Stato === 'rifiutato'">
-                            <div class="row items-center q-gutter-xs">
-                              <q-icon name="cancel" size="md" color="negative" /><span class="text-body2 text-negative">Rifiutato</span>
-                              <q-btn
-flat
-dense
-round
-size="sm"
-icon="undo"
-color="grey"
-aria-label="Ripristina"
-@click="handleRevert(props.row.idProgetto, g)">
-                                <q-tooltip>Ripristina come 'inviato'</q-tooltip>
-                              </q-btn>
-                            </div>
-                            <div v-if="g.NotaRifiuto" class="text-caption text-grey">
-                              {{ g.NotaRifiuto }}
-                            </div>
-                          </div>
-                          <div v-else-if="g.Stato === 'draft'" class="row q-gutter-xs">
-                            <q-btn
-                              dense
-                              flat
-                              icon="send"
-                              color="primary"
-                              size="sm"
-                              data-testid="btn-send"
-                              aria-label="Invia"
-                              :loading="verifyingId === g.id"
-                              @click="handleSendDraft(props.row.idProgetto, g)"
-                            >
-                              <q-tooltip>Invia</q-tooltip>
-                            </q-btn>
-                          </div>
-                        </div>
-                      </div>
-                    </q-card-section>
-                  </q-card>
-                </div>
-              </template>
-              <div v-else class="text-caption text-grey">Nessun giustificativo presente.</div>
-            </q-card-section>
-            <q-card-section class="q-pa-sm">
-              <NoteProgettoPanel :progetto-id="props.row.idProgetto" origine="verificatore" />
-            </q-card-section>
+            <RendicontazioneRowDetail
+              :row="props.row"
+              :can-verifica="canVerifica"
+              :genitori="genitoriCache[props.row.idFamiglia]"
+              :volontari="volontariCache[props.row.idFamiglia]"
+              :contatti-loading="contattiLoading"
+              :saving-field="savingField"
+              :verifying-id="verifyingId"
+              giust-layout="cards"
+              :stato-riga="statoRiga(props.row)"
+              @edit-bancari="openBancariDialog(props.row)"
+              @save-field="(g, field, val) => handleFieldSave(props.row.idProgetto, g, field, val)"
+              @verify="g => handleVerify(props.row.idProgetto, g)"
+              @reject="g => handleReject(props.row.idProgetto, g)"
+              @revert="g => handleRevert(props.row.idProgetto, g)"
+              @send-draft="g => handleSendDraft(props.row.idProgetto, g)"
+            />
           </q-card>
         </q-expansion-item>
       </div>
@@ -628,223 +397,23 @@ aria-label="Ripristina"
       <q-tr v-if="expandedRows.includes(props.row.idProgetto)" :props="props">
         <q-td colspan="100%" class="q-pa-none">
           <div class="expandable-content bg-grey-1">
-            <div class="q-px-md q-pt-md q-pb-xs">
-              <div class="row q-col-gutter-md q-mb-md">
-                <div class="col-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Dati bancari</div>
-                  <div v-if="props.row.intestatario" class="text-caption text-grey-7 q-mb-xs">
-                    Intestatario: {{ props.row.intestatario }}
-                  </div>
-                  <div class="row items-center q-gutter-xs">
-                    <q-badge :color="props.row.iban && props.row.intestatario ? 'positive' : 'warning'" outline>
-                      {{ props.row.iban && props.row.intestatario ? 'Completi' : 'Da completare' }}
-                    </q-badge>
-                    <span class="text-body2">{{ props.row.iban || 'IBAN mancante' }}</span>
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      size="sm"
-                      icon="edit"
-                      color="grey-6"
-                      data-testid="btn-edit-bancari"
-                      aria-label="Modifica dati bancari"
-                      @click="openBancariDialog(props.row)"
-                    >
-                      <q-tooltip>Modifica dati bancari</q-tooltip>
-                    </q-btn>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="text-subtitle2 text-grey-8 q-mb-xs">Rimborsabile {{ props.row.percentualeRimborso }}%</div>
-                  <div class="text-positive text-weight-medium">
-                    {{ formatCurrency(props.row.totaleRimborsabile) }}
-                  </div>
-                </div>
-              </div>
-              <q-separator class="q-mb-md" />
-              <div class="text-subtitle2 text-grey-8 q-mb-xs">Genitori</div>
-              <div v-if="contattiLoading && !genitoriCache[props.row.idFamiglia]" class="text-caption text-grey">
-                <q-spinner size="xs" /> Caricamento...
-              </div>
-              <div
-                v-else-if="!genitoriCache[props.row.idFamiglia] || genitoriCache[props.row.idFamiglia].length === 0"
-                class="text-caption text-grey"
-              >
-                Nessun genitore assegnato.
-              </div>
-              <q-list v-else dense class="q-mb-sm">
-                <q-item v-for="g in genitoriCache[props.row.idFamiglia]" :key="g.id" dense class="q-px-none q-py-xs">
-                  <q-item-section>
-                    <ContattoInfoLine :contact="g.Contatto" :emails="g._emails || []" />
-                  </q-item-section>
-                </q-item>
-              </q-list>
-              <div class="text-subtitle2 text-grey-8 q-mb-xs q-mt-md">Volontari</div>
-              <div v-if="contattiLoading && !volontariCache[props.row.idFamiglia]" class="text-caption text-grey">
-                <q-spinner size="xs" /> Caricamento...
-              </div>
-              <div
-                v-else-if="!volontariCache[props.row.idFamiglia] || volontariCache[props.row.idFamiglia].length === 0"
-                class="text-caption text-grey"
-              >
-                Nessun volontario assegnato.
-              </div>
-              <q-list v-else dense class="q-mb-sm">
-                <q-item v-for="v in volontariCache[props.row.idFamiglia]" :key="v.id" dense class="q-px-none q-py-xs">
-                  <q-item-section>
-                    <ContattoInfoLine :contact="v.Contatto" :emails="v._emails || []" />
-                  </q-item-section>
-                </q-item>
-              </q-list>
-              <q-separator />
-            </div>
-            <div class="text-subtitle2 q-px-md q-pt-md q-pb-xs text-grey-8">
-              Giustificativi — {{ props.row.annoBando || 'N/A' }}
-            </div>
-
-            <q-list v-if="props.row.giustificativi.length > 0" dense separator class="giust-sub-list">
-              <q-item v-for="g in props.row.giustificativi" :key="g.id" class="giust-item">
-                <q-item-section class="col-3">
-                  <InlineEditableField
-                    :model-value="g.Descrizione"
-                    label="Descrizione"
-                    type="text"
-                    :readonly="!canVerifica || g.Stato !== 'inviato'"
-                    :saving="savingField === `${g.id}-Descrizione`"
-                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Descrizione', val)"
-                  />
-                  <div v-if="g.NotaVolontario" class="text-caption text-grey-6 q-mt-xs ellipsis-2">
-                    {{ g.NotaVolontario }}
-                  </div>
-                </q-item-section>
-
-                <q-item-section class="col-2">
-                  <InlineEditableField
-                    :model-value="g.Importo"
-                    label="Importo"
-                    type="number"
-                    :readonly="!canVerifica || g.Stato !== 'inviato'"
-                    :format-display="v => formatCurrency(v)"
-                    :saving="savingField === `${g.id}-Importo`"
-                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Importo', parseFloat(val))"
-                  />
-                </q-item-section>
-
-                <q-item-section class="col-2">
-                  <InlineEditableField
-                    :model-value="g.Data"
-                    label="Data"
-                    type="date"
-                    :readonly="!canVerifica || g.Stato !== 'inviato'"
-                    :format-display="v => formatDate(v) || '—'"
-                    :saving="savingField === `${g.id}-Data`"
-                    @save="val => handleFieldSave(props.row.idProgetto, g, 'Data', val)"
-                  />
-                </q-item-section>
-
-                <q-item-section class="col-2">
-                  <div v-if="g.Allegato" class="row q-gutter-x-xs">
-                    <q-btn
-                      :href="assetUrl(g.Allegato)"
-                      target="_blank"
-                      type="a"
-                      flat
-                      dense
-                      round
-                      icon="open_in_new"
-                      size="sm"
-                      aria-label="Apri allegato"
-                    >
-                      <q-tooltip>Apri allegato</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      :href="assetUrl(g.Allegato, true)"
-                      type="a"
-                      flat
-                      dense
-                      round
-                      icon="file_download"
-                      size="sm"
-                      aria-label="Scarica allegato"
-                    >
-                      <q-tooltip>Scarica allegato</q-tooltip>
-                    </q-btn>
-                  </div>
-                  <div v-else class="text-grey-5 text-body2">—</div>
-                </q-item-section>
-
-                <q-item-section class="col-1">
-                  <q-badge :color="statoColor(getGiustStato(props.row, g).Stato)" outline>
-                    {{ statoLabel(getGiustStato(props.row, g).Stato) }}
-                  </q-badge>
-                </q-item-section>
-
-                  <q-item-section class="col-2">
-                  <div v-if="g.Stato === 'inviato'" class="row q-gutter-xs">
-                    <q-btn
-                      dense
-                      flat
-                      icon="check_circle"
-                      :color="ACTION_VERIFY"
-                      size="sm"
-                      data-testid="btn-verify"
-                      aria-label="Verifica"
-                      :loading="verifyingId === g.id"
-                      @click="handleVerify(props.row.idProgetto, g)"
-                    >
-                      <q-tooltip>Verifica</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      dense
-                      flat
-                      icon="cancel"
-                      :color="ACTION_REJECT"
-                      size="sm"
-                      data-testid="btn-reject"
-                      aria-label="Rifiuta"
-                      @click="handleReject(props.row.idProgetto, g)"
-                    >
-                      <q-tooltip>Rifiuta</q-tooltip>
-                    </q-btn>
-                  </div>
-                  <div v-else-if="g.Stato === 'verificato'" class="text-positive row items-center q-gutter-xs">
-                    <q-icon name="check_circle" size="sm" />
-                    <span class="text-body2">Verificato</span>
-                  </div>
-                  <div v-else-if="g.Stato === 'rifiutato'">
-                    <div class="text-negative row items-center q-gutter-xs">
-                      <q-icon name="cancel" size="sm" />
-                      <span class="text-body2">Rifiutato</span>
-                    </div>
-                    <div v-if="g.NotaRifiuto" class="text-caption text-grey-7 q-mt-xs">
-                      {{ g.NotaRifiuto }}
-                    </div>
-                  </div>
-                  <div v-else-if="g.Stato === 'draft'" class="row q-gutter-xs">
-                    <q-btn
-                      dense
-                      flat
-                      icon="send"
-                      color="primary"
-                      size="sm"
-                      data-testid="btn-send"
-                      aria-label="Invia"
-                      :loading="verifyingId === g.id"
-                      @click="handleSendDraft(props.row.idProgetto, g)"
-                    >
-                      <q-tooltip>Invia</q-tooltip>
-                    </q-btn>
-                  </div>
-                </q-item-section>
-              </q-item>
-            </q-list>
-
-            <div v-else class="q-pa-md text-grey-5 text-center">Nessun giustificativo per questo progetto.</div>
-
-            <div class="q-px-md q-pb-md">
-              <NoteProgettoPanel :progetto-id="props.row.idProgetto" origine="verificatore" />
-            </div>
+            <RendicontazioneRowDetail
+              :row="props.row"
+              :can-verifica="canVerifica"
+              :genitori="genitoriCache[props.row.idFamiglia]"
+              :volontari="volontariCache[props.row.idFamiglia]"
+              :contatti-loading="contattiLoading"
+              :saving-field="savingField"
+              :verifying-id="verifyingId"
+              giust-layout="list"
+              :stato-riga="statoRiga(props.row)"
+              @edit-bancari="openBancariDialog(props.row)"
+              @save-field="(g, field, val) => handleFieldSave(props.row.idProgetto, g, field, val)"
+              @verify="g => handleVerify(props.row.idProgetto, g)"
+              @reject="g => handleReject(props.row.idProgetto, g)"
+              @revert="g => handleRevert(props.row.idProgetto, g)"
+              @send-draft="g => handleSendDraft(props.row.idProgetto, g)"
+            />
           </div>
         </q-td>
       </q-tr>
@@ -861,45 +430,29 @@ aria-label="Ripristina"
     @save="saveBancari"
   />
 
-  <q-dialog v-model="chiudiProgettoDialog" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div class="text-h6">Chiudi progetto</div>
-        <q-space />
-        <q-btn
-v-close-popup
-flat
-round
-dense
-icon="close"
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <div class="text-body2 q-mb-sm">
-          Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong
-          >?
-        </div>
-        <div class="text-caption text-grey-7 q-mb-md">
-          Una volta chiuso, non verranno più generate nuove proposte di pagamento.
-        </div>
-        <q-input
-          v-model="chiudiProgettoNota"
-          label="Motivo della chiusura (opzionale)"
-          outlined
-          dense
-          type="textarea"
-          autogrow
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat dense size="sm" label="Annulla" />
-        <q-btn color="warning" label="Chiudi progetto" :loading="savingChiudiProgetto" @click="handleChiudiProgetto" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <AppDialog v-model="chiudiProgettoDialog" title="Chiudi progetto">
+    <q-card-section>
+      <div class="text-body2 q-mb-sm">
+        Vuoi chiudere il progetto <strong>{{ chiudiProgettoRow?.famiglia || '' }}</strong
+        >?
+      </div>
+      <div class="text-caption text-grey-7 q-mb-md">
+        Una volta chiuso, non verranno più generate nuove proposte di pagamento.
+      </div>
+      <q-input
+        v-model="chiudiProgettoNota"
+        label="Motivo della chiusura (opzionale)"
+        outlined
+        dense
+        type="textarea"
+        autogrow
+      />
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn color="warning" label="Chiudi progetto" :loading="savingChiudiProgetto" @click="handleChiudiProgetto" />
+    </template>
+  </AppDialog>
 
   <RifiutaGiustificativoDialog
     v-model="rejectDialog"
@@ -924,24 +477,14 @@ aria-label="Chiudi">
 <script setup>
 import { useQuasar } from 'quasar'
 import { computed, onMounted, ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import BancariDialog from 'components/Common/BancariDialog.vue'
-import ContattoInfoLine from 'components/Common/ContattoInfoLine.vue'
-import InlineEditableField from 'components/Common/InlineEditableField.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
-import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
 import { useServerTable } from 'src/composables/useServerTable'
-import { assetUrl } from 'src/utils/assets'
-import {
-  ACTION_VERIFY,
-  ACTION_REJECT,
-  statoColor,
-  statoLabel,
-  statoProgettoColor,
-  statoProgettoLabel
-} from 'src/utils/badges'
+import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
 import { STATO_PROGETTO } from 'src/utils/constants'
-import { formatCurrency, formatDate } from 'src/utils/formatters'
+import { formatCurrency } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { statoProgettoEffettivo } from 'src/utils/statoProgetto'
 import { calcolaStatoRiga } from 'src/utils/statoRiga'
@@ -949,6 +492,7 @@ import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
 import NotaRapidaDialog from './NotaRapidaDialog.vue'
 import ProgettoDetailDialog from './ProgettoDetailDialog.vue'
+import RendicontazioneRowDetail from './RendicontazioneRowDetail.vue'
 import RifiutaGiustificativoDialog from './RifiutaGiustificativoDialog.vue'
 
 const $q = useQuasar()
@@ -1123,10 +667,6 @@ function totalGiustificativi(row) {
 
 function statoRiga(row) {
   return rowStati.value.get(row.idProgetto) || calcolaStatoRiga(row)
-}
-
-function getGiustStato(row, g) {
-  return g
 }
 
 async function loadFamigliaContatti(famigliaId) {

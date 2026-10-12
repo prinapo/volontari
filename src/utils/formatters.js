@@ -26,7 +26,36 @@ export function formatDate(dateStr) {
   })
 }
 
-export { statoColor, statoLabel } from './badges'
+/**
+ * Data e ora italiana (es. 15/05/2024, 14:30:00). Stringa vuota se assente.
+ * @param {string} dateStr - Data in formato ISO
+ * @returns {string}
+ */
+export function formatDateTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('it-IT')
+}
+
+/**
+ * Come `formatCurrency` ma restituisce `—` per valori assenti/booleani falsi
+ * (utile nelle tabelle dove un importo mancante non deve apparire come € 0,00).
+ * @param {number|string|false|null|undefined} value
+ * @returns {string}
+ */
+export function formatCurrencyOrDash(value) {
+  if (value == null || value === '' || value === false) return '—'
+  return formatCurrency(value)
+}
+
+/**
+ * Importo numerico con 2 decimali, senza simbolo di valuta (es. 1.234,56).
+ * @param {number|string} value
+ * @returns {string}
+ */
+export function formatNumber(value) {
+  return (Number.parseFloat(value) || 0).toFixed(2)
+}
 
 /**
  * Compone nome e cognome da un oggetto contatto/persona

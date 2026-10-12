@@ -6,10 +6,9 @@ import { noteProgettiService } from 'src/services/note-progetti.service'
  * (`AutoreNome`) è il nome/cognome dell'utente loggato (tutti gli autori sono loggati).
  *
  * @param {Object} payload - { Progetto, Testo, AutoreNome }
- * @param {Object} _ctx - { origine } per audit/permessi (`volontario`/`verificatore`); non altera la logica
  * @returns {Promise<Object>} la nota creata
  */
-export async function creaNota({ Progetto, Testo, AutoreNome }, _ctx = {}) {
+export async function creaNota({ Progetto, Testo, AutoreNome }) {
   if (!Progetto) {
     throw new Error('Progetto mancante')
   }

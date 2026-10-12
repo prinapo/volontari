@@ -218,8 +218,6 @@ describe('services', () => {
     const { filesService } = await import('src/services/files.service')
     await filesService.upload(new File([], 'x.pdf'), 'folder-1')
     expect(mockPost).toHaveBeenCalledWith('/files', expect.any(FormData))
-    await filesService.updateMeta('f-1', { title: 'x' })
-    expect(mockPatch).toHaveBeenCalledWith('/files/f-1', { title: 'x' })
     await filesService.updateFolder('f-1', 'folder-2')
     expect(mockPatch).toHaveBeenCalledWith('/files/f-1', { folder: 'folder-2' })
     await filesService.renameFile('f-1', 'new.pdf')
@@ -379,8 +377,6 @@ describe('services', () => {
     expect(mockPost).toHaveBeenCalledWith('/items/Pagamenti', { Importo: 100 })
     await pagamentiService.updatePagamento(1, { Importo: 200 })
     expect(mockPatch).toHaveBeenCalledWith('/items/Pagamenti/1', { Importo: 200 })
-    await pagamentiService.deletePagamento(1)
-    expect(mockDelete).toHaveBeenCalledWith('/items/Pagamenti/1')
     await pagamentiService.getBatches({ limit: -1 })
     expect(mockGet).toHaveBeenCalledWith('/items/BatchPagamenti', { params: { limit: -1 } })
     await pagamentiService.createBatch({ Nome: 'B1' })
@@ -462,8 +458,6 @@ describe('services', () => {
     expect(mockPost).toHaveBeenCalledWith('/users', { email: 'a@b.it' })
     await usersService.update('u-1', { status: 'active' })
     expect(mockPatch).toHaveBeenCalledWith('/users/u-1', { status: 'active' })
-    await usersService.sendInvite('a@b.it', 'http://reset')
-    expect(mockPost).toHaveBeenCalledWith('/auth/password/request', { email: 'a@b.it', reset_url: 'http://reset' })
     await usersService.getRoleByName('Volontario')
     expect(mockGet).toHaveBeenCalledWith('/roles', expect.any(Object))
   })
@@ -557,13 +551,6 @@ describe('services', () => {
       '/items/InviiGiustificativiNoLogin',
       expect.objectContaining({ params: expect.objectContaining(paramsInserito) })
     )
-    await verificaService.getSubmissionsInAttesa()
-    expect(mockGet).toHaveBeenCalledWith(
-      '/items/InviiGiustificativiNoLogin',
-      expect.objectContaining({
-        params: expect.objectContaining({ limit: -1 })
-      })
-    )
     await verificaService.updateSubmission('s-1', { stato: 'riconciliato' })
     expect(mockPatch).toHaveBeenCalledWith('/items/InviiGiustificativiNoLogin/s-1', { stato: 'riconciliato' })
   })
@@ -593,15 +580,5 @@ describe('services', () => {
       limit: 20,
       fields: 'id_famiglia,Nome_Famiglia,IBAN,Intestatario_CC'
     })
-    await verificaService.findFamigliaByIBAN('IT00', 'Mario')
-    expect(mockGet).toHaveBeenCalledWith(
-      '/items/Famiglie',
-      expect.objectContaining({
-        params: expect.objectContaining({
-          'filter[IBAN][_eq]': 'IT00',
-          'filter[Intestatario_CC][_eq]': 'Mario'
-        })
-      })
-    )
   })
 })

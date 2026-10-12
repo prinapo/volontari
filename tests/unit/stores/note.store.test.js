@@ -56,17 +56,14 @@ describe('note store', () => {
   })
 
   describe('createNota', () => {
-    it('delega allo use case con origine e autore nome, antepone la nota', async () => {
+    it('delega allo use case con autore nome, antepone la nota', async () => {
       mockCreate.mockResolvedValue({ id: 5, Progetto: 10, Testo: 'nuova', AutoreNome: 'Volontario Test' })
       const store = useNoteStore()
       store.dataByProgetto = { 10: [{ id: 1, Testo: 'vecchia' }] }
 
-      await store.createNota(10, 'nuova', 'verificatore')
+      await store.createNota(10, 'nuova')
 
-      expect(mockCreate).toHaveBeenCalledWith(
-        { Progetto: 10, Testo: 'nuova', AutoreNome: 'Volontario Test' },
-        { origine: 'verificatore' }
-      )
+      expect(mockCreate).toHaveBeenCalledWith({ Progetto: 10, Testo: 'nuova', AutoreNome: 'Volontario Test' })
       expect(store.dataByProgetto[10]).toHaveLength(2)
       expect(store.dataByProgetto[10][0]).toEqual({
         id: 5,

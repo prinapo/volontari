@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { quasarMount } from '../quasar-mount'
 import FamiglieTab from 'src/components/Gestione/FamiglieTab.vue'
+import { quasarMount } from '../quasar-mount'
 
 const mockFetchAll = vi.fn()
 const mockGetContattiByFamiglia = vi.fn()
@@ -77,7 +77,7 @@ describe('FamiglieTab', () => {
       global: {
         stubs: {
           FamigliaDialog: { template: '<div />' },
-          ContattiDialog: { template: '<div />' }
+          FamigliaContattiDialog: { template: '<div />' }
         }
       }
     })

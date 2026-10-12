@@ -1,68 +1,50 @@
 <template>
-  <q-dialog v-model="model" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <div>
-          <div class="text-h6">Modifica dati bancari</div>
-          <div class="text-caption text-grey-7">{{ famigliaName }}{{ beneficiario ? ` — ${beneficiario}` : '' }}</div>
-        </div>
-        <q-space />
-        <q-btn
-v-close-popup
-icon="close"
-flat
-round
-dense
-aria-label="Chiudi">
-          <q-tooltip>Chiudi</q-tooltip>
-        </q-btn>
-      </q-card-section>
+  <AppDialog v-model="model" footer-class="q-pa-md">
+    <template #header>
+      <div>
+        <div class="text-h6">Modifica dati bancari</div>
+        <div class="text-caption text-grey-7">{{ famigliaName }}{{ beneficiario ? ` — ${beneficiario}` : '' }}</div>
+      </div>
+    </template>
 
-      <q-separator />
+    <q-card-section class="q-pt-none">
+      <q-input
+        v-model="localIban"
+        outlined
+        dense
+        label="IBAN"
+        data-testid="bancari-iban"
+        class="q-mb-md"
+        :rules="IBAN_RULES"
+        @update:model-value="val => (localIban = sanitizeIBAN(val))"
+      />
+      <q-input
+        v-model="localIntestatario"
+        outlined
+        dense
+        label="Intestatario conto corrente"
+        data-testid="bancari-intestatario"
+      />
+    </q-card-section>
 
-      <q-card-section class="q-pt-none">
-        <q-input
-          v-model="localIban"
-          outlined
-          dense
-          label="IBAN"
-          data-testid="bancari-iban"
-          class="q-mb-md"
-          :rules="IBAN_RULES"
-          @update:model-value="val => (localIban = sanitizeIBAN(val))"
-        />
-        <q-input
-          v-model="localIntestatario"
-          outlined
-          dense
-          label="Intestatario conto corrente"
-          data-testid="bancari-intestatario"
-        />
-      </q-card-section>
-
-      <q-card-actions align="right" class="q-pa-md">
-        <q-btn
-v-close-popup
-flat
-dense
-size="sm"
-label="Annulla" />
-        <q-btn
-          label="Salva"
-          color="primary"
-          :loading="saving"
-          dense
-          size="sm"
-          :disable="!hasChanges || (!!localIban && !IBAN_REGEX.test(localIban))"
-          @click="handleSave"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn
+        label="Salva"
+        color="primary"
+        :loading="saving"
+        dense
+        size="sm"
+        :disable="!hasChanges || (!!localIban && !IBAN_REGEX.test(localIban))"
+        @click="handleSave"
+      />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { IBAN_RULES, sanitizeIBAN, IBAN_REGEX } from 'src/utils/iban-validator'
 
 const props = defineProps({

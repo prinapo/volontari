@@ -12,45 +12,32 @@
       <q-item v-for="item in noteList" :key="item.id">
         <q-item-section>
           <q-item-label class="text-body2 text-pre-wrap">{{ item.Testo }}</q-item-label>
-          <q-item-label caption> {{ authorName(item) }} · {{ formatDate(item.date_created) }} </q-item-label>
+          <q-item-label caption> {{ authorName(item) }} · {{ formatDateTime(item.date_created) }} </q-item-label>
         </q-item-section>
       </q-item>
     </q-list>
 
-    <div class="row items-end q-gutter-sm">
-      <q-input
-        v-model="testo"
-        class="col"
-        outlined
-        dense
-        autogrow
-        type="textarea"
-        placeholder="Aggiungi una nota..."
-        data-testid="note-input"
-        @keydown.enter.exact.prevent="handleSubmit"
-      />
-      <q-btn
-        color="primary"
-        icon="add"
-        :loading="store.saving"
-        :disable="!testo.trim()"
-        aria-label="Aggiungi nota"
-        data-testid="note-add"
-        @click="handleSubmit"
-      >
-        <q-tooltip>Aggiungi nota</q-tooltip>
-      </q-btn>
-    </div>
+<NotaInput
+      v-model="testo"
+      placeholder="Aggiungi una nota..."
+      testid-input="note-input"
+      testid-button="note-add"
+      button-icon="add"
+      button-label="Aggiungi nota"
+      :loading="store.saving"
+      @submit="handleSubmit"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import NotaInput from 'src/components/Note/NotaInput.vue'
 import { useNoteStore } from 'src/stores/note.store'
+import { formatDateTime } from 'src/utils/formatters'
 
 const props = defineProps({
-  progettoId: { type: [Number, String], required: true },
-  origine: { type: String, default: 'volontario' }
+  progettoId: { type: [Number, String], required: true }
 })
 
 const store = useNoteStore()
@@ -65,17 +52,11 @@ function authorName(item) {
   return [first, last].filter(Boolean).join(' ') || 'Utente'
 }
 
-function formatDate(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('it-IT')
-}
-
 async function handleSubmit() {
   const value = testo.value.trim()
   if (!value) return
   try {
-    await store.createNota(props.progettoId, value, props.origine)
+    await store.createNota(props.progettoId, value)
     testo.value = ''
   } catch {
     // errore già esposto dallo store

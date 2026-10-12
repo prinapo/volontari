@@ -1,5 +1,24 @@
 # Roadmap
 
+## v4.0.x — Pulizia architetturale (Fase 0 + 1) ✅
+
+Interventi di riduzione di duplicazione e complessità (nessun cambio funzionale
+visibile, unit test 792/792 verdi):
+
+- [x] Rimozione boot ridondanti (`boot/axios.js`, `boot/material-icons.js`)
+- [x] Rimozione plumbing morto `origine`/`ctx` da store e use case
+- [x] Fix `statoProgettoColor('validato')` (badge "Validato" ora `info`)
+- [x] Rimozione `FileUploader.vue` e 9 metodi service non usati
+- [x] Riparazione config `knip` (entry pattern corretti)
+- [x] Helper unico errori `apiErrorMessage` (sostituite ~100 duplicazioni)
+- [x] Formattatori unificati su `src/utils/formatters.js`
+- [x] Utility condivise: `number`, `relations`, `password`, `emailPrimarie.pickEmail`
+- [x] `isContabile` unico, `RUOLI_FAMIGLIA` senza collisione
+- [x] Adozione `debounce`/`exportFile` di Quasar
+- [ ] (Fase 2) Deduplicazione markup UI: `AppDialog`, blocchi condivisi, split god component
+- [ ] (Fase 3) Ripristino confini layer: spostare chiamate service/logica fuori dai componenti
+- [ ] (Fase 4) Valutare `@xstate/fsm` vs transition table
+
 ## v3.2.0 — Bug fix & quality
 
 Target: corrente

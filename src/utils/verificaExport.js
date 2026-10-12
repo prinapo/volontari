@@ -1,5 +1,7 @@
 import { statoProgettoLabel } from './badges'
 import { RUOLI_FAMIGLIA } from './constants'
+import { pickEmail } from './emailPrimarie'
+import { displayFullName, formatCurrency, formatDate } from './formatters'
 import { calcolaStatoRendicontazione } from './rendicontazione'
 import { calcolaStatoRiga, residuoErogabile } from './statoRiga'
 
@@ -170,10 +172,6 @@ export const GIUSTIFICATIVI_COLUMNS = [
   { key: 'allegato', header: 'Allegato', width: 30, type: T.TEXT }
 ]
 
-function primaryEmail(emails = []) {
-  return emails.find?.(e => e.Primary)?.email_address || emails[0]?.email_address || ''
-}
-
 function allEmails(emails = []) {
   return emails
     .map(e => e.email_address)
@@ -250,7 +248,7 @@ export function buildContattiRows(rows = [], contattiByFamiglia = {}) {
         ruolo: c.Ruolo || '',
         nome: c.Nome || '',
         cognome: c.Cognome || '',
-        emailPrimaria: primaryEmail(c._emails),
+        emailPrimaria: pickEmail(c._emails) || '',
         emailTutte: allEmails(c._emails),
         cellulare: c.Numero_di_cellulare || '',
         telefono: c.Numero_di_telefono || '',
@@ -307,24 +305,11 @@ export function buildGiustificativiRows(rows = []) {
 
 const RUOLI_CONTATTI = [RUOLI_FAMIGLIA.GENITORE, RUOLI_FAMIGLIA.VOLONTARIO, RUOLI_FAMIGLIA.TUTORE]
 
-function formatDateCell(value) {
-  if (!value) return ''
-  const [year, month, day] = String(value).split('-', 3)
-  if (!year || !month || !day) return ''
-  return `${day.slice(0, 2)}/${month}/${year}`
-}
-
-function formatEuro(value) {
-  const num = Number.parseFloat(value)
-  if (!Number.isFinite(num)) return ''
-  return num.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })
-}
-
 function personaRiga(contatto) {
-  const nome = [contatto?.Nome, contatto?.Cognome].filter(Boolean).join(' ').trim()
+  const nome = displayFullName(contatto, 'nome_cognome')
   const identita = nome ? (contatto?.Ruolo ? `${contatto.Ruolo} · ${nome}` : nome) : ''
   const telefono = contatto?.Numero_di_cellulare || contatto?.Numero_di_telefono || ''
-  const parts = [identita, primaryEmail(contatto?._emails), telefono]
+  const parts = [identita, pickEmail(contatto?._emails), telefono]
     .filter(Boolean)
     .map(part => String(part).trim())
     .filter(Boolean)
@@ -349,7 +334,7 @@ function giustificativiCell(giustificativi = []) {
   return [...giustificativi]
     .filter(g => !g.Invalidato)
     .sort((a, b) => new Date(b.Data) - new Date(a.Data))
-    .map(g => [g.Descrizione, formatEuro(g.Importo), formatDateCell(g.Data), g.Stato].filter(Boolean).join(' — '))
+    .map(g => [g.Descrizione, formatCurrency(g.Importo), formatDate(g.Data), g.Stato].filter(Boolean).join(' — '))
     .filter(Boolean)
     .join('\n')
 }
@@ -360,7 +345,7 @@ function noteCell(note = []) {
     .map(nota => {
       const testo = String(nota.Testo || '').trim()
       if (!testo) return ''
-      const intestazione = [formatDateCell(nota.date_created), String(nota.AutoreNome || '').trim()]
+      const intestazione = [formatDate(nota.date_created), String(nota.AutoreNome || '').trim()]
         .filter(Boolean)
         .join(' · ')
       return intestazione ? `${intestazione} — ${testo}` : testo

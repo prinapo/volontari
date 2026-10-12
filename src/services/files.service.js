@@ -11,10 +11,6 @@ export const filesService = {
     return api.post('/files', formData)
   },
 
-  updateMeta(id, meta) {
-    return api.patch(`/files/${id}`, meta)
-  },
-
   updateFolder(fileId, folderId) {
     return api.patch(`/files/${fileId}`, { folder: folderId })
   },

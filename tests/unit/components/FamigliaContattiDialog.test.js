@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import FamigliaContattiDialog from 'src/components/Gestione/FamigliaContattiDialog.vue'
 import { quasarMount } from '../quasar-mount'
-import ContattiDialog from 'src/components/Gestione/ContattiDialog.vue'
 
 const mockSearchContatti = vi.fn()
 const mockGetByContatto = vi.fn()
@@ -59,7 +59,7 @@ async function flushAll() {
   await nextTick()
 }
 
-describe('ContattiDialog', () => {
+describe('FamigliaContattiDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     gestioneState.error = null
@@ -121,14 +121,14 @@ describe('ContattiDialog', () => {
   })
 
   function mountDialog() {
-    return quasarMount(ContattiDialog, {
+    return quasarMount(FamigliaContattiDialog, {
       props: {
         modelValue: false,
         famiglia: { id_famiglia: 'fam-1', Nome_Famiglia: 'Famiglia Test' }
       },
       global: {
         stubs: {
-          ContattoDialog: { template: '<div />' }
+          ContattoFormDialog: { template: '<div />' }
         }
       }
     })

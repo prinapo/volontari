@@ -51,14 +51,11 @@
   "knip": {
     "$schema": "https://unpkg.com/knip@5/schema.json",
     "entry": [
-      "src/index.template.html",
-      "src/App.vue",
-      "src/router/index.js",
-      "src/stores/index.js",
+      "index.html",
       "src/boot/*.js",
       "src-pwa/*.js",
       "scripts/*.mjs",
-      "quasar.config.cjs"
+      "quasar.config.js"
     ],
     "project": [
       "src/**/*.{js,vue,scss}",
@@ -66,6 +63,7 @@
     ],
     "ignoreDependencies": [
       "@quasar/app-vite",
+      "@quasar/extras",
       "@vitejs/plugin-vue",
       "@vue/test-utils",
       "imapflow",

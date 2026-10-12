@@ -1,6 +1,8 @@
 import { listePagamentiService } from 'src/services/liste-pagamenti.service'
 import { pagamentiService } from 'src/services/pagamenti.service'
 import { STATO_PAGAMENTO } from 'src/utils/constants'
+import { apiErrorMessage } from 'src/utils/errors'
+import { parseNum } from 'src/utils/number'
 import { writeSheet } from 'src/utils/xlsxExport'
 
 /**
@@ -31,10 +33,6 @@ const CONTATORI_AZIONE = {
 
 export function nomeListaBatch(batchNome) {
   return `${batchNome} (batch)`
-}
-
-function parseNum(v) {
-  return Number.parseFloat(v) || 0
 }
 
 async function getPagamentiBatch(batchId) {
@@ -182,7 +180,7 @@ export async function rigeneraListeSelezionate(liste = []) {
     } catch (error) {
       summary.errori.push({
         nome: lista.Nome,
-        message: error.response?.data?.errors?.[0]?.message || error.message || 'Errore sconosciuto'
+        message: apiErrorMessage(error, 'Errore sconosciuto')
       })
     }
   }

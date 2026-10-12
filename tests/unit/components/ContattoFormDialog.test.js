@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import ContattoDialog from 'src/components/Gestione/ContattoDialog.vue'
+import ContattoFormDialog from 'src/components/Gestione/ContattoFormDialog.vue'
 import { quasarMount } from '../quasar-mount'
 
 async function flushDialog() {
@@ -58,7 +58,7 @@ vi.mock('quasar', () => ({
   useQuasar: () => ({ notify: vi.fn() })
 }))
 
-describe('ContattoDialog', () => {
+describe('ContattoFormDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     gestioneState.error = null
@@ -70,7 +70,7 @@ describe('ContattoDialog', () => {
   })
 
   it('loads edit data and emails on open', async () => {
-    const wrapper = quasarMount(ContattoDialog, {
+    const wrapper = quasarMount(ContattoFormDialog, {
       props: {
         modelValue: false,
         editItem: {
@@ -92,7 +92,7 @@ describe('ContattoDialog', () => {
   })
 
   it('manages email list helpers', async () => {
-    const wrapper = quasarMount(ContattoDialog, { props: { modelValue: true } })
+    const wrapper = quasarMount(ContattoFormDialog, { props: { modelValue: true } })
 
     wrapper.vm.addEmail()
     wrapper.vm.addEmail()
@@ -117,7 +117,7 @@ describe('ContattoDialog', () => {
     mockUpdateEmail.mockResolvedValue({})
     mockCreateEmail.mockResolvedValue({})
     mockRemoveEmail.mockResolvedValue({})
-    const wrapper = quasarMount(ContattoDialog, {
+    const wrapper = quasarMount(ContattoFormDialog, {
       props: {
         modelValue: false,
         editItem: { id_contatto: 'cont-1', Nome: 'Mario', Cognome: 'Rossi', IsReferente: false }
@@ -152,7 +152,7 @@ describe('ContattoDialog', () => {
 
   it('creates new contact in create mode', async () => {
     mockCreateGenitore.mockResolvedValue('cont-new')
-    const wrapper = quasarMount(ContattoDialog, { props: { modelValue: true } })
+    const wrapper = quasarMount(ContattoFormDialog, { props: { modelValue: true } })
     wrapper.vm.form.Nome = 'Anna'
     wrapper.vm.form.Cognome = 'Verdi'
     wrapper.vm.emails = [{ email_address: 'anna@test.it' }]

@@ -237,36 +237,6 @@ describe('RendicontazioneTab', () => {
       })
     ).toMatchObject({ label: 'Da completare', color: 'warning' })
     expect(wrapper.vm.totalGiustificativi({ giustificativi: [{ Invalidato: false }, { Invalidato: true }] })).toBe(1)
-    expect(
-      wrapper.vm.getGiustStato(
-        {
-          allocato: 100,
-          totaleVerificato: 100,
-          totalePagato: 100,
-          totaleInPagamento: 0,
-          totaleRendicontato: 100,
-          iban: 'IT',
-          intestatario: 'Mario',
-          giustificativi: [{ Stato: 'pagato', Invalidato: false }]
-        },
-        { Stato: 'pagato' }
-      ).Stato
-    ).toBe('pagato')
-    expect(
-      wrapper.vm.getGiustStato(
-        {
-          allocato: 5000,
-          totaleVerificato: 100,
-          totalePagato: 0,
-          totaleInPagamento: 0,
-          totaleRendicontato: 100,
-          iban: 'IT',
-          intestatario: 'Mario',
-          giustificativi: [{ Stato: 'verificato', Invalidato: false }]
-        },
-        { Stato: 'verificato' }
-      ).Stato
-    ).toBe('verificato')
   })
 
   it('loads family contacts, caches them and handles failures', async () => {

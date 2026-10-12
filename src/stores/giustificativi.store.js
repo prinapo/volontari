@@ -7,6 +7,7 @@ import {
   invalidaGiustificativo,
   inviaGiustificativo
 } from 'src/usecases/giustificativi'
+import { apiErrorMessage } from 'src/utils/errors'
 
 export const useGiustificativiStore = defineStore('giustificativi', {
   state: () => ({
@@ -34,7 +35,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
         const res = await giustificativiService.getByProgetto(progettoId)
         this.data = res.data.data || []
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nel caricamento dei giustificativi'
+        this.error = apiErrorMessage(error, 'Errore nel caricamento dei giustificativi')
       } finally {
         this.loading = false
       }
@@ -44,9 +45,9 @@ export const useGiustificativiStore = defineStore('giustificativi', {
       this.saving = true
       this.error = null
       try {
-        await creaGiustificativo({ ...data, file }, { origine: 'volontario' })
+        await creaGiustificativo({ ...data, file })
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella creazione'
+        this.error = apiErrorMessage(error, 'Errore nella creazione')
         throw error
       } finally {
         this.saving = false
@@ -71,7 +72,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
           if (idx !== -1) this.data[idx] = { ...this.data[idx], ...updated }
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || 'Errore nella modifica'
+        this.error = apiErrorMessage(error, 'Errore nella modifica')
         throw error
       } finally {
         this.saving = false
@@ -91,7 +92,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
           this.data = copy
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invio"
+        this.error = apiErrorMessage(error, "Errore nell'invio")
         throw error
       } finally {
         this.saving = false
@@ -121,7 +122,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
           if (idx !== -1) this.data[idx] = { ...this.data[idx], ...updated }
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'aggiornamento"
+        this.error = apiErrorMessage(error, "Errore nell'aggiornamento")
         throw error
       }
     },
@@ -141,7 +142,7 @@ export const useGiustificativiStore = defineStore('giustificativi', {
           this.data[idx] = { ...this.data[idx], Invalidato: true }
         }
       } catch (error) {
-        this.error = error.response?.data?.errors?.[0]?.message || "Errore nell'invalidazione"
+        this.error = apiErrorMessage(error, "Errore nell'invalidazione")
         throw error
       } finally {
         this.saving = false
