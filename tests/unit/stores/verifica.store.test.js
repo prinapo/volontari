@@ -158,6 +158,15 @@ describe('verifica store', () => {
     expect(store.totalPages).toBe(2)
   })
 
+  it('fetchPage forwards the server-side sort (regression)', async () => {
+    mockGetProgetti.mockResolvedValue({ data: { data: [], meta: { filter_count: 0 } } })
+    mockGetFamiglieBatch.mockResolvedValue({ data: { data: [] } })
+    mockGetGiustificativiByProgetti.mockResolvedValue({ data: { data: [] } })
+    const store = useVerificaStore()
+    await store.fetchPage({ page: 1, limit: 25, sort: '-Famiglia.Nome_Famiglia' })
+    expect(mockGetProgetti).toHaveBeenCalledWith(expect.objectContaining({ sort: '-Famiglia.Nome_Famiglia' }))
+  })
+
   it('fetchPage loads data and maps rows', async () => {
     const project = {
       id_progetto: 1,

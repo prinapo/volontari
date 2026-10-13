@@ -238,19 +238,19 @@ export const useVerificaStore = defineStore('verifica', {
       }
     },
 
-    async fetchPage({ page, limit, search, anno, rendicontazioneFilter, statoProgettoFilter } = {}) {
+    async fetchPage({ page, limit, sort, search, anno, rendicontazioneFilter, statoProgettoFilter } = {}) {
       if (page !== undefined) this.page = page
       if (limit !== undefined) this.limit = limit
 
       this.loading = true
       this.error = null
       try {
-        const sort = 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
+        const sortFinal = sort || 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
 
         const progettiRes = await verificaService.getProgetti({
           page: this.page,
           limit: this.limit,
-          sort,
+          sort: sortFinal,
           search: search === undefined ? undefined : search,
           anno: anno === undefined ? undefined : anno,
           rendicontazioneFilter: rendicontazioneFilter === undefined ? undefined : rendicontazioneFilter,
@@ -269,13 +269,13 @@ export const useVerificaStore = defineStore('verifica', {
       }
     },
 
-    async fetchAllPages({ search, anno, rendicontazioneFilter } = {}) {
+    async fetchAllPages({ sort, search, anno, rendicontazioneFilter } = {}) {
       this.loading = true
       this.error = null
       this.rows = []
       try {
         const PAGE_SIZE = 100
-        const sort = 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
+        const sortFinal = sort || 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
         let page = 1
         let hasMore = true
         const allProjects = []
@@ -284,7 +284,7 @@ export const useVerificaStore = defineStore('verifica', {
           const progettiRes = await verificaService.getProgetti({
             page,
             limit: PAGE_SIZE,
-            sort,
+            sort: sortFinal,
             search: search === undefined ? undefined : search,
             anno: anno === undefined ? undefined : anno,
             rendicontazioneFilter: rendicontazioneFilter === undefined ? undefined : rendicontazioneFilter,
