@@ -159,14 +159,14 @@ const {
     const total = res.data.meta?.filter_count || 0
     return { rows: data, total }
   },
-  { perPage: 25 }
+  { perPage: 25, sortMap: { budget: 'Budget' } }
 )
 
 const assocBudgetCache = reactive({})
 const savingAssoc = ref(false)
 const assocColumns = [
-  { name: 'nome', label: 'Associazione', field: 'Nome', align: 'left' },
-  { name: 'budget', label: 'Budget (€)', align: 'left' },
+  { name: 'nome', label: 'Associazione', field: 'Nome', align: 'left', sortable: true },
+  { name: 'budget', label: 'Budget (€)', field: 'Budget', align: 'left', sortable: true },
   { name: 'actions', label: '', align: 'center' }
 ]
 

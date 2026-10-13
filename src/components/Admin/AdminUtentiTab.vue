@@ -256,13 +256,13 @@ const {
     const total = res.data.meta?.filter_count || 0
     return { rows: data, total }
   },
-  { perPage: 25 }
+  { perPage: 25, sortMap: { name: 'first_name', email: 'email', role: 'role.name' } }
 )
 
 const userColumns = [
-  { name: 'name', label: 'Nome', align: 'left' },
-  { name: 'email', label: 'Email', align: 'left' },
-  { name: 'role', label: 'Ruolo', align: 'center' },
+  { name: 'name', label: 'Nome', align: 'left', sortable: true },
+  { name: 'email', label: 'Email', align: 'left', sortable: true },
+  { name: 'role', label: 'Ruolo', align: 'center', sortable: true },
   { name: 'actions', label: 'Azioni', align: 'center' }
 ]
 

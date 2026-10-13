@@ -67,15 +67,7 @@
   >
     <template #top>
       <div class="full-width">
-        <TableToolbar
-          v-model:search="searchTerm"
-          search-placeholder="Cerca famiglia..."
-          search-aria-label="Cerca famiglia"
-          :loading="loading"
-          refresh
-          @update:search="onSearchChange"
-          @refresh="loadData"
-        >
+        <TableToolbar :loading="loading" refresh @refresh="loadData">
           <template #filters>
             <q-select
               v-model="selectedAnno"
@@ -86,8 +78,24 @@
               dense
               clearable
               label="Anno bando"
-              class="col-12 col-sm-6 col-md-4"
+              class="col-12 col-sm-auto"
+              :style="{ minWidth: '115px' }"
             />
+            <q-input
+              v-model="searchTerm"
+              dense
+              outlined
+              placeholder="Cerca famiglia..."
+              aria-label="Cerca famiglia"
+              clearable
+              debounce="300"
+              class="col-12 col-sm"
+              @update:model-value="onSearchChange"
+            >
+              <template #prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
             <q-select
               v-model="selectedStatoProgetto"
               :options="statoProgettoOptions"
@@ -97,7 +105,8 @@
               dense
               clearable
               label="Stato progetto"
-              class="col-12 col-sm-6 col-md-4"
+              class="col-12 col-sm-auto"
+              :style="{ minWidth: '175px' }"
             />
             <q-btn
               icon="download"
@@ -561,7 +570,18 @@ const {
     })
     return { rows: store.rows, total: store.filterCount }
   },
-  { perPage: 25 }
+  {
+    perPage: 25,
+    sortMap: {
+      annoBando: 'AnnoBando',
+      famiglia: 'Famiglia.Nome_Famiglia',
+      allocato: 'Allocato',
+      rendicontato: 'TotaleImporto',
+      pagato: 'TotalePagato',
+      stato: 'StatoRendicontazione',
+      statoProgetto: 'StatoProgetto'
+    }
+  }
 )
 
 const filteredRows = computed(() => store.rows)
@@ -613,9 +633,9 @@ const columns = [
   { name: 'famiglia', label: 'Famiglia', field: 'famiglia', align: 'left', sortable: true },
   { name: 'allocato', label: 'Allocato', field: 'allocato', align: 'right', sortable: true },
   { name: 'rendicontato', label: 'Rendicontato', field: 'totaleRendicontato', align: 'right', sortable: true },
-  { name: 'pagato', label: 'Pagato', field: 'totalePagato', align: 'right' },
-  { name: 'stato', label: 'Stato rendicontazione', field: 'id', align: 'left' },
-  { name: 'statoProgetto', label: 'Stato progetto', field: 'statoProgetto', align: 'left' },
+  { name: 'pagato', label: 'Pagato', field: 'totalePagato', align: 'right', sortable: true },
+  { name: 'stato', label: 'Stato rendicontazione', field: 'statoRendicontazione', align: 'left', sortable: true },
+  { name: 'statoProgetto', label: 'Stato progetto', field: 'statoProgetto', align: 'left', sortable: true },
   { name: 'actions', label: '', field: 'id', align: 'right' }
 ]
 

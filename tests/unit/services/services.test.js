@@ -471,7 +471,7 @@ describe('services', () => {
         params: expect.objectContaining({
           page: 1,
           limit: 25,
-          sort: 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
+          sort: 'Famiglia.Nome_Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario'
         })
       })
     )

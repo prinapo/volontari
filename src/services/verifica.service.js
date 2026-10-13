@@ -6,7 +6,7 @@ export const verificaService = {
     const params = {
       limit,
       page,
-      sort: sort || 'Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario',
+      sort: sort || 'Famiglia.Nome_Famiglia,AnnoBando,Cognome_Beneficiario,Nome_Beneficiario',
       fields: [
         'id_progetto',
         'AnnoBando',

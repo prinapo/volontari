@@ -467,7 +467,7 @@ const {
 
     return { rows: data, total }
   },
-  { defaultSort: 'Cognome' }
+  { defaultSort: 'Cognome', sortMap: { nome: 'Cognome' } }
 )
 
 const columns = [

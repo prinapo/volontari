@@ -251,10 +251,10 @@ async function handleBulkDelete() {
 }
 
 const erroriColumns = [
-  { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left' },
-  { name: 'level', label: 'Livello', field: 'level', align: 'center' },
+  { name: 'timestamp', label: 'Data', field: 'timestamp', align: 'left', sortable: true },
+  { name: 'level', label: 'Livello', field: 'level', align: 'center', sortable: true },
   { name: 'method', label: 'Metodo', field: 'method', align: 'center' },
-  { name: 'status', label: 'Status', field: 'status', align: 'center' },
+  { name: 'status', label: 'Status', field: 'status', align: 'center', sortable: true },
   { name: 'message', label: 'Messaggio', field: 'message', align: 'left' },
   { name: 'read', label: 'Letto', field: 'read', align: 'center' },
   { name: 'actions', label: '', align: 'center' }
