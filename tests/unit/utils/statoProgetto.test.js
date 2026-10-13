@@ -159,8 +159,8 @@ describe('calcolaStatoProgetto', () => {
     })
   })
 
-  describe('draft esclusi dal calcolo', () => {
-    it('un solo draft non porta a in_rendicontazione', () => {
+  describe('draft avviano la rendicontazione', () => {
+    it('un solo draft porta a in_rendicontazione', () => {
       expect(
         calcolaStatoProgetto({
           statoProgetto: 'accettato',
@@ -168,12 +168,23 @@ describe('calcolaStatoProgetto', () => {
           rimborsato: 0,
           giustificativi: [{ Stato: 'draft' }]
         })
+      ).toBe('in_rendicontazione')
+    })
+
+    it('stato vuoto non conta come giustificativo avviato', () => {
+      expect(
+        calcolaStatoProgetto({ statoProgetto: 'accettato', allocato: 500, rimborsato: 0, giustificativi: [{}] })
       ).toBe('accettato')
     })
 
-    it('stato vuoto non conta come giustificativo valido', () => {
+    it('draft invalidato non avvia la rendicontazione', () => {
       expect(
-        calcolaStatoProgetto({ statoProgetto: 'accettato', allocato: 500, rimborsato: 0, giustificativi: [{}] })
+        calcolaStatoProgetto({
+          statoProgetto: 'accettato',
+          allocato: 500,
+          rimborsato: 0,
+          giustificativi: [{ Stato: 'draft', Invalidato: true }]
+        })
       ).toBe('accettato')
     })
 

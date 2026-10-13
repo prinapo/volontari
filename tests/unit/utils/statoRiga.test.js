@@ -86,15 +86,11 @@ describe('residuoErogabile', () => {
 })
 
 describe('calcolaStatoRiga', () => {
-  it('Non ricevuta quando nessun importo rendicontato', () => {
+  it('Non ricevuta quando nessun importo rendicontato e nessuna bozza', () => {
     expect(calcolaStatoRiga({ ...base, totaleRendicontato: 0, giustificativi: [] })).toMatchObject({
       label: 'Non ricevuta',
       color: 'grey',
       key: 'nessuno'
-    })
-    expect(calcolaStatoRiga({ ...base, totaleRendicontato: 0, giustificativi: [{ Stato: 'draft' }] })).toMatchObject({
-      label: 'Non ricevuta',
-      color: 'grey'
     })
     expect(
       calcolaStatoRiga({
@@ -103,6 +99,31 @@ describe('calcolaStatoRiga', () => {
         giustificativi: [{ Stato: 'rifiutato', Invalidato: false }]
       })
     ).toMatchObject({ label: 'Non ricevuta', color: 'grey' })
+    expect(
+      calcolaStatoRiga({
+        ...base,
+        totaleRendicontato: 0,
+        giustificativi: [{ Stato: 'draft', Invalidato: true }]
+      })
+    ).toMatchObject({ label: 'Non ricevuta', color: 'grey' })
+  })
+
+  it('Bozze da inviare quando ci sono bozze e nessun importo rendicontato', () => {
+    expect(calcolaStatoRiga({ ...base, totaleRendicontato: 0, giustificativi: [{ Stato: 'draft' }] })).toMatchObject({
+      label: 'Bozze da inviare',
+      color: 'warning',
+      key: 'bozze'
+    })
+    expect(
+      calcolaStatoRiga({
+        ...base,
+        totaleRendicontato: 0,
+        giustificativi: [
+          { Stato: 'draft', Invalidato: false },
+          { Stato: 'rifiutato', Invalidato: false }
+        ]
+      })
+    ).toMatchObject({ label: 'Bozze da inviare', color: 'warning' })
   })
 
   it('return undefined senza row', () => {

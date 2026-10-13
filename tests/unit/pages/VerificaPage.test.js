@@ -164,7 +164,7 @@ describe('RendicontazioneTab', () => {
     })
     expect(
       wrapper.vm.statoRiga({ ...base, totaleRendicontato: 0, giustificativi: [{ Stato: 'draft' }] })
-    ).toMatchObject({ label: 'Non ricevuta', color: 'grey' })
+    ).toMatchObject({ label: 'Bozze da inviare', color: 'warning' })
     expect(
       wrapper.vm.statoRiga({
         ...base,

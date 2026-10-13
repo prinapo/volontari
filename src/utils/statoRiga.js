@@ -54,21 +54,25 @@ export function residuoErogabile(row) {
  * Stato di riga derivato dagli stati persistiti dei giustificativi.
  *
  * Ordine regole:
- * 1. Nessun importo rendicontato (vuoto / solo draft / solo rifiutati) → Non ricevuta
- * 2. Almeno un inviato → Da verificare (l'azione di verifica è la priorità)
- * 3. Dati bancari mancanti
- * 4. Tutti contabili → Pagato | In pagamento | Pronto
- * 5. Altrimenti → Da completare
+ * 1. Nessun importo rendicontato (vuoto / solo rifiutati) → Non ricevuta
+ * 2. Zero importi rendicontati ma con bozze → Bozze da inviare
+ * 3. Almeno un inviato → Da verificare (l'azione di verifica è la priorità)
+ * 4. Dati bancari mancanti
+ * 5. Tutti contabili → Pagato | In pagamento | Pronto
+ * 6. Altrimenti → Da completare
  *
  * @param {Object} row - Riga Verifica
  * @returns {{key: string, label: string, color: string}}
  */
 export function calcolaStatoRiga(row) {
+  const giust = row?.giustificativi || []
   const totaleRendicontato = parseNum(row?.totaleRendicontato)
   if (totaleRendicontato === 0) {
+    if (giust.some(g => !g.Invalidato && g.Stato === STATO_GIUSTIFICATIVO.DRAFT)) {
+      return { key: 'bozze', label: 'Bozze da inviare', color: 'warning' }
+    }
     return { key: 'nessuno', label: 'Non ricevuta', color: 'grey' }
   }
-  const giust = row.giustificativi || []
   if (giust.some(g => !g.Invalidato && g.Stato === STATO_GIUSTIFICATIVO.INVIATO)) {
     return { key: 'da_verificare', label: 'Da verificare', color: 'orange' }
   }

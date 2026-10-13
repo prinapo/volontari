@@ -139,6 +139,19 @@ allineato da `recalculateRowTotals` (`verifica.store.js`).
   allocato (auto) sia chiusura manuale ("Chiudi progetto", anche con
   pagato < allocato). È **sticky**: `calcolaStatoProgetto` non lo retrocede a
   `rimborso_parziale`.
+- **Una bozza avvia la rendicontazione**: appena la famiglia crea un
+  giustificativo `draft`, il progetto passa a `in_rendicontazione` (con
+  `StatoRendicontazione` = `bozza`) così il verificatore lo vede. Se l'ultima
+  bozza viene eliminata/invalidata il progetto torna `accettato` (transizione
+  già dichiarata in `state-machines/progetto.js`).
+- **Totali e bozze (due semantche distinte, entrambe volute)**:
+  - Il verificatore NON considera le bozze: `totaleRendicontato`/stato riga
+    usano `STATI_GIUSTIFICATIVO_VALIDI` (= inviato + contabili), quindi una
+    riga con solo bozze mostra "Bozze da inviare" e Rendicontato 0.
+  - `TotaleGiustificativi`/`TotaleImporto` (persistiti da `syncProgettoAggregati`)
+    e il totale mostrato alla famiglia (`FamigliePage`, somma client-side)
+    **includono** le bozze: è il prospetto della famiglia, non l'erogabile.
+    Testato in `tests/unit/utils/statoProgetto.test.js` ("calcolaAggregatiProgetto").
 - `ricalcolaProposta` salta solo i progetti `chiuso`; `ricalcolaPropostiDaProgetti`
   elabora le righe in `STATI_PROGETTO_OPERATIVI` (quindi anche il parziale).
 - **Fase manuale** (`proposto → validato → approvato → accettato`): avanzata di uno

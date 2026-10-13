@@ -12,16 +12,19 @@
  * Il rimborso_parziale è automatico: se pagato>0 ma < allocato, il progetto
  * assume questo stato indipendentemente dallo stato precedente.
  */
-import { STATI_GIUSTIFICATIVO_VALIDI, STATO_PROGETTO } from './constants'
+import { STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO, STATO_PROGETTO } from './constants'
 import { parseNum } from './number'
 import { calcolaStatoRendicontazione } from './rendicontazione'
 
-// Un giustificativo conta per lo stato progetto solo se ha avviato la
-// rendicontazione (inviato/verificato/in_pagamento/pagato): i draft non contano.
-const STATI_VALIDI = new Set(STATI_GIUSTIFICATIVO_VALIDI)
+// Un giustificativo "avvia" la rendicontazione se ha uno stato che la
+// attesta: inviato/verificato/in_pagamento/pagato oppure bozza. Con una bozza
+// la famiglia ha iniziato a compilare (StatoRendicontazione='bozza'): il
+// progetto passa a `in_rendicontazione` così il verificatore la vede.
+// Le bozze non contano tra gli importi ai fini di Verifica (`totaleRendicontato`).
+const STATI_AVVIO = new Set([...STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO.DRAFT])
 
 function hasValidGiustificativi(giustificativi = []) {
-  return giustificativi.some(g => !g.Invalidato && STATI_VALIDI.has(String(g.Stato || '').toLowerCase()))
+  return giustificativi.some(g => !g.Invalidato && STATI_AVVIO.has(String(g.Stato || '').toLowerCase()))
 }
 
 /**
@@ -42,7 +45,7 @@ export function statoProgettoEffettivo(statoProgetto) {
  * 4. Già chiuso → resta chiuso (sticky: una chiusura manuale parziale non
  *    retrocede a rimborso_parziale)
  * 5. Pagamento parziale (0 < pagato < allocato) → rimborso_parziale (operativo)
- * 6. Ha giustificativi validi → in_rendicontazione
+ * 6. Ha giustificativi avviati (inviato/contabile oppure una bozza) → in_rendicontazione
  * 7. Altrimenti → accettato
  *
  * @param {Object} input
@@ -80,7 +83,7 @@ export function calcolaStatoProgetto({ statoProgetto, allocato = 0, rimborsato =
     return STATO_PROGETTO.RIMBORSO_PARZIALE
   }
 
-  // 6. Ha giustificativi validi → in_rendicontazione
+  // 6. Ha giustificativi avviati (incluse le bozze) → in_rendicontazione
   if (hasValidGiustificativi(giustificativi)) {
     return STATO_PROGETTO.IN_RENDICONTAZIONE
   }

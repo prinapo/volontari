@@ -143,6 +143,7 @@ export class VerificaPage {
       if (
         [
           'Non ricevuta',
+          'Bozze da inviare',
           'Pronto',
           'Pagato',
           'In pagamento',

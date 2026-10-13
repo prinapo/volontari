@@ -1,14 +1,14 @@
-import { test, expect } from '../helpers/console.js'
-import { loginAs } from '../helpers/login.js'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin } from '../helpers/api.js'
 import { findByPattern } from '../helpers/cleanup.js'
+import { test, expect } from '../helpers/console.js'
+import { loginAs } from '../helpers/login.js'
 import { pulisciIds } from '../helpers/setup-atomico.js'
-import { VerificaPage } from '../pages/VerificaPage.js'
 import { createFamigliaViaUI, createProgettoViaUI, setupGiustificativiConStato } from '../helpers/setup-ui.js'
+import { VerificaPage } from '../pages/VerificaPage.js'
 
 test.describe('StatoRendicontazione', () => {
-  test.describe.configure({ timeout: 120000 })
+  test.describe.configure({ timeout: 120_000 })
 
   let ids
 
@@ -74,7 +74,7 @@ test.describe('StatoRendicontazione', () => {
     if (isMobile) {
       // Try search first (force fill)
       await vp.searchFamiglia(prefix)
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       const items = page.locator('.verifica-table .q-expansion-item')
       const count = await items.count()
       for (let i = 0; i < count; i++) {
@@ -91,7 +91,9 @@ test.describe('StatoRendicontazione', () => {
           }
         }
       }
-      throw new Error(`Progetto con prefisso ${prefix} non trovato su mobile (badge ${expectedText} non trovato tra ${count} items)`)
+      throw new Error(
+        `Progetto con prefisso ${prefix} non trovato su mobile (badge ${expectedText} non trovato tra ${count} items)`
+      )
     }
     await vp.searchFamiglia(prefix)
     const text = await vp.getStatoRiga(0)
@@ -108,10 +110,10 @@ test.describe('StatoRendicontazione', () => {
     await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
   })
 
-  test('SR-04: Solo draft → Non ricevuta (grey) @smoke', async ({ page }) => {
+  test('SR-04: Solo draft → Bozze da inviare (warning) @smoke', async ({ page }) => {
     const prefix = await creaScenario(page, [{ stato: 'draft', importo: '50.00' }])
     await loginAs(page, 'manager', auth)
-    await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
+    await checkStatoRiga(page, prefix, 'Bozze da inviare', /bg-warning/)
   })
 
   test('SR-05: Tutti verificati → Pronto (green) @smoke', async ({ page }) => {
@@ -121,14 +123,14 @@ test.describe('StatoRendicontazione', () => {
   })
 
   test('SR-06: Almeno un inviato → Da verificare (orange) @smoke', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     const prefix = await creaScenario(page, [{ stato: 'inviato', importo: '50.00' }])
     await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Da verificare', /bg-orange/)
   })
 
   test('SR-07: Draft + verificato → Da completare (warning) @smoke', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     const prefix = await creaScenario(page, [
       { stato: 'draft', importo: '30.00' },
       { stato: 'verificato', importo: '70.00' }
@@ -138,14 +140,14 @@ test.describe('StatoRendicontazione', () => {
   })
 
   test('SR-08: Solo rifiutato → Non ricevuta (grey) @smoke', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     const prefix = await creaScenario(page, [{ stato: 'rifiutato', importo: '50.00' }])
     await loginAs(page, 'manager', auth)
     await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
   })
 
   test('SR-09: Verificato + rifiutato → Da completare (warning) @smoke', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     const prefix = await creaScenario(page, [
       { stato: 'verificato', importo: '30.00' },
       { stato: 'rifiutato', importo: '70.00' }
@@ -154,18 +156,18 @@ test.describe('StatoRendicontazione', () => {
     await checkStatoRiga(page, prefix, 'Da completare', /bg-warning/)
   })
 
-  test('SR-10: Draft + rifiutato → Non ricevuta (grey) @smoke', async ({ page }) => {
-    test.setTimeout(180000)
+  test('SR-10: Draft + rifiutato → Bozze da inviare (warning) @smoke', async ({ page }) => {
+    test.setTimeout(180_000)
     const prefix = await creaScenario(page, [
       { stato: 'draft', importo: '30.00' },
       { stato: 'rifiutato', importo: '70.00' }
     ])
     await loginAs(page, 'manager', auth)
-    await checkStatoRiga(page, prefix, 'Non ricevuta', /bg-grey/)
+    await checkStatoRiga(page, prefix, 'Bozze da inviare', /bg-warning/)
   })
 
   test('SR-FLOW-01: Flusso completo invia→verifica→chiudi @e2e', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(180_000)
     const ts = Date.now()
     const prefix = `TEST_FLOW_${ts}`
     const idsFlow = { famiglia: null, progetto: null, giustificativi: [] }
@@ -215,7 +217,7 @@ test.describe('StatoRendicontazione', () => {
     const verifyBtn = page.locator('[data-testid="btn-verify"]').first()
     try {
       await verifyBtn.click({ timeout: 5000 })
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState('networkidle').catch(() => {})
       verified = true
     } catch {
       // Verifica non possibile su questo viewport

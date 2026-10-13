@@ -76,9 +76,13 @@ scrivono stato; i derivati restano selettori puri. Enforcement: ESLint
 La guardia **progetto non operativo** (stato in `STATI_PROGETTO_OPERATIVI` =
 `accettato`, `in_rendicontazione`, `rimborso_parziale`) è nel
 primitivo `_creaGiustificativoRecord`: vale per **tutti** gli ingressi, inclusa la
-riconciliazione. I **draft** non contano come giustificativi validi per lo stato
-(`hasValidGiustificativi`). `rimborso_parziale` è operativo (la famiglia può
-completare la rendicontazione); `chiuso` è l'unico stato finale.
+riconciliazione. Una **bozza** avvia la rendicontazione (`StatoProgetto` →
+`in_rendicontazione`, `StatoRendicontazione` = `bozza`), così il verificatore
+vede il progetto. Due semantiche sui totali, entrambe volute: il verificatore
+ESCLUDE le bozze (`totaleRendicontato`, `STATI_GIUSTIFICATIVO_VALIDI`), mentre
+`TotaleImporto`/`TotaleGiustificativi` e il prospetto famiglia le INCLUDONO.
+`rimborso_parziale` è operativo (la famiglia può completare la rendicontazione);
+`chiuso` è l'unico stato finale.
 
 ---
 

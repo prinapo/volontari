@@ -14,3 +14,6 @@ riconciliazione.png
 
 # Test coverage
 coverage/
+
+# jscpd output
+report/
