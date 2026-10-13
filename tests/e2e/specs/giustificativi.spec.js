@@ -596,7 +596,8 @@ test.describe('Giustificativi', () => {
         await expect(targetCard).toBeVisible({ timeout: 5000 })
       }
 
-      const oldHref = await targetCard.locator('a[href*="/assets/"]').first().getAttribute('href')
+      const allegatoLink = targetCard.locator('a[href*="/assets/"]').first()
+      const oldHref = await allegatoLink.getAttribute('href')
 
       const fileInput = targetCard.locator('input[type="file"]').first()
       const [patchResp] = await Promise.all([
@@ -607,7 +608,10 @@ test.describe('Giustificativi', () => {
       ])
       expect(patchResp.status()).toBe(200)
 
-      const newHref = await targetCard.locator('a[href*="/assets/"]').first().getAttribute('href')
+      // La card si aggiorna dal risultato dello store dopo la risposta del PATCH:
+      // attende il cambio effettivo dell'href invece di leggerlo subito (race).
+      await expect(allegatoLink).not.toHaveAttribute('href', oldHref, { timeout: 10_000 })
+      const newHref = await allegatoLink.getAttribute('href')
       expect(newHref).not.toBe(oldHref)
 
       await page.reload()
