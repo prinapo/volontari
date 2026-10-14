@@ -81,7 +81,14 @@ export const progettoMachine = createMachine({
     },
     [S.CHIUSO]: {
       on: {
-        [E.RIAPRI]: S.ACCETTATO
+        // Riapertura a target DERIVATO (ctx.targetRiapertura, calcolato da
+        // `riapriProgetto` su giustificativi e pagamenti freschi). Fallback:
+        // accettato.
+        [E.RIAPRI]: [
+          { target: S.RIMBORSO_PARZIALE, cond: (_, e) => e?.targetRiapertura === S.RIMBORSO_PARZIALE },
+          { target: S.IN_RENDICONTAZIONE, cond: (_, e) => e?.targetRiapertura === S.IN_RENDICONTAZIONE },
+          { target: S.ACCETTATO }
+        ]
       }
     }
   }

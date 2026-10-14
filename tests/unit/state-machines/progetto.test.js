@@ -49,4 +49,17 @@ describe('macchina Progetto', () => {
   it.each(TRANSIZIONI_NON_VALIDE)('%s -[%s]-> non valida', (da, evento) => {
     expect(() => calcolaStatoSuccessivo(progettoMachine, da, evento)).toThrow(TransizioneNonValidaError)
   })
+
+  it('RIAPRI da chiuso porta al target derivato passato nel ctx', () => {
+    expect(calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI)).toBe('accettato')
+    expect(calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI, { targetRiapertura: 'accettato' })).toBe(
+      'accettato'
+    )
+    expect(
+      calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI, { targetRiapertura: 'in_rendicontazione' })
+    ).toBe('in_rendicontazione')
+    expect(calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI, { targetRiapertura: 'rimborso_parziale' })).toBe(
+      'rimborso_parziale'
+    )
+  })
 })

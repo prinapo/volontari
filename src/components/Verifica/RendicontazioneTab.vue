@@ -231,10 +231,13 @@
                 icon="lock_open"
                 color="positive"
                 aria-label="Riapri progetto"
+                :disable="!puoRiaprire(props.row)"
                 :loading="savingRiapriProgetto"
                 @click="handleRiapriProgetto(props.row)"
               >
-                <q-tooltip>Riapri progetto</q-tooltip>
+                <q-tooltip>{{
+                  puoRiaprire(props.row) ? 'Riapri progetto' : 'Non riapribile: residuo zero o allocato non valido'
+                }}</q-tooltip>
               </q-btn>
             </q-card-actions>
             <RendicontazioneRowDetail
@@ -391,10 +394,13 @@
               color="positive"
               size="sm"
               aria-label="Riapri progetto"
+              :disable="!puoRiaprire(props.row)"
               :loading="savingRiapriProgetto"
               @click="handleRiapriProgetto(props.row)"
             >
-              <q-tooltip>Riapri progetto</q-tooltip>
+              <q-tooltip>{{
+                puoRiaprire(props.row) ? 'Riapri progetto' : 'Non riapribile: residuo zero o allocato non valido'
+              }}</q-tooltip>
             </q-btn>
           </template>
 
@@ -495,6 +501,7 @@ import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
 import { STATO_PROGETTO } from 'src/utils/constants'
 import { formatCurrency } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { parseNum } from 'src/utils/number'
 import { statoProgettoEffettivo } from 'src/utils/statoProgetto'
 import { calcolaStatoRiga } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
@@ -763,6 +770,13 @@ async function handleChiudiProgetto() {
 }
 
 const savingRiapriProgetto = ref(false)
+
+// Un progetto è riapribile solo con allocato valido e residuo > 0 (contratto C3-6).
+function puoRiaprire(row) {
+  const allocato = parseNum(row?.allocato)
+  const pagato = parseNum(row?.totalePagato)
+  return allocato > 0 && pagato < allocato
+}
 
 async function handleRiapriProgetto(row) {
   savingRiapriProgetto.value = true

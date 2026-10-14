@@ -7,7 +7,7 @@ import { EVENTI_GIUSTIFICATIVO, giustificativoMachine } from 'src/state-machines
 import { EVENTI_PAGAMENTO, pagamentoMachine } from 'src/state-machines/pagamento'
 import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
 import { inviaComunicazione } from 'src/usecases/comunicazioni'
-import { creaConStatoIniziale, transita } from 'src/usecases/stato/transita'
+import { creaConStatoIniziale, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
 import {
   isContabile,
   STATI_PROGETTO_OPERATIVI,
@@ -19,7 +19,7 @@ import { pickEmail } from 'src/utils/emailPrimarie'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
 import { parseNum } from 'src/utils/number'
 import { relId } from 'src/utils/relations'
-import { calcolaDerivatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
+import { calcolaDerivatiProgetto, calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
 async function getPagamentoById(pagamentoId) {
   const res = await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })
@@ -528,12 +528,45 @@ export async function chiudiProgetto(progettoId, { automatica = false, motivo = 
 
 export async function riapriProgetto(progettoId) {
   const progRes = await progettiService.getById(progettoId)
-  const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
+  const progetto = progRes.data.data
+  if (!progetto) throw new Error('Progetto non trovato')
+  const statoCorrente = statoProgettoEffettivo(progetto.StatoProgetto)
+  if (statoCorrente !== STATO_PROGETTO.CHIUSO) {
+    throw new TransizioneNonValidaError(statoCorrente, 'RIAPRI', 'progetto non chiuso')
+  }
+
+  const [giustRes, pagRes] = await Promise.all([
+    verificaService.getGiustificativiByProgetto(progettoId),
+    pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': progettoId, limit: -1 })
+  ])
+  const giustificativi = giustRes.data.data || []
+  const pagamenti = pagRes.data.data || []
+  const derivati = calcolaDerivatiProgetto({ progetto, giustificativi, pagamenti })
+  const allocato = parseNum(progetto.Allocato)
+
+  // Guardie dure: un progetto "chiuso per errore" è riaperturabile solo se ha
+  // un allocato valido e un residuo ancora da erogare.
+  if (allocato <= 0) {
+    throw new Error('Allocato non valido: correggi il progetto prima di riaprire')
+  }
+  if (derivati.TotalePagato >= allocato) {
+    throw new Error('Residuo zero: il progetto è interamente pagato e non è riapribile')
+  }
+
+  // Target derivato da giustificativi e pagamenti (mai un fisso `accettato`).
+  const targetRiapertura = calcolaStatoProgetto({
+    statoProgetto: STATO_PROGETTO.ACCETTATO,
+    allocato,
+    rimborsato: derivati.TotalePagato,
+    giustificativi
+  })
+
   await transita({
     machine: progettoMachine,
     campo: 'StatoProgetto',
     statoCorrente,
     evento: EVENTI_PROGETTO.RIAPRI,
+    ctx: { targetRiapertura },
     extra: { DataChiusura: null, MotivoChiusura: null },
     scrivi: patch => progettiService.updateStats(progettoId, patch)
   })

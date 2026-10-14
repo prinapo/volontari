@@ -485,8 +485,12 @@ describe('chiudiProgetto / riapriProgetto', () => {
     )
   })
 
-  it('riapre un progetto chiuso', async () => {
-    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'chiuso' } } })
+  it('riapre un progetto chiuso con target derivato accettato', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: '1000' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockUpdateProgettoStats.mockResolvedValue({})
     await riapriProgetto(1)
     expect(mockUpdateProgettoStats).toHaveBeenCalledWith(1, {
@@ -494,6 +498,58 @@ describe('chiudiProgetto / riapriProgetto', () => {
       MotivoChiusura: null,
       StatoProgetto: 'accettato'
     })
+  })
+
+  it('riapre a rimborso_parziale se resta un parziale da erogare', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: '1000' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ Stato: 'pagato', Importo: '300' }] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await riapriProgetto(1)
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ StatoProgetto: 'rimborso_parziale', DataChiusura: null, MotivoChiusura: null })
+    )
+  })
+
+  it('riapre a in_rendicontazione se ci sono giustificativi avviati', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: '1000' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ Stato: 'inviato', Importo: '100', Invalidato: false }] }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await riapriProgetto(1)
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ StatoProgetto: 'in_rendicontazione' })
+    )
+  })
+
+  it('rifiuta la riapertura con allocato nullo', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: 0 } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await expect(riapriProgetto(1)).rejects.toThrow('Allocato non valido')
+    expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
+  })
+
+  it('rifiuta la riapertura a residuo zero', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: '1000' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ Stato: 'pagato', Importo: '1000' }] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await expect(riapriProgetto(1)).rejects.toThrow('Residuo zero')
+    expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
   })
 
   it('riapriProgetto rifiuta uno stato non chiuso senza scrivere', async () => {
