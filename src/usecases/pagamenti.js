@@ -83,19 +83,27 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
   const ops = []
   for (const g of giustificativi) {
     if (g.Invalidato || !isContabile(g.Stato)) continue
-    const pag = pagMap.get(relId(g.Pagamento))
+    const pagamentoId = relId(g.Pagamento)
+    const pag = pagMap.get(pagamentoId)
+    // FK orfana: `Pagamento` punta a un pagamento inesistente → va azzerata.
+    const orfano = pagamentoId != null && !pag
     let nuovo
     if (capRaggiunto || pag?.Stato === STATO_PAGAMENTO.PAGATO) nuovo = STATO_GIUSTIFICATIVO.PAGATO
     else if (pag?.Stato === STATO_PAGAMENTO.IN_PAGAMENTO) nuovo = STATO_GIUSTIFICATIVO.IN_PAGAMENTO
     else nuovo = STATO_GIUSTIFICATIVO.VERIFICATO
 
-    if (nuovo === g.Stato) continue
-    const extra =
-      nuovo === STATO_GIUSTIFICATIVO.PAGATO
-        ? g.DataPagamento
-          ? {}
-          : { DataPagamento: new Date().toISOString() }
-        : { DataPagamento: null }
+    if (nuovo === g.Stato) {
+      // Stato invariato: al più si azzera la FK orfana (senza passare da transita).
+      if (orfano) ops.push(giustificativiService.update(g.id, { Pagamento: null }))
+      continue
+    }
+    const extra = {}
+    if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) {
+      if (!g.DataPagamento) extra.DataPagamento = new Date().toISOString()
+    } else {
+      extra.DataPagamento = null
+    }
+    if (orfano) extra.Pagamento = null
     ops.push(
       transita({
         machine: giustificativoMachine,
@@ -260,7 +268,7 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
  * Ricalcola la proposta di UN progetto (crea/aggiorna/annulla il `proposto`) e
  * collega/scollega i giustificativi coperti. Esegue le scritture direttamente.
  */
-async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
+async function _ricalcolaPropostaProgetto(progetto, giustificativi, pagamenti) {
   const totaleVerificato = giustificativi
     .filter(g => isContabile(g.Stato) && !g.Invalidato)
     .reduce((s, g) => s + parseNum(g.Importo), 0)
@@ -268,10 +276,12 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
     .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
     .reduce((s, p) => s + parseNum(p.Importo), 0)
 
+  const iban = progetto.IBAN || ''
+  const intestatario = progetto.Intestatario_CC || ''
   const erogabile = calcolaErogabile({
-    allocato: row.allocato,
+    allocato: progetto.Allocato,
     totaleVerificato,
-    percentualeRimborso: row.percentualeRimborso ?? 80
+    percentualeRimborso: progetto.MassimaPercentualeErogabile ?? 80
   })
   const nuovoProposto = residuoDaCoprire(erogabile, totaleStorico)
   const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
@@ -281,18 +291,18 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
     if (esistente) {
       const patch = {}
       if (parseNum(esistente.Importo) !== nuovoProposto) patch.Importo = nuovoProposto
-      if ((esistente.IBAN || '') !== (row.iban || '')) patch.IBAN = row.iban || ''
-      if ((esistente.Intestatario || '') !== (row.intestatario || '')) patch.Intestatario = row.intestatario || ''
+      if ((esistente.IBAN || '') !== iban) patch.IBAN = iban
+      if ((esistente.Intestatario || '') !== intestatario) patch.Intestatario = intestatario
       if (Object.keys(patch).length) await pagamentiService.updatePagamento(esistente.id, patch)
     } else {
       const created = await creaConStatoIniziale({
         machine: pagamentoMachine,
         extra: {
-          Progetto: row.idProgetto,
-          Famiglia: row.idFamiglia,
+          Progetto: progetto.id_progetto,
+          Famiglia: relId(progetto.Famiglia),
           Importo: nuovoProposto,
-          IBAN: row.iban || '',
-          Intestatario: row.intestatario || '',
+          IBAN: iban,
+          Intestatario: intestatario,
           DataProposta: new Date().toISOString()
         },
         scrivi: patch => pagamentiService.createPagamento(patch)
@@ -317,19 +327,22 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
  * (righe Verifica). Esegue le scritture necessarie in un'unica tornata.
  */
 export async function ricalcolaPropostiDaProgetti(progetti) {
-  if (!progetti?.length) return
+  if (!progetti?.length) return { ok: 0, failed: [] }
   const aperti = progetti.filter(
     r =>
       r.statoProgetto != null &&
       STATI_PROGETTO_OPERATIVI.includes(r.statoProgetto === 'aperto' ? 'accettato' : r.statoProgetto)
   )
-  if (!aperti.length) return
+  if (!aperti.length) return { ok: 0, failed: [] }
   const ids = aperti.map(r => r.idProgetto)
 
-  const [giustRes, pagRes] = await Promise.all([
+  const [progRes, giustRes, pagRes] = await Promise.all([
+    progettiService.getByIds(ids),
     verificaService.getGiustificativiByProgetti(ids),
     pagamentiService.getPagamenti({ 'filter[Progetto][_in]': ids.join(','), limit: -1 })
   ])
+  // Dati freschi dal DB (non dalle righe UI): evita divergenze col flusso singolo.
+  const progettiById = new Map((progRes.data.data || []).map(p => [p.id_progetto, p]))
 
   const giustByProgetto = {}
   for (const g of giustRes.data.data || []) {
@@ -346,12 +359,24 @@ export async function ricalcolaPropostiDaProgetti(progetti) {
 
   // Le scritture per progetto sono best-effort: un progetto in errore non deve
   // invalidare le altre. Poi si aggiornano i derivati (totali + stato).
-  await Promise.allSettled(
-    aperti.map(row =>
-      _ricalcolaPropostaProgetto(row, giustByProgetto[row.idProgetto] || [], pagByProgetto[row.idProgetto] || [])
-    )
+  const risultati = await Promise.allSettled(
+    aperti.map(r => {
+      const progetto = progettiById.get(r.idProgetto)
+      if (!progetto) return Promise.reject(new Error(`Progetto ${r.idProgetto} non trovato`))
+      return _ricalcolaPropostaProgetto(
+        progetto,
+        giustByProgetto[r.idProgetto] || [],
+        pagByProgetto[r.idProgetto] || []
+      )
+    })
   )
   await Promise.allSettled(aperti.map(r => ricalcolaTotaliProgetto(r.idProgetto)))
+
+  const failed = risultati.map((res, i) => (res.status === 'rejected' ? aperti[i].idProgetto : null)).filter(Boolean)
+  if (failed.length) {
+    console.warn(`[usecases] ricalcolaPropostiDaProgetti: ${failed.length} progetti in errore`, failed)
+  }
+  return { ok: aperti.length - failed.length, failed }
 }
 
 /**
@@ -360,6 +385,10 @@ export async function ricalcolaPropostiDaProgetti(progetti) {
  */
 export async function inviaNotificaPagamento(pagamento) {
   if (!pagamento || pagamento.NotificaInviata) return
+  // Ri-lettura fresca: riduce la finestra di doppio invio in caso di
+  // `segnaPagato` concorrenti (non atomico, ma evita il caso comune).
+  const fresco = await getPagamentoById(pagamento.id)
+  if (fresco?.NotificaInviata) return
   const progRes = await progettiService.getById(pagamento.Progetto)
   const progetto = progRes.data.data
   if (!progetto) return

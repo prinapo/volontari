@@ -3,6 +3,7 @@ import {
   calcolaDerivatiProgetto,
   calcolaDisallineati,
   calcolaStatoProgetto,
+  isStatoProgettoValido,
   statoProgettoEffettivo
 } from 'src/utils/statoProgetto'
 
@@ -264,6 +265,17 @@ describe('calcolaDisallineati', () => {
 
   it('gestisce input vuoto', () => {
     expect(calcolaDisallineati([])).toEqual([])
+  })
+})
+
+describe('isStatoProgettoValido', () => {
+  it('riconosce solo gli stati dichiarati nella macchina', () => {
+    expect(isStatoProgettoValido('accettato')).toBe(true)
+    expect(isStatoProgettoValido('in_rendicontazione')).toBe(true)
+    expect(isStatoProgettoValido('chiuso')).toBe(true)
+    expect(isStatoProgettoValido('aperto')).toBe(false)
+    expect(isStatoProgettoValido('foo')).toBe(false)
+    expect(isStatoProgettoValido(null)).toBe(false)
   })
 })
 

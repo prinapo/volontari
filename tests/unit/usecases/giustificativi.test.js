@@ -175,6 +175,14 @@ describe('verificaGiustificativo / inviaGiustificativo', () => {
     expect(res.Stato).toBe('inviato')
     expect(mockUpdateProgetto).toHaveBeenCalledWith(1, expect.anything())
   })
+
+  it("rifiuta l'invio di una bozza su progetto non operativo", async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { StatoProgetto: 'chiuso' } } })
+    await expect(inviaGiustificativo({ id: 'g-1', progettoId: 1, statoCorrente: 'draft' })).rejects.toThrow(
+      'Progetto non operativo'
+    )
+    expect(mockUpdateGiustificativo).not.toHaveBeenCalled()
+  })
 })
 
 describe('riconciliaSubmission', () => {

@@ -74,9 +74,10 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async ricalcolaPropostiDaProgetti(progetti) {
       this.error = null
       try {
-        await ricalcolaPropostiDaProgettiUseCase(progetti)
+        const risultato = await ricalcolaPropostiDaProgettiUseCase(progetti)
         await this.fetchProposti()
         await this.fetchAnnullati()
+        return risultato
       } catch (error) {
         this.error = apiErrorMessage(error, 'Errore nel ricalcolo proposte')
       }

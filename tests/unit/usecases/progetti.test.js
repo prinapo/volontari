@@ -84,6 +84,20 @@ describe('syncProgettoAggregati', () => {
     await expect(syncProgettoAggregati(1)).resolves.toBeNull()
   })
 
+  it('segnala una transizione non valida (stato sconosciuto) senza lanciare', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'foo', Allocato: '1000' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ Stato: 'inviato', Importo: '100', Invalidato: false }] }
+    })
+    mockUpdateProgetto.mockResolvedValue({})
+    await expect(syncProgettoAggregati(1)).resolves.toBeNull()
+    expect(errSpy).toHaveBeenCalled()
+    errSpy.mockRestore()
+  })
+
   it('ritorna null se il progetto non esiste o id mancante', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: null } })
     expect(await syncProgettoAggregati(1)).toBeNull()

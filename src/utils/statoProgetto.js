@@ -12,6 +12,7 @@
  * Il rimborso_parziale è automatico: se pagato>0 ma < allocato, il progetto
  * assume questo stato indipendentemente dallo stato precedente.
  */
+import { progettoMachine } from 'src/state-machines/progetto'
 import {
   STATI_GIUSTIFICATIVO_CONTABILI,
   STATI_GIUSTIFICATIVO_VALIDI,
@@ -40,6 +41,15 @@ function hasValidGiustificativi(giustificativi = []) {
  */
 export function statoProgettoEffettivo(statoProgetto) {
   return !statoProgetto || statoProgetto === STATO_PROGETTO.APERTO ? STATO_PROGETTO.ACCETTATO : statoProgetto
+}
+
+/**
+ * True se `stato` è uno stato dichiarato nella macchina Progetto (fonte di
+ * verità). Un valore sconosciuto è un dato anomalo da segnalare, non da
+ * normalizzare in silenzio.
+ */
+export function isStatoProgettoValido(stato) {
+  return Boolean(stato && progettoMachine.config.states?.[stato])
 }
 
 /**

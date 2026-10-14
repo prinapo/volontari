@@ -67,7 +67,16 @@ export async function syncProgettoAggregati(progettoId) {
     }
     return derivati
   } catch (error) {
-    console.warn(`[usecases] syncProgettoAggregati fallito per progetto ${progettoId}`, error)
+    if (error?.name === 'TransizioneNonValidaError') {
+      // Stato/anomalia non dichiarata dalla macchina: dato da correggere, non da
+      // ignorare silenziosamente.
+      console.error(
+        `[usecases] syncProgettoAggregati: transizione non valida per progetto ${progettoId}`,
+        error.message
+      )
+    } else {
+      console.warn(`[usecases] syncProgettoAggregati fallito per progetto ${progettoId}`, error)
+    }
     return null
   }
 }

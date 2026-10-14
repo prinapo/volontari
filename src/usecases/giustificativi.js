@@ -118,6 +118,9 @@ export async function creaSubmission(payload) {
 }
 
 export async function inviaGiustificativo({ id, progettoId, statoCorrente }) {
+  // Le bozze non sono inviabili se il progetto non è più operativo (es. chiuso
+  // dopo che la bozza era stata salvata).
+  await guardiaProgettoOperativo(progettoId)
   let updateRes
   await transita({
     machine: giustificativoMachine,

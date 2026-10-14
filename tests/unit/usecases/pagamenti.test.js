@@ -31,6 +31,7 @@ const mockGetFamigliaById = vi.fn()
 const mockGetFamiglieBatch = vi.fn()
 const mockUpdateFamiglia = vi.fn()
 const mockInviaComunicazione = vi.fn()
+const mockGetByIds = vi.fn()
 
 vi.mock('src/services/pagamenti.service', () => ({
   pagamentiService: {
@@ -44,6 +45,7 @@ vi.mock('src/services/pagamenti.service', () => ({
 vi.mock('src/services/progetti.service', () => ({
   progettiService: {
     getById: (...a) => mockGetProgettoById(...a),
+    getByIds: (...a) => mockGetByIds(...a),
     updateStats: (...a) => mockUpdateProgettoStats(...a)
   }
 }))
@@ -701,7 +703,10 @@ describe('segnaAnnullato', () => {
 })
 
 describe('inviaNotificaPagamento', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ id: 'p-1', NotificaInviata: false }] } })
+  })
 
   it('invia la notifica via mailer interno e marca NotificaInviata', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1 } } })
@@ -726,6 +731,13 @@ describe('inviaNotificaPagamento', () => {
 
   it('salta se già inviata', async () => {
     await inviaNotificaPagamento({ NotificaInviata: true })
+    expect(mockGetProgettoById).not.toHaveBeenCalled()
+  })
+
+  it('salta se la ri-lettura fresca risulta già inviata', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'p-9', NotificaInviata: true }] } })
+    await inviaNotificaPagamento({ id: 'p-9', Progetto: 1, Famiglia: 'fam-1', Importo: 100, NotificaInviata: false })
+    expect(mockInviaComunicazione).not.toHaveBeenCalled()
     expect(mockGetProgettoById).not.toHaveBeenCalled()
   })
 
@@ -813,7 +825,23 @@ describe('segnaPagato', () => {
 })
 
 describe('ricalcolaPropostiDaProgetti', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetByIds.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id_progetto: 'X',
+            Allocato: 875,
+            MassimaPercentualeErogabile: 80,
+            IBAN: '',
+            Intestatario_CC: '',
+            Famiglia: 'fam-1'
+          }
+        ]
+      }
+    })
+  })
 
   const row = extra => ({
     idProgetto: 'X',
@@ -864,6 +892,20 @@ describe('ricalcolaPropostiDaProgetti', () => {
   })
 
   it('aggiorna IBAN e Intestatario sul proposto esistente a parità di importo', async () => {
+    mockGetByIds.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id_progetto: 'X',
+            Allocato: 800,
+            MassimaPercentualeErogabile: 80,
+            IBAN: 'IT00FAM',
+            Intestatario_CC: 'Mario Rossi',
+            Famiglia: 'fam-1'
+          }
+        ]
+      }
+    })
     mockGetGiustificativiByProgetti.mockResolvedValue({
       data: { data: [{ Progetto: 'X', Stato: 'verificato', Importo: '500', Invalidato: false }] }
     })
@@ -1023,6 +1065,23 @@ describe('sincronizzaStatiPagamentoProgetto', () => {
       'g-1',
       expect.objectContaining({ Stato: 'verificato', DataPagamento: null })
     )
+  })
+
+  it('azzera la FK orfana (pagamento inesistente) mantenendo lo stato', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, Allocato: '1000', TotalePagato: '0' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: {
+        data: [{ id: 'g-1', Stato: 'verificato', Importo: '100', Invalidato: false, Pagamento: 999 }]
+      }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateGiustificativo.mockResolvedValue({})
+
+    await sincronizzaStatiPagamentoProgetto(1)
+
+    expect(mockUpdateGiustificativo).toHaveBeenCalledWith('g-1', expect.objectContaining({ Pagamento: null }))
   })
 })
 
