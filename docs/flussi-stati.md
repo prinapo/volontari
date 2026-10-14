@@ -64,19 +64,21 @@ stateDiagram-v2
     approvato --> accettato : ACCETTA
 
     accettato --> in_rendicontazione : RICALCOLA_IN_RENDICONTAZIONE
-    accettato --> rimborso_parziale : RICALCOLA_RIMBORSO_PARZIALE
-    accettato --> chiuso : RICALCOLA_CHIUSO / CHIUDI
+    accettato --> chiuso : CHIUDI
 
     in_rendicontazione --> accettato : RICALCOLA_ACCETTATO
     in_rendicontazione --> rimborso_parziale : RICALCOLA_RIMBORSO_PARZIALE
     in_rendicontazione --> chiuso : RICALCOLA_CHIUSO / CHIUDI
 
-    rimborso_parziale --> accettato : RICALCOLA_ACCETTATO
-    rimborso_parziale --> in_rendicontazione : RICALCOLA_IN_RENDICONTAZIONE
     rimborso_parziale --> chiuso : RICALCOLA_CHIUSO / CHIUDI
 
     chiuso --> accettato : RIAPRI
 ```
+
+Da `accettato` l'unico innesco automatico è `in_rendicontazione`; non si passa
+direttamente a `rimborso_parziale` e non si chiude in automatico (solo `CHIUDI`
+manuale). Da `rimborso_parziale` il progetto va **solo in avanti** (→ `chiuso`),
+mai indietro.
 
 Legenda eventi:
 
@@ -98,19 +100,26 @@ Legenda eventi:
 
 Lo stato atteso è calcolato in quest'ordine (la prima regola che scatta vince):
 
-| #   | Condizione                                                                | Risultato             |
-| --- | ------------------------------------------------------------------------- | --------------------- |
-| 1   | `StatoProgetto` nullo o legacy `aperto`                                   | base `accettato`      |
-| 2   | stato attuale ∈ {`proposto`,`validato`,`approvato`}                       | **resta invariata**   |
-| 3   | `allocato > 0` **e** `rimborsato ≥ allocato`                              | `chiuso` (auto)       |
-| 4   | stato attuale = `chiuso`                                                  | `chiuso` (**sticky**) |
-| 5   | `0 < rimborsato < allocato`                                               | `rimborso_parziale`   |
-| 6   | esiste ≥1 giustificativo **valido** (non invalidato, `inviato`/contabile) | `in_rendicontazione`  |
-| 7   | altrimenti                                                                | `accettato`           |
+| #   | Condizione                                                                            | Risultato             |
+| --- | ------------------------------------------------------------------------------------- | --------------------- |
+| 1   | `StatoProgetto` nullo o legacy `aperto`                                               | base `accettato`      |
+| 2   | stato attuale ∈ {`proposto`,`validato`,`approvato`}                                   | **resta invariata**   |
+| 3   | `allocato > 0` **e** `rimborsato ≥ allocato`                                          | `chiuso` (auto)       |
+| 4   | stato attuale = `chiuso`                                                              | `chiuso` (**sticky**) |
+| 5   | `0 < rimborsato < allocato`                                                           | `rimborso_parziale`   |
+| 6   | esiste ≥1 giustificativo **avviato** (non invalidato: `draft`, `inviato` o contabile) | `in_rendicontazione`  |
+| 7   | altrimenti                                                                            | `accettato`           |
 
 - `rimborsato` = somma dei pagamenti in stato `pagato` (`TotalePagato`).
-- "giustificativo valido" = `Stato ∈ {inviato, verificato, in_pagamento, pagato}`
-  e `Invalidato ≠ true`. I `draft` **non** contano.
+- "giustificativo avviato" = `Stato ∈ {draft, inviato, verificato, in_pagamento, pagato}`
+  e `Invalidato ≠ true`. **Anche una bozza avvia la rendicontazione**: appena la
+  famiglia salva un `draft` il progetto passa a `in_rendicontazione`
+  (`StatoRendicontazione = 'bozza'`); se l'ultima bozza viene eliminata/invalidata
+  torna `accettato`. Le bozze non contano negli importi di Verifica.
+- Le regole 3/5 sono transizioni **automatiche** legittime solo da
+  `in_rendicontazione`/`rimborso_parziale`: la derivazione le calcola anche da
+  `accettato`, ma la macchina **rifiuta** `accettato → rimborso_parziale`/`chiuso`
+  (`TransizioneNonValidaError`), segnalando lo stato anomalo.
 
 ---
 
@@ -123,18 +132,14 @@ flowchart TD
     P["rimborso_parziale"]
     C["chiuso"]
 
-    A -->|"primo giustificativo valido<br/>syncProgettoAggregati"| R
-    A -->|"0 &lt; pagato &lt; allocato<br/>ricalcolaTotaliProgetto"| P
-    A -->|"pagato ≥ allocato<br/>chiudiProgetto automatica"| C
+    A -->|"prima bozza / giustificativo avviato<br/>syncProgettoAggregati"| R
     A -->|"CHIUDI manuale"| C
 
-    R -->|"nessun giustificativo valido<br/>e pagato = 0"| A
+    R -->|"nessun giustificativo avviato<br/>e pagato = 0"| A
     R -->|"0 &lt; pagato &lt; allocato"| P
     R -->|"pagato ≥ allocato"| C
     R -->|"CHIUDI manuale"| C
 
-    P -->|"pagato = 0 e nessun valido"| A
-    P -->|"pagato = 0 e ≥1 valido"| R
     P -->|"pagato ≥ allocato"| C
     P -->|"CHIUDI manuale"| C
 
@@ -189,42 +194,48 @@ stateDiagram-v2
 
 **Ponte driver → progetto**:
 
-- un giustificativo diventa `inviato`/contabile → `syncProgettoAggregati` →
-  progetto `in_rendicontazione`;
-- un pagamento diventa `in_pagamento`/`pagato`/`fallito`/`annullato` →
-  `ricalcolaTotaliProgetto` → progetto `rimborso_parziale` o `chiuso`.
+- un giustificativo diventa **avviato** (bozza, `inviato` o contabile) →
+  `syncProgettoAggregati` → progetto `in_rendicontazione` (o ritorno ad
+  `accettato` quando l'ultimo avviato sparisce);
+- un pagamento diventa `pagato` → `ricalcolaTotaliProgetto` → progetto
+  `rimborso_parziale` (parziale) o `chiuso` (cap raggiunto). Gli stati
+  `in_pagamento`/`fallito`/`annullato` **non** fanno transire il progetto: solo
+  `TotalePagato` (pagamenti `pagato`) incide sullo stato.
 
 ---
 
 ## 5. Tutti i casi possibili da `accettato`
 
-| Da                   | Evento                         | Condizione                             | A                    | Causa (azione)                                    | Entry point UI                                                  | Side-effect                                                     |
-| -------------------- | ------------------------------ | -------------------------------------- | -------------------- | ------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |
-| `accettato`          | `RICALCOLA_IN_RENDICONTAZIONE` | ≥1 giustificativo valido, `pagato = 0` | `in_rendicontazione` | crea / invia / verifica / aggiorna giustificativo | volontario → `giustificativi.store`; manager → `verifica.store` | `syncProgettoAggregati`                                         |
-| `accettato`          | `RICALCOLA_RIMBORSO_PARZIALE`  | `0 < pagato < allocato`                | `rimborso_parziale`  | pagamento parziale                                | `PagamentiTab` → `pagamenti.store`                              | `ricalcolaTotaliProgetto` + `sincronizzaStatiPagamentoProgetto` |
-| `accettato`          | `RICALCOLA_CHIUSO`             | `allocato > 0` e `pagato ≥ allocato`   | `chiuso` (auto)      | segna pagato che raggiunge il cap                 | `PagamentiTab` → `pagamenti.store.segnaPagato`                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
-| `accettato`          | `CHIUDI`                       | —                                      | `chiuso` (manuale)   | "Chiudi progetto"                                 | `RendicontazioneTab` → `pagamenti.store.chiudiProgetto`         | set `DataChiusura`, `MotivoChiusura`                            |
-| `in_rendicontazione` | `RICALCOLA_ACCETTATO`          | nessun valido e `pagato = 0`           | `accettato`          | invalida / elimina l'ultimo giustificativo valido | volontario → `giustificativi.store`                             | `syncProgettoAggregati`                                         |
-| `in_rendicontazione` | `RICALCOLA_RIMBORSO_PARZIALE`  | `0 < pagato < allocato`                | `rimborso_parziale`  | pagamento parziale                                | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` + `sincronizzaStatiPagamentoProgetto` |
-| `in_rendicontazione` | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                    | `chiuso` (auto)      | segna pagato che raggiunge il cap                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
-| `in_rendicontazione` | `CHIUDI`                       | —                                      | `chiuso` (manuale)   | "Chiudi progetto"                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
-| `rimborso_parziale`  | `RICALCOLA_ACCETTATO`          | `pagato = 0` e nessun valido           | `accettato`          | annullo pagamenti + nessun giustificativo valido  | `PagamentiTab` / volontario                                     | `ricalcolaTotaliProgetto` / `syncProgettoAggregati`             |
-| `rimborso_parziale`  | `RICALCOLA_IN_RENDICONTAZIONE` | `pagato = 0` e ≥1 valido               | `in_rendicontazione` | annullo pagamenti (restano giustificativi validi) | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto`                                       |
-| `rimborso_parziale`  | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                    | `chiuso` (auto)      | segna pagato che raggiunge il cap                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
-| `rimborso_parziale`  | `CHIUDI`                       | —                                      | `chiuso` (manuale)   | "Chiudi progetto"                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
-| `chiuso`             | `RIAPRI`                       | —                                      | `accettato`          | "Riapri progetto"                                 | `RendicontazioneTab` → `pagamenti.store.riapriProgetto`         | azzera `DataChiusura`, `MotivoChiusura`                         |
+| Da                   | Evento                         | Condizione                                              | A                             | Causa (azione)                                                    | Entry point UI                                                  | Side-effect                                                     |
+| -------------------- | ------------------------------ | ------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |
+| `accettato`          | `RICALCOLA_IN_RENDICONTAZIONE` | ≥1 giustificativo avviato (bozza inclusa), `pagato = 0` | `in_rendicontazione`          | crea bozza / invia / verifica / aggiorna giustificativo           | volontario → `giustificativi.store`; manager → `verifica.store` | `syncProgettoAggregati`                                         |
+| `accettato`          | `CHIUDI`                       | —                                                       | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab` → `pagamenti.store.chiudiProgetto`         | set `DataChiusura`, `MotivoChiusura`                            |
+| `in_rendicontazione` | `RICALCOLA_ACCETTATO`          | nessun giustificativo avviato e `pagato = 0`            | `accettato`                   | elimina/invalida l'ultima bozza o rifiuta l'ultimo giustificativo | volontario → `giustificativi.store`                             | `syncProgettoAggregati`                                         |
+| `in_rendicontazione` | `RICALCOLA_RIMBORSO_PARZIALE`  | `0 < pagato < allocato`                                 | `rimborso_parziale`           | pagamento parziale                                                | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` + `sincronizzaStatiPagamentoProgetto` |
+| `in_rendicontazione` | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                                     | `chiuso` (auto)               | segna pagato che raggiunge il cap                                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
+| `in_rendicontazione` | `CHIUDI`                       | —                                                       | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
+| `rimborso_parziale`  | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                                     | `chiuso` (auto)               | segna pagato che raggiunge il cap                                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
+| `rimborso_parziale`  | `CHIUDI`                       | —                                                       | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
+| `chiuso`             | `RIAPRI`                       | residuo > 0                                             | target **derivato** (vedi §6) | "Riapri progetto"                                                 | `RendicontazioneTab` → `pagamenti.store.riapriProgetto`         | azzera `DataChiusura`, `MotivoChiusura`                         |
 
 ---
 
 ## 6. Transizioni NON possibili
 
-| Tentativo                                           | Esito                                                               |
-| --------------------------------------------------- | ------------------------------------------------------------------- |
-| `accettato` → `proposto`/`validato`/`approvato`     | **impossibile**: la fase manuale non retrocede                      |
-| `chiuso` → `in_rendicontazione`/`rimborso_parziale` | **impossibile**: da `chiuso` esiste solo `RIAPRI` → `accettato`     |
-| `avanzaStatoProgetto` da `accettato` o oltre        | lancia `TransizioneNonValidaError` ("progetto non in fase manuale") |
-| Creare un progetto in stato ≠ `accettato`           | `creaConStato` valida lo stato dichiarato (solo `accettato`)        |
-| Modificare `StatoProgetto` fuori da `transita`      | bloccato da ESLint `no-restricted-syntax`                           |
+| Tentativo                                                             | Esito                                                                |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `accettato` → `proposto`/`validato`/`approvato`                       | **impossibile**: la fase manuale non retrocede                       |
+| `accettato` → `rimborso_parziale`                                     | **impossibile**: da `accettato` si passa solo a `in_rendicontazione` |
+| `accettato` → `chiuso` automatica                                     | **impossibile**: chiusura solo manuale (`CHIUDI`)                    |
+| `rimborso_parziale` → `accettato`/`in_rendicontazione`                | **impossibile**: il progetto va solo in avanti (→ `chiuso`)          |
+| `chiuso` → `rimborso_parziale`/`in_rendicontazione` via `RICALCOLA_*` | **impossibile**: da `chiuso` esiste solo `RIAPRI`                    |
+| `avanzaStatoProgetto` da `accettato` o oltre                          | lancia `TransizioneNonValidaError` ("progetto non in fase manuale")  |
+| Creare un progetto in stato ≠ `accettato`                             | `creaConStato` valida lo stato dichiarato (solo `accettato`)         |
+| Modificare `StatoProgetto` fuori da `transita`                        | bloccato da ESLint `no-restricted-syntax`                            |
+
+> Nota: `chiuso → in_rendicontazione`/`rimborso_parziale` **non** è più
+> impossibile in assoluto: la riapertura (`RIAPRI`) ha un target **derivato** da
+> giustificativi e pagamenti (con le guardie `residuo > 0` e `allocato > 0`).
 
 ---
 
@@ -257,35 +268,44 @@ stateDiagram-v2
 
 ## 8. Mappa eventi → entry point
 
-| Evento / azione                 | Use case                                    | Store                                     | UI                                                    |
-| ------------------------------- | ------------------------------------------- | ----------------------------------------- | ----------------------------------------------------- |
-| Crea progetto (`accettato`)     | `creaProgetto`                              | `admin.store` / pagina                    | `CreaProgettoPage`                                    |
-| Avanza fase manuale             | `avanzaStatoProgetto`                       | `pagamenti.store`                         | `RendicontazioneTab` ("Avanza stato progetto")        |
-| Chiudi progetto (manuale)       | `chiudiProgetto`                            | `pagamenti.store`                         | `RendicontazioneTab` ("Chiudi progetto")              |
-| Riapri progetto                 | `riapriProgetto`                            | `pagamenti.store`                         | `RendicontazioneTab` ("Riapri progetto")              |
-| Crea gruppo di pagamento        | `segnaInPagamento`                          | `pagamenti.store.creaBatch`               | `PagamentiTab` ("Crea gruppo di pagamento")           |
-| Segna pagato                    | `segnaPagato`                               | `pagamenti.store`                         | `PagamentiTab` ("Segna pagato")                       |
-| Segna fallito                   | `segnaFallito`                              | `pagamenti.store`                         | `PagamentiTab` ("Segna fallito")                      |
-| Rimuovi dal gruppo / annulla    | `segnaAnnullato`                            | `pagamenti.store`                         | `PagamentiTab` ("Rimuovi dal gruppo")                 |
-| Ripristina a "Bonifici da fare" | `ripristinaProposto`                        | `pagamenti.store`                         | `PagamentiTab` ("Ripristina a Bonifici", tab Falliti) |
-| Ricalcola proposte (bulk)       | `ricalcolaPropostiDaProgetti`               | `pagamenti.store`                         | `PagamentiTab` ("RICALCOLA")                          |
-| Verifica giustificativo         | `verificaGiustificativo`                    | `verifica.store`                          | `RendicontazioneTab` / `Verifica` (azione "Verifica") |
-| Rifiuta giustificativo          | `rifiutaGiustificativo`                     | `verifica.store`                          | `RendicontazioneTab` / `Verifica` (azione "Rifiuta")  |
-| Invia bozza giustificativo      | `inviaGiustificativo`                       | `giustificativi.store`                    | card giustificativo (volontario)                      |
-| Ripristina a `inviato`          | `aggiornaCampoGiustificativo`               | `verifica.store` / `giustificativi.store` | azione "Ripristina"                                   |
-| Invalida giustificativo         | `invalidaGiustificativo`                    | `giustificativi.store`                    | card giustificativo (volontario)                      |
-| Crea giustificativo             | `creaGiustificativo`                        | `giustificativi.store` / `verifica.store` | form giustificativo (volontario/verificatore)         |
-| Crea submission (modulo libero) | `creaSubmission`                            | `submit.store`                            | `SubmitPage`                                          |
-| Riconcilia submission           | `riconciliaSubmission`                      | `verifica.store`                          | `RiconciliazionePage`                                 |
-| Scarta / ripristina submission  | `scartaSubmission` / `ripristinaSubmission` | `verifica.store`                          | `RiconciliazionePage`                                 |
+| Evento / azione                 | Use case                                    | Store                                                            | UI                                                    |
+| ------------------------------- | ------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| Crea progetto (`accettato`)     | `creaProgetto`                              | `admin.store` / pagina                                           | `CreaProgettoPage`                                    |
+| Avanza fase manuale             | `avanzaStatoProgetto`                       | `pagamenti.store`                                                | `RendicontazioneTab` ("Avanza stato progetto")        |
+| Chiudi progetto (manuale)       | `chiudiProgetto`                            | `pagamenti.store`                                                | `RendicontazioneTab` ("Chiudi progetto")              |
+| Riapri progetto                 | `riapriProgetto`                            | `pagamenti.store`                                                | `RendicontazioneTab` ("Riapri progetto")              |
+| Crea gruppo di pagamento        | `segnaInPagamento`                          | `pagamenti.store.creaBatch`                                      | `PagamentiTab` ("Crea gruppo di pagamento")           |
+| Segna pagato                    | `segnaPagato`                               | `pagamenti.store`                                                | `PagamentiTab` ("Segna pagato")                       |
+| Segna fallito                   | `segnaFallito`                              | `pagamenti.store`                                                | `PagamentiTab` ("Segna fallito")                      |
+| Rimuovi dal gruppo / annulla    | `segnaAnnullato`                            | `pagamenti.store`                                                | `PagamentiTab` ("Rimuovi dal gruppo")                 |
+| Ripristina a "Bonifici da fare" | `ripristinaProposto`                        | `pagamenti.store`                                                | `PagamentiTab` ("Ripristina a Bonifici", tab Falliti) |
+| Ricalcola proposte (bulk)       | `ricalcolaPropostiDaProgetti`               | `pagamenti.store`                                                | `PagamentiTab` ("RICALCOLA")                          |
+| Verifica giustificativo         | `verificaGiustificativo`                    | `verifica.store`                                                 | `RendicontazioneTab` / `Verifica` (azione "Verifica") |
+| Rifiuta giustificativo          | `rifiutaGiustificativo`                     | `verifica.store`                                                 | `RendicontazioneTab` / `Verifica` (azione "Rifiuta")  |
+| Invia bozza giustificativo      | `inviaGiustificativo`                       | `giustificativi.store` (volontario) / `verifica.store` (manager) | card giustificativo / `RendicontazioneTab`            |
+| Ripristina a `inviato`          | `aggiornaCampoGiustificativo`               | `verifica.store`                                                 | `RendicontazioneTab` (azione "Ripristina")            |
+| Invalida giustificativo         | `invalidaGiustificativo`                    | `giustificativi.store`                                           | card giustificativo (solo bozze)                      |
+| Crea giustificativo             | `creaGiustificativo`                        | `giustificativi.store` / `verifica.store`                        | form giustificativo (volontario/verificatore)         |
+| Crea submission (modulo libero) | `creaSubmission`                            | `submit.store`                                                   | `SubmitPage`                                          |
+| Riconcilia submission           | `riconciliaSubmission`                      | `verifica.store`                                                 | `RiconciliazionePage`                                 |
+| Scarta / ripristina submission  | `scartaSubmission` / `ripristinaSubmission` | `verifica.store`                                                 | `RiconciliazionePage`                                 |
 
 ---
 
 ## 9. Verifiche e note
 
-- **`RICALCOLA_ACCETTATO`** è realmente emesso: da `in_rendicontazione` o
-  `rimborso_parziale` quando i giustificativi validi spariscono e non ci sono
-  pagamenti (`eventoRicalcoloProgetto('accettato')`).
+- **`RICALCOLA_ACCETTATO`** è emesso **solo da `in_rendicontazione`**, quando
+  non resta nessun giustificativo avviato (ultima bozza eliminata/invalidata o
+  ultimo giustificativo rifiutato) e `pagato = 0`
+  (`eventoRicalcoloProgetto('accettato')`). Da `rimborso_parziale` non è più
+  previsto: il progetto va solo in avanti.
+- **Contratto da `accettato`**: l'unico innesco automatico è
+  `in_rendicontazione`; `rimborso_parziale` e `chiuso` automatici sono vietati
+  (chiusura solo manuale). Da `rimborso_parziale` sono vietati i ritorni a
+  `accettato`/`in_rendicontazione`.
+- **Bozze**: una `draft` avvia la rendicontazione (progetto
+  `in_rendicontazione`, `StatoRendicontazione = 'bozza'`); lo stato di riga
+  mostra "Bozze da inviare" finché non viene inviata.
 - **`chiuso` sticky**: `syncProgettoAggregati` su un progetto `chiuso` calcola
   sempre `chiuso` come target, quindi la condizione `statoRaw === statoProgetto`
   è vera e viene fatta solo la PATCH dei derivati (nessuna transizione).

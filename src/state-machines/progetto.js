@@ -9,8 +9,12 @@ const S = STATO_PROGETTO
  * - Fase manuale: VALIDA (proposto→validato), APPROVA (validato→approvato),
  *   ACCETTA (approvato→accettato).
  * - Fase automatica/derivata (da `calcolaStatoProgetto`, idempotente):
- *   RICALCOLA_* tra gli stati operativi e verso `chiuso`.
- * - Chiusura manuale: CHIUDI (sticky). Riapertura: RIAPRI.
+ *   - `accettato` → `in_rendicontazione` (unico innesco automatico da accettato);
+ *   - `in_rendicontazione` → `rimborso_parziale` | `chiuso`;
+ *   - `rimborso_parziale` → `chiuso` (il progetto va solo in avanti).
+ *   Da `accettato` NON si passa direttamente a `rimborso_parziale` e non si
+ *   chiude in automatico.
+ * - Chiusura manuale: CHIUDI. Riapertura: RIAPRI.
  *
  * Nota legacy: il valore `aperto` equivale ad `accettato` e va normalizzato
  * PRIMA di interrogare la macchina (vedi `statoProgettoEffettivo`). La macchina
@@ -51,9 +55,10 @@ export const progettoMachine = createMachine({
     },
     [S.ACCETTATO]: {
       on: {
+        // Da `accettato` l'unico innesco automatico è la rendicontazione.
+        // Non si passa direttamente a `rimborso_parziale` e non si chiude in
+        // automatico: la chiusura è solo manuale (CHIUDI).
         [E.RICALCOLA_IN_RENDICONTAZIONE]: S.IN_RENDICONTAZIONE,
-        [E.RICALCOLA_RIMBORSO_PARZIALE]: S.RIMBORSO_PARZIALE,
-        [E.RICALCOLA_CHIUSO]: S.CHIUSO,
         [E.CHIUDI]: S.CHIUSO
       }
     },
@@ -67,8 +72,9 @@ export const progettoMachine = createMachine({
     },
     [S.RIMBORSO_PARZIALE]: {
       on: {
-        [E.RICALCOLA_ACCETTATO]: S.ACCETTATO,
-        [E.RICALCOLA_IN_RENDICONTAZIONE]: S.IN_RENDICONTAZIONE,
+        // Una volta entrato nel rimborso parziale il progetto va solo in
+        // avanti: può chiudersi (cap raggiunto o manuale), mai tornare a
+        // `accettato`/`in_rendicontazione`.
         [E.RICALCOLA_CHIUSO]: S.CHIUSO,
         [E.CHIUDI]: S.CHIUSO
       }

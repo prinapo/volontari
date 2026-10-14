@@ -276,7 +276,7 @@ describe('ricalcolaTotaliProgetto', () => {
 
   it('aggiorna le stats e chiude automaticamente il progetto pagato', async () => {
     mockGetProgettoById.mockResolvedValue({
-      data: { data: { id_progetto: 21, Allocato: '100', StatoProgetto: 'aperto' } }
+      data: { data: { id_progetto: 21, Allocato: '100', StatoProgetto: 'in_rendicontazione' } }
     })
     mockGetGiustificativiByProgetto.mockResolvedValue({
       data: { data: [{ Stato: 'verificato', Importo: '100' }] }
@@ -335,7 +335,7 @@ describe('ricalcolaTotaliProgetto', () => {
 
   it('transizione a rimborso_parziale senza DataChiusura', async () => {
     mockGetProgettoById.mockResolvedValue({
-      data: { data: { id_progetto: 40, Allocato: '1000', StatoProgetto: 'accettato' } }
+      data: { data: { id_progetto: 40, Allocato: '1000', StatoProgetto: 'in_rendicontazione' } }
     })
     mockGetGiustificativiByProgetto.mockResolvedValue({
       data: { data: [{ Stato: 'verificato', Importo: '500' }] }
@@ -351,6 +351,36 @@ describe('ricalcolaTotaliProgetto', () => {
     expect(statoCall[1]).toEqual({ StatoProgetto: 'rimborso_parziale' })
     expect(statoCall[1].DataChiusura).toBeUndefined()
     expect(statoCall[1].MotivoChiusura).toBeUndefined()
+  })
+
+  it('da accettato non transisce a rimborso_parziale (contratto)', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 41, Allocato: '1000', StatoProgetto: 'accettato' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ Stato: 'verificato', Importo: '500' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '400' }] }
+    })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await expect(ricalcolaTotaliProgetto(41)).rejects.toBeInstanceOf(TransizioneNonValidaError)
+  })
+
+  it('da accettato non chiude automaticamente al cap (contratto)', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 42, Allocato: '100', StatoProgetto: 'accettato' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ Stato: 'verificato', Importo: '100' }] }
+    })
+    mockGetPagamenti.mockResolvedValue({
+      data: { data: [{ id: 'paid-1', Stato: 'pagato', Importo: '100' }] }
+    })
+    mockUpdateProgettoStats.mockResolvedValue({})
+
+    await expect(ricalcolaTotaliProgetto(42)).rejects.toBeInstanceOf(TransizioneNonValidaError)
   })
 })
 
