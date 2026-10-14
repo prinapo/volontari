@@ -383,18 +383,18 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {
+    async chiudiProgetto(progettoId, { automatica = false, motivo = null, tipo = null } = {}) {
       try {
-        await chiudiProgettoUseCase(progettoId, { automatica, motivo })
+        await chiudiProgettoUseCase(progettoId, { automatica, motivo, tipo })
       } catch (error) {
         this.error = apiErrorMessage(error)
         throw error
       }
     },
 
-    async riapriProgetto(progettoId) {
+    async riapriProgetto(progettoId, { conferma = false } = {}) {
       try {
-        await riapriProgettoUseCase(progettoId)
+        await riapriProgettoUseCase(progettoId, { conferma })
       } catch (error) {
         this.error = apiErrorMessage(error)
         throw error

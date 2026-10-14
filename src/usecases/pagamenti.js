@@ -13,7 +13,9 @@ import {
   STATI_PROGETTO_OPERATIVI,
   STATO_GIUSTIFICATIVO,
   STATO_PAGAMENTO,
-  STATO_PROGETTO
+  STATO_PROGETTO,
+  TIPI_CHIUSURA_DEFINITIVI,
+  TIPO_CHIUSURA
 } from 'src/utils/constants'
 import { pickEmail } from 'src/utils/emailPrimarie'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
@@ -510,7 +512,7 @@ export async function correggiDati(pagamentoId, { iban, intestatario }) {
   await famiglieService.update(pagamento.Famiglia, { IBAN: iban, Intestatario_CC: intestatario })
 }
 
-export async function chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {
+export async function chiudiProgetto(progettoId, { automatica = false, motivo = null, tipo = null } = {}) {
   const progRes = await progettiService.getById(progettoId)
   const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
   await transita({
@@ -520,13 +522,14 @@ export async function chiudiProgetto(progettoId, { automatica = false, motivo = 
     evento: automatica ? EVENTI_PROGETTO.RICALCOLA_CHIUSO : EVENTI_PROGETTO.CHIUDI,
     extra: {
       DataChiusura: new Date().toISOString(),
-      MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
+      MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo,
+      TipoChiusura: automatica ? TIPO_CHIUSURA.CAP_RAGGIUNTO : tipo || TIPO_CHIUSURA.ALTRO
     },
     scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
 }
 
-export async function riapriProgetto(progettoId) {
+export async function riapriProgetto(progettoId, { conferma = false } = {}) {
   const progRes = await progettiService.getById(progettoId)
   const progetto = progRes.data.data
   if (!progetto) throw new Error('Progetto non trovato')
@@ -553,6 +556,13 @@ export async function riapriProgetto(progettoId) {
     throw new Error('Residuo zero: il progetto è interamente pagato e non è riapribile')
   }
 
+  // Motivi "definitivi" (rinuncia/irraggiungibile/fine anno): riapertura solo
+  // con conferma esplicita.
+  const tipoChiusura = progetto.TipoChiusura || null
+  if (TIPI_CHIUSURA_DEFINITIVI.includes(tipoChiusura) && !conferma) {
+    throw new Error(`Chiusura definitiva (${tipoChiusura}): serve conferma esplicita per riaprire`)
+  }
+
   // Target derivato da giustificativi e pagamenti (mai un fisso `accettato`).
   const targetRiapertura = calcolaStatoProgetto({
     statoProgetto: STATO_PROGETTO.ACCETTATO,
@@ -567,7 +577,7 @@ export async function riapriProgetto(progettoId) {
     statoCorrente,
     evento: EVENTI_PROGETTO.RIAPRI,
     ctx: { targetRiapertura },
-    extra: { DataChiusura: null, MotivoChiusura: null },
+    extra: { DataChiusura: null, MotivoChiusura: null, TipoChiusura: null },
     scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
 }

@@ -359,7 +359,7 @@ describe('pagamenti store', () => {
     mockChiudiProgetto.mockResolvedValue()
     const store = usePagamentiStore()
     await store.chiudiProgetto(1, { automatica: true })
-    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null })
+    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null, tipo: null })
   })
 
   it('avanzaStatoProgetto delega allo use case', async () => {

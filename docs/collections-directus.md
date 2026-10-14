@@ -59,16 +59,17 @@ Pagamenti.Batch → BatchPagamenti.id
 
 ## 4. Campi nuovi su `Progetti`
 
-| Campo               | Tipo              | Note                                  |
-| ------------------- | ----------------- | ------------------------------------- |
-| `StatoProgetto`     | String (Dropdown) | `aperto`, `chiuso` — default `aperto` |
-| `MotivoChiusura`    | Text              | nullable                              |
-| `DataChiusura`      | Timestamp         | nullable                              |
-| `TotaleVerificato`  | Decimal (10,2)    | calcolato e salvato dal sistema       |
-| `TotaleProposto`    | Decimal (10,2)    | calcolato e salvato                   |
-| `TotaleInPagamento` | Decimal (10,2)    | calcolato e salvato                   |
-| `TotalePagato`      | Decimal (10,2)    | calcolato e salvato                   |
-| `ResiduoAllocato`   | Decimal (10,2)    | calcolato e salvato                   |
+| Campo               | Tipo              | Note                                                                                                                    |
+| ------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `StatoProgetto`     | String (Dropdown) | `proposto`, `validato`, `approvato`, `accettato`, `in_rendicontazione`, `rimborso_parziale`, `chiuso` (legacy `aperto`) |
+| `MotivoChiusura`    | Text              | nullable (nota libera)                                                                                                  |
+| `DataChiusura`      | Timestamp         | nullable                                                                                                                |
+| `TipoChiusura`      | String (Dropdown) | nullable; `cap_raggiunto`, `rinuncia`, `irraggiungibile`, `fine_anno`, `errore`, `altro`                                |
+| `TotaleVerificato`  | Decimal (10,2)    | calcolato e salvato dal sistema                                                                                         |
+| `TotaleProposto`    | Decimal (10,2)    | calcolato e salvato                                                                                                     |
+| `TotaleInPagamento` | Decimal (10,2)    | calcolato e salvato                                                                                                     |
+| `TotalePagato`      | Decimal (10,2)    | calcolato e salvato                                                                                                     |
+| `ResiduoAllocato`   | Decimal (10,2)    | calcolato e salvato                                                                                                     |
 
 ---
 
@@ -144,6 +145,11 @@ for field in '{"field":"StatoProgetto","type":"string","meta":{"interface":"sele
     -d "$field"
 done
 
+# 2b. TipoChiusura su Progetti (motivo di chiusura; nullable)
+curl -s -X POST "https://app.sostienilsostegno.com/fields/Progetti" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"field":"TipoChiusura","type":"string","meta":{"interface":"select-dropdown","width":"half","options":{"choices":[{"text":"Cap raggiunto","value":"cap_raggiunto"},{"text":"Rinuncia","value":"rinuncia"},{"text":"Irraggiungibile","value":"irraggiungibile"},{"text":"Fine anno","value":"fine_anno"},{"text":"Errore","value":"errore"},{"text":"Altro","value":"altro"}]}},"schema":{"is_nullable":true,"default_value":null}}'
+
 # 3. Dati Associazioni (se non inseriti)
 curl -s -X POST "https://app.sostienilsostegno.com/items/Associazioni" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
@@ -158,13 +164,17 @@ curl -s -X POST "https://app.sostienilsostegno.com/items/Associazioni" \
 
 ## 6. Permessi Directus
 
-| Collection               | Volontario                                      | Verificatore                                                       | Admin     |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------ | --------- |
-| `Associazioni`           | Nessuno                                         | Read                                                               | Full CRUD |
-| `BatchPagamenti`         | Nessuno                                         | Read, Create                                                       | Full CRUD |
-| `Pagamenti`              | Nessuno                                         | Read, Create, Update (no Delete)                                   | Full CRUD |
-| `Progetti` (nuovi campi) | Read                                            | Read + Update su `StatoProgetto`, `MotivoChiusura`, `DataChiusura` | Full      |
-| `NoteProgetti`           | Create, Read (senza filtro — rischio accettato) | Create, Read                                                       | Full CRUD |
+| Collection                   | Volontario                                                                                                 | Manager                          | Admin     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------- | --------- |
+| `Associazioni`               | Nessuno                                                                                                    | Read                             | Full CRUD |
+| `BatchPagamenti`             | Nessuno                                                                                                    | Read, Create                     | Full CRUD |
+| `Pagamenti`                  | Read (pagina famiglia)                                                                                     | Read, Create, Update (no Delete) | Full CRUD |
+| `Progetti` (derivati)        | Read + Update **solo** su `StatoProgetto`, `StatoRendicontazione`, `TotaleGiustificativi`, `TotaleImporto` | Read + Update                    | Full      |
+| `InviiGiustificativiNoLogin` | Create (modulo libero, anche da loggati)                                                                   | Read, Create, Update             | Full CRUD |
+| `NoteProgetti`               | Create, Read (senza filtro — rischio accettato)                                                            | Create, Read                     | Full CRUD |
+
+> Ruoli reali: **Admin**, **Manager**, **Volontario** (non esistono utenti "Verificatore"/"Genitore").
+> Nota: `Progetti.TipoChiusura` è **fuori** dal field-scoped del Volontario → scrivibile solo da Manager/Admin.
 
 ---
 

@@ -458,18 +458,26 @@ describe('segnaFallito', () => {
 describe('chiudiProgetto / riapriProgetto', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('chiude manualmente un progetto operativo con il motivo', async () => {
+  it('chiude manualmente un progetto operativo con motivo e tipo', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'accettato' } } })
     mockUpdateProgettoStats.mockResolvedValue({})
-    await chiudiProgetto(1, { motivo: 'Chiuso dal manager' })
+    await chiudiProgetto(1, { motivo: 'Chiuso dal manager', tipo: 'rinuncia' })
     expect(mockUpdateProgettoStats).toHaveBeenCalledWith(
       1,
       expect.objectContaining({
         StatoProgetto: 'chiuso',
         MotivoChiusura: 'Chiuso dal manager',
+        TipoChiusura: 'rinuncia',
         DataChiusura: expect.any(String)
       })
     )
+  })
+
+  it('la chiusura manuale senza tipo usa "altro"', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'accettato' } } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await chiudiProgetto(1, { motivo: 'x' })
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(1, expect.objectContaining({ TipoChiusura: 'altro' }))
   })
 
   it('la chiusura automatica usa il motivo standard', async () => {
@@ -480,7 +488,8 @@ describe('chiudiProgetto / riapriProgetto', () => {
       1,
       expect.objectContaining({
         StatoProgetto: 'chiuso',
-        MotivoChiusura: 'Importo allocato interamente pagato'
+        MotivoChiusura: 'Importo allocato interamente pagato',
+        TipoChiusura: 'cap_raggiunto'
       })
     )
   })
@@ -496,6 +505,7 @@ describe('chiudiProgetto / riapriProgetto', () => {
     expect(mockUpdateProgettoStats).toHaveBeenCalledWith(1, {
       DataChiusura: null,
       MotivoChiusura: null,
+      TipoChiusura: null,
       StatoProgetto: 'accettato'
     })
   })
@@ -550,6 +560,36 @@ describe('chiudiProgetto / riapriProgetto', () => {
     mockUpdateProgettoStats.mockResolvedValue({})
     await expect(riapriProgetto(1)).rejects.toThrow('Residuo zero')
     expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
+  })
+
+  it('richiede conferma esplicita per una chiusura definitiva', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: '1000', TipoChiusura: 'rinuncia' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await expect(riapriProgetto(1)).rejects.toThrow('serve conferma esplicita')
+    expect(mockUpdateProgettoStats).not.toHaveBeenCalled()
+  })
+
+  it('con conferma esplicita riapre e azzera TipoChiusura', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'chiuso', Allocato: '1000', TipoChiusura: 'rinuncia' } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    await riapriProgetto(1, { conferma: true })
+    expect(mockUpdateProgettoStats).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        StatoProgetto: 'accettato',
+        TipoChiusura: null,
+        DataChiusura: null,
+        MotivoChiusura: null
+      })
+    )
   })
 
   it('riapriProgetto rifiuta uno stato non chiuso senza scrivere', async () => {

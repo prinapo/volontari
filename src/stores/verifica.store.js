@@ -64,6 +64,7 @@ function normalizeProject(project, famiglia = {}) {
     totaleGiustificativi: project.TotaleGiustificativi || 0,
     totaleImporto: toNumber(project.TotaleImporto),
     statoProgetto: project.StatoProgetto || 'accettato',
+    tipoChiusura: project.TipoChiusura || null,
     totaleVerificato: toNumber(project.TotaleVerificato),
     totaleProposto: toNumber(project.TotaleProposto),
     totaleInPagamento: toNumber(project.TotaleInPagamento),

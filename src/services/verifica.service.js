@@ -20,6 +20,7 @@ export const verificaService = {
         'TotaleGiustificativi',
         'TotaleImporto',
         'StatoProgetto',
+        'TipoChiusura',
         'TotaleVerificato',
         'TotaleProposto',
         'TotaleInPagamento',

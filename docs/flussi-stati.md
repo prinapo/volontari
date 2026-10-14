@@ -72,7 +72,7 @@ stateDiagram-v2
 
     rimborso_parziale --> chiuso : RICALCOLA_CHIUSO / CHIUDI
 
-    chiuso --> accettato : RIAPRI
+    chiuso --> accettato : RIAPRI (target derivato)
 ```
 
 Da `accettato` l'unico innesco automatico è `in_rendicontazione`; non si passa
@@ -206,17 +206,17 @@ stateDiagram-v2
 
 ## 5. Tutti i casi possibili da `accettato`
 
-| Da                   | Evento                         | Condizione                                              | A                             | Causa (azione)                                                    | Entry point UI                                                  | Side-effect                                                     |
-| -------------------- | ------------------------------ | ------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |
-| `accettato`          | `RICALCOLA_IN_RENDICONTAZIONE` | ≥1 giustificativo avviato (bozza inclusa), `pagato = 0` | `in_rendicontazione`          | crea bozza / invia / verifica / aggiorna giustificativo           | volontario → `giustificativi.store`; manager → `verifica.store` | `syncProgettoAggregati`                                         |
-| `accettato`          | `CHIUDI`                       | —                                                       | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab` → `pagamenti.store.chiudiProgetto`         | set `DataChiusura`, `MotivoChiusura`                            |
-| `in_rendicontazione` | `RICALCOLA_ACCETTATO`          | nessun giustificativo avviato e `pagato = 0`            | `accettato`                   | elimina/invalida l'ultima bozza o rifiuta l'ultimo giustificativo | volontario → `giustificativi.store`                             | `syncProgettoAggregati`                                         |
-| `in_rendicontazione` | `RICALCOLA_RIMBORSO_PARZIALE`  | `0 < pagato < allocato`                                 | `rimborso_parziale`           | pagamento parziale                                                | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` + `sincronizzaStatiPagamentoProgetto` |
-| `in_rendicontazione` | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                                     | `chiuso` (auto)               | segna pagato che raggiunge il cap                                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
-| `in_rendicontazione` | `CHIUDI`                       | —                                                       | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
-| `rimborso_parziale`  | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                                     | `chiuso` (auto)               | segna pagato che raggiunge il cap                                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
-| `rimborso_parziale`  | `CHIUDI`                       | —                                                       | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
-| `chiuso`             | `RIAPRI`                       | residuo > 0                                             | target **derivato** (vedi §6) | "Riapri progetto"                                                 | `RendicontazioneTab` → `pagamenti.store.riapriProgetto`         | azzera `DataChiusura`, `MotivoChiusura`                         |
+| Da                   | Evento                         | Condizione                                                               | A                             | Causa (azione)                                                    | Entry point UI                                                  | Side-effect                                                     |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------ | ----------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |
+| `accettato`          | `RICALCOLA_IN_RENDICONTAZIONE` | ≥1 giustificativo avviato (bozza inclusa), `pagato = 0`                  | `in_rendicontazione`          | crea bozza / invia / verifica / aggiorna giustificativo           | volontario → `giustificativi.store`; manager → `verifica.store` | `syncProgettoAggregati`                                         |
+| `accettato`          | `CHIUDI`                       | —                                                                        | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab` → `pagamenti.store.chiudiProgetto`         | set `DataChiusura`, `MotivoChiusura`                            |
+| `in_rendicontazione` | `RICALCOLA_ACCETTATO`          | nessun giustificativo avviato e `pagato = 0`                             | `accettato`                   | elimina/invalida l'ultima bozza o rifiuta l'ultimo giustificativo | volontario → `giustificativi.store`                             | `syncProgettoAggregati`                                         |
+| `in_rendicontazione` | `RICALCOLA_RIMBORSO_PARZIALE`  | `0 < pagato < allocato`                                                  | `rimborso_parziale`           | pagamento parziale                                                | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` + `sincronizzaStatiPagamentoProgetto` |
+| `in_rendicontazione` | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                                                      | `chiuso` (auto)               | segna pagato che raggiunge il cap                                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
+| `in_rendicontazione` | `CHIUDI`                       | —                                                                        | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
+| `rimborso_parziale`  | `RICALCOLA_CHIUSO`             | `pagato ≥ allocato`                                                      | `chiuso` (auto)               | segna pagato che raggiunge il cap                                 | `PagamentiTab`                                                  | `ricalcolaTotaliProgetto` → `chiudiProgetto({automatica:true})` |
+| `rimborso_parziale`  | `CHIUDI`                       | —                                                                        | `chiuso` (manuale)            | "Chiudi progetto"                                                 | `RendicontazioneTab`                                            | set `DataChiusura`, `MotivoChiusura`                            |
+| `chiuso`             | `RIAPRI`                       | `allocato > 0` e `residuo > 0` (conferma esplicita se motivo definitivo) | target **derivato** (vedi §6) | "Riapri progetto"                                                 | `RendicontazioneTab` → `pagamenti.store.riapriProgetto`         | azzera `DataChiusura`, `MotivoChiusura`, `TipoChiusura`         |
 
 ---
 
@@ -235,7 +235,9 @@ stateDiagram-v2
 
 > Nota: `chiuso → in_rendicontazione`/`rimborso_parziale` **non** è più
 > impossibile in assoluto: la riapertura (`RIAPRI`) ha un target **derivato** da
-> giustificativi e pagamenti (con le guardie `residuo > 0` e `allocato > 0`).
+> giustificativi e pagamenti (con le guardie `residuo > 0` e `allocato > 0`, e
+> conferma esplicita per i motivi **definitivi**: rinuncia, irraggiungibile,
+> fine anno).
 
 ---
 
@@ -248,8 +250,8 @@ stateDiagram-v2
 | `sincronizzaStatiPagamentoProgetto(id)` | `segnaInPagamento`/`segnaPagato`/`segnaFallito`/`segnaAnnullato`/`ripristina*`                        | Riallinea gli stati dei giustificativi contabili al pagamento collegato (e al cap allocato)                            |
 | `ricalcolaProposta(progettoId)`         | verifica/rifiuta/aggiorna campo (manager), `segnaAnnullato`                                           | Crea/aggiorna/annulla il pagamento `proposto`; collega/scollega i giustificativi; poi ricalcola totali                 |
 | `ricalcolaPropostiDaProgetti(rows)`     | pulsante "RICALCOLA"                                                                                  | Versione bulk di `ricalcolaProposta` sui progetti operativi                                                            |
-| `chiudiProgetto(id, {automatica})`      | cap raggiunto (auto) o "Chiudi progetto" (manuale)                                                    | `transita` con `RICALCOLA_CHIUSO` o `CHIUDI`; set `DataChiusura`/`MotivoChiusura`                                      |
-| `riapriProgetto(id)`                    | "Riapri progetto"                                                                                     | `transita` con `RIAPRI`; azzera `DataChiusura`/`MotivoChiusura`                                                        |
+| `chiudiProgetto(id, {automatica})`      | cap raggiunto (auto) o "Chiudi progetto" (manuale)                                                    | `transita` con `RICALCOLA_CHIUSO` o `CHIUDI`; set `DataChiusura`/`MotivoChiusura`/`TipoChiusura`                       |
+| `riapriProgetto(id)`                    | "Riapri progetto"                                                                                     | `transita` con `RIAPRI`; azzera `DataChiusura`/`MotivoChiusura`/`TipoChiusura`                                         |
 | `inviaNotificaPagamento(pagamento)`     | dopo `segnaPagato`                                                                                    | Invia l'email al volontario/genitore e marca `NotificaInviata`                                                         |
 
 **Ordine tipico di `segnaPagato`** (`usecases/pagamenti.js`):

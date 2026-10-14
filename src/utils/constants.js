@@ -82,6 +82,20 @@ export const STATI_PROGETTO_OPERATIVI = [
 // finale: la famiglia può ancora inserire giustificativi fino al rimborso totale.
 export const STATI_PROGETTO_FINALI = [STATO_PROGETTO.CHIUSO]
 
+// Motivo della chiusura (campo `Progetti.TipoChiusura`): distingue la chiusura
+// automatica al cap da quelle manuali, e identifica i motivi "definitivi" per i
+// quali la riapertura richiede una conferma esplicita.
+export const TIPO_CHIUSURA = {
+  CAP_RAGGIUNTO: 'cap_raggiunto',
+  RINUNCIA: 'rinuncia',
+  IRRAGGIUNGIBILE: 'irraggiungibile',
+  FINE_ANNO: 'fine_anno',
+  ERRORE: 'errore',
+  ALTRO: 'altro'
+}
+
+export const TIPI_CHIUSURA_DEFINITIVI = [TIPO_CHIUSURA.RINUNCIA, TIPO_CHIUSURA.IRRAGGIUNGIBILE, TIPO_CHIUSURA.FINE_ANNO]
+
 export const FILE_ACCEPT = '.jpg,.jpeg,.png,.gif,.heic,.pdf'
 export const FILE_MAX_SIZE = 5 * 1024 * 1024
 
