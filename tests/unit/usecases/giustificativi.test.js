@@ -60,6 +60,13 @@ vi.mock('src/services/giustificativi.service', () => ({
   }
 }))
 
+const mockContattiUpdate = vi.fn()
+vi.mock('src/services/contatti.service', () => ({
+  contattiService: {
+    update: (...a) => mockContattiUpdate(...a)
+  }
+}))
+
 vi.mock('src/utils/file-naming', () => ({
   uploadAndPrefixFile: (...a) => mockUpload(...a),
   markFileObsolete: vi.fn(() => Promise.resolve()),
@@ -215,6 +222,24 @@ describe('riconciliaSubmission', () => {
         copiedFields: []
       })
     ).rejects.toThrow('Progetto non operativo')
+    expect(mockCreate).not.toHaveBeenCalled()
+  })
+
+  it('non applica side-effect contatto/file se il progetto non è operativo', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { StatoProgetto: 'chiuso' } } })
+    await expect(
+      riconciliaSubmission({
+        submissionId: 's-1',
+        contattoId: 'c-1',
+        famigliaId: 'fam-9',
+        progettoId: 9,
+        descrizione: 'x',
+        importo: 1,
+        copiedFields: ['Nome'],
+        rightValues: { Nome: 'Mario' }
+      })
+    ).rejects.toThrow('Progetto non operativo')
+    expect(mockContattiUpdate).not.toHaveBeenCalled()
     expect(mockCreate).not.toHaveBeenCalled()
   })
 })

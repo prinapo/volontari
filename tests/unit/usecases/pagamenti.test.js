@@ -456,7 +456,10 @@ describe('segnaFallito', () => {
 })
 
 describe('chiudiProgetto / riapriProgetto', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+  })
 
   it('chiude manualmente un progetto operativo con motivo e tipo', async () => {
     mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'accettato' } } })
@@ -491,6 +494,19 @@ describe('chiudiProgetto / riapriProgetto', () => {
         MotivoChiusura: 'Importo allocato interamente pagato',
         TipoChiusura: 'cap_raggiunto'
       })
+    )
+  })
+
+  it('annulla la proposta pendente alla chiusura', async () => {
+    mockGetProgettoById.mockResolvedValue({ data: { data: { id_progetto: 1, StatoProgetto: 'accettato' } } })
+    mockUpdateProgettoStats.mockResolvedValue({})
+    mockGetPagamenti.mockResolvedValueOnce({ data: { data: [{ id: 'prop-1', Stato: 'proposto' }] } })
+    mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockUpdatePagamento.mockResolvedValue({})
+    await chiudiProgetto(1, { tipo: 'rinuncia' })
+    expect(mockUpdatePagamento).toHaveBeenCalledWith(
+      'prop-1',
+      expect.objectContaining({ Stato: 'annullato', Batch: null })
     )
   })
 
@@ -668,6 +684,19 @@ describe('segnaAnnullato', () => {
       data: { data: [{ id: 'p-3', Stato: 'pagato', Progetto: 9 }] }
     })
     await expect(segnaAnnullato('p-3')).rejects.toThrow(TransizioneNonValidaError)
+  })
+
+  it('non scollega i giustificativi quando la transizione è invalida (ordine sicuro)', async () => {
+    mockGetPagamenti.mockResolvedValueOnce({
+      data: { data: [{ id: 'p-4', Stato: 'pagato', Progetto: 9 }] }
+    })
+    mockUpdatePagamento.mockResolvedValue({})
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ id: 'g-1', Stato: 'pagato', Pagamento: 'p-4' }] }
+    })
+
+    await expect(segnaAnnullato('p-4')).rejects.toThrow(TransizioneNonValidaError)
+    expect(mockUpdateGiustificativo).not.toHaveBeenCalled()
   })
 })
 

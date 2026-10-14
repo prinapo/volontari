@@ -283,6 +283,11 @@ export async function riconciliaSubmission({
   copiedFields,
   statoCorrente
 }) {
+  // Guardia "progetto operativo" PRIMA di qualunque side-effect (patch contatto/
+  // famiglia, spostamento/rinomina file): un progetto non operativo non deve
+  // lasciare effetti parziali.
+  await guardiaProgettoOperativo(progettoId)
+
   if (contattoId && copiedFields?.length > 0) {
     await _patchContattoFromCopied(contattoId, copiedFields, rightValues)
     if (copiedFields.includes('Email') && emailRecordId) {

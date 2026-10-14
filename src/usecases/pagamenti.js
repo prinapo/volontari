@@ -470,8 +470,9 @@ export async function segnaAnnullato(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
   if (!pagamento) throw new Error('Pagamento non trovato')
   const batchId = pagamento.Batch
-  const giustRes = await verificaService.getGiustificativiByProgetto(pagamento.Progetto)
-  await _scollegaGiustificativi(giustRes.data.data || [], pagamentoId)
+
+  // Prima si valida e si scrive la transizione; solo dopo si scollegano i
+  // giustificativi. Così una transizione invalida non lascia FK orfane.
   await transita({
     machine: pagamentoMachine,
     statoCorrente: pagamento.Stato,
@@ -479,6 +480,10 @@ export async function segnaAnnullato(pagamentoId) {
     extra: { Batch: null, NoteEsito: 'Rimosso dal gruppo' },
     scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
   })
+
+  const giustRes = await verificaService.getGiustificativiByProgetto(pagamento.Progetto)
+  await _scollegaGiustificativi(giustRes.data.data || [], pagamentoId)
+
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   await ricalcolaProposta(pagamento.Progetto, {
@@ -512,6 +517,30 @@ export async function correggiDati(pagamentoId, { iban, intestatario }) {
   await famiglieService.update(pagamento.Famiglia, { IBAN: iban, Intestatario_CC: intestatario })
 }
 
+/**
+ * Alla chiusura del progetto la proposta pendente non è più dovuta: va
+ * annullata e i giustificativi collegati scollegati (evita una proposta aperta
+ * e pagabile su un progetto chiuso).
+ */
+async function _annullaPropostaPendente(progettoId) {
+  const res = await pagamentiService.getPagamenti({
+    'filter[Progetto][_eq]': progettoId,
+    'filter[Stato][_eq]': STATO_PAGAMENTO.PROPOSTO,
+    limit: 1
+  })
+  const proposto = (res.data.data || [])[0]
+  if (!proposto) return
+  const giustRes = await verificaService.getGiustificativiByProgetto(progettoId)
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: proposto.Stato,
+    evento: EVENTI_PAGAMENTO.ANNULLA_PROPOSTA,
+    extra: { NoteEsito: 'Proposta annullata: progetto chiuso', Batch: null },
+    scrivi: patch => pagamentiService.updatePagamento(proposto.id, patch)
+  })
+  await _scollegaGiustificativi(giustRes.data.data || [], proposto.id)
+}
+
 export async function chiudiProgetto(progettoId, { automatica = false, motivo = null, tipo = null } = {}) {
   const progRes = await progettiService.getById(progettoId)
   const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
@@ -527,6 +556,7 @@ export async function chiudiProgetto(progettoId, { automatica = false, motivo = 
     },
     scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
+  await _annullaPropostaPendente(progettoId)
 }
 
 export async function riapriProgetto(progettoId, { conferma = false } = {}) {
