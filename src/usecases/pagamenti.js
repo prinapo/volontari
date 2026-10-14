@@ -19,7 +19,7 @@ import { pickEmail } from 'src/utils/emailPrimarie'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
 import { parseNum } from 'src/utils/number'
 import { relId } from 'src/utils/relations'
-import { calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
+import { calcolaDerivatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
 async function getPagamentoById(pagamentoId) {
   const res = await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })
@@ -109,7 +109,9 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
 
 /**
  * Ricalcola i totali progetto (TotaleVerificato/Proposto/InPagamento/Pagato/
- * ResiduoAllocato) e lo StatoProgetto dopo un cambiamento di pagamento.
+ * ResiduoAllocato) e lo StatoProgetto dopo un cambiamento di pagamento, da dati
+ * freschi. Usa la computazione unica `calcolaDerivatiProgetto` (stessa via di
+ * `syncProgettoAggregati`) con lo scope di scrittura completo (manager).
  * Chiusura automatica quando il derivato differisce dall'attuale.
  */
 export async function ricalcolaTotaliProgetto(progettoId) {
@@ -119,39 +121,24 @@ export async function ricalcolaTotaliProgetto(progettoId) {
   const progetto = progRes.data.data
   if (!progetto) return
 
-  const giustRes = await verificaService.getGiustificativiByProgetto(id)
+  const [giustRes, pagRes] = await Promise.all([
+    verificaService.getGiustificativiByProgetto(id),
+    pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': id, limit: -1 })
+  ])
   const giustificativi = giustRes.data.data || []
-  const totaleVerificato = giustificativi
-    .filter(g => isContabile(g.Stato) && !g.Invalidato)
-    .reduce((s, g) => s + parseNum(g.Importo), 0)
-
-  const pagamentiRes = await pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': id, limit: -1 })
-  const tutti = pagamentiRes.data.data || []
-  const proposto = tutti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
-  const inPagamento = tutti
-    .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO)
-    .reduce((s, p) => s + parseNum(p.Importo), 0)
-  const pagato = tutti.filter(p => p.Stato === STATO_PAGAMENTO.PAGATO).reduce((s, p) => s + parseNum(p.Importo), 0)
-
-  const allocato = parseNum(progetto.Allocato)
-  const totaleProposto = proposto ? parseNum(proposto.Importo) : 0
-  const residuo = allocato - (totaleProposto + inPagamento + pagato)
+  const pagamenti = pagRes.data.data || []
+  const derivati = calcolaDerivatiProgetto({ progetto, giustificativi, pagamenti })
 
   await progettiService.updateStats(id, {
-    TotaleVerificato: totaleVerificato,
-    TotaleProposto: totaleProposto,
-    TotaleInPagamento: inPagamento,
-    TotalePagato: pagato,
-    ResiduoAllocato: Math.max(0, residuo)
+    TotaleVerificato: derivati.TotaleVerificato,
+    TotaleProposto: derivati.TotaleProposto,
+    TotaleInPagamento: derivati.TotaleInPagamento,
+    TotalePagato: derivati.TotalePagato,
+    ResiduoAllocato: derivati.ResiduoAllocato
   })
 
   const statoProgettoAttuale = statoProgettoEffettivo(progetto.StatoProgetto)
-  const statoProgettoCalcolato = calcolaStatoProgetto({
-    statoProgetto: statoProgettoAttuale,
-    allocato,
-    rimborsato: pagato,
-    giustificativi
-  })
+  const statoProgettoCalcolato = derivati.statoProgetto
 
   if (statoProgettoCalcolato !== statoProgettoAttuale) {
     if (statoProgettoCalcolato === STATO_PROGETTO.CHIUSO) {

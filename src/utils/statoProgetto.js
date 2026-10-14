@@ -12,7 +12,13 @@
  * Il rimborso_parziale è automatico: se pagato>0 ma < allocato, il progetto
  * assume questo stato indipendentemente dallo stato precedente.
  */
-import { STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO, STATO_PROGETTO } from './constants'
+import {
+  STATI_GIUSTIFICATIVO_CONTABILI,
+  STATI_GIUSTIFICATIVO_VALIDI,
+  STATO_GIUSTIFICATIVO,
+  STATO_PAGAMENTO,
+  STATO_PROGETTO
+} from './constants'
 import { parseNum } from './number'
 import { calcolaStatoRendicontazione } from './rendicontazione'
 
@@ -22,6 +28,7 @@ import { calcolaStatoRendicontazione } from './rendicontazione'
 // progetto passa a `in_rendicontazione` così il verificatore la vede.
 // Le bozze non contano tra gli importi ai fini di Verifica (`totaleRendicontato`).
 const STATI_AVVIO = new Set([...STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO.DRAFT])
+const STATI_CONTABILI = new Set(STATI_GIUSTIFICATIVO_CONTABILI)
 
 function hasValidGiustificativi(giustificativi = []) {
   return giustificativi.some(g => !g.Invalidato && STATI_AVVIO.has(String(g.Stato || '').toLowerCase()))
@@ -126,25 +133,50 @@ export function calcolaDisallineati(rows = []) {
 }
 
 /**
- * Campi derivati del progetto da persistere dopo ogni mutazione dei suoi
- * giustificativi. Fonte unica usata da `syncProgettoAggregati`: calcola gli
- * aggregati e lo stato progetto/rendicontazione a partire dai dati grezzi.
+ * Computazione UNICA dei campi derivati del progetto a partire da dati grezzi
+ * (progetto + giustificativi + pagamenti). È la fonte condivisa da
+ * `syncProgettoAggregati` e `ricalcolaTotaliProgetto`: entrambi ricalcolano gli
+ * stessi valori da dati freschi e poi scrivono solo i campi consentiti dai
+ * permessi (volontario vs manager).
  *
- * @param {Object} progetto - Progetto con StatoProgetto, Allocato, TotalePagato
- * @param {Array}  giustificativi - Giustificativi del progetto
- * @returns {{TotaleGiustificativi: number, TotaleImporto: number, StatoRendicontazione: string, statoProgetto: string}}
+ * @param {Object} input
+ * @param {Object} input.progetto - Progetto con StatoProgetto, Allocato
+ * @param {Array}  input.giustificativi - Giustificativi del progetto
+ * @param {Array}  input.pagamenti - Pagamenti del progetto (proposto/in_pagamento/pagato)
+ * @returns {{TotaleGiustificativi, TotaleImporto, TotaleVerificato, TotaleProposto,
+ *            TotaleInPagamento, TotalePagato, ResiduoAllocato, StatoRendicontazione, statoProgetto}}
  */
-export function calcolaAggregatiProgetto(progetto = {}, giustificativi = []) {
+export function calcolaDerivatiProgetto({ progetto = {}, giustificativi = [], pagamenti = [] } = {}) {
+  const allocato = parseNum(progetto.Allocato)
   const validi = giustificativi.filter(g => !g.Invalidato)
   const totaleImporto = validi.reduce((sum, g) => sum + parseNum(g.Importo), 0)
+  const totaleVerificato = giustificativi
+    .filter(g => !g.Invalidato && STATI_CONTABILI.has(String(g.Stato || '').toLowerCase()))
+    .reduce((sum, g) => sum + parseNum(g.Importo), 0)
+
+  const proposto = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
+  const totaleProposto = proposto ? parseNum(proposto.Importo) : 0
+  const inPagamento = pagamenti
+    .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO)
+    .reduce((sum, p) => sum + parseNum(p.Importo), 0)
+  const pagato = pagamenti
+    .filter(p => p.Stato === STATO_PAGAMENTO.PAGATO)
+    .reduce((sum, p) => sum + parseNum(p.Importo), 0)
+  const residuo = allocato - (totaleProposto + inPagamento + pagato)
+
   return {
     TotaleGiustificativi: validi.length,
     TotaleImporto: totaleImporto,
+    TotaleVerificato: totaleVerificato,
+    TotaleProposto: totaleProposto,
+    TotaleInPagamento: inPagamento,
+    TotalePagato: pagato,
+    ResiduoAllocato: Math.max(0, residuo),
     StatoRendicontazione: calcolaStatoRendicontazione(giustificativi),
     statoProgetto: calcolaStatoProgetto({
       statoProgetto: progetto.StatoProgetto,
-      allocato: progetto.Allocato,
-      rimborsato: progetto.TotalePagato,
+      allocato,
+      rimborsato: pagato,
       giustificativi
     })
   }

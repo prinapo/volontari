@@ -6,12 +6,19 @@ const mockGetProgettoById = vi.fn()
 const mockGetGiustificativiByProgetto = vi.fn()
 const mockUpdateProgetto = vi.fn()
 const mockUpdateStats = vi.fn()
+const mockGetPagamenti = vi.fn()
 
 vi.mock('src/services/verifica.service', () => ({
   verificaService: {
     getProgettoById: (...a) => mockGetProgettoById(...a),
     getGiustificativiByProgetto: (...a) => mockGetGiustificativiByProgetto(...a),
     updateProgetto: (...a) => mockUpdateProgetto(...a)
+  }
+}))
+
+vi.mock('src/services/pagamenti.service', () => ({
+  pagamentiService: {
+    getPagamenti: (...a) => mockGetPagamenti(...a)
   }
 }))
 
@@ -22,7 +29,10 @@ vi.mock('src/services/progetti.service', () => ({
 }))
 
 describe('syncProgettoAggregati', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+  })
 
   it('ricalcola e scrive solo i campi derivati', async () => {
     mockGetProgettoById.mockResolvedValue({
@@ -39,11 +49,33 @@ describe('syncProgettoAggregati', () => {
       StatoRendicontazione: 'in_attesa',
       StatoProgetto: 'in_rendicontazione'
     })
-    expect(payload).toEqual({
+    expect(payload).toEqual(
+      expect.objectContaining({
+        TotaleGiustificativi: 1,
+        TotaleImporto: 200,
+        StatoRendicontazione: 'in_attesa',
+        statoProgetto: 'in_rendicontazione'
+      })
+    )
+  })
+
+  it('usa i pagamenti freschi (non il TotalePagato persistito) per lo stato', async () => {
+    mockGetProgettoById.mockResolvedValue({
+      data: { data: { id_progetto: 1, StatoProgetto: 'in_rendicontazione', Allocato: '1000', TotalePagato: 0 } }
+    })
+    mockGetGiustificativiByProgetto.mockResolvedValue({
+      data: { data: [{ Stato: 'verificato', Importo: '800', Invalidato: false }] }
+    })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ Stato: 'pagato', Importo: '400' }] } })
+    mockUpdateProgetto.mockResolvedValue({})
+
+    await syncProgettoAggregati(1)
+
+    expect(mockUpdateProgetto).toHaveBeenCalledWith(1, {
       TotaleGiustificativi: 1,
-      TotaleImporto: 200,
-      StatoRendicontazione: 'in_attesa',
-      statoProgetto: 'in_rendicontazione'
+      TotaleImporto: 800,
+      StatoRendicontazione: 'verificato',
+      StatoProgetto: 'rimborso_parziale'
     })
   })
 

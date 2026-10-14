@@ -39,6 +39,18 @@ vi.mock('src/services/submit.service', () => ({
   }
 }))
 
+const mockGetPagamenti = vi.fn()
+vi.mock('src/services/pagamenti.service', () => ({
+  pagamentiService: {
+    getPagamenti: (...a) => mockGetPagamenti(...a)
+  }
+}))
+
+// Default per ogni test: nessun pagamento (clearAllMocks non resetta le impl).
+beforeEach(() => {
+  mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+})
+
 vi.mock('src/services/giustificativi.service', () => ({
   giustificativiService: {
     create: (...a) => mockCreate(...a),
@@ -108,6 +120,7 @@ describe('creaGiustificativo', () => {
       data: { data: { id_progetto: 1, StatoProgetto: 'rimborso_parziale', Allocato: '1000', TotalePagato: '200' } }
     })
     mockGetGiustificativiByProgetto.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [{ Stato: 'pagato', Importo: '200' }] } })
     mockFindByProject.mockResolvedValue({ data: { data: [] } })
     mockCreateRendicontazione.mockResolvedValue({ data: { data: { id: 'rend-1' } } })
     mockCreate.mockResolvedValue({ data: { data: { Descrizione: 'x', id: 'g-1' } } })

@@ -1,40 +1,55 @@
+import { pagamentiService } from 'src/services/pagamenti.service'
 import { progettiService } from 'src/services/progetti.service'
 import { verificaService } from 'src/services/verifica.service'
 import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
 import { creaConStato, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
 import { STATO_PROGETTO } from 'src/utils/constants'
-import { calcolaAggregatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
+import { calcolaDerivatiProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
 /**
- * Ricalcola e persiste gli aggregati derivati di un progetto a partire da dati
- * FRESCHI (mai da stato UI). È l'invariante condiviso: ogni mutazione di
- * giustificativo termina qui. Idempotente (ricalcolo puro).
+ * Invariante delle mutazioni di giustificativo: ricalcola gli aggregati del
+ * progetto da dati FRESCHI (progetto + giustificativi + pagamenti, mai stato UI)
+ * e persiste i campi derivati.
  *
- * Lo stato progetto passa dalla macchina (`transita`); gli altri derivati sono
- * scritti nella stessa patch.
+ * Calcolo UNICO (`calcolaDerivatiProgetto`), condiviso con `ricalcolaTotaliProgetto`.
+ * Qui lo scope di scrittura è quello consentito al volontario (policy Directus
+ * field-scoped): `TotaleGiustificativi`, `TotaleImporto`, `StatoRendicontazione`,
+ * `StatoProgetto`. I campi economici (`TotaleVerificato/Pagato/…`) restano di
+ * competenza della via manager (`ricalcolaTotaliProgetto`).
+ *
+ * Lo stato progetto passa dalla macchina (`transita`). Best-effort: non lancia.
  *
  * @param {string|number} progettoId
- * @returns {Promise<Object|null>} gli aggregati calcolati, o null se il progetto
+ * @returns {Promise<Object|null>} i derivati calcolati, o null se il progetto
  *          non esiste / in errore (best-effort: non rompe l'azione principale).
  */
 export async function syncProgettoAggregati(progettoId) {
   if (!progettoId) return null
   try {
-    const [progRes, giustRes] = await Promise.all([
+    const [progRes, giustRes, pagRes] = await Promise.all([
       verificaService.getProgettoById(progettoId),
-      verificaService.getGiustificativiByProgetto(progettoId)
+      verificaService.getGiustificativiByProgetto(progettoId),
+      pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': progettoId, limit: -1 })
     ])
     const progetto = progRes.data.data
     if (!progetto) return null
     const giustificativi = giustRes.data.data || []
-    const aggregati = calcolaAggregatiProgetto(progetto, giustificativi)
-    const { statoProgetto, ...derivati } = aggregati
+    const pagamenti = pagRes.data.data || []
+    const derivati = calcolaDerivatiProgetto({ progetto, giustificativi, pagamenti })
+
+    // Scope volontario: esclude i campi economici (competenza manager).
+    const volontario = {
+      TotaleGiustificativi: derivati.TotaleGiustificativi,
+      TotaleImporto: derivati.TotaleImporto,
+      StatoRendicontazione: derivati.StatoRendicontazione
+    }
+    const statoProgetto = derivati.statoProgetto
     const statoRaw = progetto.StatoProgetto
     const statoCorrente = statoProgettoEffettivo(statoRaw)
     const scrivi = patch => verificaService.updateProgetto(progettoId, patch)
 
     if (statoRaw === statoProgetto) {
-      await verificaService.updateProgetto(progettoId, derivati)
+      await scrivi(volontario)
     } else {
       const evento = eventoRicalcoloProgetto(statoProgetto)
       if (evento) {
@@ -43,14 +58,14 @@ export async function syncProgettoAggregati(progettoId) {
           campo: 'StatoProgetto',
           statoCorrente,
           evento,
-          extra: derivati,
+          extra: volontario,
           scrivi
         })
       } else {
-        await verificaService.updateProgetto(progettoId, derivati)
+        await scrivi(volontario)
       }
     }
-    return aggregati
+    return derivati
   } catch (error) {
     console.warn(`[usecases] syncProgettoAggregati fallito per progetto ${progettoId}`, error)
     return null
