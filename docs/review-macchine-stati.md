@@ -15,6 +15,15 @@ capire chi le emette, chi le innesca e con quali side-effect.
 > sezioni che li citano (es. #C6) restano come documentazione storica della
 > revisione.
 
+> **Nota (branch `feat/ciclo-stato-progetto`)**: documento **storico**. Da allora:
+> rimosso `Pagamento: fallito → in_pagamento` (una tranche pagata non si riapre)
+> e il relativo `ripristinaInPagamento`; il progetto **non** passa da `accettato`
+> a `rimborso_parziale`/`chiuso` automatico; `RIAPRI` ha **target derivato** con
+> guardie (`residuo>0`, `allocato>0`, conferma per motivi definitivi);
+> `chiudiProgetto` scrive `TipoChiusura` e annulla la proposta pendente. I
+> riferimenti a `usecases/sincronizzazione.js` e `applicaStatoProgetto` non
+> esistono più nel codice.
+
 ## Avanzamento
 
 | #   | Entità         | Stato                | Esito      |
