@@ -301,7 +301,7 @@ export async function managerRicalcola(page, { auth }) {
   await page.waitForLoadState('networkidle').catch(() => {})
 }
 
-export async function managerCreaBatch(page, { auth, nomeFam, associazione }) {
+export async function managerCreaBatch(page, { auth, nomeFam, associazione, progettoId }) {
   await loginAs(page, 'manager', auth)
   await page.goto('/pagamenti')
   await page.waitForLoadState('networkidle').catch(() => {})
@@ -329,6 +329,19 @@ export async function managerCreaBatch(page, { auth, nomeFam, associazione }) {
     .fill('GRUPPO_SYS_' + Date.now())
   await dialog.locator('button:has-text("Conferma")').click()
   await page.waitForLoadState('networkidle').catch(() => {})
+
+  if (progettoId) {
+    const start = Date.now()
+    let stati = []
+    while (Date.now() - start < 20_000) {
+      stati = (await readPagamentiProgetto(progettoId)).map(p => p.Stato)
+      if (stati.includes('in_pagamento')) return
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    throw new Error(
+      `creaBatch non ha portato in_pagamento (progetto ${progettoId}); stati: ${stati.join(',') || 'nessuno'}`
+    )
+  }
 }
 
 export async function managerSegnaPagato(page, { auth, nomeFam }) {
@@ -393,8 +406,18 @@ export async function managerRipristinaBonifici(page, { auth, nomeFam }) {
   }
   const row = page.locator('.q-table tbody tr, .q-table__grid-content .q-card').filter({ hasText: nomeFam }).first()
   await expect(row).toBeVisible({ timeout: 15_000 })
-  await row.locator('.q-checkbox').first().click()
-  await page.locator('button:has-text("Ripristina a Bonifici")').first().click()
+  const btn = page.locator('button:has-text("Ripristina a Bonifici")').first()
+  const checkbox = row.locator('.q-checkbox').first()
+  await checkbox.evaluate(el => el.click())
+  if (!(await btn.isVisible({ timeout: 3000 }).catch(() => false))) {
+    await checkbox
+      .locator('input')
+      .first()
+      .evaluate(el => el.click())
+      .catch(() => {})
+  }
+  await expect(btn).toBeVisible({ timeout: 8000 })
+  await btn.evaluate(el => el.click())
   await page.waitForLoadState('networkidle').catch(() => {})
 }
 

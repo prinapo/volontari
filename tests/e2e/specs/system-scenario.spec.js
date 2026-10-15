@@ -45,6 +45,7 @@ test.describe('System scenario', () => {
   test.describe.configure({ timeout: 900_000 })
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(600_000)
     await apiLogin(auth.admin.email, auth.admin.password)
     const page = await browser.newPage()
     try {
@@ -58,6 +59,7 @@ test.describe('System scenario', () => {
   })
 
   test.afterAll(async () => {
+    test.setTimeout(300_000)
     await pulisciIds(ids)
     if (associazioneId) await apiDelete('Associazioni', associazioneId).catch(() => {})
   })
@@ -67,14 +69,14 @@ test.describe('System scenario', () => {
     const { nomeFam, progettoId } = cast[0]
     const desc = `${ids.prefix}_S1`
 
-    const g = await volontarioCreaBozza(page, { auth, nomeFam, descrizione: desc, importo: 1000 })
+    const g = await volontarioCreaBozza(page, { auth, nomeFam, descrizione: desc, importo: 1250 })
     ids.giustificativi.push(g.id)
     await volontarioInviaBozza(page, g.id)
     await managerVerifica(page, { auth, nomeFam })
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'verificato' })
 
     await managerRicalcola(page, { auth })
-    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome })
+    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome, progettoId })
     await managerSegnaPagato(page, { auth, nomeFam })
 
     await assertProgetto(progettoId, {
@@ -150,7 +152,7 @@ test.describe('System scenario', () => {
     await volontarioInviaBozza(page, g1.id)
     await managerVerifica(page, { auth, nomeFam })
     await managerRicalcola(page, { auth })
-    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome })
+    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome, progettoId })
     await managerSegnaPagato(page, { auth, nomeFam })
 
     await assertProgetto(progettoId, { StatoProgetto: 'rimborso_parziale', TotalePagato: 400 })
@@ -172,12 +174,12 @@ test.describe('System scenario', () => {
     const { nomeFam, progettoId } = cast[5]
     const desc = `${ids.prefix}_S6`
 
-    const g = await volontarioCreaBozza(page, { auth, nomeFam, descrizione: desc, importo: 1000 })
+    const g = await volontarioCreaBozza(page, { auth, nomeFam, descrizione: desc, importo: 1250 })
     ids.giustificativi.push(g.id)
     await volontarioInviaBozza(page, g.id)
     await managerVerifica(page, { auth, nomeFam })
     await managerRicalcola(page, { auth })
-    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome })
+    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome, progettoId })
     await managerSegnaFallito(page, { auth, nomeFam, nota: 'IBAN errato SYS' })
 
     await assertPagamentoStato(progettoId, 'fallito')
@@ -187,7 +189,7 @@ test.describe('System scenario', () => {
     await managerRipristinaBonifici(page, { auth, nomeFam })
     await assertPagamentoStato(progettoId, 'proposto')
 
-    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome })
+    await managerCreaBatch(page, { auth, nomeFam, associazione: associazioneNome, progettoId })
     await managerSegnaPagato(page, { auth, nomeFam })
     await assertProgetto(progettoId, { StatoProgetto: 'chiuso', TipoChiusura: 'cap_raggiunto' })
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'pagato' })
