@@ -13,7 +13,6 @@ import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiPost, apiDelete } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
 import { pulisciIds } from '../helpers/setup-atomico.js'
-import { isMobile } from '../helpers/skip-mobile.js'
 import {
   setupFamiglie,
   volontarioCreaBozza,
@@ -64,8 +63,7 @@ test.describe('System scenario', () => {
     if (associazioneId) await apiDelete('Associazioni', associazioneId).catch(() => {})
   })
 
-  test('SYS-01: golden path + cap → chiuso automatico', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-01: golden path + cap → chiuso automatico', async ({ page }) => {
     const { nomeFam, progettoId } = cast[0]
     const desc = `${ids.prefix}_S1`
 
@@ -88,8 +86,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'pagato' })
   })
 
-  test('SYS-02: bozza dimenticata → progetto in_rendicontazione (poi inviata)', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-02: bozza dimenticata → progetto in_rendicontazione (poi inviata)', async ({ page }) => {
     const { nomeFam, progettoId } = cast[1]
     const desc = `${ids.prefix}_S2`
 
@@ -107,8 +104,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'inviato' })
   })
 
-  test('SYS-03: rifiuto → progetto accettato → ripristino → verifica', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-03: rifiuto → progetto accettato → ripristino → verifica', async ({ page }) => {
     const { nomeFam, progettoId } = cast[2]
     const desc = `${ids.prefix}_S3`
 
@@ -127,8 +123,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'verificato' })
   })
 
-  test('SYS-04: bozza invalidata → progetto torna accettato', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-04: bozza invalidata → progetto torna accettato', async ({ page }) => {
     const { nomeFam, progettoId } = cast[3]
     const desc = `${ids.prefix}_S4`
 
@@ -141,8 +136,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Invalidato: true })
   })
 
-  test('SYS-05: tranche parziale → rimborso_parziale → nuova proposta', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-05: tranche parziale → rimborso_parziale → nuova proposta', async ({ page }) => {
     const { nomeFam, progettoId } = cast[4]
     const descA = `${ids.prefix}_S5a`
     const descB = `${ids.prefix}_S5b`
@@ -169,8 +163,7 @@ test.describe('System scenario', () => {
     await assertProgetto(progettoId, { StatoProgetto: 'rimborso_parziale' })
   })
 
-  test('SYS-06: pagamento fallito → Ripristina a Bonifici → nuova tranche → pagato', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-06: pagamento fallito → Ripristina a Bonifici → nuova tranche → pagato', async ({ page }) => {
     const { nomeFam, progettoId } = cast[5]
     const desc = `${ids.prefix}_S6`
 
@@ -195,8 +188,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'pagato' })
   })
 
-  test('SYS-07: chiusura con proposta pendente → annullo → riapertura con conferma', async ({ page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-07: chiusura con proposta pendente → annullo → riapertura con conferma', async ({ page }) => {
     const { nomeFam, progettoId } = cast[6]
     const desc = `${ids.prefix}_S7`
 
@@ -219,8 +211,7 @@ test.describe('System scenario', () => {
     })
   })
 
-  test('SYS-09: isolamento — aggregati coerenti per ogni progetto', async ({ page: _page }, testInfo) => {
-    test.skip(isMobile(testInfo), 'sistema test desktop-only')
+  test('SYS-09: isolamento — aggregati coerenti per ogni progetto', async ({ page: _page }) => {
     for (const f of cast) {
       await assertAggregatiCoerenti(f.progettoId)
     }
