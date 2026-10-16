@@ -118,6 +118,9 @@ export async function creaSubmission(payload) {
 }
 
 export async function inviaGiustificativo({ id, progettoId, statoCorrente }) {
+  // Le bozze non sono inviabili se il progetto non è più operativo (es. chiuso
+  // dopo che la bozza era stata salvata).
+  await guardiaProgettoOperativo(progettoId)
   let updateRes
   await transita({
     machine: giustificativoMachine,
@@ -283,6 +286,11 @@ export async function riconciliaSubmission({
   copiedFields,
   statoCorrente
 }) {
+  // Guardia "progetto operativo" PRIMA di qualunque side-effect (patch contatto/
+  // famiglia, spostamento/rinomina file): un progetto non operativo non deve
+  // lasciare effetti parziali.
+  await guardiaProgettoOperativo(progettoId)
+
   if (contattoId && copiedFields?.length > 0) {
     await _patchContattoFromCopied(contattoId, copiedFields, rightValues)
     if (copiedFields.includes('Email') && emailRecordId) {

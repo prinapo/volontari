@@ -74,9 +74,10 @@ export const usePagamentiStore = defineStore('pagamenti', {
     async ricalcolaPropostiDaProgetti(progetti) {
       this.error = null
       try {
-        await ricalcolaPropostiDaProgettiUseCase(progetti)
+        const risultato = await ricalcolaPropostiDaProgettiUseCase(progetti)
         await this.fetchProposti()
         await this.fetchAnnullati()
+        return risultato
       } catch (error) {
         this.error = apiErrorMessage(error, 'Errore nel ricalcolo proposte')
       }
@@ -294,7 +295,32 @@ export const usePagamentiStore = defineStore('pagamenti', {
           throw new Error('Solo pagamenti in stato proposto possono essere inclusi in un batch')
         }
 
-        const totale = pagamenti.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
+        // Ricalcolo fresco delle proposte coinvolte: la proposta è uno snapshot
+        // e può essere stantia (es. `Allocato` modificato dopo la creazione).
+        // Così il batch parte sempre dall'importo dovuto e non si sfora l'allocato.
+        const progettoIds = [
+          ...new Set(
+            pagamenti.map(p => (typeof p.Progetto === 'object' ? p.Progetto?.id_progetto : p.Progetto)).filter(Boolean)
+          )
+        ]
+        await Promise.all(progettoIds.map(id => ricalcolaPropostaUseCase(id)))
+
+        // Rilettura dei selezionati con gli importi aggiornati: se una proposta è
+        // stata annullata/azzerata dal ricalcolo, non è più includibile.
+        const freschiRes = await pagamentiService.getPagamenti({
+          'filter[id][_in]': pagamentoIds.join(','),
+          fields: 'id,Stato,Importo,IBAN,Intestatario,Famiglia.id_famiglia,Famiglia.Nome_Famiglia,Progetto.id_progetto',
+          limit: -1
+        })
+        const selezionati = freschiRes.data.data || []
+        if (selezionati.length !== pagamenti.length) {
+          throw new Error('Alcuni pagamenti non sono più disponibili: rigenera le proposte e riprova')
+        }
+        if (selezionati.some(p => p.Stato !== STATO_PAGAMENTO.PROPOSTO)) {
+          throw new Error('Alcuni pagamenti non sono più proponibili: rigenera le proposte e riprova')
+        }
+
+        const totale = selezionati.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0)
         const residuo = this.residuoAssociazione(associazione)
         if (totale > residuo) {
           throw new Error(
@@ -312,7 +338,7 @@ export const usePagamentiStore = defineStore('pagamenti', {
         })
         const batchId = batchRes.data.data?.id
 
-        await segnaInPagamentoUseCase({ pagamentoIds: pagamenti.map(p => p.id), batchId })
+        await segnaInPagamentoUseCase({ pagamentoIds: selezionati.map(p => p.id), batchId })
 
         await this._aggiornaListaBatch(batchId, nome)
 
@@ -383,18 +409,18 @@ export const usePagamentiStore = defineStore('pagamenti', {
       }
     },
 
-    async chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {
+    async chiudiProgetto(progettoId, { automatica = false, motivo = null, tipo = null } = {}) {
       try {
-        await chiudiProgettoUseCase(progettoId, { automatica, motivo })
+        await chiudiProgettoUseCase(progettoId, { automatica, motivo, tipo })
       } catch (error) {
         this.error = apiErrorMessage(error)
         throw error
       }
     },
 
-    async riapriProgetto(progettoId) {
+    async riapriProgetto(progettoId, { conferma = false } = {}) {
       try {
-        await riapriProgettoUseCase(progettoId)
+        await riapriProgettoUseCase(progettoId, { conferma })
       } catch (error) {
         this.error = apiErrorMessage(error)
         throw error

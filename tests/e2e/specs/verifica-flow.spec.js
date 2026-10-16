@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import auth from '../fixtures/auth-test.json' with { type: 'json' }
 import { apiLogin, apiGet, apiPatch } from '../helpers/api.js'
 import { test, expect } from '../helpers/console.js'
-import { createGiustificativoViaDialog } from '../helpers/giustificativo.js'
+import { createGiustificativoViaDialog, inviaGiustificativo } from '../helpers/giustificativo.js'
 import { loginAs } from '../helpers/login.js'
 import { monitorApi, waitForPatchStato, logApiCalls, waitForNetworkQuiet } from '../helpers/network.js'
 import {
@@ -92,16 +92,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       importo: '75.00',
       submitAfter: false
     })
-    if (result1?.id) ids.giustificativi.push(result1.id)
+    expect(result1?.id, 'creazione giustificativo fallita').toBeTruthy()
+    ids.giustificativi.push(result1.id)
 
-    // Invia il giustificativo esplicitamente
+    // Invia il giustificativo esplicitamente (deterministico: attende la PATCH inviato)
     await page.waitForLoadState('networkidle').catch(() => {})
-    const inviaBtn = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
-    await inviaBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-    if ((await inviaBtn.count()) > 0) {
-      await inviaBtn.click()
-      await page.waitForLoadState('networkidle').catch(() => {})
-    }
+    await inviaGiustificativo(page, result1.id)
 
     const vp = new VerificaPage(page)
     await loginAs(page, 'manager', auth)
@@ -154,16 +150,12 @@ test.describe('Verifica StatoRendicontazione Flow', () => {
       importo: '75.00',
       submitAfter: false
     })
-    if (result2?.id) ids.giustificativi.push(result2.id)
+    expect(result2?.id, 'creazione giustificativo fallita').toBeTruthy()
+    ids.giustificativi.push(result2.id)
 
-    // Invia il giustificativo
+    // Invia il giustificativo (deterministico: attende la PATCH inviato)
     await page.waitForLoadState('networkidle').catch(() => {})
-    const inviaBtn2 = page.locator('.q-card').filter({ hasText: testDesc }).locator('button:has-text("Invia")').first()
-    await inviaBtn2.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-    if ((await inviaBtn2.count()) > 0) {
-      await inviaBtn2.click()
-      await page.waitForLoadState('networkidle').catch(() => {})
-    }
+    await inviaGiustificativo(page, result2.id)
 
     const vp = new VerificaPage(page)
     await loginAs(page, 'manager', auth)

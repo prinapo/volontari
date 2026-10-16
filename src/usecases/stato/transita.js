@@ -35,18 +35,22 @@ export function eventoDichiarato(machine, statoCorrente, evento) {
 /**
  * Calcola lo stato successivo validando la transizione. Puro: nessun I/O.
  *
+ * @param {Object} machine - Macchina @xstate/fsm
+ * @param {string} statoCorrente
+ * @param {string} evento
+ * @param {Object} [ctx] - payload dell'evento (letto dalle guardie `cond`)
  * @throws {TransizioneNonValidaError} se lo stato corrente è assente o
  *         l'evento non è dichiarato per quello stato.
  * @returns {string} lo stato di destinazione
  */
-export function calcolaStatoSuccessivo(machine, statoCorrente, evento) {
+export function calcolaStatoSuccessivo(machine, statoCorrente, evento, ctx = {}) {
   if (statoCorrente == null || statoCorrente === '') {
     throw new TransizioneNonValidaError(statoCorrente, evento, 'stato corrente assente')
   }
   if (!eventoDichiarato(machine, statoCorrente, evento)) {
     throw new TransizioneNonValidaError(statoCorrente, evento)
   }
-  return machine.transition(statoCorrente, { type: evento }).value
+  return machine.transition(statoCorrente, { type: evento, ...ctx }).value
 }
 
 /**
@@ -82,12 +86,13 @@ export async function creaConStato({ machine, campo = 'Stato', stato, extra = {}
  * @param {string} [input.campo='Stato'] - nome del campo di stato persistito
  * @param {string} input.statoCorrente
  * @param {string} input.evento
+ * @param {Object} [input.ctx] - payload dell'evento (letto dalle guardie `cond`)
  * @param {Object} [input.extra] - altri campi da includere nella patch
  * @param {(patch: Object) => Promise<void>} [input.scrivi]
  * @returns {Promise<string>} lo stato di destinazione
  */
-export async function transita({ machine, campo = 'Stato', statoCorrente, evento, extra = {}, scrivi }) {
-  const target = calcolaStatoSuccessivo(machine, statoCorrente, evento)
+export async function transita({ machine, campo = 'Stato', statoCorrente, evento, ctx = {}, extra = {}, scrivi }) {
+  const target = calcolaStatoSuccessivo(machine, statoCorrente, evento, ctx)
   if (typeof scrivi === 'function') {
     await scrivi({ ...extra, [campo]: target })
   }

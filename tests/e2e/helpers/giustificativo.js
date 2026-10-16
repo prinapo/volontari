@@ -8,6 +8,38 @@ const __dirname = path.dirname(__filename)
 const FIXTURE_PDF = path.resolve(__dirname, '..', 'fixtures', 'test-file-pdf.pdf')
 
 /**
+ * Invia un giustificativo dalla card della FamigliePage e attende la PATCH che
+ * lo porta a `inviato`. Deterministico: se la card o il bottone "Invia" non
+ * compaiono, il test FALLISCE (niente click saltato in silenzio).
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} giustId
+ * @param {{timeout?: number}} [opts]
+ * @returns {Promise<import('@playwright/test').Response>}
+ */
+export async function inviaGiustificativo(page, giustId, { timeout = 15_000 } = {}) {
+  const card = page.locator(`[data-testid="giustificativo-card-${giustId}"]`)
+  await expect(card).toBeVisible({ timeout })
+
+  const inviaBtn = card.locator('button:has-text("Invia")')
+  await expect(inviaBtn).toBeVisible({ timeout })
+
+  const [resp] = await Promise.all([
+    page.waitForResponse(
+      r => r.url().includes(`/items/Giustificativi/${giustId}`) && r.request().method() === 'PATCH',
+      { timeout }
+    ),
+    inviaBtn.click()
+  ])
+
+  expect(resp.status()).toBe(200)
+  const body = resp.request().postData() ? JSON.parse(resp.request().postData()) : null
+  expect(body?.Stato, 'PATCH invio non imposta Stato=inviato').toBe('inviato')
+  await page.waitForLoadState('networkidle').catch(() => {})
+  return resp
+}
+
+/**
  * Crea un giustificativo dal dialog "Aggiungi" di FamigliePage.
  * Usa i data-testid del componente GiustificativoForm.
  *
@@ -69,18 +101,7 @@ export async function createGiustificativoViaDialog(page, data = {}) {
 
   if (data.submitAfter && giustId) {
     await page.waitForLoadState('networkidle').catch(() => {})
-    const sendBtn = page.locator('[data-testid="giustificativo-card-' + giustId + '"] button:has-text("Invia")')
-    if (await sendBtn.count().then(c => c > 0)) {
-      const [patchResp] = await Promise.all([
-        page
-          .waitForResponse(
-            resp => resp.url().includes('/items/Giustificativi/' + giustId) && resp.request().method() === 'PATCH'
-          )
-          .catch(() => null),
-        sendBtn.evaluate(el => el.click())
-      ])
-    }
-    await page.waitForLoadState('networkidle').catch(() => {})
+    await inviaGiustificativo(page, giustId)
   }
 
   return { id: giustId, desc: testDesc }

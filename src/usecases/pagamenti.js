@@ -7,19 +7,21 @@ import { EVENTI_GIUSTIFICATIVO, giustificativoMachine } from 'src/state-machines
 import { EVENTI_PAGAMENTO, pagamentoMachine } from 'src/state-machines/pagamento'
 import { EVENTI_PROGETTO, eventoRicalcoloProgetto, progettoMachine } from 'src/state-machines/progetto'
 import { inviaComunicazione } from 'src/usecases/comunicazioni'
-import { creaConStatoIniziale, transita } from 'src/usecases/stato/transita'
+import { creaConStatoIniziale, transita, TransizioneNonValidaError } from 'src/usecases/stato/transita'
 import {
   isContabile,
   STATI_PROGETTO_OPERATIVI,
   STATO_GIUSTIFICATIVO,
   STATO_PAGAMENTO,
-  STATO_PROGETTO
+  STATO_PROGETTO,
+  TIPI_CHIUSURA_DEFINITIVI,
+  TIPO_CHIUSURA
 } from 'src/utils/constants'
 import { pickEmail } from 'src/utils/emailPrimarie'
 import { calcolaErogabile, residuoDaCoprire } from 'src/utils/erogabile'
 import { parseNum } from 'src/utils/number'
 import { relId } from 'src/utils/relations'
-import { calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
+import { calcolaDerivatiProgetto, calcolaStatoProgetto, statoProgettoEffettivo } from 'src/utils/statoProgetto'
 
 async function getPagamentoById(pagamentoId) {
   const res = await pagamentiService.getPagamenti({ 'filter[id][_eq]': pagamentoId, limit: 1 })
@@ -81,19 +83,27 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
   const ops = []
   for (const g of giustificativi) {
     if (g.Invalidato || !isContabile(g.Stato)) continue
-    const pag = pagMap.get(relId(g.Pagamento))
+    const pagamentoId = relId(g.Pagamento)
+    const pag = pagMap.get(pagamentoId)
+    // FK orfana: `Pagamento` punta a un pagamento inesistente → va azzerata.
+    const orfano = pagamentoId != null && !pag
     let nuovo
     if (capRaggiunto || pag?.Stato === STATO_PAGAMENTO.PAGATO) nuovo = STATO_GIUSTIFICATIVO.PAGATO
     else if (pag?.Stato === STATO_PAGAMENTO.IN_PAGAMENTO) nuovo = STATO_GIUSTIFICATIVO.IN_PAGAMENTO
     else nuovo = STATO_GIUSTIFICATIVO.VERIFICATO
 
-    if (nuovo === g.Stato) continue
-    const extra =
-      nuovo === STATO_GIUSTIFICATIVO.PAGATO
-        ? g.DataPagamento
-          ? {}
-          : { DataPagamento: new Date().toISOString() }
-        : { DataPagamento: null }
+    if (nuovo === g.Stato) {
+      // Stato invariato: al più si azzera la FK orfana (senza passare da transita).
+      if (orfano) ops.push(giustificativiService.update(g.id, { Pagamento: null }))
+      continue
+    }
+    const extra = {}
+    if (nuovo === STATO_GIUSTIFICATIVO.PAGATO) {
+      if (!g.DataPagamento) extra.DataPagamento = new Date().toISOString()
+    } else {
+      extra.DataPagamento = null
+    }
+    if (orfano) extra.Pagamento = null
     ops.push(
       transita({
         machine: giustificativoMachine,
@@ -109,7 +119,9 @@ export async function sincronizzaStatiPagamentoProgetto(progettoId) {
 
 /**
  * Ricalcola i totali progetto (TotaleVerificato/Proposto/InPagamento/Pagato/
- * ResiduoAllocato) e lo StatoProgetto dopo un cambiamento di pagamento.
+ * ResiduoAllocato) e lo StatoProgetto dopo un cambiamento di pagamento, da dati
+ * freschi. Usa la computazione unica `calcolaDerivatiProgetto` (stessa via di
+ * `syncProgettoAggregati`) con lo scope di scrittura completo (manager).
  * Chiusura automatica quando il derivato differisce dall'attuale.
  */
 export async function ricalcolaTotaliProgetto(progettoId) {
@@ -119,39 +131,24 @@ export async function ricalcolaTotaliProgetto(progettoId) {
   const progetto = progRes.data.data
   if (!progetto) return
 
-  const giustRes = await verificaService.getGiustificativiByProgetto(id)
+  const [giustRes, pagRes] = await Promise.all([
+    verificaService.getGiustificativiByProgetto(id),
+    pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': id, limit: -1 })
+  ])
   const giustificativi = giustRes.data.data || []
-  const totaleVerificato = giustificativi
-    .filter(g => isContabile(g.Stato) && !g.Invalidato)
-    .reduce((s, g) => s + parseNum(g.Importo), 0)
-
-  const pagamentiRes = await pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': id, limit: -1 })
-  const tutti = pagamentiRes.data.data || []
-  const proposto = tutti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
-  const inPagamento = tutti
-    .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO)
-    .reduce((s, p) => s + parseNum(p.Importo), 0)
-  const pagato = tutti.filter(p => p.Stato === STATO_PAGAMENTO.PAGATO).reduce((s, p) => s + parseNum(p.Importo), 0)
-
-  const allocato = parseNum(progetto.Allocato)
-  const totaleProposto = proposto ? parseNum(proposto.Importo) : 0
-  const residuo = allocato - (totaleProposto + inPagamento + pagato)
+  const pagamenti = pagRes.data.data || []
+  const derivati = calcolaDerivatiProgetto({ progetto, giustificativi, pagamenti })
 
   await progettiService.updateStats(id, {
-    TotaleVerificato: totaleVerificato,
-    TotaleProposto: totaleProposto,
-    TotaleInPagamento: inPagamento,
-    TotalePagato: pagato,
-    ResiduoAllocato: Math.max(0, residuo)
+    TotaleVerificato: derivati.TotaleVerificato,
+    TotaleProposto: derivati.TotaleProposto,
+    TotaleInPagamento: derivati.TotaleInPagamento,
+    TotalePagato: derivati.TotalePagato,
+    ResiduoAllocato: derivati.ResiduoAllocato
   })
 
   const statoProgettoAttuale = statoProgettoEffettivo(progetto.StatoProgetto)
-  const statoProgettoCalcolato = calcolaStatoProgetto({
-    statoProgetto: statoProgettoAttuale,
-    allocato,
-    rimborsato: pagato,
-    giustificativi
-  })
+  const statoProgettoCalcolato = derivati.statoProgetto
 
   if (statoProgettoCalcolato !== statoProgettoAttuale) {
     if (statoProgettoCalcolato === STATO_PROGETTO.CHIUSO) {
@@ -271,7 +268,7 @@ export async function ricalcolaProposta(progettoId, { iban, intestatario } = {})
  * Ricalcola la proposta di UN progetto (crea/aggiorna/annulla il `proposto`) e
  * collega/scollega i giustificativi coperti. Esegue le scritture direttamente.
  */
-async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
+async function _ricalcolaPropostaProgetto(progetto, giustificativi, pagamenti) {
   const totaleVerificato = giustificativi
     .filter(g => isContabile(g.Stato) && !g.Invalidato)
     .reduce((s, g) => s + parseNum(g.Importo), 0)
@@ -279,10 +276,12 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
     .filter(p => p.Stato === STATO_PAGAMENTO.IN_PAGAMENTO || p.Stato === STATO_PAGAMENTO.PAGATO)
     .reduce((s, p) => s + parseNum(p.Importo), 0)
 
+  const iban = progetto.IBAN || ''
+  const intestatario = progetto.Intestatario_CC || ''
   const erogabile = calcolaErogabile({
-    allocato: row.allocato,
+    allocato: progetto.Allocato,
     totaleVerificato,
-    percentualeRimborso: row.percentualeRimborso ?? 80
+    percentualeRimborso: progetto.MassimaPercentualeErogabile ?? 80
   })
   const nuovoProposto = residuoDaCoprire(erogabile, totaleStorico)
   const esistente = pagamenti.find(p => p.Stato === STATO_PAGAMENTO.PROPOSTO)
@@ -292,18 +291,18 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
     if (esistente) {
       const patch = {}
       if (parseNum(esistente.Importo) !== nuovoProposto) patch.Importo = nuovoProposto
-      if ((esistente.IBAN || '') !== (row.iban || '')) patch.IBAN = row.iban || ''
-      if ((esistente.Intestatario || '') !== (row.intestatario || '')) patch.Intestatario = row.intestatario || ''
+      if ((esistente.IBAN || '') !== iban) patch.IBAN = iban
+      if ((esistente.Intestatario || '') !== intestatario) patch.Intestatario = intestatario
       if (Object.keys(patch).length) await pagamentiService.updatePagamento(esistente.id, patch)
     } else {
       const created = await creaConStatoIniziale({
         machine: pagamentoMachine,
         extra: {
-          Progetto: row.idProgetto,
-          Famiglia: row.idFamiglia,
+          Progetto: progetto.id_progetto,
+          Famiglia: relId(progetto.Famiglia),
           Importo: nuovoProposto,
-          IBAN: row.iban || '',
-          Intestatario: row.intestatario || '',
+          IBAN: iban,
+          Intestatario: intestatario,
           DataProposta: new Date().toISOString()
         },
         scrivi: patch => pagamentiService.createPagamento(patch)
@@ -328,19 +327,22 @@ async function _ricalcolaPropostaProgetto(row, giustificativi, pagamenti) {
  * (righe Verifica). Esegue le scritture necessarie in un'unica tornata.
  */
 export async function ricalcolaPropostiDaProgetti(progetti) {
-  if (!progetti?.length) return
+  if (!progetti?.length) return { ok: 0, failed: [] }
   const aperti = progetti.filter(
     r =>
       r.statoProgetto != null &&
       STATI_PROGETTO_OPERATIVI.includes(r.statoProgetto === 'aperto' ? 'accettato' : r.statoProgetto)
   )
-  if (!aperti.length) return
+  if (!aperti.length) return { ok: 0, failed: [] }
   const ids = aperti.map(r => r.idProgetto)
 
-  const [giustRes, pagRes] = await Promise.all([
+  const [progRes, giustRes, pagRes] = await Promise.all([
+    progettiService.getByIds(ids),
     verificaService.getGiustificativiByProgetti(ids),
     pagamentiService.getPagamenti({ 'filter[Progetto][_in]': ids.join(','), limit: -1 })
   ])
+  // Dati freschi dal DB (non dalle righe UI): evita divergenze col flusso singolo.
+  const progettiById = new Map((progRes.data.data || []).map(p => [p.id_progetto, p]))
 
   const giustByProgetto = {}
   for (const g of giustRes.data.data || []) {
@@ -357,12 +359,24 @@ export async function ricalcolaPropostiDaProgetti(progetti) {
 
   // Le scritture per progetto sono best-effort: un progetto in errore non deve
   // invalidare le altre. Poi si aggiornano i derivati (totali + stato).
-  await Promise.allSettled(
-    aperti.map(row =>
-      _ricalcolaPropostaProgetto(row, giustByProgetto[row.idProgetto] || [], pagByProgetto[row.idProgetto] || [])
-    )
+  const risultati = await Promise.allSettled(
+    aperti.map(r => {
+      const progetto = progettiById.get(r.idProgetto)
+      if (!progetto) return Promise.reject(new Error(`Progetto ${r.idProgetto} non trovato`))
+      return _ricalcolaPropostaProgetto(
+        progetto,
+        giustByProgetto[r.idProgetto] || [],
+        pagByProgetto[r.idProgetto] || []
+      )
+    })
   )
   await Promise.allSettled(aperti.map(r => ricalcolaTotaliProgetto(r.idProgetto)))
+
+  const failed = risultati.map((res, i) => (res.status === 'rejected' ? aperti[i].idProgetto : null)).filter(Boolean)
+  if (failed.length) {
+    console.warn(`[usecases] ricalcolaPropostiDaProgetti: ${failed.length} progetti in errore`, failed)
+  }
+  return { ok: aperti.length - failed.length, failed }
 }
 
 /**
@@ -371,6 +385,10 @@ export async function ricalcolaPropostiDaProgetti(progetti) {
  */
 export async function inviaNotificaPagamento(pagamento) {
   if (!pagamento || pagamento.NotificaInviata) return
+  // Ri-lettura fresca: riduce la finestra di doppio invio in caso di
+  // `segnaPagato` concorrenti (non atomico, ma evita il caso comune).
+  const fresco = await getPagamentoById(pagamento.id)
+  if (fresco?.NotificaInviata) return
   const progRes = await progettiService.getById(pagamento.Progetto)
   const progetto = progRes.data.data
   if (!progetto) return
@@ -481,8 +499,9 @@ export async function segnaAnnullato(pagamentoId) {
   const pagamento = await getPagamentoById(pagamentoId)
   if (!pagamento) throw new Error('Pagamento non trovato')
   const batchId = pagamento.Batch
-  const giustRes = await verificaService.getGiustificativiByProgetto(pagamento.Progetto)
-  await _scollegaGiustificativi(giustRes.data.data || [], pagamentoId)
+
+  // Prima si valida e si scrive la transizione; solo dopo si scollegano i
+  // giustificativi. Così una transizione invalida non lascia FK orfane.
   await transita({
     machine: pagamentoMachine,
     statoCorrente: pagamento.Stato,
@@ -490,6 +509,10 @@ export async function segnaAnnullato(pagamentoId) {
     extra: { Batch: null, NoteEsito: 'Rimosso dal gruppo' },
     scrivi: patch => pagamentiService.updatePagamento(pagamentoId, patch)
   })
+
+  const giustRes = await verificaService.getGiustificativiByProgetto(pagamento.Progetto)
+  await _scollegaGiustificativi(giustRes.data.data || [], pagamentoId)
+
   await ricalcolaTotaliProgetto(pagamento.Progetto)
   await sincronizzaStatiPagamentoProgetto(pagamento.Progetto)
   await ricalcolaProposta(pagamento.Progetto, {
@@ -523,7 +546,31 @@ export async function correggiDati(pagamentoId, { iban, intestatario }) {
   await famiglieService.update(pagamento.Famiglia, { IBAN: iban, Intestatario_CC: intestatario })
 }
 
-export async function chiudiProgetto(progettoId, { automatica = false, motivo = null } = {}) {
+/**
+ * Alla chiusura del progetto la proposta pendente non è più dovuta: va
+ * annullata e i giustificativi collegati scollegati (evita una proposta aperta
+ * e pagabile su un progetto chiuso).
+ */
+async function _annullaPropostaPendente(progettoId) {
+  const res = await pagamentiService.getPagamenti({
+    'filter[Progetto][_eq]': progettoId,
+    'filter[Stato][_eq]': STATO_PAGAMENTO.PROPOSTO,
+    limit: 1
+  })
+  const proposto = (res.data.data || [])[0]
+  if (!proposto) return
+  const giustRes = await verificaService.getGiustificativiByProgetto(progettoId)
+  await transita({
+    machine: pagamentoMachine,
+    statoCorrente: proposto.Stato,
+    evento: EVENTI_PAGAMENTO.ANNULLA_PROPOSTA,
+    extra: { NoteEsito: 'Proposta annullata: progetto chiuso', Batch: null },
+    scrivi: patch => pagamentiService.updatePagamento(proposto.id, patch)
+  })
+  await _scollegaGiustificativi(giustRes.data.data || [], proposto.id)
+}
+
+export async function chiudiProgetto(progettoId, { automatica = false, motivo = null, tipo = null } = {}) {
   const progRes = await progettiService.getById(progettoId)
   const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
   await transita({
@@ -533,21 +580,63 @@ export async function chiudiProgetto(progettoId, { automatica = false, motivo = 
     evento: automatica ? EVENTI_PROGETTO.RICALCOLA_CHIUSO : EVENTI_PROGETTO.CHIUDI,
     extra: {
       DataChiusura: new Date().toISOString(),
-      MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo
+      MotivoChiusura: automatica ? 'Importo allocato interamente pagato' : motivo,
+      TipoChiusura: automatica ? TIPO_CHIUSURA.CAP_RAGGIUNTO : tipo || TIPO_CHIUSURA.ALTRO
     },
     scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
+  await _annullaPropostaPendente(progettoId)
 }
 
-export async function riapriProgetto(progettoId) {
+export async function riapriProgetto(progettoId, { conferma = false } = {}) {
   const progRes = await progettiService.getById(progettoId)
-  const statoCorrente = statoProgettoEffettivo(progRes.data.data?.StatoProgetto)
+  const progetto = progRes.data.data
+  if (!progetto) throw new Error('Progetto non trovato')
+  const statoCorrente = statoProgettoEffettivo(progetto.StatoProgetto)
+  if (statoCorrente !== STATO_PROGETTO.CHIUSO) {
+    throw new TransizioneNonValidaError(statoCorrente, 'RIAPRI', 'progetto non chiuso')
+  }
+
+  const [giustRes, pagRes] = await Promise.all([
+    verificaService.getGiustificativiByProgetto(progettoId),
+    pagamentiService.getPagamenti({ 'filter[Progetto][_eq]': progettoId, limit: -1 })
+  ])
+  const giustificativi = giustRes.data.data || []
+  const pagamenti = pagRes.data.data || []
+  const derivati = calcolaDerivatiProgetto({ progetto, giustificativi, pagamenti })
+  const allocato = parseNum(progetto.Allocato)
+
+  // Guardie dure: un progetto "chiuso per errore" è riaperturabile solo se ha
+  // un allocato valido e un residuo ancora da erogare.
+  if (allocato <= 0) {
+    throw new Error('Allocato non valido: correggi il progetto prima di riaprire')
+  }
+  if (derivati.TotalePagato >= allocato) {
+    throw new Error('Residuo zero: il progetto è interamente pagato e non è riapribile')
+  }
+
+  // Motivi "definitivi" (rinuncia/irraggiungibile/fine anno): riapertura solo
+  // con conferma esplicita.
+  const tipoChiusura = progetto.TipoChiusura || null
+  if (TIPI_CHIUSURA_DEFINITIVI.includes(tipoChiusura) && !conferma) {
+    throw new Error(`Chiusura definitiva (${tipoChiusura}): serve conferma esplicita per riaprire`)
+  }
+
+  // Target derivato da giustificativi e pagamenti (mai un fisso `accettato`).
+  const targetRiapertura = calcolaStatoProgetto({
+    statoProgetto: STATO_PROGETTO.ACCETTATO,
+    allocato,
+    rimborsato: derivati.TotalePagato,
+    giustificativi
+  })
+
   await transita({
     machine: progettoMachine,
     campo: 'StatoProgetto',
     statoCorrente,
     evento: EVENTI_PROGETTO.RIAPRI,
-    extra: { DataChiusura: null, MotivoChiusura: null },
+    ctx: { targetRiapertura },
+    extra: { DataChiusura: null, MotivoChiusura: null, TipoChiusura: null },
     scrivi: patch => progettiService.updateStats(progettoId, patch)
   })
 }

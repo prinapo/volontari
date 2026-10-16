@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
-  calcolaAggregatiProgetto,
+  calcolaDerivatiProgetto,
   calcolaDisallineati,
   calcolaStatoProgetto,
+  isStatoProgettoValido,
   statoProgettoEffettivo
 } from 'src/utils/statoProgetto'
 
@@ -267,31 +268,50 @@ describe('calcolaDisallineati', () => {
   })
 })
 
-describe('calcolaAggregatiProgetto', () => {
+describe('isStatoProgettoValido', () => {
+  it('riconosce solo gli stati dichiarati nella macchina', () => {
+    expect(isStatoProgettoValido('accettato')).toBe(true)
+    expect(isStatoProgettoValido('in_rendicontazione')).toBe(true)
+    expect(isStatoProgettoValido('chiuso')).toBe(true)
+    expect(isStatoProgettoValido('aperto')).toBe(false)
+    expect(isStatoProgettoValido('foo')).toBe(false)
+    expect(isStatoProgettoValido(null)).toBe(false)
+  })
+})
+
+describe('calcolaDerivatiProgetto', () => {
   it('calcola conteggio, importo e stati dai giustificativi', () => {
-    const res = calcolaAggregatiProgetto({ StatoProgetto: 'accettato', Allocato: 1000, TotalePagato: 0 }, [
-      { Stato: 'inviato', Importo: '100' },
-      { Stato: 'verificato', Importo: 50 },
-      { Stato: 'draft', Importo: '999' }
-    ])
+    const res = calcolaDerivatiProgetto({
+      progetto: { StatoProgetto: 'accettato', Allocato: 1000 },
+      giustificativi: [
+        { Stato: 'inviato', Importo: '100' },
+        { Stato: 'verificato', Importo: 50 },
+        { Stato: 'draft', Importo: '999' }
+      ],
+      pagamenti: []
+    })
     expect(res.TotaleGiustificativi).toBe(3)
     expect(res.TotaleImporto).toBe(1149)
+    expect(res.TotaleVerificato).toBe(50)
     expect(res.StatoRendicontazione).toBe('in_attesa')
     expect(res.statoProgetto).toBe('in_rendicontazione')
   })
 
   it('esclude gli invalidati da conteggio e importo', () => {
-    const res = calcolaAggregatiProgetto({ Allocato: 1000, TotalePagato: 0 }, [
-      { Stato: 'verificato', Importo: '100' },
-      { Stato: 'verificato', Importo: '200', Invalidato: true }
-    ])
+    const res = calcolaDerivatiProgetto({
+      progetto: { Allocato: 1000 },
+      giustificativi: [
+        { Stato: 'verificato', Importo: '100' },
+        { Stato: 'verificato', Importo: '200', Invalidato: true }
+      ]
+    })
     expect(res.TotaleGiustificativi).toBe(1)
     expect(res.TotaleImporto).toBe(100)
     expect(res.StatoRendicontazione).toBe('verificato')
   })
 
   it('senza giustificativi resta accettato con rendicontazione nessuno', () => {
-    const res = calcolaAggregatiProgetto({ StatoProgetto: null, Allocato: 500, TotalePagato: 0 }, [])
+    const res = calcolaDerivatiProgetto({ progetto: { StatoProgetto: null, Allocato: 500 } })
     expect(res.TotaleGiustificativi).toBe(0)
     expect(res.TotaleImporto).toBe(0)
     expect(res.StatoRendicontazione).toBe('nessuno')
@@ -299,9 +319,28 @@ describe('calcolaAggregatiProgetto', () => {
   })
 
   it('rispetta le fasi manuali', () => {
-    const res = calcolaAggregatiProgetto({ StatoProgetto: 'proposto', Allocato: 500, TotalePagato: 0 }, [
-      { Stato: 'verificato', Importo: '100' }
-    ])
+    const res = calcolaDerivatiProgetto({
+      progetto: { StatoProgetto: 'proposto', Allocato: 500 },
+      giustificativi: [{ Stato: 'verificato', Importo: '100' }]
+    })
     expect(res.statoProgetto).toBe('proposto')
+  })
+
+  it('calcola i totali economici dai pagamenti freschi', () => {
+    const res = calcolaDerivatiProgetto({
+      progetto: { StatoProgetto: 'in_rendicontazione', Allocato: 1000 },
+      giustificativi: [{ Stato: 'verificato', Importo: '800' }],
+      pagamenti: [
+        { Stato: 'proposto', Importo: '200' },
+        { Stato: 'in_pagamento', Importo: '100' },
+        { Stato: 'pagato', Importo: '300' }
+      ]
+    })
+    expect(res.TotaleVerificato).toBe(800)
+    expect(res.TotaleProposto).toBe(200)
+    expect(res.TotaleInPagamento).toBe(100)
+    expect(res.TotalePagato).toBe(300)
+    expect(res.ResiduoAllocato).toBe(400)
+    expect(res.statoProgetto).toBe('rimborso_parziale')
   })
 })

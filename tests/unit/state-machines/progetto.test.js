@@ -9,15 +9,11 @@ const TRANSIZIONI_VALIDE = [
   ['validato', E.APPROVA, 'approvato'],
   ['approvato', E.ACCETTA, 'accettato'],
   ['accettato', E.RICALCOLA_IN_RENDICONTAZIONE, 'in_rendicontazione'],
-  ['accettato', E.RICALCOLA_RIMBORSO_PARZIALE, 'rimborso_parziale'],
-  ['accettato', E.RICALCOLA_CHIUSO, 'chiuso'],
   ['accettato', E.CHIUDI, 'chiuso'],
   ['in_rendicontazione', E.RICALCOLA_ACCETTATO, 'accettato'],
   ['in_rendicontazione', E.RICALCOLA_RIMBORSO_PARZIALE, 'rimborso_parziale'],
   ['in_rendicontazione', E.RICALCOLA_CHIUSO, 'chiuso'],
   ['in_rendicontazione', E.CHIUDI, 'chiuso'],
-  ['rimborso_parziale', E.RICALCOLA_ACCETTATO, 'accettato'],
-  ['rimborso_parziale', E.RICALCOLA_IN_RENDICONTAZIONE, 'in_rendicontazione'],
   ['rimborso_parziale', E.RICALCOLA_CHIUSO, 'chiuso'],
   ['rimborso_parziale', E.CHIUDI, 'chiuso'],
   ['chiuso', E.RIAPRI, 'accettato']
@@ -31,9 +27,13 @@ const TRANSIZIONI_NON_VALIDE = [
   ['validato', E.CHIUDI],
   ['approvato', E.RICALCOLA_CHIUSO],
   ['accettato', E.RICALCOLA_ACCETTATO],
+  ['accettato', E.RICALCOLA_RIMBORSO_PARZIALE],
+  ['accettato', E.RICALCOLA_CHIUSO],
   ['accettato', E.RIAPRI],
   ['in_rendicontazione', E.RICALCOLA_IN_RENDICONTAZIONE],
   ['in_rendicontazione', E.RIAPRI],
+  ['rimborso_parziale', E.RICALCOLA_ACCETTATO],
+  ['rimborso_parziale', E.RICALCOLA_IN_RENDICONTAZIONE],
   ['rimborso_parziale', E.RICALCOLA_RIMBORSO_PARZIALE],
   ['rimborso_parziale', E.RIAPRI],
   ['chiuso', E.RICALCOLA_ACCETTATO],
@@ -48,5 +48,18 @@ describe('macchina Progetto', () => {
 
   it.each(TRANSIZIONI_NON_VALIDE)('%s -[%s]-> non valida', (da, evento) => {
     expect(() => calcolaStatoSuccessivo(progettoMachine, da, evento)).toThrow(TransizioneNonValidaError)
+  })
+
+  it('RIAPRI da chiuso porta al target derivato passato nel ctx', () => {
+    expect(calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI)).toBe('accettato')
+    expect(calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI, { targetRiapertura: 'accettato' })).toBe(
+      'accettato'
+    )
+    expect(
+      calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI, { targetRiapertura: 'in_rendicontazione' })
+    ).toBe('in_rendicontazione')
+    expect(calcolaStatoSuccessivo(progettoMachine, 'chiuso', E.RIAPRI, { targetRiapertura: 'rimborso_parziale' })).toBe(
+      'rimborso_parziale'
+    )
   })
 })

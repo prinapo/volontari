@@ -226,14 +226,13 @@ describe('pagamenti store', () => {
   })
 
   it('creaBatch creates batch for proposals', async () => {
-    mockGetPagamenti.mockResolvedValueOnce({
+    mockGetPagamenti.mockResolvedValue({
       data: { data: [{ id: 'p-1', Stato: 'proposto', Progetto: 1, Importo: '100' }] }
     })
     mockCreateBatch.mockResolvedValue({ data: { data: { id: 'b-1' } } })
     mockUpdatePagamento.mockResolvedValue({})
     mockSegnaInPagamento.mockResolvedValue([])
     mockGetAssociazioni.mockResolvedValue({ data: { data: [{ Nome: 'A', Budget: '1000' }] } })
-    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
     mockGetBatches.mockResolvedValue({ data: { data: [] } })
     mockGetListe.mockResolvedValue([])
     const store = usePagamentiStore()
@@ -248,7 +247,7 @@ describe('pagamenti store', () => {
 
   it('creaBatch uses user_id and passa i pagamenti a segnaInPagamento', async () => {
     localStorage.setItem('user_id', 'user-42')
-    mockGetPagamenti.mockResolvedValueOnce({
+    mockGetPagamenti.mockResolvedValue({
       data: {
         data: [
           { id: 'p-1', Stato: 'proposto', Progetto: 10, Importo: '100' },
@@ -270,6 +269,23 @@ describe('pagamenti store', () => {
     expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ CreatoDA: 'user-42' }))
     expect(mockSegnaInPagamento).toHaveBeenCalledWith({ pagamentoIds: ['p-1', 'p-2'], batchId: 'batch-2' })
     expect(initSpy).toHaveBeenCalled()
+  })
+
+  it('creaBatch ricalcola le proposte e blocca se un pagamento non è più proponibile', async () => {
+    mockRicalcolaProposta.mockResolvedValue()
+    mockGetPagamenti
+      .mockResolvedValueOnce({
+        data: { data: [{ id: 'p-1', Stato: 'proposto', Progetto: 1, Importo: '100' }] }
+      })
+      .mockResolvedValueOnce({ data: { data: [{ id: 'p-1', Stato: 'annullato', Progetto: 1, Importo: '0' }] } })
+    const store = usePagamentiStore()
+    store.budgetMap = { A: 1000 }
+
+    await expect(store.creaBatch({ nome: 'B', associazione: 'A', pagamentoIds: ['p-1'] })).rejects.toThrow(
+      'non sono più proponibili'
+    )
+    expect(mockRicalcolaProposta).toHaveBeenCalledWith(1)
+    expect(mockCreateBatch).not.toHaveBeenCalled()
   })
 
   it('_aggiornaListaBatch delega allo use case e ricarica le liste', async () => {
@@ -359,7 +375,7 @@ describe('pagamenti store', () => {
     mockChiudiProgetto.mockResolvedValue()
     const store = usePagamentiStore()
     await store.chiudiProgetto(1, { automatica: true })
-    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null })
+    expect(mockChiudiProgetto).toHaveBeenCalledWith(1, { automatica: true, motivo: null, tipo: null })
   })
 
   it('avanzaStatoProgetto delega allo use case', async () => {
@@ -423,7 +439,8 @@ describe('pagamenti store', () => {
       'Solo pagamenti in stato proposto possono essere inclusi in un batch'
     )
 
-    mockGetPagamenti.mockResolvedValueOnce({
+    mockRicalcolaProposta.mockResolvedValue()
+    mockGetPagamenti.mockResolvedValue({
       data: { data: [{ id: 'p-2', Stato: 'proposto', Progetto: 1, Importo: '100' }] }
     })
     await expect(store.creaBatch({ nome: 'B2', associazione: 'A', pagamentoIds: ['p-2'] })).rejects.toThrow(

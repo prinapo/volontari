@@ -45,12 +45,7 @@
           :disable="selected.length === 0 || !batchAssociazione"
           @click="openCreaBatch"
         />
-        <q-btn
-          color="primary"
-          label="RICALCOLA"
-          :loading="store.loading"
-          @click="ricalcolaProposte"
-        />
+        <q-btn color="primary" label="RICALCOLA" :loading="store.loading" @click="ricalcolaProposte" />
       </div>
 
       <PagamentiTabella
@@ -374,11 +369,7 @@
 
     <!-- Sotto-vista: Annullati -->
     <template v-if="subTab === 'annullati' && authStore.canAdmin">
-      <PagamentiTabella
-        :rows="filteredAnnullati"
-        :columns="annullatiColumns"
-        :loading="store.loading"
-      >
+      <PagamentiTabella :rows="filteredAnnullati" :columns="annullatiColumns" :loading="store.loading">
         <template #top>
           <div class="full-width">
             <TableToolbar
@@ -574,8 +565,8 @@ const batchAssociazioneLabel = computed(() => {
 
 const selectedTotal = computed(() => selected.value.reduce((s, p) => s + (Number.parseFloat(p.Importo) || 0), 0))
 
-const allInPagamento = computed(() =>
-  selectedInCorso.value.length > 0 && selectedInCorso.value.every(p => p.Stato === 'in_pagamento')
+const allInPagamento = computed(
+  () => selectedInCorso.value.length > 0 && selectedInCorso.value.every(p => p.Stato === 'in_pagamento')
 )
 
 const propostiColumns = [
@@ -634,8 +625,9 @@ async function ricalcolaProposte() {
     }
   }
   if (verificaStore.rows.length > 0) {
-    await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
+    const res = await store.ricalcolaPropostiDaProgetti(verificaStore.rows)
     if (store.error) notifyError($q, store.error, 'Errore ricalcolo')
+    else if (res?.failed?.length) notifyError($q, null, `${res.failed.length} progetti non ricalcolati`)
     await store.fetchProposti()
   }
 }

@@ -1,6 +1,6 @@
 {
-  "version": "4.0.19",
-  "updated": "2026-10-13T22:38:43.000Z",
+  "version": "4.0.20",
+  "updated": "2026-10-16T10:42:16.159Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -327,8 +327,8 @@
       "file": "giustificativi.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.19",
-      "lastPassed": "4.0.19"
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
     },
     "EL-02": {
       "name": "Elimina dialog Annulla card resta @crud",
@@ -1111,8 +1111,8 @@
       "file": "verifica-flow.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.19",
-      "lastPassed": "4.0.19"
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
     },
     "VF-02": {
       "name": "Rifiuta giustificativo — intercetta PATCH @crud",
@@ -1567,8 +1567,8 @@
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.19",
-      "lastPassed": "4.0.19"
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
     },
     "RC-PG-02": {
       "name": "RC-PG-02: Controlli paginazione visibili @smoke",
@@ -1807,8 +1807,8 @@
       "file": "pagamenti-crud.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.19",
-      "lastPassed": "4.0.19"
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
     },
     "DBD-01": {
       "name": "DBD-01: Manager vede dashboard con cerchi e grafici @smoke",
@@ -1929,6 +1929,70 @@
       "mobile": "pass",
       "lastRun": "4.0.19",
       "lastPassed": "4.0.19"
+    },
+    "SYS-01": {
+      "name": "SYS-01: golden path + cap → chiuso automatico @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-02": {
+      "name": "SYS-02: bozza dimenticata → progetto in_rendicontazione (poi inviata) @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-03": {
+      "name": "SYS-03: rifiuto → progetto accettato → ripristino → verifica @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-04": {
+      "name": "SYS-04: bozza invalidata → progetto torna accettato @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-05": {
+      "name": "SYS-05: tranche parziale → rimborso_parziale → nuova proposta @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-06": {
+      "name": "SYS-06: pagamento fallito → Ripristina a Bonifici → nuova tranche → pagato @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-07": {
+      "name": "SYS-07: chiusura con proposta pendente → annullo → riapertura con conferma @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
+    },
+    "SYS-09": {
+      "name": "SYS-09: isolamento — aggregati coerenti per ogni progetto @system",
+      "file": "system-scenario.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.20",
+      "lastPassed": "4.0.20"
     }
   }
 }

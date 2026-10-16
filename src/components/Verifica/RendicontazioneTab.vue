@@ -26,25 +26,30 @@
     {{ store.error }}
   </q-banner>
 
-  <q-banner
-    v-if="store.statoDisallineati.length > 0"
-    class="bg-warning-2 text-dark q-mb-md"
-    rounded
-    dense
-  >
+  <q-banner v-if="store.statoDisallineati.length > 0" class="bg-warning-2 text-dark q-mb-md" rounded dense>
     <template #avatar>
       <q-icon name="error_outline" color="warning" />
     </template>
-    Alcuni progetti hanno uno stato non allineato ai dati. Segnalali all'amministratore
-    (Admin → Consistenza → Trasformazioni) per verificarli.
+    Alcuni progetti hanno uno stato non allineato ai dati. Segnalali all'amministratore (Admin → Consistenza →
+    Trasformazioni) per verificarli.
     <q-list dense class="q-mt-sm">
       <q-item v-for="d in store.statoDisallineati" :key="d.idProgetto" dense class="q-px-none q-py-none">
         <q-item-section>
           <div>
             <span class="text-weight-medium">{{ d.beneficiario || d.idProgetto }}</span>
-            <q-badge :color="statoProgettoColor(d.statoDB)" :label="statoProgettoLabel(d.statoDB)" outline class="q-mx-xs" />
+            <q-badge
+              :color="statoProgettoColor(d.statoDB)"
+              :label="statoProgettoLabel(d.statoDB)"
+              outline
+              class="q-mx-xs"
+            />
             →
-            <q-badge :color="statoProgettoColor(d.statoCalcolato)" :label="statoProgettoLabel(d.statoCalcolato)" outline class="q-ml-xs" />
+            <q-badge
+              :color="statoProgettoColor(d.statoCalcolato)"
+              :label="statoProgettoLabel(d.statoCalcolato)"
+              outline
+              class="q-ml-xs"
+            />
           </div>
         </q-item-section>
       </q-item>
@@ -231,10 +236,13 @@
                 icon="lock_open"
                 color="positive"
                 aria-label="Riapri progetto"
+                :disable="!puoRiaprire(props.row)"
                 :loading="savingRiapriProgetto"
                 @click="handleRiapriProgetto(props.row)"
               >
-                <q-tooltip>Riapri progetto</q-tooltip>
+                <q-tooltip>{{
+                  puoRiaprire(props.row) ? 'Riapri progetto' : 'Non riapribile: residuo zero o allocato non valido'
+                }}</q-tooltip>
               </q-btn>
             </q-card-actions>
             <RendicontazioneRowDetail
@@ -391,10 +399,13 @@
               color="positive"
               size="sm"
               aria-label="Riapri progetto"
+              :disable="!puoRiaprire(props.row)"
               :loading="savingRiapriProgetto"
               @click="handleRiapriProgetto(props.row)"
             >
-              <q-tooltip>Riapri progetto</q-tooltip>
+              <q-tooltip>{{
+                puoRiaprire(props.row) ? 'Riapri progetto' : 'Non riapribile: residuo zero o allocato non valido'
+              }}</q-tooltip>
             </q-btn>
           </template>
 
@@ -448,14 +459,23 @@
       <div class="text-caption text-grey-7 q-mb-md">
         Una volta chiuso, non verranno più generate nuove proposte di pagamento.
       </div>
-      <q-input
-        v-model="chiudiProgettoNota"
-        label="Motivo della chiusura (opzionale)"
+      <q-select
+        v-model="chiudiProgettoTipo"
+        :options="TIPO_CHIUSURA_OPTIONS"
+        label="Motivo della chiusura"
         outlined
         dense
-        type="textarea"
-        autogrow
+        emit-value
+        map-options
+        class="q-mb-sm"
       />
+      <q-input
+v-model="chiudiProgettoNota"
+label="Nota (opzionale)"
+outlined
+dense
+type="textarea"
+autogrow />
     </q-card-section>
     <template #footer>
       <q-btn v-close-popup flat dense size="sm" label="Annulla" />
@@ -492,9 +512,10 @@ import TableToolbar from 'components/TableToolbar.vue'
 import GiustificativoForm from 'src/components/Giustificativi/GiustificativoForm.vue'
 import { useServerTable } from 'src/composables/useServerTable'
 import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
-import { STATO_PROGETTO } from 'src/utils/constants'
+import { STATO_PROGETTO, TIPI_CHIUSURA_DEFINITIVI, TIPO_CHIUSURA } from 'src/utils/constants'
 import { formatCurrency } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
+import { parseNum } from 'src/utils/number'
 import { statoProgettoEffettivo } from 'src/utils/statoProgetto'
 import { calcolaStatoRiga } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
@@ -507,6 +528,15 @@ import RifiutaGiustificativoDialog from './RifiutaGiustificativoDialog.vue'
 const $q = useQuasar()
 const store = useVerificaStore()
 const authStore = useAuthStore()
+
+// Motivi di chiusura manuale (esclude `cap_raggiunto`, che è automatico).
+const TIPO_CHIUSURA_OPTIONS = [
+  { label: 'Rinuncia', value: TIPO_CHIUSURA.RINUNCIA },
+  { label: 'Irraggiungibile', value: TIPO_CHIUSURA.IRRAGGIUNGIBILE },
+  { label: 'Fine anno', value: TIPO_CHIUSURA.FINE_ANNO },
+  { label: 'Errore', value: TIPO_CHIUSURA.ERRORE },
+  { label: 'Altro', value: TIPO_CHIUSURA.ALTRO }
+]
 
 const selectedAnno = ref(null)
 const selectedStatoProgetto = ref(null)
@@ -543,6 +573,7 @@ const rejectProgettoId = ref(null)
 const chiudiProgettoDialog = ref(false)
 const chiudiProgettoRow = ref(null)
 const chiudiProgettoNota = ref('')
+const chiudiProgettoTipo = ref(null)
 const savingChiudiProgetto = ref(false)
 
 const selectedProgetto = ref(null)
@@ -550,16 +581,8 @@ const detailDialog = ref(false)
 
 const selectedProgettoRow = computed(() => filteredRows.value.find(r => r.idProgetto === selectedProgetto.value) || {})
 
-const {
-  loading,
-  pagination,
-  searchTerm,
-  onRequest,
-  onSearchChange,
-  setFilters,
-  loadData
-} = useServerTable(
-  async (params) => {
+const { loading, pagination, searchTerm, onRequest, onSearchChange, setFilters, loadData } = useServerTable(
+  async params => {
     await store.fetchPage({
       page: params.page,
       limit: params.limit,
@@ -603,9 +626,15 @@ const annoOptions = computed(() =>
   }))
 )
 
-const statoProgettoOptions = ['proposto', 'validato', 'approvato', 'accettato', 'in_rendicontazione', 'rimborso_parziale', 'chiuso'].map(
-  v => ({ label: statoProgettoLabel(v), value: v })
-)
+const statoProgettoOptions = [
+  'proposto',
+  'validato',
+  'approvato',
+  'accettato',
+  'in_rendicontazione',
+  'rimborso_parziale',
+  'chiuso'
+].map(v => ({ label: statoProgettoLabel(v), value: v }))
 
 const canVerifica = computed(() => authStore.canManager)
 
@@ -740,6 +769,7 @@ async function saveBancari({ iban, intestatario }) {
 function openChiudiProgetto(row) {
   chiudiProgettoRow.value = row
   chiudiProgettoNota.value = ''
+  chiudiProgettoTipo.value = null
   chiudiProgettoDialog.value = true
 }
 
@@ -750,7 +780,8 @@ async function handleChiudiProgetto() {
     const pagStore = usePagamentiStore()
     await pagStore.chiudiProgetto(chiudiProgettoRow.value.idProgetto, {
       automatica: false,
-      motivo: chiudiProgettoNota.value || null
+      motivo: chiudiProgettoNota.value || null,
+      tipo: chiudiProgettoTipo.value
     })
     notifySuccess($q, 'Progetto chiuso')
     chiudiProgettoDialog.value = false
@@ -764,12 +795,33 @@ async function handleChiudiProgetto() {
 
 const savingRiapriProgetto = ref(false)
 
+// Un progetto è riapribile solo con allocato valido e residuo > 0 (contratto C3-6).
+function puoRiaprire(row) {
+  const allocato = parseNum(row?.allocato)
+  const pagato = parseNum(row?.totalePagato)
+  return allocato > 0 && pagato < allocato
+}
+
 async function handleRiapriProgetto(row) {
+  if (TIPI_CHIUSURA_DEFINITIVI.includes(row.tipoChiusura)) {
+    $q.dialog({
+      title: 'Conferma riapertura',
+      message: `Progetto chiuso per "${row.tipoChiusura}". Confermi la riapertura?`,
+      cancel: { label: 'Annulla', flat: true },
+      ok: { label: 'Riapri', color: 'warning' },
+      persistent: true
+    }).onOk(() => riapriProgetto(row, true))
+    return
+  }
+  await riapriProgetto(row, false)
+}
+
+async function riapriProgetto(row, conferma) {
   savingRiapriProgetto.value = true
   try {
     const { usePagamentiStore } = await import('stores/pagamenti.store')
     const pagStore = usePagamentiStore()
-    await pagStore.riapriProgetto(row.idProgetto)
+    await pagStore.riapriProgetto(row.idProgetto, { conferma })
     if (pagStore.error) throw new Error(pagStore.error)
     notifySuccess($q, 'Progetto riaperto')
     await loadData()

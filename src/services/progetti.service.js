@@ -5,6 +5,12 @@ export const progettiService = {
     return api.get(`/items/Progetti/${progettoId}`)
   },
 
+  getByIds(ids = []) {
+    return api.get('/items/Progetti', {
+      params: { 'filter[id_progetto][_in]': ids.join(','), limit: -1 }
+    })
+  },
+
   updateStats(progettoId, stats) {
     return api.patch(`/items/Progetti/${progettoId}`, stats)
   },
