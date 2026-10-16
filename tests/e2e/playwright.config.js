@@ -1,6 +1,6 @@
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -10,7 +10,11 @@ export default defineConfig({
   testDir: './specs',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // Retry locale opt-in (E2E_RETRIES=1) per i run lunghi: il dev server Vite può
+  // avere hiccup transitori (dynamic import). In CI è già 1. Default locale 0 per
+  // non mascherare i flake durante lo sviluppo: quando un test viene ritentato
+  // Playwright lo marca "flaky" nel reporter, quindi resta visibile.
+  retries: process.env.CI ? 1 : Number(process.env.E2E_RETRIES || 0),
   workers: process.env.CI ? 2 : 1,
   reporter: [['list'], [resolve(__dirname, 'helpers/results-reporter.cjs')]],
   use: {
@@ -36,7 +40,7 @@ export default defineConfig({
   webServer: {
     command: 'npx quasar dev -p 9000',
     port: 9000,
-    timeout: 60000,
+    timeout: 60_000,
     reuseExistingServer: true
   }
 })

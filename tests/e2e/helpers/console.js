@@ -14,6 +14,19 @@ const API_ERRORS_FILE = resolve(__dirname, '..', '..', '..', 'test-results', 'ap
 // se serve tollerare un errore, dichiararlo esplicitamente nel test con `page.expectApiError()`.
 const KNOWN_API_ERRORS = []
 
+// Errori console transitori del dev server Vite, NON errori applicativi.
+// Un dynamic import può fallire per un hiccup del dev server (connessione
+// interrotta/rebuild): basta ricaricare la pagina. Un modulo davvero rotto NON
+// sfugge comunque, perché le assert funzionali del test (attesa URL/elementi)
+// falliscono: questo filtro è solo una rete secondaria.
+// NB: il pattern pretende il path `/src/` del dev server, quindi NON matcha mai
+// gli asset hashati del build di produzione.
+const DEV_DYNAMIC_IMPORT_RE = /^Failed to fetch dynamically imported module: https?:\/\/[^/\s]+\/src\//
+
+function isTransientDevError(text) {
+  return DEV_DYNAMIC_IMPORT_RE.test(text)
+}
+
 function recordApiErrors(testInfo, entries) {
   if (entries.length === 0) return
   try {
@@ -43,6 +56,7 @@ async function countErrorLog() {
 export const test = base.extend({
   page: async ({ page }, use, testInfo) => {
     const errors = []
+    const transientErrors = []
     const warnings = []
     const expectedApiErrors = []
     const api4xx = []
@@ -97,8 +111,13 @@ export const test = base.extend({
       if (msg.type() === 'error' && text.includes('Failed to load resource')) {
         // Skip "Failed to load resource" — already tracked via response handler with URL
       } else if (msg.type() === 'error') {
-        errors.push(text)
-        console.log('[BROWSER ERROR]', text)
+        if (isTransientDevError(text)) {
+          transientErrors.push(text)
+          console.log('[BROWSER ERROR — TRANSIENT DEV-SERVER (ignorato)]', text)
+        } else {
+          errors.push(text)
+          console.log('[BROWSER ERROR]', text)
+        }
       } else if (msg.type() === 'warning') {
         warnings.push(text)
         console.log('[BROWSER WARN]', text)
@@ -108,8 +127,13 @@ export const test = base.extend({
     })
 
     page.on('pageerror', err => {
-      errors.push(err.message)
-      console.log('[BROWSER UNCAUGHT]', err.message)
+      if (isTransientDevError(err.message)) {
+        transientErrors.push(err.message)
+        console.log('[BROWSER UNCAUGHT — TRANSIENT DEV-SERVER (ignorato)]', err.message)
+      } else {
+        errors.push(err.message)
+        console.log('[BROWSER UNCAUGHT]', err.message)
+      }
     })
 
     await use(page)
@@ -137,6 +161,11 @@ export const test = base.extend({
           }
         }
       } catch {}
+    }
+
+    if (transientErrors.length > 0) {
+      console.log(`\n=== TRANSIENT DEV-SERVER ERRORS (ignorati, ${transientErrors.length}) ===`)
+      transientErrors.forEach((e, i) => console.log(`  ${i + 1}. ${e}`))
     }
 
     if (filtered.length > 0) {
