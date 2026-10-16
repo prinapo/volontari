@@ -63,7 +63,7 @@ test.describe('System scenario', () => {
     if (associazioneId) await apiDelete('Associazioni', associazioneId).catch(() => {})
   })
 
-  test('SYS-01: golden path + cap → chiuso automatico', async ({ page }) => {
+  test('SYS-01: golden path + cap → chiuso automatico @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[0]
     const desc = `${ids.prefix}_S1`
 
@@ -86,7 +86,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'pagato' })
   })
 
-  test('SYS-02: bozza dimenticata → progetto in_rendicontazione (poi inviata)', async ({ page }) => {
+  test('SYS-02: bozza dimenticata → progetto in_rendicontazione (poi inviata) @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[1]
     const desc = `${ids.prefix}_S2`
 
@@ -104,7 +104,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'inviato' })
   })
 
-  test('SYS-03: rifiuto → progetto accettato → ripristino → verifica', async ({ page }) => {
+  test('SYS-03: rifiuto → progetto accettato → ripristino → verifica @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[2]
     const desc = `${ids.prefix}_S3`
 
@@ -123,7 +123,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'verificato' })
   })
 
-  test('SYS-04: bozza invalidata → progetto torna accettato', async ({ page }) => {
+  test('SYS-04: bozza invalidata → progetto torna accettato @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[3]
     const desc = `${ids.prefix}_S4`
 
@@ -136,7 +136,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Invalidato: true })
   })
 
-  test('SYS-05: tranche parziale → rimborso_parziale → nuova proposta', async ({ page }) => {
+  test('SYS-05: tranche parziale → rimborso_parziale → nuova proposta @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[4]
     const descA = `${ids.prefix}_S5a`
     const descB = `${ids.prefix}_S5b`
@@ -163,7 +163,7 @@ test.describe('System scenario', () => {
     await assertProgetto(progettoId, { StatoProgetto: 'rimborso_parziale' })
   })
 
-  test('SYS-06: pagamento fallito → Ripristina a Bonifici → nuova tranche → pagato', async ({ page }) => {
+  test('SYS-06: pagamento fallito → Ripristina a Bonifici → nuova tranche → pagato @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[5]
     const desc = `${ids.prefix}_S6`
 
@@ -188,7 +188,7 @@ test.describe('System scenario', () => {
     await assertGiustificativoByDesc(progettoId, desc, { Stato: 'pagato' })
   })
 
-  test('SYS-07: chiusura con proposta pendente → annullo → riapertura con conferma', async ({ page }) => {
+  test('SYS-07: chiusura con proposta pendente → annullo → riapertura con conferma @system', async ({ page }) => {
     const { nomeFam, progettoId } = cast[6]
     const desc = `${ids.prefix}_S7`
 
@@ -211,7 +211,7 @@ test.describe('System scenario', () => {
     })
   })
 
-  test('SYS-09: isolamento — aggregati coerenti per ogni progetto', async ({ page: _page }) => {
+  test('SYS-09: isolamento — aggregati coerenti per ogni progetto @system', async ({ page: _page }) => {
     for (const f of cast) {
       await assertAggregatiCoerenti(f.progettoId)
     }
