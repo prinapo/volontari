@@ -128,7 +128,7 @@
     "jsdom": "^30.1.1",
     "knip": "^6.39.0",
     "lint-staged": "^17.6.0",
-    "mailparser": "^3.9.8",
+    "mailparser": "^3.9.37",
     "markdownlint-cli": "^0.49.1",
     "pinia": "^4.0.2",
     "prettier": "^3.9.5",
