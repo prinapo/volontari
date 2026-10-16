@@ -121,7 +121,7 @@
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-unicorn": "^76.0.0",
     "eslint-plugin-vue": "^10.9.2",
-    "eslint-plugin-vuejs-accessibility": "^2.5.0",
+    "eslint-plugin-vuejs-accessibility": "^2.6.2",
     "husky": "^9.1.7",
     "imapflow": "^2.2.1",
     "jscpd": "^5.0.12",
