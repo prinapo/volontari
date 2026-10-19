@@ -119,8 +119,10 @@ giustificativo") era implementata in store diverse con side-effect incoerenti.
 
 Ogni mutazione di giustificativo termina con `syncProgettoAggregati(progettoId)`
 (`src/usecases/progetti.js`): ricalcola `TotaleGiustificativi`, `TotaleImporto`,
-`StatoRendicontazione`, `StatoProgetto` da dati **freschi** (mai da stato UI) e
-li PATCHa su `Progetti`. È idempotente: può girare più volte senza effetti.
+`StatoRendicontazione`, `StatoProgetto` da dati **freschi** (progetto +
+giustificativi + **pagamenti**, via `calcolaDerivatiProgetto`; mai da stato UI e
+mai dal `TotalePagato` persistito) e li PATCHa su `Progetti`. È idempotente: può
+girare più volte senza effetti.
 La PATCH dal flusso volontario è abilitata dal permesso Directus field-scoped
 (solo i 4 campi derivati — vedi "Permesso Volontario su Progetti").
 
@@ -160,6 +162,29 @@ allineato da `recalculateRowTotals` (`verifica.store.js`).
   la fase manuale serve per i progetti che arrivano in quegli stati (import).
   Solo in avanti; le correzioni manuali vanno fatte direttamente sul DB.
 
+### Contratto transizioni progetto
+
+La macchina `state-machines/progetto.js` dichiara solo le transizioni legali
+(dettaglio e diagrammi in `docs/flussi-stati.md`):
+
+- da `accettato` l'unico innesco automatico è `in_rendicontazione`; **vietati**
+  `accettato → rimborso_parziale` e `accettato → chiuso` automatico (chiusura
+  solo manuale con `CHIUDI`);
+- da `in_rendicontazione`: `accettato` (nessun giustificativo avviato e
+  `pagato = 0`), `rimborso_parziale`, `chiuso` (cap o `CHIUDI`);
+- da `rimborso_parziale`: **solo** `chiuso` (cap o `CHIUDI`); vietati i ritorni a
+  `accettato`/`in_rendicontazione`;
+- da `chiuso`: **solo** `RIAPRI`, con **target derivato** da giustificativi e
+  pagamenti (`accettato` | `in_rendicontazione` | `rimborso_parziale`), guardie
+  `allocato > 0` e `residuo > 0`, e **conferma esplicita** per i motivi definitivi
+  (`rinuncia`/`irraggiungibile`/`fine_anno`);
+- la chiusura scrive `Progetti.TipoChiusura` (`cap_raggiunto` automatico; motivo
+  scelto a mano) e **annulla la proposta pendente**; la riapertura lo azzera;
+- `transita` accetta un `ctx` per le guardie (`RIAPRI`).
+
+Test-contratto: `tests/unit/state-machines/contract.test.js`; scenari di sistema:
+`tests/e2e/specs/system-scenario.spec.js` (`@system`).
+
 ### Stati giustificativo (persistiti, opzione C)
 
 Lo stato è **scritto nel DB** su `Giustificativi.Stato` (non più derivato):
@@ -182,6 +207,10 @@ li porta a `pagato` (o tutti, se l'allocato è raggiunto). `segnaFallito`/
 `segnaAnnullato` riallineano (annullo → scollega). L'invariante è
 `sincronizzaStatiPagamentoProgetto` (`usecases/pagamenti.js`), idempotente.
 
+- **Bonifico fallito**: `Pagamenti.Stato` `in_pagamento → fallito`; dopo
+  `correggiDati` si riporta a `proposto` (`ripristinaProposto`, `Batch` azzerato)
+  e confluisce in una **nuova** tranche. `pagato` è terminale (nessuno storno).
+
 Nota permessi (dev+prod, DB non git): le policy su `Giustificativi` sono
 `fields: ['*']` per Manager e Volontario; il volontario **potrebbe** quindi
 scrivere `pagato` via API (non esposto in UI). Hardening field-scoped da
@@ -193,8 +222,9 @@ Ogni cambio di stato (`Giustificativi.Stato`, `Pagamenti.Stato`,
 `Progetti.StatoProgetto`, `InviiGiustificativiNoLogin.stato`) passa
 **esclusivamente** dalla primitiva `src/usecases/stato/transita.js`:
 
-- `transita({ machine, statoCorrente, evento, extra, scrivi })` — transizione
-  dichiarata; valida con la macchina e scrive la patch.
+- `transita({ machine, campo, statoCorrente, evento, ctx, extra, scrivi })` —
+  transizione dichiarata; valida con la macchina (le guardie leggono `ctx`) e
+  scrive la patch.
 - `creaConStato` / `creaConStatoIniziale` — creazione con stato dichiarato.
 
 Le macchine vivono in `src/state-machines/` (`giustificativo`, `pagamento`,

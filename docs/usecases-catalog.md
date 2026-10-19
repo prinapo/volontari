@@ -16,9 +16,11 @@ stessi side-effect) da qualunque parte la si inneschi.
 | `src/stores/`   | Adapter UI                  | Stato locale Pinia + chiamata allo use case + aggiornamento dal risultato |
 | Componenti/Page | Solo presentazione          | Chiamano lo store, mai API dirette                                        |
 
-Ogni use case ha firma `fn(payload, { origine })` dove `origine` identifica il
-punto di ingresso (es. `volontario`, `modulo_libero`, `verificatore`) e serve
-**solo** per audit/permessi — mai per eseguire logica diversa.
+Le azioni con più punti di ingresso ricevono un contesto `{ origine }`
+(es. `creaGiustificativo`); `origine` identifica il punto di ingresso
+(`volontario`, `modulo_libero`, `verificatore`) e serve **solo** per
+audit/permessi — mai per eseguire logica diversa. Le altre azioni hanno firma
+`fn(payload)`.
 
 ## Legenda stato
 
@@ -57,8 +59,9 @@ con `creaSubmission` e la materializzazione avviene alla riconciliazione (manage
 
 Ogni mutazione di giustificativo termina con `syncProgettoAggregati(progettoId)`
 (vedi Area Progetti): ricalcola `TotaleGiustificativi`, `TotaleImporto`,
-`StatoRendicontazione`, `StatoProgetto` da dati freschi e li persiste su
-`Progetti`. `StatoProgetto` è scritto tramite la macchina (`transita`);
+`StatoRendicontazione`, `StatoProgetto` da dati **freschi** (progetto +
+giustificativi + **pagamenti**, via `calcolaDerivatiProgetto`; non usa il
+`TotalePagato` persistito) e li persiste su `Progetti`. `StatoProgetto` è scritto tramite la macchina (`transita`);
 gli altri derivati nella stessa patch. La PATCH dal flusso volontario è abilitata
 dal permesso Directus field-scoped.
 
@@ -76,7 +79,8 @@ scrivono stato; i derivati restano selettori puri. Enforcement: ESLint
 La guardia **progetto non operativo** (stato in `STATI_PROGETTO_OPERATIVI` =
 `accettato`, `in_rendicontazione`, `rimborso_parziale`) è nel
 primitivo `_creaGiustificativoRecord`: vale per **tutti** gli ingressi, inclusa la
-riconciliazione. Una **bozza** avvia la rendicontazione (`StatoProgetto` →
+riconciliazione. `inviaGiustificativo` applica la stessa guardia (una bozza
+salvata prima della chiusura non è inviabile). Una **bozza** avvia la rendicontazione (`StatoProgetto` →
 `in_rendicontazione`, `StatoRendicontazione` = `bozza`), così il verificatore
 vede il progetto. Due semantiche sui totali, entrambe volute: il verificatore
 ESCLUDE le bozze (`totaleRendicontato`, `STATI_GIUSTIFICATIVO_VALIDI`), mentre
@@ -93,33 +97,40 @@ ESCLUDE le bozze (`totaleRendicontato`, `STATI_GIUSTIFICATIVO_VALIDI`), mentre
 | Sincronizza aggregati | `syncProgettoAggregati` | ogni mutazione giustificativo                           | estratto |
 | Crea progetto         | `creaProgetto`          | Admin CreaProgettoPage                                  | estratto |
 | Avanza stato manuale  | `avanzaStatoProgetto`   | RendicontazioneTab (manager)                            | estratto |
-| Chiudi progetto       | `chiudiProgetto`        | RendicontazioneTab / PagamentiTab                       | estratto |
-| Riapri progetto       | `riapriProgetto`        | PagamentiTab                                            | estratto |
+| Chiudi progetto       | `chiudiProgetto`        | RendicontazioneTab (con motivo `TipoChiusura`)          | estratto |
+| Riapri progetto       | `riapriProgetto`        | RendicontazioneTab (conferma per motivi definitivi)     | estratto |
 | Aggiorna beneficiario | `aggiornaBeneficiario`  | Admin Utenti (`admin.store.updateProgettoBeneficiario`) | in store |
+
+> **Contratto transizioni progetto** (dettaglio in `docs/flussi-stati.md`):
+> da `accettato` l'unico innesco automatico è `in_rendicontazione`; niente
+> `accettato → rimborso_parziale`/`chiuso` automatico. `rimborso_parziale` va solo
+> in avanti (→ `chiuso`). `chiuso` esce solo con `RIAPRI` (target **derivato**,
+> guardie `allocato>0`/`residuo>0`, conferma per motivi definitivi). La chiusura
+> scrive `TipoChiusura` e **annulla la proposta pendente**.
 
 ---
 
 ## Area Pagamenti — `src/usecases/pagamenti.js` ✅ estratto (core)
 
-| Azione                    | Use case                            | Entry point                                   | Stato                                            |
-| ------------------------- | ----------------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| Ricalcola proposta        | `ricalcolaProposta`                 | Verifica / PagamentiTab                       | estratto                                         |
-| Ricalcola proposte (bulk) | `ricalcolaPropostiDaProgetti`       | PagamentiTab                                  | estratto                                         |
-| Ricalcola totali progetto | `ricalcolaTotaliProgetto`           | `segnaPagato`/`segnaFallito`/`segnaAnnullato` | estratto                                         |
-| Riallinea stati pagamento | `sincronizzaStatiPagamentoProgetto` | transizioni pagamento                         | estratto (idempotente)                           |
-| Segna in pagamento        | `segnaInPagamento`                  | `creaBatch` (store)                           | estratto                                         |
-| Ripristina proposto       | `ripristinaProposto`                | PagamentiTab                                  | estratto                                         |
-| Segna pagato              | `segnaPagato`                       | PagamentiTab                                  | estratto (side-effect: `inviaNotificaPagamento`) |
-| Segna fallito             | `segnaFallito`                      | PagamentiTab                                  | estratto                                         |
-| Segna annullato           | `segnaAnnullato`                    | PagamentiTab                                  | estratto                                         |
-| Correggi dati pagamento   | `correggiDati`                      | PagamentiTab                                  | estratto                                         |
-| Invia notifica pagamento  | `inviaNotificaPagamento`            | side-effect di `segnaPagato`                  | estratto                                         |
-| Crea batch                | `creaBatch`                         | PagamentiTab                                  | in store (batch/Excel, UI-coupled)               |
-| Aggiorna lista batch      | `_aggiornaListaBatch`               | `creaBatch`/`segnaFallito`/`segnaAnnullato`   | in store, delega a `rigeneraListaBatch`          |
-| Rigenera lista batch      | `rigeneraListaBatch`                | `_aggiornaListaBatch`, Admin Check            | estratto (Excel, idempotente)                    |
-| Rigenera liste scelte     | `rigeneraListeSelezionate`          | Admin Check ("Rigenera selezionate")          | estratto (idempotente)                           |
-| Valuta liste (anteprima)  | `valutaListe`                       | Admin Check                                   | estratto (sola lettura)                          |
-| Elimina lista             | `eliminaLista`                      | PagamentiTab                                  | in store                                         |
+| Azione                    | Use case                            | Entry point                                                | Stato                                                                     |
+| ------------------------- | ----------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Ricalcola proposta        | `ricalcolaProposta`                 | Verifica / PagamentiTab                                    | estratto                                                                  |
+| Ricalcola proposte (bulk) | `ricalcolaPropostiDaProgetti`       | PagamentiTab                                               | estratto                                                                  |
+| Ricalcola totali progetto | `ricalcolaTotaliProgetto`           | transizioni pagamento + `ricalcolaProposta`                | estratto                                                                  |
+| Riallinea stati pagamento | `sincronizzaStatiPagamentoProgetto` | transizioni pagamento                                      | estratto (idempotente)                                                    |
+| Segna in pagamento        | `segnaInPagamento`                  | `creaBatch` (store)                                        | estratto                                                                  |
+| Ripristina proposto       | `ripristinaProposto`                | PagamentiTab (Falliti: `fallito`/`annullato` → `proposto`) | estratto                                                                  |
+| Segna pagato              | `segnaPagato`                       | PagamentiTab                                               | estratto (side-effect: `inviaNotificaPagamento`)                          |
+| Segna fallito             | `segnaFallito`                      | PagamentiTab                                               | estratto                                                                  |
+| Segna annullato           | `segnaAnnullato`                    | PagamentiTab                                               | estratto (valida la transizione prima di scollegare i giustificativi)     |
+| Correggi dati pagamento   | `correggiDati`                      | PagamentiTab                                               | estratto (solo `fallito`: IBAN/intestatario)                              |
+| Invia notifica pagamento  | `inviaNotificaPagamento`            | side-effect di `segnaPagato`                               | estratto                                                                  |
+| Crea batch                | `creaBatch`                         | PagamentiTab                                               | in store (batch/Excel, UI-coupled; ricalcola le proposte prima del batch) |
+| Aggiorna lista batch      | `_aggiornaListaBatch`               | `creaBatch`/`segnaFallito`/`segnaAnnullato`                | in store, delega a `rigeneraListaBatch`                                   |
+| Rigenera lista batch      | `rigeneraListaBatch`                | `_aggiornaListaBatch`, Admin Check                         | estratto (Excel, idempotente)                                             |
+| Rigenera liste scelte     | `rigeneraListeSelezionate`          | Admin Check ("Rigenera selezionate")                       | estratto (idempotente)                                                    |
+| Valuta liste (anteprima)  | `valutaListe`                       | Admin Check                                                | estratto (sola lettura)                                                   |
+| Elimina lista             | `eliminaLista`                      | PagamentiTab                                               | in store                                                                  |
 
 ---
 

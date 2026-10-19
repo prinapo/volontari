@@ -28,14 +28,15 @@ npx playwright test --config tests/e2e/playwright.config.js --grep @crud
 
 ## Tagging
 
-| Tag           | Scopo                                      | Esempi                    |
-| ------------- | ------------------------------------------ | ------------------------- |
-| `@smoke`      | Percorso critico (login, pagina carica)    | `A-01`, `F-01`, `CT-01`   |
-| `@crud`       | Persistenza dati (crea, modifica, elimina) | `CG-04`, `IE-01`, `IB-01` |
-| `@regression` | Edge case, validazione, errori             | `A-04`, `CG-02`, `EH-01`  |
-| `@visual`     | Screenshot (toHaveScreenshot)              | `VR-SS-01`, `F-SS-01`     |
-| `@e2e`        | Flusso end-to-end completo                 | `VF-05`, `RP-10`          |
-| `@setup`      | Preparazione dati per altri test           | `RC-SETUP-01`             |
+| Tag           | Scopo                                             | Esempi                    |
+| ------------- | ------------------------------------------------- | ------------------------- |
+| `@smoke`      | Percorso critico (login, pagina carica)           | `A-01`, `F-01`, `CT-01`   |
+| `@crud`       | Persistenza dati (crea, modifica, elimina)        | `CG-04`, `IE-01`, `IB-01` |
+| `@regression` | Edge case, validazione, errori                    | `A-04`, `CG-02`, `EH-01`  |
+| `@visual`     | Screenshot (toHaveScreenshot)                     | `VR-SS-01`, `F-SS-01`     |
+| `@e2e`        | Flusso end-to-end completo                        | `VF-05`, `RP-10`          |
+| `@setup`      | Preparazione dati per altri test                  | `RC-SETUP-01`             |
+| `@system`     | Test di sistema (flusso completo, multi-famiglia) | `SYS-01`…`SYS-09`         |
 
 ## Screenshot Test
 
@@ -90,6 +91,7 @@ tests/e2e/
 │   ├── network.js             # Intercettazione richieste API
 │   ├── email.js               # Lettura email via IMAP
 │   ├── results-reporter.cjs   # Reporter custom
+│   ├── system-scenario.js     # Azioni + assert per i test di sistema (@system)
 │   └── skip-mobile.js         # Helper skip su mobile
 ├── pages/
 │   ├── LoginPage.js
@@ -116,8 +118,16 @@ tests/e2e/
     ├── referente.spec.js       # Referenti
     ├── email-case.spec.js      # Case sensitivity email
     ├── error-log.spec.js       # Error log admin
+    ├── system-scenario.spec.js  # Test di sistema @system (desktop + mobile)
     └── reset-password.spec.js  # Reset password
 ```
+
+## Robustezza contro i flake del dev server
+
+- `helpers/console.js` ignora **solo** i `Failed to fetch dynamically imported module` transitori del dev server (path `/src/`, mai build di produzione) e li stampa in un blocco dedicato; gli altri errori console restano bloccanti.
+- `helpers/login.js` (`loginAs`) fa un `reload` + secondo tentativo se `waitForURL` va in timeout per un hiccup del dev.
+- `helpers/giustificativo.js` (`inviaGiustificativo`) è deterministico: attende la card e la PATCH `Stato=inviato`, non salta il click.
+- `retries` locale opt-in: `E2E_RETRIES=1 npm run test:e2e` (in CI è già 1).
 
 ## CI/CD
 

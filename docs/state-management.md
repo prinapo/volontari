@@ -1,7 +1,7 @@
 # State Management Document
 
-**Version:** 3.0.0
-**Last Updated:** 2026-10-09
+**Version:** 3.1.0
+**Last Updated:** 2026-10-19
 **Status:** Current (per le macchine a stati); le sezioni per-store "storiche" restano indicative
 
 > ⚠️ **Nota.** Lo stato asincrono canonico è `{ data/data_*, loading, error }`
@@ -348,9 +348,9 @@ da store/componenti/service. Tutto passa dalla primitiva
 
 API della primitiva:
 
-- `transita({ machine, campo, statoCorrente, evento, extra, scrivi })` — valida
-  la transizione (evento dichiarato per lo stato corrente) e scrive la patch.
-  Evento non valido → `TransizioneNonValidaError`.
+- `transita({ machine, campo, statoCorrente, evento, ctx, extra, scrivi })` — valida
+  la transizione (evento dichiarato per lo stato corrente; le guardie leggono
+  `ctx`) e scrive la patch. Evento non valido → `TransizioneNonValidaError`.
 - `creaConStato` / `creaConStatoIniziale` — creazione con stato dichiarato.
 
 Le macchine (`@xstate/fsm`) non fanno I/O e non persistono: la fonte di verità
@@ -358,6 +358,15 @@ resta Directus. I fetch/read e i **valori derivati** (`statoRiga`,
 `calcolaStatoRendicontazione`, totali/erogabile) restano funzioni pure di
 lettura. `StatoRendicontazione` è persistito ma non editabile in UI.
 
+**Contratto transizioni progetto** (dettaglio in `docs/flussi-stati.md`): da
+`accettato` solo `in_rendicontazione` (automatico) o `CHIUDI`; da
+`rimborso_parziale` solo avanti (→ `chiuso`); da `chiuso` solo `RIAPRI` con
+**target derivato** (guardie `allocato > 0`/`residuo > 0`, conferma esplicita per
+i motivi definitivi). La chiusura scrive `Progetti.TipoChiusura` e annulla la
+proposta pendente. Lato pagamenti: `fallito` → `proposto` (nuova tranche),
+`pagato` terminale.
+
 **Enforcement**: ESLint `no-restricted-syntax` vieta i literal `Stato` /
 `StatoProgetto` in oggetti fuori da `src/state-machines/` e
-`src/usecases/stato/`. Test: `tests/unit/state-machines/`.
+`src/usecases/stato/`. Test: `tests/unit/state-machines/` (matrice-contratto
+inclusa) + `tests/e2e/specs/system-scenario.spec.js` (`@system`).

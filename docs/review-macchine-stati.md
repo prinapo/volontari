@@ -22,7 +22,7 @@ capire chi le emette, chi le innesca e con quali side-effect.
 > guardie (`residuo>0`, `allocato>0`, conferma per motivi definitivi);
 > `chiudiProgetto` scrive `TipoChiusura` e annulla la proposta pendente. I
 > riferimenti a `usecases/sincronizzazione.js` e `applicaStatoProgetto` non
-> esistono più nel codice.
+> esistono più nel codice. Per lo stato corrente vedi `docs/flussi-stati.md`.
 
 ## Avanzamento
 
