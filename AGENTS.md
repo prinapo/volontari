@@ -8,7 +8,7 @@
 
 ## Quality toolchain
 
-ESLint 8 | Prettier 3 | Stylelint 16 | commitlint | Husky 9 | lint-staged | knip 5 | Playwright | GitHub Actions | Dependabot
+ESLint 8 | Prettier 3 | Stylelint 17 | commitlint | Husky 9 | lint-staged | knip 5 | Playwright | GitHub Actions | Dependabot
 
 **Nota su knip e template Vue**: knip non traccia i tag usati solo nei template Vue
 (es. `<ProgettoDetailDialog />`). Dopo ogni rimozione di import segnalato come
@@ -38,8 +38,14 @@ in un template prima di eliminare il file/import.
   Il deploy dell'estensione in Directus è una procedura separata dal rilascio SPA.
   Override attivo lì: `overrides.axios = ^1.20.0` (`@directus/composables` pinna
   axios **1.18.1** esatto, quindi `npm audit fix` non può aggiornarlo).
-- Stato atteso prima del push: `npm audit` root = **solo `uuid`/`exceljs`**,
-  estensione = **0**.
+- Stato atteso prima del push:
+  - `npm audit --omit=dev` (root) = **solo `uuid`/`exceljs`** (rischio accettato sopra);
+  - `npm audit` (root, **completo**) include anche vulnerabilità **dev-only** della
+    toolchain (`stylelint`/`markdownlint-cli` → `globby`/`fast-glob`/`braces`/
+    `micromatch`): **nessun fix non-breaking** (`npm audit fix` non li risolve; il
+    fix proposto per markdownlint è un downgrade). **Accettate** perché non spedite
+    in produzione; rivalutare con un major upgrade dedicato della toolchain;
+  - `directus-extensions/communications` = **0**.
 
 ## Comandi chiave
 
