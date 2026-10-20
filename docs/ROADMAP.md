@@ -1,5 +1,16 @@
 # Roadmap
 
+## v4.0.20–21 — Macchine a stati, derivazione e sicurezza ✅
+
+- [x] Revisione completa del ciclo di vita progetto (`docs/flussi-stati.md` + diagrammi)
+- [x] Contratto transizioni progetto (rimosse transizioni illegali; `RIAPRI` a target derivato)
+- [x] `calcolaDerivatiProgetto` + ricalcolo unico e fresco (pagamenti inclusi)
+- [x] `TipoChiusura` + conferma riapertura; chiusura che annulla la proposta pendente
+- [x] Integrità catene (annullo, riconciliazione, FK orfane, notifica, bulk)
+- [x] Test unitari esaustivi (matrice-contratto + truth table) e test di sistema `@system`
+- [x] Giro sicurezza/Dependabot (estensione 0; prod solo `exceljs`/`uuid` accettati)
+- [x] Documentazione allineata (AGENTS, flussi-stati, state-management, usecases-catalog, e2e-testing)
+
 ## v4.0.x — Pulizia architetturale (Fase 0 + 1) ✅
 
 Interventi di riduzione di duplicazione e complessità (nessun cambio funzionale

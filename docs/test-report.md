@@ -1,6 +1,17 @@
-# Test Report — v3.1.0
+# Test Report
 
-## Playwright (E2E)
+## v4.0.21 — riepilogo
+
+- **Unit (Vitest): 1491/1491** (79 file), inclusi 671 test esaustivi nuovi.
+- **E2E full (Playwright, chromium + mobile): 504 test → 502 pass, 2 flaky (passati al retry), 0 fail** (2.8h).
+- **Test di sistema `@system`: 8 scenari** (SYS-01…SYS-07, SYS-09) verdi su entrambi i progetti.
+- Audit: root prod solo `exceljs`/`uuid` (rischio accettato); estensione **0**.
+
+> Le sezioni successive sono **storiche (v3.1.0)**: per lo stato corrente usare `tests/e2e/test-status.json`.
+
+## Storico — v3.1.0
+
+### Playwright (E2E)
 
 **16 spec file · 2 progetti (desktop + mobile)**
 
