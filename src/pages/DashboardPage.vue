@@ -73,7 +73,7 @@
           </q-card>
         </div>
 
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-sm-6 col-md-3">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Progetti per ambito</div>
@@ -83,7 +83,17 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-sm-6 col-md-3">
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section>
+              <div class="text-subtitle1">Sostegno scolastico</div>
+            </q-card-section>
+            <q-card-section>
+              <BaseChart :option="scolasticoOption" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Progetti per stato rendicontazione</div>
@@ -93,7 +103,7 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-sm-6 col-md-3">
           <q-card flat bordered class="q-mb-md">
             <q-card-section>
               <div class="text-subtitle1">Indice gravità disabilità</div>
@@ -264,6 +274,36 @@ function donutOption(data) {
 }
 
 const ambitoOption = computed(() => donutOption(store.donutAmbito))
+const scolasticoOption = computed(() => {
+  const data = store.donutScolastico
+  const totale = data.reduce((acc, d) => acc + d.value, 0)
+  return {
+    tooltip: { trigger: 'item', confine: true, formatter: p => `${p.name}: ${p.value} (${Math.round(p.percent)}%)` },
+    title: {
+      text: String(totale),
+      left: 'center',
+      top: 'center',
+      textStyle: { fontSize: 24, fontWeight: 700, color: '#333333' }
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '65%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: true,
+        label: {
+          show: true,
+          position: 'outside',
+          formatter: p => `${p.name}: ${p.value} (${Math.round(p.percent)}%)`,
+          fontSize: 12,
+          fontWeight: 600
+        },
+        labelLine: { show: true, length: 10, length2: 10 },
+        data: data.map((d, i) => ({ ...d, itemStyle: { color: palette[i % palette.length] } }))
+      }
+    ]
+  }
+})
 const statiOption = computed(() => donutOption(store.donutStati))
 const gravitaOption = computed(() => donutOption(store.donutGravita))
 const iseeOption = computed(() => {

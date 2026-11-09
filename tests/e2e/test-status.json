@@ -1,6 +1,6 @@
 {
-  "version": "4.0.21",
-  "updated": "2026-10-20T08:07:33.325Z",
+  "version": "4.0.25",
+  "updated": "2026-11-09T14:26:33.457Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -1815,24 +1815,32 @@
       "file": "dashboard.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.21",
-      "lastPassed": "4.0.21"
+      "lastRun": "4.0.25",
+      "lastPassed": "4.0.25"
     },
     "DBD-02": {
       "name": "DBD-02: Volontario non accede a /dashboard @regression",
       "file": "dashboard.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.21",
-      "lastPassed": "4.0.21"
+      "lastRun": "4.0.25",
+      "lastPassed": "4.0.25"
     },
     "DBD-03": {
       "name": "DBD-03: Grafico Progetti per stato e anno renderizzato @smoke",
       "file": "dashboard.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.21",
-      "lastPassed": "4.0.21"
+      "lastRun": "4.0.25",
+      "lastPassed": "4.0.25"
+    },
+    "DBD-04": {
+      "name": "DBD-04: Dashboard mostra grafico sostegno scolastico @smoke",
+      "file": "dashboard.spec.js",
+      "chromium": "pass",
+      "mobile": "pass",
+      "lastRun": "4.0.25",
+      "lastPassed": "4.0.25"
     },
     "VER-CHIUSO-01": {
       "name": "VER-CHIUSO-01: Chiuso è l ultima opzione del filtro stato progetto @smoke",

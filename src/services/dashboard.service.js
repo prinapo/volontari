@@ -18,6 +18,7 @@ export const dashboardService = {
           'StatoProgetto',
           'StatoRendicontazione',
           'Ambito',
+          'Progetto_Sostegno_Scolastico',
           'Famiglia',
           'MassimaPercentualeErogabile',
           'TotaleGiustificativi',

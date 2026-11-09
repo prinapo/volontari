@@ -35,4 +35,17 @@ test.describe('Dashboard', () => {
     expect(box.width).toBeGreaterThan(0)
     expect(box.height).toBeGreaterThan(0)
   })
+
+  test('DBD-04: Dashboard mostra grafico sostegno scolastico @smoke', async ({ page }) => {
+    await loginAs(page, 'manager', auth)
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle').catch(() => {})
+
+    const donut = page
+      .locator('.q-card')
+      .filter({ has: page.locator('.text-subtitle1', { hasText: /^Sostegno scolastico$/ }) })
+      .first()
+    await expect(donut).toBeVisible({ timeout: 10_000 })
+    await expect(donut.locator('.dashboard-chart canvas')).toHaveCount(1)
+  })
 })

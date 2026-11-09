@@ -17,6 +17,7 @@ function emptyMetric() {
     pagato: 0,
     residuo: 0,
     chiusi: 0,
+    scolastici: 0,
     perAmbito: {},
     perStatoProgetto: {},
     perStatoRendicontazione: {},
@@ -41,6 +42,7 @@ function addToMetric(metric, progetto) {
       : progetto.StatoProgetto || STATO_PROGETTO.ACCETTATO
   if (STATI_PROGETTO_FINALI.includes(statoProgettoEff)) metric.chiusi++
   metric.perStatoProgetto[statoProgettoEff] = (metric.perStatoProgetto[statoProgettoEff] || 0) + 1
+  if (progetto.Progetto_Sostegno_Scolastico === true) metric.scolastici++
   const ambito = progetto.Ambito || 'Senza ambito'
   metric.perAmbito[ambito] = (metric.perAmbito[ambito] || 0) + 1
   const stato = STATI_PROGETTO_FINALI.includes(statoProgettoEff) ? 'chiuso' : progetto.StatoRendicontazione || 'nessuno'
@@ -155,6 +157,15 @@ export const useDashboardStore = defineStore('dashboard', {
       return Object.entries(m.perAmbito)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value)
+    },
+
+    donutScolastico: state => {
+      const m = state.metriche
+      if (!m) return []
+      return [
+        { name: 'Sì', value: m.scolastici },
+        { name: 'No', value: m.progetti - m.scolastici }
+      ]
     },
 
     donutGravita: state => {

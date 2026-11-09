@@ -25,6 +25,7 @@ const progetti = [
     StatoProgetto: 'aperto',
     StatoRendicontazione: 'verificato',
     Ambito: 'Scolastico',
+    Progetto_Sostegno_Scolastico: true,
     Famiglia: 'F1',
     Indice_Gravita_Disabilita: 3,
     ISEE: 12_000
@@ -42,6 +43,7 @@ const progetti = [
     StatoProgetto: 'chiuso',
     StatoRendicontazione: 'verificato',
     Ambito: 'Sociale',
+    Progetto_Sostegno_Scolastico: false,
     Famiglia: 'F1',
     Indice_Gravita_Disabilita: 2,
     ISEE: 60_000
@@ -80,6 +82,7 @@ describe('buildAggregati', () => {
     expect(d.byYear[2025].allocato).toBe(1500)
     expect(d.byYear[2025].pagato).toBe(500)
     expect(d.byYear[2025].chiusi).toBe(1)
+    expect(d.byYear[2025].scolastici).toBe(1)
     expect(d.byYear[2025].perAmbito.Scolastico).toBe(1)
     expect(d.byYear[2025].perAmbito.Sociale).toBe(1)
     expect(d.byYear[2025].perStatoProgetto.accettato).toBe(1)
@@ -89,11 +92,13 @@ describe('buildAggregati', () => {
 
     expect(d.byYear[2026].progetti).toBe(1)
     expect(d.byYear[2026].famiglie).toBe(1)
+    expect(d.byYear[2026].scolastici).toBe(0)
     expect(d.byYear[2026].perStatoProgetto.accettato).toBe(1)
 
     expect(d.totali.progetti).toBe(3)
     expect(d.totali.famiglie).toBe(2)
     expect(d.totali.allocato).toBe(3500)
+    expect(d.totali.scolastici).toBe(1)
 
     expect(d.pagByStato.pagato).toBe(500)
     expect(d.pagByYear[2026].fallito).toBe(50)
@@ -137,6 +142,7 @@ describe('dashboard store', () => {
     const m = store.metriche
     expect(m.progetti).toBe(3)
     expect(m.allocato).toBe(3500)
+    expect(m.scolastici).toBe(1)
     expect(store.gauge).toBe(20)
     expect(store.sommaPagamenti).toBe(700)
     expect(store.pctTotale).toBe(20)
@@ -152,6 +158,10 @@ describe('dashboard store', () => {
       { anno: 2026, stati: { accettato: 1 } }
     ])
     expect(store.donutAmbito.length).toBeGreaterThanOrEqual(2)
+    expect(store.donutScolastico).toEqual([
+      { name: 'Sì', value: 1 },
+      { name: 'No', value: 2 }
+    ])
     expect(store.donutStati.find(x => x.name === 'verificato').value).toBe(1)
     expect(store.donutStati.find(x => x.name === 'chiuso').value).toBe(1)
     expect(store.donutGravita).toEqual([
@@ -174,7 +184,24 @@ describe('dashboard store', () => {
     store.selectedAnno = 2025
 
     expect(store.metriche.progetti).toBe(2)
+    expect(store.metriche.scolastici).toBe(1)
+    expect(store.donutScolastico).toEqual([
+      { name: 'Sì', value: 1 },
+      { name: 'No', value: 1 }
+    ])
     expect(store.donutPagamenti.find(x => x.name === 'in_pagamento').value).toBe(200)
+  })
+
+  it('donutScolastico con nessun progetto', async () => {
+    mockGetProgetti.mockResolvedValue({ data: { data: [] } })
+    mockGetPagamenti.mockResolvedValue({ data: { data: [] } })
+    const store = useDashboardStore()
+    await store.fetchDashboard()
+
+    expect(store.donutScolastico).toEqual([
+      { name: 'Sì', value: 0 },
+      { name: 'No', value: 0 }
+    ])
   })
 
   it('fetchDashboard gestisce l errore', async () => {
