@@ -1,6 +1,6 @@
 {
-  "version": "4.0.25",
-  "updated": "2026-11-09T17:15:06.515Z",
+  "version": "4.0.26",
+  "updated": "2026-11-11T17:04:50.934Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
