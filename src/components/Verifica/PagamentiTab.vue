@@ -283,138 +283,10 @@
     </template>
 
     <!-- Sotto-vista: Falliti -->
-    <template v-if="subTab === 'falliti'">
-      <PagamentiTabella
-        :rows="filteredFalliti"
-        :columns="fallitiColumns"
-        :loading="store.loading"
-        selectable
-        :selected="selectedFalliti"
-        :client-pagination="{ rowsPerPage: 25 }"
-        @update:selected="val => (selectedFalliti = val)"
-      >
-        <template #top>
-          <div class="full-width">
-            <div v-if="selectedFalliti.length > 0" class="row items-center q-gutter-sm q-mb-sm">
-              <span class="text-caption">{{ selectedFalliti.length }} selezionati</span>
-              <q-btn color="warning" icon="restore" label="Ripristina a Bonifici" @click="handleRipristinaProposti" />
-            </div>
-            <TableToolbar
-              v-model:search="searchFalliti"
-              search-placeholder="Cerca famiglia, IBAN..."
-              :loading="store.loading"
-              refresh
-              @refresh="store.fetchFalliti()"
-            />
-          </div>
-        </template>
-
-        <template #body-cell-iban="props">
-          <q-td :props="props">
-            <q-input
-              :model-value="props.row.IBAN"
-              dense
-              outlined
-              :rules="IBAN_RULES"
-              @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))"
-            />
-          </q-td>
-        </template>
-        <template #body-cell-intestatario="props">
-          <q-td :props="props">
-            <q-input
-              :model-value="props.row.Intestatario"
-              dense
-              outlined
-              @update:model-value="val => editFallito(props.row, 'Intestatario', val)"
-            />
-          </q-td>
-        </template>
-        <template #body-cell-importo="props">
-          <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
-        </template>
-        <template #item="props">
-          <div class="q-pa-xs col-12">
-            <q-card flat bordered>
-              <q-card-section>
-                <div class="row items-center q-gutter-sm q-mb-sm">
-                  <q-checkbox v-model="selectedFalliti" :val="props.row" dense />
-                  <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
-                </div>
-                <div class="text-caption text-weight-medium q-mb-xs">€{{ formatNumber(props.row.Importo) }}</div>
-                <q-input
-                  :model-value="props.row.IBAN"
-                  label="IBAN"
-                  dense
-                  outlined
-                  class="q-mb-sm"
-                  :rules="IBAN_RULES"
-                  @update:model-value="val => editFallito(props.row, 'IBAN', sanitizeIBAN(val))"
-                />
-                <q-input
-                  :model-value="props.row.Intestatario"
-                  label="Intestatario"
-                  dense
-                  outlined
-                  class="q-mb-sm"
-                  @update:model-value="val => editFallito(props.row, 'Intestatario', val)"
-                />
-                <div v-if="props.row.NoteEsito" class="text-caption text-grey-7">Note: {{ props.row.NoteEsito }}</div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </template>
-      </PagamentiTabella>
-    </template>
+    <PagamentiFalliti v-if="subTab === 'falliti'" />
 
     <!-- Sotto-vista: Annullati -->
-    <template v-if="subTab === 'annullati' && authStore.canAdmin">
-      <PagamentiTabella :rows="filteredAnnullati" :columns="annullatiColumns" :loading="store.loading">
-        <template #top>
-          <div class="full-width">
-            <TableToolbar
-              v-model:search="searchAnnullati"
-              search-placeholder="Cerca famiglia, IBAN, motivo..."
-              :loading="store.loading"
-              refresh
-              @refresh="store.fetchAnnullati()"
-            >
-              <template #filters>
-                <q-select
-                  v-model="motivoAnnullati"
-                  :options="motiviAnnullati"
-                  label="Filtra per motivo"
-                  dense
-                  outlined
-                  clearable
-                  class="col-12 col-sm-6 col-md-4"
-                  emit-value
-                  map-options
-                />
-              </template>
-            </TableToolbar>
-          </div>
-        </template>
-
-        <template #body-cell-importo="props">
-          <q-td :props="props">€{{ formatNumber(props.row.Importo) }}</q-td>
-        </template>
-        <template #body-cell-data="props">
-          <q-td :props="props">{{ formatDate(props.row.DataProposta) }}</q-td>
-        </template>
-        <template #item="props">
-          <div class="q-pa-xs col-12">
-            <q-card flat bordered>
-              <q-card-section>
-                <div class="text-weight-medium">{{ props.row.Famiglia?.Nome_Famiglia || '—' }}</div>
-                <div class="text-caption">€{{ formatNumber(props.row.Importo) }}</div>
-                <div v-if="props.row.NoteEsito" class="text-caption text-grey-7">Motivo: {{ props.row.NoteEsito }}</div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </template>
-      </PagamentiTabella>
-    </template>
+    <PagamentiAnnullati v-if="subTab === 'annullati' && authStore.canAdmin" />
 
     <!-- Sotto-vista: Liste esportazione -->
     <template v-if="subTab === 'liste'">
@@ -456,9 +328,10 @@ import AppDialog from 'components/Common/AppDialog.vue'
 import TableToolbar from 'components/TableToolbar.vue'
 import ListePagamentiTable from 'src/components/Pagamenti/ListePagamentiTable.vue'
 import PagamentiTabella from 'src/components/Verifica/PagamentiTabella.vue'
+import PagamentiAnnullati from 'src/components/Verifica/pagamenti/PagamentiAnnullati.vue'
+import PagamentiFalliti from 'src/components/Verifica/pagamenti/PagamentiFalliti.vue'
 import { runBulk } from 'src/utils/bulk'
-import { formatDate, formatNumber } from 'src/utils/formatters'
-import { IBAN_RULES, sanitizeIBAN } from 'src/utils/iban-validator'
+import { formatNumber } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
 import { usePagamentiStore } from 'stores/pagamenti.store'
@@ -472,18 +345,10 @@ const verificaStore = useVerificaStore()
 const subTab = ref('proposti')
 const selected = ref([])
 const selectedInCorso = ref([])
-const selectedFalliti = ref([])
 const batchAssociazione = ref(null)
 const batchFilter = ref(null)
 const searchInCorso = ref('')
 const searchProposti = ref('')
-const searchFalliti = ref('')
-const searchAnnullati = ref('')
-const motivoAnnullati = ref(null)
-const motiviAnnullati = [
-  { label: 'Rimosso dal gruppo', value: 'Rimosso dal gruppo' },
-  { label: 'Proposta annullata: importo non più dovuto', value: 'Proposta annullata: importo non più dovuto' }
-]
 const searchListe = ref('')
 
 function loadInCorso() {
@@ -494,10 +359,6 @@ const debouncedLoadInCorso = debounce(loadInCorso, 300)
 
 watch(searchInCorso, debouncedLoadInCorso)
 watch(batchFilter, () => loadInCorso())
-
-watch(subTab, val => {
-  if (val === 'annullati') store.fetchAnnullati()
-})
 
 const filteredProposti = computed(() => {
   if (!searchProposti.value) return store.proposti
@@ -510,29 +371,6 @@ const filteredProposti = computed(() => {
   })
 })
 
-const filteredFalliti = computed(() => {
-  if (!searchFalliti.value) return store.falliti
-  const q = searchFalliti.value.toLowerCase()
-  return store.falliti.filter(p => {
-    const fam = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
-    const iban = (p.IBAN || '').toLowerCase()
-    const note = (p.NoteEsito || '').toLowerCase()
-    return fam.includes(q) || iban.includes(q) || note.includes(q)
-  })
-})
-
-const filteredAnnullati = computed(() => {
-  return store.annullati.filter(p => {
-    if (motivoAnnullati.value && (p.NoteEsito || '') !== motivoAnnullati.value) return false
-    if (!searchAnnullati.value) return true
-    const q = searchAnnullati.value.toLowerCase()
-    const fam = p.Famiglia?.Nome_Famiglia?.toLowerCase() || ''
-    const iban = (p.IBAN || '').toLowerCase()
-    const note = (p.NoteEsito || '').toLowerCase()
-    return fam.includes(q) || iban.includes(q) || note.includes(q)
-  })
-})
-
 const filteredListe = computed(() => {
   if (!searchListe.value) return store.liste
   const q = searchListe.value.toLowerCase()
@@ -540,7 +378,6 @@ const filteredListe = computed(() => {
 })
 const batchNome = ref('')
 const showBatchDialog = ref(false)
-const editingFalliti = ref({})
 const loadingVerifica = ref(false)
 
 const assocOptions = computed(() => store.associazioni.map(a => ({ label: a.Nome, value: a.Nome })))
@@ -591,23 +428,6 @@ const incorsoColumns = [
   { name: 'azioni', label: 'Azioni', align: 'center' }
 ]
 
-const fallitiColumns = [
-  { name: 'famiglia', label: 'Famiglia', align: 'left', field: row => row.Famiglia?.Nome_Famiglia || '' },
-  { name: 'iban', label: 'IBAN', align: 'left' },
-  { name: 'intestatario', label: 'Intestatario', align: 'left' },
-  { name: 'importo', label: 'Importo', align: 'right' },
-  { name: 'note', label: 'Note', field: 'NoteEsito', align: 'left' }
-]
-
-const annullatiColumns = [
-  { name: 'famiglia', label: 'Famiglia', align: 'left', field: row => row.Famiglia?.Nome_Famiglia || '' },
-  { name: 'importo', label: 'Importo', align: 'right' },
-  { name: 'IBAN', label: 'IBAN', field: 'IBAN', align: 'left' },
-  { name: 'Intestatario', label: 'Intestatario', field: 'Intestatario', align: 'left' },
-  { name: 'data', label: 'Data', align: 'left' },
-  { name: 'note', label: 'Motivo', field: 'NoteEsito', align: 'left' }
-]
-
 function residuo(nome) {
   return store.residuoAssociazione(nome)
 }
@@ -638,10 +458,6 @@ function openCreaBatch() {
   showBatchDialog.value = true
 }
 
-function editFallito(row, field, val) {
-  editingFalliti.value[row.id] = { ...editingFalliti.value[row.id], [field]: val }
-}
-
 async function creaBatch() {
   try {
     await store.creaBatch({
@@ -654,28 +470,6 @@ async function creaBatch() {
     selected.value = []
   } catch (error) {
     notifyError($q, error, 'Errore creazione gruppo')
-  }
-}
-
-async function handleRipristinaProposti() {
-  try {
-    const count = selectedFalliti.value.length
-    for (const p of selectedFalliti.value) {
-      const edits = editingFalliti.value[p.id]
-      if (edits?.IBAN || edits?.Intestatario) {
-        await store.correggiDati(p.id, {
-          iban: edits.IBAN || p.IBAN,
-          intestatario: edits.Intestatario || p.Intestatario
-        })
-      }
-      await store.ripristinaProposto(p.id)
-    }
-    selectedFalliti.value = []
-    editingFalliti.value = {}
-    await store.fetchFalliti()
-    notifySuccess($q, `${count} pagamenti ripristinati a Bonifici`)
-  } catch (error) {
-    notifyError($q, error, 'Errore ripristino')
   }
 }
 
