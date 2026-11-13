@@ -11,6 +11,29 @@ import {
 import { test, expect } from '../helpers/console.js'
 import { loginAs } from '../helpers/login.js'
 
+async function isVisible(locator, timeout = 3000) {
+  return expect(locator)
+    .toBeVisible({ timeout })
+    .then(() => true)
+    .catch(() => false)
+}
+
+async function impersonateUser(page, email) {
+  const searchInput = page.locator('input[aria-label="Cerca utenti"]')
+  if (await isVisible(searchInput, 5000)) {
+    await searchInput.fill(email)
+    await page.waitForLoadState('networkidle').catch(() => {})
+  }
+  const row = page
+    .locator('.q-table tbody tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
+    .filter({ hasText: email })
+    .first()
+  await expect(row).toBeVisible({ timeout: 10_000 })
+  const btn = row.locator('button[aria-label="Impersona utente"]').first()
+  await expect(btn).toBeVisible({ timeout: 5000 })
+  await btn.click()
+}
+
 test.describe('Admin Page', () => {
   test.beforeEach(async ({ page }) => {
     test.setTimeout(30_000)
@@ -175,40 +198,34 @@ test.describe('Admin — Impersonazione', () => {
   })
 
   test('AD-IMP-02: Impersona utente e torna a admin @crud', async ({ page }) => {
-    let targetUserId = null
-
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
     await page.waitForLoadState('networkidle').catch(() => {})
 
-    // Legge il primo userId dalla tabella utenti per cleanup
-    targetUserId = await page
-      .evaluate(() => {
-        try {
-          const pinia = document.querySelector('#q-app')?.__vue_app__?.config?.globalProperties?.$pinia
-          const users = pinia?.state?.value?.admin?.users
-          return users?.[0]?.id || null
-        } catch {
-          return null
-        }
-      })
-      .catch(() => null)
+    // Utente attivo e deterministico: il "primo" utente della tabella può essere
+    // suspended/senza ruolo e rispondere 401 durante l'impersonazione.
+    const users = await apiGetSystem('users', {
+      'filter[email][_eq]': 'fake.volontario@fake.com',
+      fields: 'id',
+      limit: 1
+    })
+    const targetUserId = users?.data?.[0]?.id || null
 
-    // Clicca il primo pulsante impersona
-    const impBtn = page.locator('button[aria-label="Impersona utente"]').first()
-    await expect(impBtn).toBeVisible({ timeout: 10_000 })
-    await Promise.all([page.waitForLoadState('domcontentloaded', { timeout: 20_000 }).catch(() => {}), impBtn.click()])
-    await page.waitForLoadState('networkidle').catch(() => {})
-    await page.waitForTimeout(2000)
+    await impersonateUser(page, 'fake.volontario@fake.com')
 
-    // Verifica che il banner di impersonazione sia visibile
+    // Il banner compare solo a impersonazione avviata: attendi con retry reale
+    // (isVisible non ritenta e causava flake se la chiamata tardava).
     const banner = page.locator('.bg-purple-8')
-    const bannerVisible = await banner.isVisible({ timeout: 15_000 }).catch(() => false)
-    expect(bannerVisible).toBe(true)
+    await expect(banner).toBeVisible({ timeout: 20_000 })
 
     // Torna a admin
-    await page.locator('button:has-text("Torna a Admin")').click()
+    const backBtn = page.getByRole('button', { name: 'Torna a Admin' })
+    await expect(backBtn).toBeVisible({ timeout: 5000 })
+    await backBtn.click()
     // Attendi il reload completo della pagina (stopImpersonation fa location.reload())
+    await expect(banner)
+      .toBeHidden({ timeout: 20_000 })
+      .catch(() => {})
     await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {})
     await page.waitForTimeout(2000)
 
@@ -241,9 +258,7 @@ test.describe('Admin — Impersonazione', () => {
     await loginAs(page, 'admin', auth)
     await page.goto('/admin')
     await page.waitForLoadState('networkidle').catch(() => {})
-    const impBtn = page.locator('button[aria-label="Impersona utente"]').first()
-    await expect(impBtn).toBeVisible({ timeout: 10_000 })
-    await impBtn.click()
+    await impersonateUser(page, 'fake.volontario@fake.com')
     await page.waitForLoadState('networkidle').catch(() => {})
     await page.waitForTimeout(3000)
 
@@ -363,14 +378,27 @@ test.describe('Admin — Utenti CRUD', () => {
     await page.goto('/admin')
     await page.waitForLoadState('networkidle').catch(() => {})
     const searchInput = page.locator('input[aria-label="Cerca utenti"]')
-    if (await searchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+
+    const search = async () => {
+      if (!(await isVisible(searchInput, 5000))) return
+      await searchInput.fill('')
       await searchInput.fill(email)
       await page.waitForLoadState('networkidle').catch(() => {})
     }
+
     const row = page
       .locator('.q-table tbody tr, .q-table__grid-content .q-card, .q-table--grid .q-card')
       .filter({ hasText: email })
       .first()
+
+    await search()
+    // retry con reload: la tabella può fallire transitoriamente il fetch (403/race)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (await isVisible(row, 8000)) return { uid, email, row }
+      await page.reload()
+      await page.waitForLoadState('networkidle').catch(() => {})
+      await search()
+    }
     await expect(row).toBeVisible({ timeout: 10_000 })
     return { uid, email, row }
   }
@@ -380,12 +408,18 @@ test.describe('Admin — Utenti CRUD', () => {
     const { uid, row } = await createThrowawayUser(page, 'e2e_role')
 
     const roleSelect = row.locator('.admin-role-select').first()
+    await expect(roleSelect).toBeVisible({ timeout: 5000 })
     await roleSelect.scrollIntoViewIfNeeded()
+    const managerOption = page.getByRole('option', { name: 'Manager' }).first()
     await roleSelect.click()
-    // Su mobile il q-select non usa .q-menu ma rende le opzioni con role=option.
+    // Su mobile il q-select può perdere il primo click durante l'apertura:
+    // se il menu non è comparso, riprova una volta.
+    if (!(await isVisible(managerOption, 3000))) {
+      const menuOpen = await isVisible(page.locator('.q-menu').first(), 1500)
+      if (!menuOpen) await roleSelect.click()
+    }
     // Attende che l'opzione sia visibile/stabile prima del click (evita il flake
     // in cui il click si perde durante l'apertura → timeout sul PATCH).
-    const managerOption = page.getByRole('option', { name: 'Manager' }).first()
     await expect(managerOption).toBeVisible({ timeout: 10_000 })
     const [patchResp] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes('/users/' + uid) && resp.request().method() === 'PATCH', {

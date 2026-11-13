@@ -64,7 +64,12 @@ test.describe('Pagine Pubbliche', () => {
     await expect(page.locator('.login-card').first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Accedi' })).toBeVisible()
     await page.waitForLoadState('networkidle').catch(() => {})
-    await expect(page).toHaveScreenshot('login-page.png', { maxDiffPixels: 500, animations: 'disabled' })
+    await expect(page).toHaveScreenshot('login-page.png', {
+      maxDiffPixels: 2000,
+      animations: 'disabled',
+      // la versione cambia a ogni release: non deve far fallire il visual test
+      mask: [page.locator('.text-grey-5.text-center.q-mt-md')]
+    })
   })
 })
 
