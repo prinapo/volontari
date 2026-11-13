@@ -7,9 +7,11 @@
           row-key="id"
           flat
           bordered
+          class="bg-white"
           :loading="loading"
           :pagination="{ rowsPerPage: 10 }"
           :grid="$q.screen.lt.sm"
+          :dense="$q.screen.lt.md"
         >
           <template #item="slotProps">
             <div class="q-pa-xs col-12">

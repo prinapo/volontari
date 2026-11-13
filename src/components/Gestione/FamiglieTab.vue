@@ -13,7 +13,9 @@
       row-key="id_famiglia"
       flat
       bordered
+      class="bg-white"
       :grid="$q.screen.lt.sm"
+      :dense="$q.screen.lt.md"
       :loading="loading"
       @request="onRequest"
     >

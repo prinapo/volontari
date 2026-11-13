@@ -13,7 +13,9 @@
           row-key="id"
           flat
           bordered
+          class="bg-white"
           :grid="$q.screen.lt.sm"
+          :dense="$q.screen.lt.md"
           :pagination="{ rowsPerPage: 5 }"
         >
           <template #item="slotPropsV">
@@ -92,7 +94,9 @@
           row-key="id"
           flat
           bordered
+          class="bg-white"
           :grid="$q.screen.lt.sm"
+          :dense="$q.screen.lt.md"
           :pagination="{ rowsPerPage: 5 }"
         >
           <template #item="slotPropsG">

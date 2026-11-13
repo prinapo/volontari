@@ -11,10 +11,12 @@
       row-key="id"
       flat
       bordered
+      class="bg-white"
       :loading="loading"
       selection="multiple"
       wrap-cells
       :grid="$q.screen.lt.sm"
+      :dense="$q.screen.lt.md"
       @request="onRequest"
     >
       <template #top>
