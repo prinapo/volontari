@@ -73,6 +73,31 @@ npm install        # solo per il build (SDK)
 npm run build      # produce dist/index.js
 ```
 
-Deploy: copiare l'intera cartella (incluso `dist/`) in
-`<directus>/extensions/communications/` e riavviare il container Directus.
-Il `dist/` non è versionato: va rigenerato con `npm run build`.
+`dist/index.js` è un bundle autocontenuto (nessuna dipendenza runtime): in
+produzione non serve `node_modules`. Il `dist/` non è versionato: va rigenerato
+con `npm run build`.
+
+### Path
+
+| Ambiente | Path host                                              | Container                 |
+| -------- | ------------------------------------------------------ | ------------------------- |
+| Dev      | `/home/ubuntu/directus-dev/extensions/communications/` | `directus-dev-directus-1` |
+| Prod     | `/opt/directus/extensions/communications/`             | `directus-directus-1`     |
+
+### Deploy (dal repo/dev)
+
+```bash
+# backup prod, fuori da extensions/
+ssh root@<host-prod> 'cp -a /opt/directus/extensions/communications /opt/directus/communications.bak-$(date +%F)'
+
+# copia (senza node_modules)
+rsync -av --exclude node_modules \
+  /home/ubuntu/volontari/directus-extensions/communications/ \
+  root@<host-prod>:/opt/directus/extensions/communications/
+
+# restart Directus
+ssh root@<host-prod> 'cd /opt/directus && docker compose restart directus'
+
+# verifica
+curl -s https://app.sostienilsostegno.com/communications/ping
+```

@@ -77,8 +77,40 @@ npm install
 npm run build            # produce dist/index.js
 ```
 
-Copiare l'intera cartella in `<directus>/extensions/communications/` (incluso
-`dist/`) e riavviare il container Directus. Il `dist/` non è versionato.
+`dist/index.js` è un bundle autocontenuto (nessuna dipendenza runtime): in
+produzione bastano `package.json` + `dist/`, **non** `node_modules`. Il `dist/`
+non è versionato e va rigenerato con `npm run build`.
+
+### Path delle istanze
+
+| Ambiente | Path host                                              | Mount nel container                                               |
+| -------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| Dev      | `/home/ubuntu/directus-dev/extensions/communications/` | `/directus/extensions/communications` (`directus-dev-directus-1`) |
+| Prod     | `/opt/directus/extensions/communications/`             | `/directus/extensions/communications` (`directus-directus-1`)     |
+
+### Procedura di aggiornamento (dev → prod)
+
+```bash
+# 0) backup del prod, FUORI da extensions/ (altrimenti Directus lo carica come estensione)
+ssh root@<host-prod> 'cp -a /opt/directus/extensions/communications /opt/directus/communications.bak-$(date +%F)'
+
+# 1) copia dal repo/dev al prod (node_modules escluso)
+rsync -av --exclude node_modules \
+  /home/ubuntu/volontari/directus-extensions/communications/ \
+  root@<host-prod>:/opt/directus/extensions/communications/
+
+# 2) riavvio Directus
+ssh root@<host-prod> 'cd /opt/directus && docker compose restart directus'
+
+# 3) verifica
+curl -s https://app.sostienilsostegno.com/communications/ping
+# atteso: {"ok":true,"brevo":true,"sender":"noreplay@sostienilsostegno.com"}
+```
+
+Su dev (stessa macchina) dopo la copia: `cd /home/ubuntu/directus-dev && docker compose restart directus`.
+
+Il deploy dell'estensione è **separato** dal rilascio SPA (`npm run release`) e
+non è incluso nel deploy FTP.
 
 In dev l'app chiama l'API su `https://development.sostienilsostegno.com` e nginx
 proxy-a a Directus solo alcune route: serve aggiungere anche **`location /communications/`**

@@ -538,6 +538,12 @@ la gestione le fa il manager.
 - L'invio avviene in un'**estensione Directus endpoint** in
   `directus-extensions/communications/` (fuori dal frontend, come `db-sync`):
   `POST /communications/recipients` (anteprima) e `/send` (invio + log).
+  - Path istanze: dev `/home/ubuntu/directus-dev/extensions/communications/`,
+    prod `/opt/directus/extensions/communications/`. Aggiornamento (backup,
+    rsync senza `node_modules`, restart container, verifica
+    `/communications/ping`) in `docs/comunicazioni.md` §4.
+  - Deploy estensione **separato** dal rilascio SPA (`npm run release`), non
+    incluso nel deploy FTP.
 - Il frontend non invia mai email direttamente: passa dal use case
   `inviaComunicazione` (`src/usecases/comunicazioni.js`), che costruisce il
   payload (filtri → id famiglia) via `src/utils/filtriComunicazioni.js`.
