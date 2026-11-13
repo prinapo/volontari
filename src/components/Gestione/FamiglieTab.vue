@@ -77,68 +77,23 @@
                 </q-item-label>
               </q-item-section>
             </template>
-            <q-card flat bordered>
-              <q-card-section class="q-pa-sm">
-                <div class="row q-col-gutter-sm q-mb-sm">
-                  <div class="col-12">
-                    <InlineEditableField
-                      :model-value="props.row.IBAN"
-                      label="IBAN"
-                      :readonly="!authStore.canAdmin"
-                      :saving="savingField === `IBAN_${props.row.id_famiglia}`"
-                      history-collection="Famiglie"
-                      :history-item-id="props.row.id_famiglia"
-                      history-field="IBAN"
-                      :revisions="revisioniFamiglie[props.row.id_famiglia]?.IBAN"
-                      @save="value => handleInlineSave(props.row, 'IBAN', value)"
-                    />
-                  </div>
-                  <div class="col-12">
-                    <InlineEditableField
-                      :model-value="props.row.Intestatario_CC"
-                      label="Intestatario CC"
-                      :readonly="!authStore.canAdmin"
-                      :saving="savingField === `Intestatario_CC_${props.row.id_famiglia}`"
-                      history-collection="Famiglie"
-                      :history-item-id="props.row.id_famiglia"
-                      history-field="Intestatario_CC"
-                      :revisions="revisioniFamiglie[props.row.id_famiglia]?.Intestatario_CC"
-                      @save="value => handleInlineSave(props.row, 'Intestatario_CC', value)"
-                    />
-                  </div>
-                </div>
-
-                <q-separator class="q-mb-sm" />
-                <FamigliaContattiList
-                  :contatti="expandedCache[props.row.id_famiglia]"
-                  :loading="expandedLoading"
-                  @add="openContatti(props.row)"
-                  @remove="c => confirmRemoveContatto(c, props.row)"
-                />
-              </q-card-section>
-            </q-card>
-
-            <div v-if="progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-center q-py-md">
-              <q-spinner size="sm" /> Caricamento progetti...
-            </div>
-            <q-card v-else-if="progettiCache[props.row.id_famiglia]?.length" flat bordered class="q-mt-sm">
-              <q-card-section class="q-pa-sm">
-                <div class="text-caption text-grey-7 q-mb-sm">Progetti ({{ progettiCache[props.row.id_famiglia].length }})</div>
-                <ProgettoDetailPanel
-                  v-for="prog in progettiCache[props.row.id_famiglia]"
-                  :key="prog.id_progetto"
-                  :prog="prog"
-                  :can-admin="authStore.canAdmin"
-                  :saving="salvandoProgId === prog.id_progetto"
-                  class="q-mb-sm"
-                  @save-field="(f, v) => saveProgettoField(prog, f, v)"
-                  @save-percentuale="v => salvaPercentualeProgetto(prog, v)"
-                />
-               </q-card-section>
-             </q-card>
-            <div v-else-if="!progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-grey q-py-sm">
-              Nessun progetto per questa famiglia.
-            </div>
+            <FamigliaExpansionContent
+              :row="props.row"
+              :can-admin="authStore.canAdmin"
+              show-bancari
+              :saving-field="savingField"
+              :revisioni="revisioniFamiglie[props.row.id_famiglia]"
+              :contatti="expandedCache[props.row.id_famiglia]"
+              :contatti-loading="expandedLoading"
+              :progetti="progettiCache[props.row.id_famiglia]"
+              :progetti-loading="progettiLoading"
+              :salvando-prog-id="salvandoProgId"
+              @inline-save="(field, value) => handleInlineSave(props.row, field, value)"
+              @add-contatti="openContatti(props.row)"
+              @remove-contatto="c => confirmRemoveContatto(c, props.row)"
+              @save-field="(prog, field, value) => saveProgettoField(prog, field, value)"
+              @save-percentuale="(prog, value) => salvaPercentualeProgetto(prog, value)"
+            />
           </q-expansion-item>
         </div>
       </template>
@@ -207,38 +162,22 @@
         </q-tr>
         <q-tr v-show="props.expand" :props="props">
           <q-td colspan="100%" class="text-break">
-            <q-card flat bordered class="q-ma-sm">
-              <q-card-section>
-                <FamigliaContattiList
-                  :contatti="expandedCache[props.row.id_famiglia]"
-                  :loading="expandedLoading"
-                  @add="openContatti(props.row)"
-                  @remove="c => confirmRemoveContatto(c, props.row)"
-                />
-              </q-card-section>
-            </q-card>
-
-            <div v-if="progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-center q-py-md">
-              <q-spinner size="sm" /> Caricamento progetti...
-            </div>
-            <q-card v-else-if="progettiCache[props.row.id_famiglia]?.length" flat bordered class="q-mt-sm">
-              <q-card-section class="q-pa-sm">
-                <div class="text-caption text-grey-7 q-mb-sm">Progetti ({{ progettiCache[props.row.id_famiglia].length }})</div>
-                <ProgettoDetailPanel
-                  v-for="prog in progettiCache[props.row.id_famiglia]"
-                  :key="prog.id_progetto"
-                  :prog="prog"
-                  :can-admin="authStore.canAdmin"
-                  :saving="salvandoProgId === prog.id_progetto"
-                  class="q-mb-sm"
-                  @save-field="(f, v) => saveProgettoField(prog, f, v)"
-                  @save-percentuale="v => salvaPercentualeProgetto(prog, v)"
-                />
-               </q-card-section>
-             </q-card>
-            <div v-else-if="!progettiLoading && !progettiCache[props.row.id_famiglia]" class="text-grey q-py-sm">
-              Nessun progetto per questa famiglia.
-            </div>
+            <FamigliaExpansionContent
+              :row="props.row"
+              :can-admin="authStore.canAdmin"
+              :saving-field="savingField"
+              :revisioni="revisioniFamiglie[props.row.id_famiglia]"
+              :contatti="expandedCache[props.row.id_famiglia]"
+              :contatti-loading="expandedLoading"
+              :progetti="progettiCache[props.row.id_famiglia]"
+              :progetti-loading="progettiLoading"
+              :salvando-prog-id="salvandoProgId"
+              @inline-save="(field, value) => handleInlineSave(props.row, field, value)"
+              @add-contatti="openContatti(props.row)"
+              @remove-contatto="c => confirmRemoveContatto(c, props.row)"
+              @save-field="(prog, field, value) => saveProgettoField(prog, field, value)"
+              @save-percentuale="(prog, value) => salvaPercentualeProgetto(prog, value)"
+            />
           </q-td>
         </q-tr>
       </template>
@@ -266,9 +205,8 @@ import { notifyError, notifySuccess } from 'src/utils/notify'
 import { useAuthStore } from 'stores/auth.store'
 import { useGestioneStore } from 'stores/gestione.store'
 import FamigliaContattiDialog from './FamigliaContattiDialog.vue'
-import FamigliaContattiList from './FamigliaContattiList.vue'
 import FamigliaDialog from './FamigliaDialog.vue'
-import ProgettoDetailPanel from './ProgettoDetailPanel.vue'
+import FamigliaExpansionContent from './FamigliaExpansionContent.vue'
 
 const store = useGestioneStore()
 const $q = useQuasar()
