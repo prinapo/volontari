@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import PagamentiTab from 'src/components/Verifica/PagamentiTab.vue'
 import PagamentiFalliti from 'src/components/Verifica/pagamenti/PagamentiFalliti.vue'
+import PagamentiInCorso from 'src/components/Verifica/pagamenti/PagamentiInCorso.vue'
+import PagamentiProposti from 'src/components/Verifica/pagamenti/PagamentiProposti.vue'
 import { quasarMount } from '../quasar-mount'
 
 const mockInit = vi.fn()
@@ -132,25 +134,27 @@ describe('PagamentiTab', () => {
   })
 
   it('initializes on mount and computes helpers', () => {
-    const wrapper = quasarMount(PagamentiTab)
+    quasarMount(PagamentiTab)
+    const proposti = quasarMount(PagamentiProposti)
+    const inCorso = quasarMount(PagamentiInCorso)
 
     expect(mockInit).toHaveBeenCalled()
-    expect(wrapper.vm.assocOptions).toEqual([
+    expect(proposti.vm.assocOptions).toEqual([
       { label: 'Assoc 1', value: 'Assoc 1' },
       { label: 'Assoc 2', value: 'Assoc 2' }
     ])
-    expect(wrapper.vm.batchOptions).toEqual([
+    expect(inCorso.vm.batchOptions).toEqual([
       { label: 'Batch 1', value: 'b1' },
       { label: 'Batch 2', value: 'b2' }
     ])
-    expect(wrapper.vm.formatNumber('10.5')).toBe('10.50')
-    expect(wrapper.vm.residuo('Assoc 1')).toBe(100)
-    expect(wrapper.vm.selectedTotal).toBe(0)
-    expect(wrapper.vm.incorsoColumns.some(c => c.name === 'Intestatario')).toBe(true)
+    expect(inCorso.vm.formatNumber('10.5')).toBe('10.50')
+    expect(proposti.vm.residuo('Assoc 1')).toBe(100)
+    expect(proposti.vm.selectedTotal).toBe(0)
+    expect(inCorso.vm.incorsoColumns.some(c => c.name === 'Intestatario')).toBe(true)
   })
 
   it('opens batch dialog only when rows are selected', () => {
-    const wrapper = quasarMount(PagamentiTab)
+    const wrapper = quasarMount(PagamentiProposti)
 
     wrapper.vm.openCreaBatch()
     expect(wrapper.vm.showBatchDialog).toBe(false)
@@ -163,7 +167,7 @@ describe('PagamentiTab', () => {
 
   it('creates a batch successfully and handles errors', async () => {
     mockCreaBatch.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom'))
-    const wrapper = quasarMount(PagamentiTab)
+    const wrapper = quasarMount(PagamentiProposti)
     wrapper.vm.selected = [{ id: 1 }, { id: 2 }]
     wrapper.vm.batchNome = 'Batch Test'
     wrapper.vm.batchAssociazione = 'Assoc 1'
@@ -188,7 +192,7 @@ describe('PagamentiTab', () => {
     mockSegnaPagato.mockResolvedValue({})
     mockSegnaFallito.mockResolvedValue({})
     mockSegnaAnnullato.mockResolvedValue({})
-    const wrapper = quasarMount(PagamentiTab)
+    const wrapper = quasarMount(PagamentiInCorso)
 
     await wrapper.vm.handlePagato({ id: 11 })
     expect(mockSegnaPagato).toHaveBeenCalledWith(11)
