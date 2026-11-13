@@ -530,6 +530,12 @@ la gestione le fa il manager.
   toccate.
 - Dopo un sync la sessione admin corrente è invalidata (truncate users): la UI
   chiede di accedere di nuovo.
+- **Dopo un sync/import riavviare Directus**: se l'API di dev risponde `403`
+  ("You don't have permission to access collection ...") su tutte le collezioni
+  anche da admin, è lo stato permessi/schema in memoria del container non più
+  allineato al DB. Rimedio:
+  `cd /home/ubuntu/directus-dev && docker compose restart directus`.
+  Non è un problema di permessi nel DB.
 
 ## Comunicazioni (email 1-a-1)
 
