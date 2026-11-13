@@ -24,6 +24,7 @@
       row-key="id"
       flat
       bordered
+      class="bg-white"
       :loading="loading"
       :grid="$q.screen.lt.sm"
       :dense="$q.screen.lt.md"

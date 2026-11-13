@@ -6,8 +6,10 @@
       v-model:pagination="pagination"
       flat
       bordered
+      class="bg-white"
       row-key="id"
       :grid="$q.screen.lt.sm"
+      :dense="$q.screen.lt.md"
       :rows="rows"
       :columns="submissionColumns"
       :loading="loading"

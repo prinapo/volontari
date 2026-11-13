@@ -192,6 +192,7 @@
           v-if="giustificativi.length > 0"
           flat
           bordered
+          class="bg-white"
           dense
           :rows="giustificativi"
           :columns="giustColumns"

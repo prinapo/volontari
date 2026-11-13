@@ -13,8 +13,10 @@
       row-key="id_contatto"
       flat
       bordered
+      class="bg-white"
       binary-state-sort
       :grid="$q.screen.lt.sm"
+      :dense="$q.screen.lt.md"
       @request="onRequest"
     >
       <template #top>
