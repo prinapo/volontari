@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminAssociazioniTab from 'src/components/Admin/AdminAssociazioniTab.vue'
-import AdminConsistencyTab from 'src/components/Admin/AdminConsistencyTab.vue'
 import AdminUtentiTab from 'src/components/Admin/AdminUtentiTab.vue'
+import CheckVolontariSection from 'src/components/Admin/Check/CheckVolontariSection.vue'
 import AdminPage from 'src/pages/AdminPage.vue'
 import { quasarMount } from '../quasar-mount'
 
@@ -207,7 +207,7 @@ describe('AdminPage', () => {
   it('creates or links volunteer users and handles missing email', async () => {
     mockGetRoleByName.mockResolvedValue({ data: { data: [{ id: 'role-vol' }] } })
     mockSearchByEmail.mockResolvedValue({ data: { data: [{ id: 'user-existing' }] } })
-    const wrapper = quasarMount(AdminConsistencyTab)
+    const wrapper = quasarMount(CheckVolontariSection)
     const volontario = {
       id_contatto: 'c1',
       Nome: 'Mario',
