@@ -1,32 +1,29 @@
 <template>
-  <q-dialog v-model="visible">
-    <q-card style="min-width: 420px; max-width: 640px">
-      <q-card-section class="text-h6">Invia email</q-card-section>
-      <q-separator />
-      <q-card-section>
-        <q-input v-model="oggetto" label="Oggetto *" outlined dense maxlength="150" />
-        <q-input
-          v-model="corpo"
-          label="Corpo *"
-          type="textarea"
-          autogrow
-          outlined
-          class="q-mt-sm"
-          hint="Segnaposto: {nome}, {cognome}, {famiglia}, {email}"
-        />
-        <q-input v-model="link" label="Link allegato (opzionale)" outlined dense class="q-mt-sm" />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn v-close-popup flat label="Annulla" />
-        <q-btn color="positive" label="Invia" :loading="sending" :disable="!oggetto || !corpo" @click="invia" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <AppDialog v-model="visible" title="Invia email" :persistent="false" :width="420">
+    <q-card-section>
+      <q-input v-model="oggetto" label="Oggetto *" outlined dense maxlength="150" />
+      <q-input
+        v-model="corpo"
+        label="Corpo *"
+        type="textarea"
+        autogrow
+        outlined
+        class="q-mt-sm"
+        hint="Segnaposto: {nome}, {cognome}, {famiglia}, {email}"
+      />
+      <q-input v-model="link" label="Link allegato (opzionale)" outlined dense class="q-mt-sm" />
+    </q-card-section>
+    <template #footer>
+      <q-btn v-close-popup flat dense size="sm" label="Annulla" />
+      <q-btn color="positive" label="Invia" :loading="sending" :disable="!oggetto || !corpo" @click="invia" />
+    </template>
+  </AppDialog>
 </template>
 
 <script setup>
 import { useQuasar } from 'quasar'
 import { computed, ref, watch } from 'vue'
+import AppDialog from 'components/Common/AppDialog.vue'
 import { inviaComunicazione } from 'src/usecases/comunicazioni'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 
