@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import PagamentiTab from 'src/components/Verifica/PagamentiTab.vue'
+import PagamentiFalliti from 'src/components/Verifica/pagamenti/PagamentiFalliti.vue'
 import { quasarMount } from '../quasar-mount'
 
 const mockInit = vi.fn()
@@ -209,7 +210,7 @@ describe('PagamentiTab', () => {
   it('handles ripristino proposto for falliti', async () => {
     mockCorreggiDati.mockResolvedValue({})
     mockRipristinaProposto.mockResolvedValue({})
-    const wrapper = quasarMount(PagamentiTab)
+    const wrapper = quasarMount(PagamentiFalliti)
     const row = { id: 21, IBAN: 'ITX', Intestatario: 'Luca' }
 
     wrapper.vm.editFallito(row, 'IBAN', 'IT 99')
