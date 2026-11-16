@@ -52,6 +52,15 @@ describe('services', () => {
     const { authService } = await import('src/services/auth.service')
     await authService.login('a@b.it', 'pwd')
     expect(mockPost).toHaveBeenCalledWith('/auth/login', { email: 'a@b.it', password: 'pwd', mode: 'cookie' })
+    await authService.login('a@b.it', 'pwd', '123456')
+    expect(mockPost).toHaveBeenCalledWith('/auth/login', {
+      email: 'a@b.it',
+      password: 'pwd',
+      mode: 'cookie',
+      otp: '123456'
+    })
+    await authService.login('a@b.it', 'pwd', '')
+    expect(mockPost).toHaveBeenLastCalledWith('/auth/login', { email: 'a@b.it', password: 'pwd', mode: 'cookie' })
     await authService.logout('rtok')
     expect(mockPost).toHaveBeenCalledWith('/auth/logout', { mode: 'cookie' })
     await authService.getMe()

@@ -42,6 +42,26 @@
                 </template>
               </q-input>
 
+              <q-input
+                v-if="authStore.otpRequired"
+                ref="otpInput"
+                v-model="otp"
+                label="Codice di verifica"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                outlined
+                dense
+                data-testid="login-otp"
+                hint="6 cifre della tua app di autenticazione"
+                :rules="[val => /^\d{6}$/.test(val) || 'Inserisci le 6 cifre del codice']"
+                lazy-rules
+              >
+                <template #prepend>
+                  <q-icon name="verified_user" />
+                </template>
+              </q-input>
+
               <q-btn
                 type="submit"
                 color="primary"
@@ -102,7 +122,7 @@
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppDialog from 'components/Common/AppDialog.vue'
 import { authService } from 'src/services/auth.service'
@@ -117,6 +137,8 @@ const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
+const otp = ref('')
+const otpInput = ref(null)
 const showPassword = ref(false)
 const showForgotPassword = ref(false)
 const resetEmail = ref('')
@@ -124,11 +146,16 @@ const sendingReset = ref(false)
 
 async function handleLogin() {
   try {
-    await authStore.login(email.value.toLowerCase(), password.value)
+    const otpValue = authStore.otpRequired ? otp.value.trim() : ''
+    await authStore.login(email.value.toLowerCase(), password.value, otpValue)
     if (authStore.canManager) return router.push('/dashboard')
     router.push('/famiglie')
   } catch {
     // error already set in authStore.error
+    if (authStore.otpRequired) {
+      await nextTick()
+      otpInput.value?.focus()
+    }
   }
 }
 

@@ -40,6 +40,7 @@ describe('LoginPage', () => {
     vi.clearAllMocks()
     mockAuthStore.loading = false
     mockAuthStore.error = null
+    mockAuthStore.otpRequired = false
     mockAuthStore.canManager = false
     mockRequestPasswordReset.mockResolvedValue({})
   })
@@ -57,7 +58,39 @@ describe('LoginPage', () => {
 
     await wrapper.vm.handleLogin()
 
-    expect(mockLogin).toHaveBeenCalledWith('mario@test.it', 'Secret123!')
+    expect(mockLogin).toHaveBeenCalledWith('mario@test.it', 'Secret123!', '')
+  })
+
+  it('non mostra il campo OTP se non richiesto', () => {
+    const wrapper = quasarMount(LoginPage)
+
+    expect(wrapper.find('[data-testid="login-otp"]').exists()).toBe(false)
+  })
+
+  it('mostra il campo OTP quando la store lo richiede e invia il codice', async () => {
+    mockAuthStore.otpRequired = true
+    mockLogin.mockResolvedValue(true)
+    const wrapper = quasarMount(LoginPage)
+    wrapper.vm.email = 'Mario@Test.it'
+    wrapper.vm.password = 'Secret123!'
+    wrapper.vm.otp = '123456'
+
+    await wrapper.vm.handleLogin()
+
+    expect(wrapper.find('[data-testid="login-otp"]').exists()).toBe(true)
+    expect(mockLogin).toHaveBeenCalledWith('mario@test.it', 'Secret123!', '123456')
+  })
+
+  it('invia stringa vuota se il campo OTP è vuoto', async () => {
+    mockAuthStore.otpRequired = true
+    mockLogin.mockResolvedValue(true)
+    const wrapper = quasarMount(LoginPage)
+    wrapper.vm.email = 'mario@test.it'
+    wrapper.vm.password = 'Secret123!'
+
+    await wrapper.vm.handleLogin()
+
+    expect(mockLogin).toHaveBeenCalledWith('mario@test.it', 'Secret123!', '')
   })
 
   it('redirects to dashboard after login for manager role', async () => {

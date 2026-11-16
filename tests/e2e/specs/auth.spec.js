@@ -50,6 +50,39 @@ test.describe('Authentication', () => {
     await page.reload()
     await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
   })
+
+  test('A-05: account con 2FA chiede il codice OTP e completa il login @regression', async ({ page }) => {
+    // Simula un account con 2FA: la prima POST senza otp riceve INVALID_OTP
+    // (come Directus reale), la seconda — con il codice — prosegue normalmente.
+    let loginCalls = 0
+    await page.route('**/auth/login', async route => {
+      loginCalls += 1
+      if (loginCalls === 1) {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            errors: [{ message: 'Invalid user OTP.', extensions: { code: 'INVALID_OTP' } }]
+          })
+        })
+        return
+      }
+      await route.continue()
+    })
+    page.expectApiError('/auth/login')
+
+    await loginPage.login(testUser.email, testUser.password)
+
+    const otpInput = page.locator('[data-testid="login-otp"]')
+    await expect(otpInput).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.text-negative')).toContainText('codice a 6 cifre')
+
+    await otpInput.fill('123456')
+    await loginPage.submitButton.click()
+
+    await expect(page).toHaveURL(/\/famiglie/, { timeout: 15_000 })
+    expect(loginCalls).toBe(2)
+  })
 })
 
 test.describe('Pagine Pubbliche', () => {

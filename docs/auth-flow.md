@@ -6,11 +6,11 @@
 
 ## Change Log
 
-| Date | Version | Author | Change |
-|---|---|---|---|
-| 2026-05-25 | 1.0.0 | System | Initial draft |
-| 2026-05-25 | 1.1.0 | System | Final — route guard simplified to localStorage check |
-| 2026-05-25 | 2.0.0 | System | Final — added initFromStorage boot flow, role resolution, canVerifica, route guard update |
+| Date       | Version | Author | Change                                                                                    |
+| ---------- | ------- | ------ | ----------------------------------------------------------------------------------------- |
+| 2026-05-25 | 1.0.0   | System | Initial draft                                                                             |
+| 2026-05-25 | 1.1.0   | System | Final — route guard simplified to localStorage check                                      |
+| 2026-05-25 | 2.0.0   | System | Final — added initFromStorage boot flow, role resolution, canVerifica, route guard update |
 
 ---
 
@@ -85,6 +85,46 @@ User                  LoginPage              auth.store              Directus
   │  <redirect>          │                      │                      │
 ```
 
+### 2.1 Login con 2FA (MFA) attiva sull'utente
+
+Directus richiede il codice TOTP solo agli utenti con `directus_users.tfa_secret`
+valorizzato (`InvalidOtpError`, 401, codice `INVALID_OTP`). Il codice va inviato
+nello **stesso** `POST /auth/login` del payload `{ email, password, otp, mode }`.
+Il flusso è quello dell'app ufficiale Directus: due richieste, la prima senza OTP.
+
+```
+LoginPage                 auth.store              Directus
+  │  login(email, pass)     │                       │
+  │────────────────────────>│  POST /auth/login     │
+  │                         │  (senza otp)          │
+  │                         │──────────────────────>│
+  │                         │  401 INVALID_OTP      │
+  │                         │<──────────────────────│
+  │  otpRequired = true     │                       │
+  │  (campo OTP + messaggio)│                       │
+  │<────────────────────────│                       │
+  │  login(email, pass, otp)│  POST /auth/login     │
+  │────────────────────────>│  (con otp)            │
+  │                         │──────────────────────>│
+  │                         │  { access_token }     │
+  │                         │<──────────────────────│
+  │  → /dashboard | /famiglie                       │
+```
+
+Regole:
+
+- `otp` viene inviato solo se non vuoto (`auth.service.login`), così gli utenti
+  senza 2FA restano identici.
+- Il campo OTP in `LoginPage` compare solo se `auth.store.otpRequired` è `true`
+  (errori diversi da `INVALID_OTP`, es. `INVALID_CREDENTIALS`, non lo mostrano).
+- Messaggi: senza codice → "Questo account richiede la verifica in due
+  passaggi..."; con codice errato → "Codice di verifica non valido o scaduto."
+  Mai il testo grezzo "Invalid user OTP.".
+- Il refresh token non richiede OTP: la verifica avviene solo al login.
+- Attenzione: Directus consuma un tentativo di login per **ogni** POST, quindi
+  un login con 2FA ne consuma due (`auth_login_attempts` in Directus Settings;
+  se `NULL` non c'è limite). Oltre soglia l'utente passa a `status=suspended`.
+
 ---
 
 ## 3. Token Refresh Sequence (on 401)
@@ -140,12 +180,14 @@ Getters:
 ```
 
 **Role resolution flow:**
+
 1. JWT payload decoded client-side (`decodeJwtPayload`) to extract `role` ID
 2. `resolveUserRole()` calls `authService.getRole(roleId)` to get the full role object with `name`
 3. `canVerifica` checks if `roleName` matches `VERIFICA_ROLE_NAMES` or `roleId` matches `VERIFICA_ROLE_IDS`
 4. If `directus_roles` table is not readable, `canVerifica` falls back to `VERIFICA_ROLE_IDS` check
 
 **Security notes:**
+
 - localStorage is readable by any JS on the same origin
 - XSS protection is essential (sanitize inputs, avoid innerHTML)
 - The refresh token has a 7-day TTL; no auto-refresh on tab close
@@ -185,6 +227,7 @@ router.beforeEach((to, from, next) => {
 ```
 
 Route meta flags:
+
 - `public: true` → `/login` (accessible without auth)
 - `requiresAuth: true` → all routes under `AppLayout`
 - `requiredRole: 'Verifica'` → `/verifica` (checks canVerifica)

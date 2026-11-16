@@ -3,8 +3,15 @@ import api from './api'
 const AUTH_MODE = 'cookie'
 
 export const authService = {
-  login(email, password) {
-    return api.post('/auth/login', { email, password, mode: AUTH_MODE })
+  /**
+   * Login locale. `otp` (codice TOTP a 6 cifre) va inviato solo per gli
+   * account con 2FA attiva: Directus risponde `INVALID_OTP` alla prima
+   * richiesta senza codice e l'OTP va ripetuto nello stesso payload.
+   */
+  login(email, password, otp) {
+    const data = { email, password, mode: AUTH_MODE }
+    if (otp) data.otp = otp
+    return api.post('/auth/login', data)
   },
 
   logout(refreshToken) {
