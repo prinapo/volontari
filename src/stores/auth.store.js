@@ -3,7 +3,7 @@ import { authService } from 'src/services/auth.service'
 import { contattiService } from 'src/services/contatti.service'
 import { famiglieService } from 'src/services/famiglie.service'
 import { STORAGE_KEYS } from 'src/utils/constants'
-import { apiErrorMessage } from 'src/utils/errors'
+import { apiErrorMessage, errorCode } from 'src/utils/errors'
 import { MANAGER_ROLE_NAMES, ADMIN_ROLE_NAMES } from 'src/utils/permissions'
 import { logSessionEvent } from 'src/utils/session-log'
 
@@ -45,6 +45,7 @@ export const useAuthStore = defineStore('auth', {
     hasFamiglieAccess: false,
     loading: false,
     error: null,
+    otpRequired: false,
     initialized: false,
     isImpersonating: false,
     impersonatedUserId: null
@@ -103,13 +104,14 @@ export const useAuthStore = defineStore('auth', {
       this.initialized = true
     },
 
-    async login(email, password) {
+    async login(email, password, otp = '') {
       this.loading = true
       this.error = null
       try {
-        const res = await authService.login(email, password)
+        const res = await authService.login(email, password, otp)
         const tokens = res.data.data
         this.token = tokens.access_token
+        this.otpRequired = false
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token)
         if (AUTH_MODE === 'json') {
           this.refreshToken = tokens.refresh_token
@@ -117,7 +119,17 @@ export const useAuthStore = defineStore('auth', {
         }
         await this.fetchUserData()
       } catch (error) {
-        this.error = apiErrorMessage(error, 'Errore di login')
+        // Account con 2FA: la prima richiesta senza OTP riceve INVALID_OTP.
+        // Si richiede il codice senza mostrare l'errore grezzo di Directus.
+        if (errorCode(error) === 'INVALID_OTP') {
+          this.otpRequired = true
+          this.error = otp
+            ? 'Codice di verifica non valido o scaduto. Riprova.'
+            : 'Questo account richiede la verifica in due passaggi: inserisci il codice a 6 cifre della tua app di autenticazione.'
+        } else {
+          this.otpRequired = false
+          this.error = apiErrorMessage(error, 'Errore di login')
+        }
         throw error
       } finally {
         this.loading = false

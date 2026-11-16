@@ -392,6 +392,12 @@ né ruoli separati "Verificatore", "Gestore" o "GestoreVerifica": la verifica e
 la gestione le fa il manager.
 
 - Nessun test deve fare `loginAs` con genitore/verificatore/gestore.
+- **MFA/2FA**: la SPA supporta il login con codice OTP (`auth.store.otpRequired`,
+  campo `login-otp` in `LoginPage`, `otp` inviato solo se valorizzato). NON
+  attivare 2FA sugli utenti fixture `fake.*`: `loginAs` non invia OTP e la suite
+  fallirebbe. Per provare la MFA usare un account reale (es. il proprio) su dev;
+  ogni login con 2FA consuma **2** tentativi Directus (`auth_login_attempts`
+  deve restare `NULL` o alto). Dettagli in `docs/auth-flow.md` §2.1.
 - Test che assunvano quei ruoli come login → spostati in `tests/e2e/obsolete/`
   (fuori dal `testDir` di Playwright, NON eseguiti, eslint ignorati).
   Esempio: `obsolete/permissions.spec.js` (PER-01..10). La guardia "manager non

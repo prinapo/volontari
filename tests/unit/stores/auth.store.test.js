@@ -202,6 +202,64 @@ describe('auth store', () => {
       const store = useAuthStore()
       await expect(store.login('test@example.com', 'password')).rejects.toThrow()
       expect(store.error).toBe('Network failure')
+      expect(store.otpRequired).toBe(false)
+    })
+
+    it('chiede il codice OTP quando Directus risponde INVALID_OTP', async () => {
+      mockLogin.mockRejectedValue({
+        response: { data: { errors: [{ message: 'Invalid user OTP.', extensions: { code: 'INVALID_OTP' } }] } }
+      })
+
+      const store = useAuthStore()
+      await expect(store.login('admin@example.com', 'password')).rejects.toThrow()
+
+      expect(store.otpRequired).toBe(true)
+      expect(store.error).toContain('codice a 6 cifre')
+      expect(store.error).not.toContain('Invalid user OTP')
+    })
+
+    it('segnala codice errato quando INVALID_OTP arriva con otp inviato', async () => {
+      mockLogin.mockRejectedValue({
+        response: { data: { errors: [{ message: 'Invalid user OTP.', extensions: { code: 'INVALID_OTP' } }] } }
+      })
+
+      const store = useAuthStore()
+      await expect(store.login('admin@example.com', 'password', '123456')).rejects.toThrow()
+
+      expect(store.otpRequired).toBe(true)
+      expect(store.error).toContain('non valido o scaduto')
+      expect(mockLogin).toHaveBeenCalledWith('admin@example.com', 'password', '123456')
+    })
+
+    it('azzera otpRequired sul login riuscito con OTP', async () => {
+      mockLogin.mockResolvedValue({
+        data: { data: { access_token: 'new-token', refresh_token: 'new-refresh' } }
+      })
+      mockGetMe.mockResolvedValue({ data: { data: { id: 'user-1', role: { name: 'admin' } } } })
+      mockGetByUserId.mockResolvedValue({ data: { data: [] } })
+
+      const store = useAuthStore()
+      store.otpRequired = true
+
+      await store.login('admin@example.com', 'password', '123456')
+
+      expect(store.otpRequired).toBe(false)
+      expect(store.error).toBeNull()
+      expect(mockLogin).toHaveBeenCalledWith('admin@example.com', 'password', '123456')
+    })
+
+    it('non richiede OTP per INVALID_CREDENTIALS', async () => {
+      mockLogin.mockRejectedValue({
+        response: {
+          data: { errors: [{ message: 'Invalid user credentials.', extensions: { code: 'INVALID_CREDENTIALS' } }] }
+        }
+      })
+
+      const store = useAuthStore()
+      await expect(store.login('bad@email', 'wrong')).rejects.toThrow()
+
+      expect(store.otpRequired).toBe(false)
+      expect(store.error).toBe('Invalid user credentials.')
     })
   })
 
