@@ -8,6 +8,8 @@ import {
   statoPagamentoLabel,
   statoProgettoColor,
   statoProgettoLabel,
+  statoRendicontazioneColor,
+  statoRendicontazioneLabel,
   tipoBadgeColor
 } from 'src/utils/badges'
 
@@ -111,6 +113,38 @@ describe('badges', () => {
       expect(statoProgettoLabel('aperto')).toBe('Accettato')
       expect(statoProgettoLabel('boh')).toBe('boh')
       expect(statoProgettoLabel()).toBe('—')
+    })
+  })
+
+  describe('statoRendicontazioneColor', () => {
+    it('maps known rendicontazione states and defaults to grey', () => {
+      expect(statoRendicontazioneColor('verificato')).toBe('positive')
+      expect(statoRendicontazioneColor('in_attesa')).toBe('orange')
+      expect(statoRendicontazioneColor('parziale')).toBe('warning')
+      expect(statoRendicontazioneColor('bozza')).toBe('grey')
+      expect(statoRendicontazioneColor('nessuno')).toBe('grey')
+      expect(statoRendicontazioneColor('boh')).toBe('grey')
+      expect(statoRendicontazioneColor()).toBe('grey')
+    })
+
+    it('non confonde gli stati di rendicontazione con quelli dei giustificativi', () => {
+      // 'parziale' è uno stato di rendicontazione: il badge giustificativo lo
+      // segnalerebbe come sconosciuto (warning in console).
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      statoRendicontazioneColor('parziale')
+      expect(warn).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('statoRendicontazioneLabel', () => {
+    it('maps known rendicontazione states and falls back to Nessuno', () => {
+      expect(statoRendicontazioneLabel('verificato')).toBe('Verificato')
+      expect(statoRendicontazioneLabel('in_attesa')).toBe('In attesa')
+      expect(statoRendicontazioneLabel('parziale')).toBe('Parziale')
+      expect(statoRendicontazioneLabel('bozza')).toBe('Bozza')
+      expect(statoRendicontazioneLabel('nessuno')).toBe('Nessuno')
+      expect(statoRendicontazioneLabel('boh')).toBe('Nessuno')
+      expect(statoRendicontazioneLabel()).toBe('Nessuno')
     })
   })
 

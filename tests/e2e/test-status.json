@@ -1,6 +1,6 @@
 {
-  "version": "4.0.28",
-  "updated": "2026-11-17T13:30:00.000Z",
+  "version": "4.0.29",
+  "updated": "2026-11-17T16:05:00.000Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -943,40 +943,40 @@
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-02": {
       "name": "Apri RiconciliaDialog per riga linked @smoke",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-03": {
       "name": "Salva singolo campo contatto (Nome) @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-04": {
       "name": "Scarta submission @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-05": {
       "name": "Riconcilia submission completa @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "SR-03": {
       "name": "Nessun giustificativo → Non ricevuta (grey) @smoke",
@@ -1535,72 +1535,72 @@
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-NL-01": {
       "name": "RC-NL-01: not_linked mostra associa famiglia @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-NP-01": {
       "name": "RC-NP-01: not_parent mostra bottone associa genitore @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-SETUP-01": {
       "name": "RC-SETUP-01: Aggiunge IBAN e Intestatario a famiglia @setup",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-SETUP-02": {
       "name": "RC-SETUP-02: Modifica Nome/Cognome contatto @setup",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-PG-01": {
       "name": "RC-PG-01: Toggle scartati mostra/nasconde scartati @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-PG-02": {
       "name": "RC-PG-02: Controlli paginazione visibili @smoke",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-PG-03": {
       "name": "RC-PG-03: Pulsante refresh ricarica @smoke",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-PG-04": {
       "name": "RC-PG-04: Recupera submission scartata @crud",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RG-COMB-01": {
       "name": "RG-COMB-01: Manager accede a Gestione e vede contatti @smoke",
@@ -1615,16 +1615,16 @@
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "RC-PRIORITY-01": {
       "name": "RC-PRIORITY-01: Submission con contatto Volontario+Genitore assegna alla famiglia Genitore @regression",
       "file": "riconciliazione.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "SR-FLOW-01": {
       "name": "SR-FLOW-01: Flusso completo invia→verifica→chiudi @e2e",
@@ -1655,40 +1655,40 @@
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "VP-DETT-03": {
       "name": "VP-DETT-03: Dialog mostra tutti i campi del progetto @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "VP-DETT-04": {
       "name": "VP-DETT-04: Dialog mostra lista giustificativi @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "VP-DETT-05": {
       "name": "VP-DETT-05: Dialog mostra data inizio/fine e descrizioni @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "VP-DETT-06": {
       "name": "VP-DETT-06: Dialog mostra sezione Allegati se presente @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.28",
-      "lastPassed": "4.0.28"
+      "lastRun": "4.0.29",
+      "lastPassed": "4.0.29"
     },
     "PG-AL-01": {
       "name": "PG-AL-01: Pagamenti tabs hanno overflow-x auto @smoke",

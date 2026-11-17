@@ -51,6 +51,35 @@ export function statoLabel(stato) {
 }
 
 /**
+ * Colore Quasar per lo stato di rendicontazione di un progetto
+ * (`Progetti.StatoRendicontazione`, da `calcolaStatoRendicontazione`).
+ *
+ * Standard:
+ * - nessuno    -> grey
+ * - bozza      -> grey      (compilazione iniziata)
+ * - in_attesa  -> orange    (giustificativi inviati da verificare)
+ * - parziale   -> warning   (parte verificata, parte ancora in lavorazione)
+ * - verificato -> positive
+ */
+export function statoRendicontazioneColor(stato) {
+  if (stato === 'verificato') return 'positive'
+  if (stato === 'in_attesa') return 'orange'
+  if (stato === 'parziale') return 'warning'
+  return 'grey'
+}
+
+/**
+ * Etichetta testuale per lo stato di rendicontazione di un progetto.
+ */
+export function statoRendicontazioneLabel(stato) {
+  if (stato === 'verificato') return 'Verificato'
+  if (stato === 'in_attesa') return 'In attesa'
+  if (stato === 'parziale') return 'Parziale'
+  if (stato === 'bozza') return 'Bozza'
+  return 'Nessuno'
+}
+
+/**
  * Colore Quasar per lo stato di un Pagamento (erogazione).
  *
  * Standard:
