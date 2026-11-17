@@ -35,8 +35,8 @@
           </div>
           <div class="col-6">
             <div class="text-caption text-grey-7">Stato rendicontazione</div>
-            <q-badge :color="statoColor(progetto.statoRendicontazione)" outline>
-              {{ statoLabel(progetto.statoRendicontazione) }}
+            <q-badge :color="statoRendicontazioneColor(progetto.statoRendicontazione)" outline>
+              {{ statoRendicontazioneLabel(progetto.statoRendicontazione) }}
             </q-badge>
           </div>
           <div class="col-6">
@@ -93,7 +93,7 @@
           <div v-for="f in progetto.allegatiProgetto" :key="f.directus_files_id?.id" class="q-ml-sm">
             <AllegatoButtons
               :allegato="f.directus_files_id"
-              show-download="false"
+              :show-download="false"
               open-label="Apri allegato progetto"
               :open-tooltip="f.directus_files_id?.filename_download || 'Apri allegato progetto'"
             />
@@ -104,7 +104,7 @@
           <div v-for="f in progetto.allegatiISEE" :key="f.directus_files_id?.id" class="q-ml-sm">
             <AllegatoButtons
               :allegato="f.directus_files_id"
-              show-download="false"
+              :show-download="false"
               open-label="Apri allegato ISEE"
               :open-tooltip="f.directus_files_id?.filename_download || 'Apri allegato ISEE'"
             />
@@ -115,7 +115,7 @@
           <div v-for="f in progetto.allegatiGiustificativi" :key="f.directus_files_id?.id" class="q-ml-sm">
             <AllegatoButtons
               :allegato="f.directus_files_id"
-              show-download="false"
+              :show-download="false"
               open-label="Apri giustificativo"
               :open-tooltip="f.directus_files_id?.filename_download || 'Apri giustificativo'"
             />
@@ -231,7 +231,7 @@
                       {{ statoLabel(slotProps.row.Stato) }}
                     </q-badge>
                     <q-space />
-                    <AllegatoButtons :allegato="slotProps.row.Allegato" show-download="false" />
+                    <AllegatoButtons :allegato="slotProps.row.Allegato" :show-download="false" />
                   </div>
                 </q-card-section>
               </q-card>
@@ -246,7 +246,7 @@
           </template>
           <template #body-cell-allegato="cellProps">
             <q-td :props="cellProps">
-              <AllegatoButtons :allegato="cellProps.value" show-download="false" />
+              <AllegatoButtons :allegato="cellProps.value" :show-download="false" />
             </q-td>
           </template>
         </q-table>
@@ -283,7 +283,12 @@ import AllegatoButtons from 'components/Common/AllegatoButtons.vue'
 import AppDialog from 'components/Common/AppDialog.vue'
 import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazioni.vue'
 import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
-import { statoColor, statoLabel } from 'src/utils/badges'
+import {
+  statoColor,
+  statoLabel,
+  statoRendicontazioneColor,
+  statoRendicontazioneLabel
+} from 'src/utils/badges'
 import { formatCurrency } from 'src/utils/formatters'
 import { capErogabileRaggiunto, residuoErogabile } from 'src/utils/statoRiga'
 

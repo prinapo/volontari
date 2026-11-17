@@ -88,7 +88,7 @@
                   </div>
                   <div class="col-6">
                     <div class="text-caption text-grey-7">Allegato</div>
-                    <AllegatoButtons :allegato="props.row.allegato" show-download="false" />
+                    <AllegatoButtons :allegato="props.row.allegato" :show-download="false" />
                   </div>
                 </div>
                 <q-separator class="q-my-md" />
@@ -231,7 +231,7 @@
 
       <template #body-cell-allegato="props">
         <q-td :props="props">
-          <AllegatoButtons :allegato="props.value" show-download="false" />
+          <AllegatoButtons :allegato="props.value" :show-download="false" />
         </q-td>
       </template>
 
