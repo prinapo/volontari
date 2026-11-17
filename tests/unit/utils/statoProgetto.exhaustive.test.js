@@ -162,10 +162,15 @@ describe('calcolaErogabile / residuoDaCoprire — invarianti', () => {
     })
   }
 
-  it('quirk noto: percentualeRimborso = 0 è trattata come default 80 (fallback `|| 80`)', () => {
-    // Comportamento ATTUALE (da valutare se correggere): uno 0 esplicito è falsy
-    // e cade sul default 80%. Qui lo si fissa per non cambiarlo accidentalmente.
+  it('percentualeRimborso = 0 è rispettata (0% => erogabile 0)', () => {
+    // Uno 0 esplicito NON è un valore mancante: il default 80 vale solo per
+    // null/undefined/''. Vedi normalizzaPercentuale in src/utils/erogabile.js.
     const erogabile = calcolaErogabile({ allocato: 1000, totaleVerificato: 500, percentualeRimborso: 0 })
+    expect(erogabile).toBe(0)
+  })
+
+  it('percentualeRimborso mancante usa il default 80', () => {
+    const erogabile = calcolaErogabile({ allocato: 1000, totaleVerificato: 500 })
     expect(erogabile).toBe(400)
   })
 

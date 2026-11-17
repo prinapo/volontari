@@ -129,6 +129,29 @@ Lo stato atteso è calcolato in quest'ordine (la prima regola che scatta vince):
   `accettato`, ma la macchina **rifiuta** `accettato → rimborso_parziale`/`chiuso`
   (`TransizioneNonValidaError`), segnalando lo stato anomalo.
 
+### 3.1 Percentuale di rimborso (`MassimaPercentualeErogabile`)
+
+La chiusura automatica resta legata all'**allocato** (`pagato ≥ allocato`), ma
+quanto si può erogare dipende dalla percentuale del progetto:
+
+`erogabile = min(totaleVerificato × pct/100, allocato)` — `pct` = `Progetti.MassimaPercentualeErogabile`
+(default **80**, range 0–100; `normalizzaPercentuale` in `src/utils/erogabile.js`,
+usata da Verifica, proposte e viste). La percentuale si imposta da **Gestione →
+Famiglie → progetto → “Massimo erogabile”**.
+
+Conseguenze:
+
+- con **100%** si può erogare l'intero verificato (fino all'allocato) e quindi si
+  arriva alla chiusura automatica quando il verificato copre l'allocato;
+- con **80%** (default) si arriva al cap solo con un verificato ≥ `allocato / 0,8`
+  (25% di spese in più): fino ad allora il progetto resta `rimborso_parziale`;
+- quando il “residuo erogabile” è 0 ma il progetto non è ancora `chiuso`, la UI
+  (dettaglio riga Verifica e dialog progetto) mostra l'avviso “cap erogabile
+  raggiunto”: la chiusura in quel caso è **manuale** (`CHIUDI`).
+- i giustificativi collegati a una tranche pagata risultano `pagato` anche se
+  l'importo erogato copre solo una parte del loro totale (l'erogato reale è
+  `TotalePagato`): la vista mostra “Erogato X su Y rendicontati”.
+
 ---
 
 ## 4. Flusso integrato da `accettato`

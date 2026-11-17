@@ -62,10 +62,16 @@
                   </div>
                 </div>
                 <q-space />
-                <div class="text-caption text-grey">
-                  Il totale rimborsabile è l'80% dei giustificativi fino al valore allocato ({{
-                    formatCurrency(allocato)
-                  }})
+                <div class="text-caption text-grey text-right">
+                  <div>
+                    Il totale rimborsabile è il {{ percentualeRimborso }}% dei giustificativi, fino al valore allocato ({{
+                      formatCurrency(allocato)
+                    }})
+                  </div>
+                  <div>
+                    Erogato {{ formatCurrency(famiglieStore.totaleErogato) }} su
+                    {{ formatCurrency(totaleGiustificativi) }} di giustificativi rendicontati
+                  </div>
                 </div>
               </q-card-section>
             </q-card>
@@ -140,6 +146,7 @@ import FamigliaInfoCard from 'components/Famiglia/FamigliaInfoCard.vue'
 import ProgettoSelector from 'components/Famiglia/ProgettoSelector.vue'
 import GiustificativoList from 'components/Giustificativi/GiustificativoList.vue'
 import NoteProgettoPanel from 'components/Note/NoteProgettoPanel.vue'
+import { normalizzaPercentuale } from 'src/utils/erogabile'
 import { formatCurrency } from 'src/utils/formatters'
 import { useAuthStore } from 'stores/auth.store'
 import { useFamiglieStore } from 'stores/famiglie.store'
@@ -163,9 +170,13 @@ const totaleGiustificativi = computed(() => {
     .reduce((sum, item) => sum + (Number.parseFloat(item.Importo) || 0), 0)
 })
 
+const percentualeRimborso = computed(() =>
+  normalizzaPercentuale(famiglieStore.selectedProgetto?.MassimaPercentualeErogabile)
+)
+
 const totaleRimborsabile = computed(() => {
-  const ottantaPct = totaleGiustificativi.value * 0.8
-  return Math.min(ottantaPct, allocato.value)
+  const rimborsabileLordo = totaleGiustificativi.value * (percentualeRimborso.value / 100)
+  return Math.min(rimborsabileLordo, allocato.value)
 })
 
 const giustificativiCount = computed(() => giustificativiStore.data.filter(i => !i.Invalidato).length)

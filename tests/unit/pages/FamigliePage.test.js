@@ -157,4 +157,41 @@ describe('FamigliePage', () => {
     expect(mockSelectFamiglia).toHaveBeenCalledWith('fam-2')
     expect(mockSelectProgetto).toHaveBeenCalledWith('proj-2')
   })
+
+  it('usa la percentuale del progetto (100%) per il totale rimborsabile', () => {
+    famiglieState.famiglia = { id_famiglia: 'fam-1' }
+    famiglieState.selectedProgettoId = 'p-1'
+    famiglieState.selectedProgetto = { Allocato: '1000', AnnoBando: 2026, MassimaPercentualeErogabile: 100 }
+    giustificativiState.data = [{ Importo: '50' }, { Importo: '25' }]
+
+    const wrapper = quasarMount(FamigliePage)
+
+    expect(wrapper.vm.percentualeRimborso).toBe(100)
+    expect(wrapper.vm.totaleRimborsabile).toBe(75)
+    expect(wrapper.text()).toContain('100%')
+  })
+
+  it('applica una percentuale custom e il cap sull allocato', () => {
+    famiglieState.famiglia = { id_famiglia: 'fam-1' }
+    famiglieState.selectedProgettoId = 'p-1'
+    famiglieState.selectedProgetto = { Allocato: '30', AnnoBando: 2026, MassimaPercentualeErogabile: 50 }
+    giustificativiState.data = [{ Importo: '50' }, { Importo: '25' }]
+
+    const wrapper = quasarMount(FamigliePage)
+
+    expect(wrapper.vm.percentualeRimborso).toBe(50)
+    expect(wrapper.vm.totaleRimborsabile).toBe(30)
+  })
+
+  it('mostra erogato e giustificativi rendicontati', () => {
+    famiglieState.famiglia = { id_famiglia: 'fam-1' }
+    famiglieState.selectedProgettoId = 'p-1'
+    famiglieState.selectedProgetto = { Allocato: '3000', AnnoBando: 2026, MassimaPercentualeErogabile: 100 }
+    famiglieState.totaleErogato = 800
+    giustificativiState.data = [{ Importo: '1000' }, { Importo: '1000' }, { Importo: '1000' }]
+
+    const wrapper = quasarMount(FamigliePage)
+
+    expect(wrapper.text()).toContain('€800 su €3000 di giustificativi rendicontati')
+  })
 })

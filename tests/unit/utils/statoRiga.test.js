@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcolaStatoRiga, residuoErogabile } from 'src/utils/statoRiga'
+import { calcolaStatoRiga, capErogabileRaggiunto, residuoErogabile } from 'src/utils/statoRiga'
 
 const base = {
   allocato: 5000,
@@ -262,5 +262,67 @@ describe('calcolaStatoRiga', () => {
         ]
       })
     ).toMatchObject({ label: 'Da completare', color: 'warning' })
+  })
+})
+
+describe('capErogabileRaggiunto', () => {
+  it('true quando l erogabile è interamente coperto', () => {
+    expect(
+      capErogabileRaggiunto({
+        allocato: 5000,
+        totaleVerificato: 1000,
+        totalePagato: 800,
+        totaleInPagamento: 0,
+        percentualeRimborso: 80
+      })
+    ).toBe(true)
+  })
+
+  it('true quando erogabile e coperto da pagato + in pagamento', () => {
+    expect(
+      capErogabileRaggiunto({
+        allocato: 5000,
+        totaleVerificato: 1000,
+        totalePagato: 400,
+        totaleInPagamento: 400,
+        percentualeRimborso: 80
+      })
+    ).toBe(true)
+  })
+
+  it('false se resta qualcosa da erogare', () => {
+    expect(
+      capErogabileRaggiunto({
+        allocato: 5000,
+        totaleVerificato: 1000,
+        totalePagato: 400,
+        totaleInPagamento: 0,
+        percentualeRimborso: 80
+      })
+    ).toBe(false)
+  })
+
+  it('false se non c è nulla di verificato', () => {
+    expect(
+      capErogabileRaggiunto({
+        allocato: 5000,
+        totaleVerificato: 0,
+        totalePagato: 0,
+        totaleInPagamento: 0,
+        percentualeRimborso: 80
+      })
+    ).toBe(false)
+  })
+
+  it('considera la percentuale del progetto (100%)', () => {
+    const row = {
+      allocato: 5000,
+      totaleVerificato: 1000,
+      totalePagato: 1000,
+      totaleInPagamento: 0,
+      percentualeRimborso: 100
+    }
+    expect(capErogabileRaggiunto(row)).toBe(true)
+    expect(capErogabileRaggiunto({ ...row, totalePagato: 800 })).toBe(false)
   })
 })

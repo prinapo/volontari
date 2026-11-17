@@ -6,11 +6,11 @@
 
 ## Change Log
 
-| Date | Version | Author | Change |
-|---|---|---|---|
-| 2026-05-25 | 1.0.0 | System | Initial draft |
-| 2026-05-25 | 1.1.0 | System | Final — added Dati bancari expansion, Elimina button, Apri/Scarica labels |
-| 2026-05-25 | 2.0.0 | System | Final — added AppLayout with sidebar, VerificaPage, ConfirmDialog, FileUploader, genitori section, InlineEditableField date type, GiustificativoForm Stato |
+| Date       | Version | Author | Change                                                                                                                                                     |
+| ---------- | ------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-25 | 1.0.0   | System | Initial draft                                                                                                                                              |
+| 2026-05-25 | 1.1.0   | System | Final — added Dati bancari expansion, Elimina button, Apri/Scarica labels                                                                                  |
+| 2026-05-25 | 2.0.0   | System | Final — added AppLayout with sidebar, VerificaPage, ConfirmDialog, FileUploader, genitori section, InlineEditableField date type, GiustificativoForm Stato |
 
 ---
 
@@ -55,7 +55,7 @@ App.vue
       │           │   ├── q-card (totali summary)
       │           │   │   ├── text "Totale Giustificativi" + text-h6 primary
       │           │   │   ├── text "Totale Rimborsabile" + text-h6 positive
-      │           │   │   └── text "80% dei giustificativi fino a €Allocato"
+      │           │   │   └── text "X% dei giustificativi fino a €Allocato" (X = MassimaPercentualeErogabile, default 80)
       │           │   └── GiustificativoList
       │           │       ├── heading "Giustificativi"
       │           │       ├── q-btn (Aggiungi, icon add)
@@ -110,38 +110,40 @@ App.vue
 
 ### 2.1 AppLayout.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| — | — | Shell layout with QHeader + QDrawer + QPageContainer |
+| Prop | Type | Description                                          |
+| ---- | ---- | ---------------------------------------------------- |
+| —    | —    | Shell layout with QHeader + QDrawer + QPageContainer |
 
-| State | Description |
-|---|---|
-| `userName` | From authStore.userName getter |
-| `canVerifica` | From authStore.canVerifica (shows Verifica in sidebar) |
-| `changePasswordDialog` | Boolean, toggle change password dialog |
+| State                  | Description                                            |
+| ---------------------- | ------------------------------------------------------ |
+| `userName`             | From authStore.userName getter                         |
+| `canVerifica`          | From authStore.canVerifica (shows Verifica in sidebar) |
+| `changePasswordDialog` | Boolean, toggle change password dialog                 |
 
 **Features:**
+
 - Responsive QDrawer (collapsible on mobile)
 - User dropdown in header with Cambia password / Esci
 - Change password dialog with q-input (new password) + Salva button
 
 ### 2.2 InlineEditableField.vue
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| modelValue | String | — | Current value |
-| label | String | — | Field label |
-| readonly | Boolean | false | Disable editing entirely |
-| type | String | "text" | Input type (text, number, date) |
-| rules | Array | [] | Validation rules |
+| Prop       | Type    | Default | Description                     |
+| ---------- | ------- | ------- | ------------------------------- |
+| modelValue | String  | —       | Current value                   |
+| label      | String  | —       | Field label                     |
+| readonly   | Boolean | false   | Disable editing entirely        |
+| type       | String  | "text"  | Input type (text, number, date) |
+| rules      | Array   | []      | Validation rules                |
 
-| Event | Payload | Description |
-|---|---|---|
-| update:modelValue | String | Emitted on save |
-| save | String | Emitted when user confirms edit |
-| cancel | — | Emitted when user cancels edit |
+| Event             | Payload | Description                     |
+| ----------------- | ------- | ------------------------------- |
+| update:modelValue | String  | Emitted on save                 |
+| save              | String  | Emitted when user confirms edit |
+| cancel            | —       | Emitted when user cancels edit  |
 
 **States:**
+
 - **Display mode:** Shows value as plain text (formatted: € for currency, DD/MM/YYYY for date), clickable to enter edit mode
 - **Edit mode:** Shows `q-input`, save checkmark (`[data-testid="inline-save"]`), cancel X (`[data-testid="inline-cancel"]`)
 - **Saving:** Shows loading spinner, input disabled
@@ -149,90 +151,95 @@ App.vue
 
 ### 2.3 GiustificativoCard.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| item | Object | Giustificativo data (id, Descrizione, Importo, Data, Stato, Allegato, Rendicontazione, Invalidato) |
-| editable | Boolean | Whether inline editing is allowed (true if Stato === 'draft') |
+| Prop     | Type    | Description                                                                                        |
+| -------- | ------- | -------------------------------------------------------------------------------------------------- |
+| item     | Object  | Giustificativo data (id, Descrizione, Importo, Data, Stato, Allegato, Rendicontazione, Invalidato) |
+| editable | Boolean | Whether inline editing is allowed (true if Stato === 'draft')                                      |
 
-| Event | Description |
-|---|---|
-| save | Emitted with `{ id, field, value }` when inline edit saved |
-| submit | Emitted with id when user clicks "Invia" |
-| invalida | Emitted with id when user clicks "Elimina" |
-| file-change | Emitted with `{ id, file }` when user changes attachment |
+| Event       | Description                                                |
+| ----------- | ---------------------------------------------------------- |
+| save        | Emitted with `{ id, field, value }` when inline edit saved |
+| submit      | Emitted with id when user clicks "Invia"                   |
+| invalida    | Emitted with id when user clicks "Elimina"                 |
+| file-change | Emitted with `{ id, file }` when user changes attachment   |
 
 **Features:**
+
 - Attachment URLs constructed as: `{API_URL}/assets/{fileId}?access_token={token}` (open) and `{API_URL}/assets/{fileId}?download=1&access_token={token}` (download)
 - "Elimina" button triggers a **ConfirmDialog** with message "Eliminare giustificativo?"
 - "Cambia file" only visible for draft items
 
 ### 2.4 GiustificativoForm.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| progettoId | String | Selected project ID |
-| famigliaId | String | Current family ID |
-| annoBando | String | Project's year (for rendicontazione) |
+| Prop       | Type   | Description                          |
+| ---------- | ------ | ------------------------------------ |
+| progettoId | String | Selected project ID                  |
+| famigliaId | String | Current family ID                    |
+| annoBando  | String | Project's year (for rendicontazione) |
 
-| Event | Description |
-|---|---|
+| Event  | Description                                       |
+| ------ | ------------------------------------------------- |
 | create | Emitted with `{ data, file }` when form submitted |
-| close | Emitted when dialog is closed |
+| close  | Emitted when dialog is closed                     |
 
 **Validation rules:**
+
 - Descrizione: required
 - Importo: required, numeric
 - File: required
 
 ### 2.5 GiustificativoList.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| progettoId | String | Selected project ID |
-| famigliaId | String | Current family ID |
-| annoBando | String | Anno bando for rendicontazione |
+| Prop       | Type   | Description                    |
+| ---------- | ------ | ------------------------------ |
+| progettoId | String | Selected project ID            |
+| famigliaId | String | Current family ID              |
+| annoBando  | String | Anno bando for rendicontazione |
 
 **Features:**
+
 - Fetches giustificativi via `giustificativiStore.fetchByProgetto(progettoId)` on mount and watch
 - Manages GiustificativoForm dialog visibility
 - Handles all CRUD events from GiustificativoCard
 
 ### 2.6 FamigliaInfoCard.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| famigliaName | String | Nome_Famiglia |
-| iban | String | IBAN value |
-| intestatarioCc | String | Intestatario_CC value |
-| saving | Boolean | Loading state for save |
+| Prop           | Type    | Description            |
+| -------------- | ------- | ---------------------- |
+| famigliaName   | String  | Nome_Famiglia          |
+| iban           | String  | IBAN value             |
+| intestatarioCc | String  | Intestatario_CC value  |
+| saving         | Boolean | Loading state for save |
 
 **Features:**
+
 - Uses `useFamiglieStore()` to access genitori list
 - Genitori section: shows each parent's Nome/Cognome, Email (mailto: link), Cellulare (tel: link), Telefono (tel: link)
 - Dati bancari in `q-expansion-item` (collapsed by default, expand/collapse on click)
 
 ### 2.7 ProgettoSelector.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| modelValue | String | Selected progetto id |
-| options | Array | List of Progetti objects (id_progetto, AnnoBando, Cognome_e__Nome_Beneficiario, Eta, Allocato) |
+| Prop       | Type   | Description                                                                                    |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------- |
+| modelValue | String | Selected progetto id                                                                           |
+| options    | Array  | List of Progetti objects (id_progetto, AnnoBando, Cognome_e__Nome_Beneficiario, Eta, Allocato) |
 
-| Event | Description |
-|---|---|
+| Event             | Description                 |
+| ----------------- | --------------------------- |
 | update:modelValue | Emitted on selection change |
 
 **Option format:** `"{AnnoBando} — {Beneficiario} ({Età} anni) — €{Allocato}"`
 
 ### 2.8 VerificaPage.vue
 
-| Prop | Type | Description |
-|---|---|---|
-| — | — | Uses `useVerificaStore()` |
+| Prop | Type | Description               |
+| ---- | ---- | ------------------------- |
+| —    | —    | Uses `useVerificaStore()` |
 
-**Column order:** Bando → Famiglia (nome — beneficiario — ID) → Dati bancari (con edit button) → Allocato → Rendicontato → Rimborsabile (globale min 80%/allocato) → Stato → Actions
+**Column order:** Bando → Famiglia (nome — beneficiario — ID) → Dati bancari (con edit button) → Allocato → Rendicontato → Rimborsabile (globale min X%/allocato, X = MassimaPercentualeErogabile) → Stato → Actions
 
 **Features:**
+
 - **Expandable rows** in q-table: `#body` slot pattern, expand gestito da `props.expand`
 - Ogni giustificativo mostra: Descrizione (con NotaVolontario sotto), Importo, Data, Allegato (Apri/Scarica), Stato (badge), NotaRifiuto (se presente)
 - **Verifica** (check_circle, primary) → cambia Stato "Inviato" → "Verificato" (teal) — rimane nei totali
@@ -240,56 +247,60 @@ App.vue
 - Loading state individuale per ogni bottone (`verifyingId` / `rejectingId`)
 
 **Filtri:**
+
 - **Anno bando**: dinamico da `store.anniBando` (dedotto dai progetti)
 - **Rendicontazione**: "con importi", "tutte", "mancanti"
 - **Ricerca**: filtro testuale per famiglia
 
 **Dati bancari:**
+
 - Badge "Completi" (verde) se IBAN + Intestatario valorizzati; "Da completare" (giallo) altrimenti
 - Pulsante edit (matita) → dialog con campi IBAN e Intestatario → `PATCH /items/Famiglie/:id`
 - Salvataggio aggiorna TUTTE le righe con stesso `idFamiglia` in memoria (senza refresh)
 
 **State riga (progetto):**
-| Stato | Colore badge | Condizione |
-|---|---|---|
-| Non ricevuta | grey | Nessun giustificativo rendicontato |
-| Dati bancari mancanti | warning | Ha importi ma IBAN/Intestatario assente |
-| Da verificare | orange | IBAN ok, ma qualche giustificativo ancora "Inviato" |
-| Pronta ASPI | positive | IBAN ok, tutti i giustificativi Verificati/Rifiutati |
+
+| Stato                 | Colore badge | Condizione                                           |
+| --------------------- | ------------ | ---------------------------------------------------- |
+| Non ricevuta          | grey         | Nessun giustificativo rendicontato                   |
+| Dati bancari mancanti | warning      | Ha importi ma IBAN/Intestatario assente              |
+| Da verificare         | orange       | IBAN ok, ma qualche giustificativo ancora "Inviato"  |
+| Pronta ASPI           | positive     | IBAN ok, tutti i giustificativi Verificati/Rifiutati |
 
 **Computed totals:**
+
 - `totaleRendicontato`: sum of all rendered giustificativi (esclude Rifiutato)
-- `totaleRimborsabile`: globale — `min(80% of totaleRendicontato, allocato)`
+- `totaleRimborsabile`: globale — `min(pct% of totaleRendicontato, allocato)` (pct = `MassimaPercentualeErogabile`, default 80)
 - `aspiRows`: projects ready for ASPI export (dati bancari completi + importi + nessun Inviato pending)
 
 ### 2.9 ConfirmDialog.vue
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| icon | String | "warning" | Dialog icon |
-| title | String | "Conferma" | Dialog title |
-| message | String | "" | Dialog message |
-| cancelLabel | String | "Annulla" | Cancel button text |
-| confirmLabel | String | "Conferma" | Confirm button text |
-| loading | Boolean | false | Loading state on confirm button |
+| Prop         | Type    | Default    | Description                     |
+| ------------ | ------- | ---------- | ------------------------------- |
+| icon         | String  | "warning"  | Dialog icon                     |
+| title        | String  | "Conferma" | Dialog title                    |
+| message      | String  | ""         | Dialog message                  |
+| cancelLabel  | String  | "Annulla"  | Cancel button text              |
+| confirmLabel | String  | "Conferma" | Confirm button text             |
+| loading      | Boolean | false      | Loading state on confirm button |
 
-| Event | Description |
-|---|---|
-| confirm | Emitted when user clicks confirm |
-| cancel | Emitted when user clicks cancel or closes dialog |
+| Event   | Description                                      |
+| ------- | ------------------------------------------------ |
+| confirm | Emitted when user clicks confirm                 |
+| cancel  | Emitted when user clicks cancel or closes dialog |
 
 ### 2.10 FileUploader.vue
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| accept | String | ".jpg,.jpeg,.png,.pdf" | Accepted file types |
-| maxSize | Number | 5242880 | Max file size in bytes (5MB) |
-| label | String | "Allega file" | Label text |
+| Prop    | Type   | Default                | Description                  |
+| ------- | ------ | ---------------------- | ---------------------------- |
+| accept  | String | ".jpg,.jpeg,.png,.pdf" | Accepted file types          |
+| maxSize | Number | 5242880                | Max file size in bytes (5MB) |
+| label   | String | "Allega file"          | Label text                   |
 
-| Event | Description |
-|---|---|
-| file-selected | Emitted with File object |
-| file-removed | Emitted when file is removed |
+| Event         | Description                  |
+| ------------- | ---------------------------- |
+| file-selected | Emitted with File object     |
+| file-removed  | Emitted when file is removed |
 
 ---
 

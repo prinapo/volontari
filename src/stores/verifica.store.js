@@ -17,6 +17,7 @@ import {
 } from 'src/usecases/giustificativi'
 import { STATI_GIUSTIFICATIVO_CONTABILI, STATI_GIUSTIFICATIVO_VALIDI, STATO_GIUSTIFICATIVO } from 'src/utils/constants'
 import { enrichWithEmails } from 'src/utils/enrichment'
+import { normalizzaPercentuale } from 'src/utils/erogabile'
 import { apiErrorMessage } from 'src/utils/errors'
 import { calcolaDisallineati } from 'src/utils/statoProgetto'
 import {
@@ -93,7 +94,7 @@ function normalizeProject(project, famiglia = {}) {
     allegatiISEE: project.Allegati_ISEE || [],
     allegatiGiustificativi: project.Allegati_Giustificativi || [],
     giustificativi: [],
-    percentualeRimborso: Math.min(100, Math.max(0, project.MassimaPercentualeErogabile ?? 80))
+    percentualeRimborso: normalizzaPercentuale(project.MassimaPercentualeErogabile)
   }
 }
 
@@ -109,7 +110,7 @@ function recalculateRowTotals(row) {
     }
   })
 
-  const fattore = (row.percentualeRimborso ?? 80) / 100
+  const fattore = normalizzaPercentuale(row.percentualeRimborso) / 100
   const totaleRimborsabileLordo = totaleRendicontato * fattore
   row.totaleRendicontato = totaleRendicontato
   row.totaleVerificato = totaleVerificato

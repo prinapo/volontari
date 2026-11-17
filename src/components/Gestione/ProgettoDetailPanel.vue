@@ -131,6 +131,7 @@
               max="100"
               step="1"
               suffix="%"
+              :readonly="!canAdmin"
               :loading="saving"
               @update:model-value="v => emit('save-percentuale', v)"
             />

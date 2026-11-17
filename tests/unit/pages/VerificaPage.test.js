@@ -129,7 +129,7 @@ describe('RendicontazioneTab', () => {
     expect(wrapper.text()).toContain('Verifica')
     expect(mockFetchAnni).toHaveBeenCalled()
     expect(mockFetchPage).toHaveBeenCalled()
-    expect(wrapper.vm.selectedTotals).toEqual({ rendicontato: 150, rimborsabile: 120 })
+    expect(wrapper.vm.selectedTotals).toEqual({ rendicontato: 150, rimborsabile: 120, residuoErogabile: 0 })
     expect(wrapper.vm.prontiCount).toBe(1)
     expect(wrapper.vm.annoOptions).toEqual([
       { label: '2025', value: 2025 },

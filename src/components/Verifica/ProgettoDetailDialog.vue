@@ -156,12 +156,27 @@
             </div>
           </div>
           <div class="col-4">
+            <div class="text-caption text-grey-7">Residuo erogabile</div>
+            <div class="text-weight-medium">
+              {{ formatCurrency(residuoEr) }}
+            </div>
+          </div>
+          <div class="col-4">
             <div class="text-caption text-grey-7">Residuo allocato</div>
             <div class="text-weight-medium">
               {{ formatCurrency(progetto.residuoAllocato) }}
             </div>
           </div>
+          <div class="col-12">
+            <div class="text-caption text-grey-7">
+              Erogato {{ formatCurrency(progetto.totalePagato) }} su
+              {{ formatCurrency(progetto.totaleRendicontato) }} rendicontati
+            </div>
+          </div>
         </div>
+        <q-banner v-if="capRaggiunto" dense rounded class="bg-orange-1 text-orange-9 q-mt-sm">
+          Cap erogabile raggiunto: non resta nulla da erogare. Se il progetto è concluso, chiudilo con “Chiudi progetto”.
+        </q-banner>
       </q-card-section>
       <q-separator />
 
@@ -270,6 +285,7 @@ import StoricoComunicazioni from 'src/components/Comunicazioni/StoricoComunicazi
 import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
 import { statoColor, statoLabel } from 'src/utils/badges'
 import { formatCurrency } from 'src/utils/formatters'
+import { capErogabileRaggiunto, residuoErogabile } from 'src/utils/statoRiga'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -282,6 +298,9 @@ const visible = computed({
   get: () => props.modelValue,
   set: val => emit('update:modelValue', val)
 })
+
+const residuoEr = computed(() => residuoErogabile(props.progetto))
+const capRaggiunto = computed(() => props.progetto.statoProgetto !== 'chiuso' && capErogabileRaggiunto(props.progetto))
 
 const giustificativi = computed(() => props.progetto.giustificativi || [])
 

@@ -20,7 +20,6 @@ export const dashboardService = {
           'Ambito',
           'Progetto_Sostegno_Scolastico',
           'Famiglia',
-          'MassimaPercentualeErogabile',
           'TotaleGiustificativi',
           'Indice_Gravita_Disabilita',
           'ISEE'
