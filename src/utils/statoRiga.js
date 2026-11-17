@@ -51,6 +51,19 @@ export function residuoErogabile(row) {
 }
 
 /**
+ * True quando non resta nulla da erogare (residuo ≤ 0,01) e il progetto ha
+ * qualcosa di verificato: il manager può chiuderlo (la chiusura resta manuale,
+ * il "cap raggiunto" automatico scatta solo quando è pagato l'intero allocato).
+ *
+ * @param {Object} row - Riga Verifica
+ * @returns {boolean}
+ */
+export function capErogabileRaggiunto(row) {
+  if (parseNum(row?.totaleVerificato) <= 0) return false
+  return residuoErogabile(row) <= 0.01
+}
+
+/**
  * Stato di riga derivato dagli stati persistiti dei giustificativi.
  *
  * Ordine regole:

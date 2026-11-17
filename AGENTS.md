@@ -162,6 +162,15 @@ allineato da `recalculateRowTotals` (`verifica.store.js`).
     Testato in `tests/unit/utils/statoProgetto.test.js` ("calcolaAggregatiProgetto").
 - `ricalcolaProposta` salta solo i progetti `chiuso`; `ricalcolaPropostiDaProgetti`
   elabora le righe in `STATI_PROGETTO_OPERATIVI` (quindi anche il parziale).
+- **Percentuale di rimborso** (`Progetti.MassimaPercentualeErogabile`, default 80,
+  range 0–100, modificabile da Gestione → Famiglie → progetto → "Massimo
+  erogabile"): `erogabile = min(totaleVerificato × pct, allocato)` via
+  `normalizzaPercentuale`/`calcolaErogabile` (`utils/erogabile.js`, unica fonte).
+  `0` è un valore valido; solo `null`/`''` cadono sull'80. La **chiusura
+  automatica resta sul `pagato ≥ allocato`**: con 80% serve un verificato ≥
+  `allocato / 0,8`. Se il residuo erogabile è 0 ma il progetto non è chiuso la UI
+  mostra l'avviso "cap erogabile raggiunto" (chiusura manuale). Con 100% si
+  arriva all'allocato con il solo verificato.
 - **Fase manuale** (`proposto → validato → approvato → accettato`): avanzata di uno
   step dal manager via `avanzaStatoProgetto` (`usecases/progetti.js`, evento
   `VALIDA`/`APPROVA`/`ACCETTA`). La creazione (`creaProgetto`) nasce `accettato`;

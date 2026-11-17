@@ -1,6 +1,6 @@
 {
-  "version": "4.0.27",
-  "updated": "2026-11-16T22:45:00.000Z",
+  "version": "4.0.28",
+  "updated": "2026-11-17T09:45:00.000Z",
   "tests": {
     "AD-01": {
       "name": "Pagina admin caricata @smoke",
@@ -891,12 +891,12 @@
       "lastPassed": "4.0.27"
     },
     "RP-01": {
-      "name": "Nessun token mostra link non valido @smoke",
-      "file": "reset-password.spec.js",
+      "name": "RP-01: progetto al 100% propone il verificato intero e si chiude al cap @crud",
+      "file": "gestione-percentuale.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "RP-02": {
       "name": "Token valido submit con password matching mostra successo @smoke",
@@ -1159,112 +1159,112 @@
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VR-02": {
       "name": "VerificaPage non accessibile se non autorizzati @regression",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "TB-01": {
       "name": "Colonne ordine corretto @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "TB-05": {
       "name": "Colonna Totali non esiste @regression",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "FL-01": {
       "name": "Tabella mostra progetti con righe @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "FL-06": {
       "name": "Filtro anno bando @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "FL-07": {
       "name": "Ricerca per famiglia @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "ER-03": {
       "name": "Expand row mostra sezione contatti @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "ER-04": {
       "name": "Expand row mostra sezione giustificativi @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "SR-02": {
       "name": "Stato Da verificare visibile quando presente @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "EH-01": {
       "name": "Errore API mostra banner di errore @regression",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VCP-01": {
       "name": "Chiudi progetto con badge Aperto @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VCP-02": {
       "name": "Chiudi progetto con motivo @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VCP-03": {
       "name": "Annulla chiusura progetto @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "WF-01": {
       "name": "Flusso Submit → Riconcilia → Verifica @e2e",
@@ -1303,48 +1303,48 @@
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "DB-V2": {
       "name": "Pulsante edit apre dialog IBAN @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "DB-V3": {
       "name": "Dialog IBAN annulla chiude senza salvare @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "DB-V4": {
       "name": "Dialog IBAN salva invia PATCH @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "DB-V5": {
       "name": "IBAN non valido → Salva disabilitato @regression",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "RP-SMOKE": {
       "name": "Tab Famiglie in Gestione espande e mostra progetti @smoke",
       "file": "gestione-percentuale.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "SY-01": {
       "name": "Tab Sync visibile in Admin (solo dev) @smoke",
@@ -1479,40 +1479,40 @@
       "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "F-GR-02": {
       "name": "F-GR-02: Modifica IBAN e Intestatario — salva, annulla, reload @crud",
       "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "F-GR-03": {
       "name": "F-GR-03: Notifiche salvataggio IBAN — compare e scompare @smoke",
       "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "F-GR-05": {
       "name": "F-GR-05: IBAN non valido inline — errore validazione @regression",
       "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "F-GR-04": {
       "name": "F-GR-04: Selettore progetti, totali e badge @smoke",
       "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "CG-SS-01": {
       "name": "CG-SS-01: GiustificativoForm dialog screenshot @visual",
@@ -1647,48 +1647,48 @@
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VP-DETT-02": {
       "name": "VP-DETT-02: Pulsante Dettaglio visibile per riga @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VP-DETT-03": {
       "name": "VP-DETT-03: Dialog mostra tutti i campi del progetto @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VP-DETT-04": {
       "name": "VP-DETT-04: Dialog mostra lista giustificativi @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VP-DETT-05": {
       "name": "VP-DETT-05: Dialog mostra data inizio/fine e descrizioni @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VP-DETT-06": {
       "name": "VP-DETT-06: Dialog mostra sezione Allegati se presente @crud",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "PG-AL-01": {
       "name": "PG-AL-01: Pagamenti tabs hanno overflow-x auto @smoke",
@@ -1855,16 +1855,16 @@
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "VER-ALLINE-01": {
       "name": "VER-ALLINE-01: banner warning per progetto stato non allineato @smoke",
       "file": "verifica.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "PAG-51": {
       "name": "giustificativo verificato dopo tranche parziale genera nuova proposta @crud",
@@ -1879,8 +1879,8 @@
       "file": "famiglie.spec.js",
       "chromium": "pass",
       "mobile": "pass",
-      "lastRun": "4.0.27",
-      "lastPassed": "4.0.27"
+      "lastRun": "4.0.28",
+      "lastPassed": "4.0.28"
     },
     "AD-CHECK-03": {
       "name": "AD-CHECK-03: Check liste pagamenti mostra elenco e rigenera selezionate @smoke",

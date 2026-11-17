@@ -517,7 +517,7 @@ import { formatCurrency } from 'src/utils/formatters'
 import { notifyError, notifySuccess } from 'src/utils/notify'
 import { parseNum } from 'src/utils/number'
 import { statoProgettoEffettivo } from 'src/utils/statoProgetto'
-import { calcolaStatoRiga } from 'src/utils/statoRiga'
+import { calcolaStatoRiga, residuoErogabile } from 'src/utils/statoRiga'
 import { useAuthStore } from 'stores/auth.store'
 import { useVerificaStore } from 'stores/verifica.store'
 import NotaRapidaDialog from './NotaRapidaDialog.vue'
@@ -673,9 +673,10 @@ const selectedTotals = computed(() => {
     (totals, row) => {
       totals.rendicontato += Number(row.totaleRendicontato) || 0
       totals.rimborsabile += Number(row.totaleRimborsabile) || 0
+      totals.residuoErogabile += residuoErogabile(row)
       return totals
     },
-    { rendicontato: 0, rimborsabile: 0 }
+    { rendicontato: 0, rimborsabile: 0, residuoErogabile: 0 }
   )
 })
 
@@ -693,6 +694,7 @@ const summary = computed(() => [
   { label: 'Famiglie/progetti', value: String(filteredRows.value.length), color: '' },
   { label: 'Rendicontato', value: formatCurrency(selectedTotals.value.rendicontato), color: 'primary' },
   { label: 'Rimborsabile', value: formatCurrency(selectedTotals.value.rimborsabile), color: 'positive' },
+  { label: 'Residuo erogabile', value: formatCurrency(selectedTotals.value.residuoErogabile), color: 'warning' },
   { label: 'Pronte', value: String(prontiCount.value), color: '' }
 ])
 

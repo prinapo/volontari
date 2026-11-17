@@ -9,8 +9,16 @@
         <div class="text-positive text-weight-medium">
           {{ formatCurrency(row.totaleRimborsabile) }}
         </div>
+        <div class="text-caption text-grey-7 q-mt-xs">Residuo erogabile: {{ formatCurrency(residuoEr) }}</div>
+        <div class="text-caption text-grey-7">
+          Erogato {{ formatCurrency(row.totalePagato) }} su {{ formatCurrency(row.totaleRendicontato) }} rendicontati
+        </div>
       </div>
     </div>
+
+    <q-banner v-if="capRaggiunto" dense rounded class="bg-orange-1 text-orange-9 q-mb-sm">
+      Cap erogabile raggiunto: non resta nulla da erogare. Se il progetto è concluso, chiudilo con “Chiudi progetto”.
+    </q-banner>
 
     <div class="row items-center q-gutter-x-sm q-mb-sm">
       <div class="text-caption text-grey-7">Pagato:</div>
@@ -31,9 +39,7 @@
     <ContattiFamigliaPanel :genitori="genitori" :volontari="volontari" :loading="contattiLoading" />
     <q-separator class="q-mt-sm" />
 
-    <div class="text-subtitle2 text-grey-8 q-mb-sm q-mt-md">
-      Giustificativi — {{ row.annoBando || 'N/A' }}
-    </div>
+    <div class="text-subtitle2 text-grey-8 q-mb-sm q-mt-md">Giustificativi — {{ row.annoBando || 'N/A' }}</div>
     <template v-if="row.giustificativi?.length">
       <GiustificativoRow
         v-for="g in row.giustificativi"
@@ -59,14 +65,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import ContattiFamigliaPanel from 'components/Common/ContattiFamigliaPanel.vue'
 import DatiBancariPanel from 'components/Common/DatiBancariPanel.vue'
 import GiustificativoRow from 'src/components/Giustificativi/GiustificativoRow.vue'
 import NoteProgettoPanel from 'src/components/Note/NoteProgettoPanel.vue'
 import { statoProgettoColor, statoProgettoLabel } from 'src/utils/badges'
 import { formatCurrency } from 'src/utils/formatters'
+import { capErogabileRaggiunto, residuoErogabile } from 'src/utils/statoRiga'
 
-defineProps({
+const props = defineProps({
   row: { type: Object, required: true },
   canVerifica: { type: Boolean, default: false },
   genitori: { type: Array, default: undefined },
@@ -77,6 +85,9 @@ defineProps({
   giustLayout: { type: String, default: 'cards' },
   statoRiga: { type: Object, default: null }
 })
+
+const residuoEr = computed(() => residuoErogabile(props.row))
+const capRaggiunto = computed(() => props.row.statoProgetto !== 'chiuso' && capErogabileRaggiunto(props.row))
 
 defineEmits(['edit-bancari', 'save-field', 'verify', 'reject', 'revert', 'send-draft'])
 </script>
